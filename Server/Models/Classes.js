@@ -1,0 +1,33 @@
+import mongoose from "mongoose";
+
+const classSchema = new mongoose.Schema({
+  classTitle: {
+    type: String,
+    required: true,
+  },
+  classSchedule: {
+    type: String,
+    required: true,
+  },
+  teachBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+  },
+  totalHours: {
+    type: Number
+  },
+  enrolledStudents: {
+    type: [
+        {
+            type: mongoose.Schema.Types.ObjectId
+        }
+    ],
+    default: []
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+export default mongoose.model("Classes", classSchema);
