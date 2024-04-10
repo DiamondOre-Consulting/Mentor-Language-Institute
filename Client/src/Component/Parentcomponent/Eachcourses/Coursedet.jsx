@@ -176,9 +176,50 @@ const Coursedet = () => {
                                         </div>
                                     </Tabs.Item>
                                     <Tabs.Item title="Fee Details" icon={HiAdjustments}>
-                                        This is <span className="font-medium text-gray-800 dark:text-white">Settings tab's associated content</span>.
-                                        Clicking another tab will toggle the visibility of this one for the next. The tab JavaScript swaps classes to
-                                        control the content visibility and styling.
+                                    <div className=''>
+                                            <p className='text-2xl text-orange-500 font-bold mb-6'>Fee Details</p>
+
+
+                                            <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+                                                <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                                                    <thead class="text-xs text-gray-100 uppercase bg-orange-400 dark:bg-gray-700 dark:text-gray-400">
+                                                        <tr>
+                                                            <th scope="col" class="px-6 py-3">
+                                                               Month
+                                                            </th>
+                                                            <th scope="col" class="px-6 py-3">
+                                                                Status
+                                                            </th>
+
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
+                                                            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                                               January
+                                                            </th>
+                                                            <td class="px-6 py-4 text-green-600">
+                                                               Submitted
+                                                            </td>
+
+                                                        </tr>
+                                                        <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
+                                                            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                                               February
+                                                            </th>
+                                                            <td class="px-6 py-4 text-red-500">
+                                                                Due
+                                                            </td>
+
+                                                        </tr>
+                                                        
+                                                    </tbody>
+                                                </table>
+
+                                            </div>
+                                        
+
+                                        </div>
                                     </Tabs.Item>
 
 
