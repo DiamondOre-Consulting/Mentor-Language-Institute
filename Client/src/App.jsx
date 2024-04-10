@@ -9,6 +9,7 @@ import Eachcourse from './Pages/parentpages/stueachcourses/Eachcourse'
 import Admin from './Pages/Adminpages/Admin'
 import Register from './Component/AdminComponents/Register'
 import Home from './Component/AdminComponents/Home'
+import Allparents from './Component/AdminComponents/Allparents'
 
 
 
@@ -22,6 +23,7 @@ function App() {
       <Route path='/parent/home' element={<Mainhome/>}/>
       <Route path ='/each/course' element={<Eachcourse/>}/>
       <Route path ='/admin-dashboard' element={<Admin/>}/>
+      <Route path ='/all-parents' element={<Allparents/>}/>
       </Routes>
     </BrowserRouter>
     

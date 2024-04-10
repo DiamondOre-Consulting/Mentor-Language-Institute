@@ -31,7 +31,11 @@ const Admindash = () => {
                         <img src="https://mentorlanguage.com/wp-content/uploads/2022/12/img68-300x156.jpg" class="h-22 me-3 sm:h-16" alt="Flowbite Logo" />
                     </a>
                     <ul class="space-y-2 font-medium">
-                        <li>
+                        <li className='flex items-center'>
+                            <svg class="w-6 h-6 text-gray-500 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                <path fill-rule="evenodd" d="M11.293 3.293a1 1 0 0 1 1.414 0l6 6 2 2a1 1 0 0 1-1.414 1.414L19 12.414V19a2 2 0 0 1-2 2h-3a1 1 0 0 1-1-1v-3h-2v3a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2v-6.586l-.293.293a1 1 0 0 1-1.414-1.414l2-2 6-6Z" clip-rule="evenodd" />
+                            </svg>
+
                             <button
                                 className={`tab ${activeTab === 'home' && 'active'} flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group`}
                                 onClick={() => handleTabClick('home')}
@@ -39,7 +43,11 @@ const Admindash = () => {
                                 Home
                             </button>
                         </li>
-                        <li>
+                        <li className='flex items-center'>
+                            <svg class="w-6 h-6 text-gray-500 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                <path fill-rule="evenodd" d="M5 6a3 3 0 1 1 4 2.83V10a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V8.83a3.001 3.001 0 1 1 2 0V10a3 3 0 0 1-3 3h-1v2.17a3.001 3.001 0 1 1-2 0V13h-1a3 3 0 0 1-3-3V8.83A3.001 3.001 0 0 1 5 6Z" clip-rule="evenodd" />
+                            </svg>
+
                             <button
                                 className={`tab ${activeTab === 'register' && 'active'} flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group`}
                                 onClick={() => handleTabClick('register')}
