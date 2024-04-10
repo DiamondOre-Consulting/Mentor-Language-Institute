@@ -18,7 +18,7 @@ function App() {
     <>
     <BrowserRouter>
       <Routes>
-      <Route path='' element={<Parentlog/>}/>
+      <Route path='/' element={<Parentlog/>}/>
       <Route path='/parent/home' element={<Mainhome/>}/>
       <Route path ='/each/course' element={<Eachcourse/>}/>
       <Route path ='/admin-dashboard' element={<Admin/>}/>
