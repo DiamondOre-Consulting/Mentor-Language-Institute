@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const adminSchema = new mongoose.Schema({
+const parentSchema = new mongoose.Schema({
   role: {
     type: String,
     required: true,
@@ -38,4 +38,4 @@ const adminSchema = new mongoose.Schema({
   },
 });
 
-export default mongoose.model("Admin", adminSchema);
+export default mongoose.model("Parent", parentSchema);

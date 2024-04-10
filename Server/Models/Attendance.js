@@ -10,7 +10,8 @@ const attendanceSchema = new mongoose.Schema({
     required: true
   },
   completedHours: {
-    type: Number
+    type: Number,
+    default: 0
   },
   detailAttendance: {
     type: [
