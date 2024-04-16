@@ -1,9 +1,18 @@
 import React from 'react'
 import Admindash from '../../Component/AdminComponents/Admindash'
+import AdminSidebar from '../../Component/AdminComponents/AdminSidebar'
+
 
 const Admin = () => {
   return (
-    <Admindash/>
+    <>
+
+     <AdminSidebar/>
+      <div className="admin-content">
+        <Admindash/>
+      </div>
+
+    </>
   )
 }
 

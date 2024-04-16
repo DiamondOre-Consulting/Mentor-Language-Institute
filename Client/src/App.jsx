@@ -2,14 +2,18 @@ import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-import Parentlog from './Component/Parentcomponent/parentHomeComponent/Parentlog'
+import Parentsignup from './Component/Studentcomponents/Stuauth/Parentsignup'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import Mainhome from './Pages/parentpages/parenthomepage/Mainhome'
-import Eachcourse from './Pages/parentpages/stueachcourses/Eachcourse'
 import Admin from './Pages/Adminpages/Admin'
-import Register from './Component/AdminComponents/Register'
+
 import Home from './Component/AdminComponents/Home'
-import Allparents from './Component/AdminComponents/Allparents'
+import Login from './Component/Studentcomponents/Stuauth/Login'
+import Maindash from './Pages/Studentpages/Maindash'
+import StudentEachcourses from './Pages/Studentpages/StudentEachcourses'
+import { Sidebar } from 'flowbite-react'
+import Teachermain from './Pages/Teacherpages/Teachermain'
+
+
 
 
 
@@ -17,16 +21,18 @@ function App() {
 
   return (
     <>
-    <BrowserRouter>
-      <Routes>
-      <Route path='' element={<Parentlog/>}/>
-      <Route path='/parent/home' element={<Mainhome/>}/>
-      <Route path ='/each/course' element={<Eachcourse/>}/>
-      <Route path ='/admin-dashboard' element={<Admin/>}/>
-      <Route path ='/all-parents' element={<Allparents/>}/>
-      </Routes>
-    </BrowserRouter>
-    
+      <BrowserRouter>
+        <Routes>
+          <Route path='/' element={<Parentsignup />} />
+          <Route path='/login' element={<Login />} />
+          <Route path='/main-dashboard' element={<Maindash />} />
+          <Route path='/student-each-course' element={<StudentEachcourses/>} />
+          <Route path='/admin-dashboard/*' element={<Admin/>}/>
+          <Route path='/teacher-dashboard/*' element={<Teachermain/>}/>
+         
+        </Routes>
+      </BrowserRouter>
+
     </>
   )
 }

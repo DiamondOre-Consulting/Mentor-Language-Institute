@@ -1,6 +1,7 @@
 import React from 'react'
 import { Tabs } from "flowbite-react";
-import { HiAdjustments, HiClipboardList, HiUserCircle } from "react-icons/hi";
+import { HiAdjustments, HiClipboardList } from "react-icons/hi";
+import { FaBook } from 'react-icons/fa';
 import { MdDashboard } from "react-icons/md";
 
 const Coursedet = () => {
@@ -8,8 +9,8 @@ const Coursedet = () => {
 
     return (
         <>
-            <div className='p-20 '>
-                <div className='grid grid-cols-3 gap-2'>
+            <div className='p-10 md:p-20 '>
+                <div className='grid grid-cols-1 gap-2 md:grid-cols-3'>
                     <div className='col-span-2'>
                         <h1 className='text-4xl font-bold'>JavaScript Fundamentals</h1>
                         <div className='pt-4'>
@@ -33,10 +34,8 @@ const Coursedet = () => {
                             {/* section */}
                             <div className='mt-10'>
 
-
-
                                 <Tabs aria-label="Tabs with icons" style="underline">
-                                    <Tabs.Item active title="Course Details" icon={HiUserCircle}>
+                                    <Tabs.Item active title="Course Details" icon={FaBook} className="focus:outline-none" >
                                         <div className=''>
                                             <p className='text-2xl text-orange-500 font-bold mb-6'>Course Details</p>
 
@@ -114,7 +113,7 @@ const Coursedet = () => {
 
                                         </div>
                                     </Tabs.Item>
-                                    <Tabs.Item title="Attendence Details" icon={MdDashboard}>
+                                    <Tabs.Item title="Attendence Details" icon={MdDashboard} className="focus:outline-none">
                                         <div className=''>
                                             <p className='text-2xl text-orange-500 font-bold mb-6'>Attendence Details</p>
 
@@ -175,8 +174,8 @@ const Coursedet = () => {
 
                                         </div>
                                     </Tabs.Item>
-                                    <Tabs.Item title="Fee Details" icon={HiAdjustments}>
-                                    <div className=''>
+                                    <Tabs.Item title="Fee Details" icon={HiAdjustments} className="focus:outline-none">
+                                        <div className=''>
                                             <p className='text-2xl text-orange-500 font-bold mb-6'>Fee Details</p>
 
 
@@ -185,7 +184,7 @@ const Coursedet = () => {
                                                     <thead class="text-xs text-gray-100 uppercase bg-orange-400 dark:bg-gray-700 dark:text-gray-400">
                                                         <tr>
                                                             <th scope="col" class="px-6 py-3">
-                                                               Month
+                                                                Month
                                                             </th>
                                                             <th scope="col" class="px-6 py-3">
                                                                 Status
@@ -196,28 +195,28 @@ const Coursedet = () => {
                                                     <tbody>
                                                         <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
                                                             <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                                               January
+                                                                January
                                                             </th>
                                                             <td class="px-6 py-4 text-green-600">
-                                                               Submitted
+                                                                Submitted
                                                             </td>
 
                                                         </tr>
                                                         <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
                                                             <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                                               February
+                                                                February
                                                             </th>
                                                             <td class="px-6 py-4 text-red-500">
                                                                 Due
                                                             </td>
 
                                                         </tr>
-                                                        
+
                                                     </tbody>
                                                 </table>
 
                                             </div>
-                                        
+
 
                                         </div>
                                     </Tabs.Item>
@@ -236,16 +235,16 @@ const Coursedet = () => {
                     <div className='flex'>
                         <div className='border border-0 rounded-md bl-4 w-1 h-60 bg-gradient-to-b from-orange-500 to-stone-200'></div>
                         <div className='flex'>
-                            <div className='flex-col mx-3'>
-                                <p className='text-gray-700 font-bold text-xl'>All Courses</p>
-                                <p>JavaScript</p>
-                                <p>HTML</p>
-                                <p>CSS</p>
-                                <p>Java</p>
-                                <p>JavaScript</p>
-                                <p>HTML</p>
-                                <p>CSS</p>
-                                <p>Java</p>
+                            <div className='flex-col mx-3 cursor-pointer'>
+                                <p className='text-gray-700 font-bold text-xl mb-2'>All Courses</p>
+                                <p className='py-1 hover:text-orange-500'>JavaScript</p>
+                                <p className='hover:text-orange-500'>HTML</p>
+                                <p className='py-1 hover:text-orange-500'>CSS</p>
+                                <p className='hover:text-orange-500'>Java</p>
+                                <p className='py-1 hover:text-orange-500'>JavaScript</p>
+                                <p className='hover:text-orange-500'>HTML</p>
+                                <p className='py-1 hover:text-orange-500'>CSS</p>
+                                <p className='hover:text-orange-500'>Java</p>
                             </div>
 
                         </div>
