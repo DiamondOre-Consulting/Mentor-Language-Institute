@@ -92,9 +92,14 @@ router.post('/apply-course/:id', StudentAuthenticateToken, async (req, res) => {
             {new: true}
         );
 
-        const studentUpdate = await Students.findOneAndUpdate({
-            {}
-        })
+        const studentUpdate = await Students.findOneAndUpdate(
+            {_id: userId},
+            {
+                $push: {appliedClasses: id}
+            }
+        );
+
+        res.status(200).json({message: "Student has applied for a course successfully!!!"});
 
     } catch(error) {
         console.log("Something went wrong!!! ");
