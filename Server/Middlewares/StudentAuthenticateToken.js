@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-const TeacherAuthenticateToken = (req, res, next) => {
+const StudentAuthenticateToken = (req, res, next) => {
     // Get the JWT token from the request headers
     const token = req.headers.authorization?.split(' ')[1];
   
@@ -10,7 +10,7 @@ const TeacherAuthenticateToken = (req, res, next) => {
   
     try {
       // Verify and decode the token
-      const decoded = jwt.verify(token, process.env.TEACHER_JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.STUDENT_JWT_SECRET);
   
       // Attach the decoded token to the request object
       req.user = decoded;
@@ -23,4 +23,4 @@ const TeacherAuthenticateToken = (req, res, next) => {
     }
   };
 
-  export default TeacherAuthenticateToken;
+  export default StudentAuthenticateToken;
