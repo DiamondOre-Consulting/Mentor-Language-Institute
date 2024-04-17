@@ -5,6 +5,7 @@ import TeacherMessage from './TeacherMessage'
 import TeacherProfile from './TeacherProfile'
 import UpdateAttendence from './UpdateAttendence'
 import TeacherAllStudents from './TeacherAllStudents'
+import TeachersClasses from './TeachersClasses'
 const TeacherDashboard = () => {
   return (
     <>
@@ -17,6 +18,7 @@ const TeacherDashboard = () => {
                             <Route path='/message' element={<TeacherMessage/>}/>
                             <Route path='/myaccount' element={<TeacherProfile/>}/>
                             <Route path='/allstudents' element={<TeacherAllStudents/>}/>
+                            <Route path='/teacherclasses' element={<TeachersClasses/>}/>
                             <Route path='/attendence' element={<UpdateAttendence/>}/>
                          
                             {/* Add more routes for additional components */}
