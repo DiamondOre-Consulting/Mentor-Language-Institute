@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import Students from "../Models/Students.js";
 import StudentAuthenticateToken from "../Middlewares/StudentAuthenticateToken.js";
 import Classes from "../Models/Classes.js";
+import ClassAccessStatus from "../Models/ClassAccessStatus.js";
 
 dotenv.config();
 
@@ -104,6 +105,70 @@ router.post('/apply-course/:id', StudentAuthenticateToken, async (req, res) => {
     } catch(error) {
         console.log("Something went wrong!!! ");
         res.status(500).json(error); 
+    }
+})
+
+router.post('/enroll-course/:id', StudentAuthenticateToken, async (req, res) => {
+    try {
+        const {id} = req.params;
+        const {userId} = req.user;
+        const { totalFee, feeMonth, paid, amountPaid } = req.body;
+
+        const userRegistered = await Classes.findOne({enrolledStudents: userId});
+        if(userRegistered) {
+            return res.status(408).json({message: "Student has already registered in this course!!!"});
+        }
+
+        const updateClass = await Classes.findByIdAndUpdate(
+            { _id: id },
+            {
+              $push: { enrolledStudents: userId },
+            },
+            { new: true }
+          );
+
+          if (updateClass) {
+            // UPDATE CLASS ACCESS STATUS
+            const newClassAccessStatus = new ClassAccessStatus({
+              classId: id,
+              studentId: userId,
+              classAccessStatus: true,
+            });
+      
+            await newClassAccessStatus.save();
+      
+            // UPDATE FEE FIRST TIME
+            // let forUpdate = totalFee-amountPaid;
+            const feeUpdate = new Fee({
+              classId: id,
+              studentId: userId,
+              totalFee,
+              detailFee: [
+                {
+                  feeMonth,
+                  paid,
+                  amountPaid,
+                },
+              ],
+            });
+      
+            await feeUpdate.save();
+      
+            // UPDATE STUDENT
+            const updateStudent = await Students.findByIdAndUpdate(
+              { _id: userId },
+              {
+                $push: { classes: id, feeDetail: feeUpdate._id },
+              },
+              { new: true }
+            );
+          }
+
+          res.status(200).json({message: "Student has been enrolled in the course successfully!!!"})
+
+    } catch(error) {
+        console.log("Something went wrong!!! ");
+        res.status(500).json(error);
     }
 })
 

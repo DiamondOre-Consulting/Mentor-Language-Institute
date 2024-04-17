@@ -202,7 +202,7 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
 // GET ALL TEACHERS
 router.get("/all-teachers", AdminAuthenticateToken, async (req, res) => {
   try {
-    const allTeachers = await Teachers.find({ password: 0 });
+    const allTeachers = await Teachers.find({}, {password: 0});
 
     return res.status(200).json(allTeachers);
   } catch (error) {
