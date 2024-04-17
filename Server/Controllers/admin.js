@@ -6,10 +6,9 @@ import Admin from "../Models/Admin.js";
 import AdminAuthenticateToken from "../Middlewares/AdminAuthenticateToken.js";
 import Classes from "../Models/Classes.js";
 import Teachers from "../Models/Teachers.js";
-import Parents from "../Models/Parents.js";
 import Students from "../Models/Students.js";
 import Fee from "../Models/Fee.js";
-import Attendance from "../Models/Attendance.js";
+import ClassAccessStatus from "../Models/ClassAccessStatus.js";
 
 dotenv.config();
 
@@ -170,7 +169,7 @@ router.get("/all-classes/:id", AdminAuthenticateToken, async (req, res) => {
 // ADD TEACHER
 router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
   try {
-    const { name, username, phone, password } = req.body;
+    const { name, phone, password } = req.body;
 
     const teacher = Teachers.exists({ phone });
 
@@ -181,10 +180,10 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newTeacher = {};
-    if (name && username && phone) {
+    if (name && phone && password) {
       const newTeacher = new Teachers({
+        role: "Teacher",
         name,
-        username: name + "-" + phone,
         phone,
         password: hashedPassword,
       });
@@ -229,132 +228,32 @@ router.get("/all-teachers/:id", AdminAuthenticateToken, async (req, res) => {
   }
 });
 
-// ADD PARENT
-router.post("/add-parent", AdminAuthenticateToken, async (req, res) => {
+// ADD STUDENT
+router.post("/add-student", AdminAuthenticateToken, async (req, res) => {
   try {
     const { name, phone, password } = req.body;
 
-    const adminuser = Parents.exists({ phone });
+    const studentUser = await Students.findOne({ phone });
 
-    if (adminuser) {
-      return res.status(409).json({ message: "Parent user already exists" });
-    }
-
-    if (!name || !phone || !password) {
-      return res.status(409).json({ message: "All fields are required!!!" });
+    if (studentUser) {
+      return res
+        .status(409)
+        .json({ message: "Student with this phone number already exist!!!" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newParent = new Parents({
-      role: "Parent",
+    const newStudent = new Students({
       name,
-      username: name + "-" + phone,
       phone,
       password: hashedPassword,
     });
 
-    await newParent.save();
-
-    res.status(200).json({ message: "New parent has added!!! ", newParent });
-  } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
-  }
-});
-
-// GET ALL PARENTS
-router.get("/all-parents", AdminAuthenticateToken, async (req, res) => {
-  try {
-    const allParents = await Parents.find({}, {password: 0});
-
-    return res.status(200).json(allParents);
-  } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
-  }
-});
-
-// GET PARENT BY ID
-router.get("/all-parents/:id", AdminAuthenticateToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const singleParent = await Parents.findById({ _id: id });
-
-    return res.status(200).json(singleParent);
-  } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
-  }
-});
-
-// ADD STUDENT
-router.post("/add-student", AdminAuthenticateToken, async (req, res) => {
-  try {
-    const { name, parentId, classId, feeMonth, paid, completedHours } = req.body;
-
-    const parent = await Parents.findById({ _id: parentId });
-
-    for (const studentId of parent.wards) {
-      // Find student by ID
-      const student = await Students.findById(studentId);
-      if (!student) {
-        // Handle case where student doesn't exist (optional)
-        console.log(`Student with ID ${studentId} not found.`);
-        continue; // Continue to next iteration
-      }
-      // Compare student names
-      if (student.name === name) {
-        return res
-          .status(400)
-          .json({ error: "Student already exists for the particular parent" });
-      }
-    }
-
-    const newStudent = new Students({
-      name,
-      parent: parentId,
-      classes: classId,
-    });
-
     await newStudent.save();
 
-    if (newStudent) {
-      const updateParent = await Parents.findByIdAndUpdate(
-        { _id: parentId },
-        {
-          $push: { wards: newStudent._id },
-        }
-      );
-    }
-
-    if (newStudent) {
-      const updateClass = await Classes.findByIdAndUpdate(
-        {_id: classId},
-        {
-          $push: {enrolledStudents: newStudent._id}
-        }
-      )
-    }
-
-    if(newStudent) {
-      await Fee.create({
-        classId,
-        studentId: newStudent._id,
-        detailFee: [{ feeMonth, paid }],
-      });
-    }
-
-    if(newStudent) {
-      await Attendance.create({
-        classId,
-        studentId: newStudent._id,
-        completedHours,
-      })
-    }
-
-    return res.status(200).json({message: `New student ${name} has been added under parent ${parent.name}!!!`})
+    return res
+      .status(200)
+      .json({ message: `New student has been registered successfully!!!` });
   } catch (error) {
     console.log("Something went wrong!!! ");
     res.status(500).json(error);
@@ -362,54 +261,122 @@ router.post("/add-student", AdminAuthenticateToken, async (req, res) => {
 });
 
 // GET ALL STUDENTS
-router.get('/all-students', AdminAuthenticateToken, async (req, res) => {
+router.get("/all-students", AdminAuthenticateToken, async (req, res) => {
   try {
     const allStudents = await Students.find({});
 
     return res.status(200).json(allStudents);
-
-  } catch(error) {
+  } catch (error) {
     console.log("Something went wrong!!! ");
     res.status(500).json(error);
   }
-})
+});
 
 // GET STUDENT BY ID
-router.get('/all-students/:id', AdminAuthenticateToken, async (req, res) => {
+router.get("/all-students/:id", AdminAuthenticateToken, async (req, res) => {
   try {
-    const {id} = req.params;
+    const { id } = req.params;
 
-    const singleStudent = await Students.findById({_id: id});
+    const singleStudent = await Students.findById({ _id: id });
 
     return res.status(200).json(singleStudent);
-  } catch(error) {
+  } catch (error) {
+    console.log("Something went wrong!!! ");
+    res.status(500).json(error);
+  }
+});
+
+// ENROLL STUDENT IN A COURSE
+router.put("/enroll-student/:id1/:id2", async (req, res) => {
+  try {
+    const { id1, id2 } = req.params;
+    const { totalFee, feeMonth, paid, amountPaid } = req.body;
+
+    const studentExist = await Classes.findOne({enrolledStudents: id2});
+
+    if(studentExist) {
+      return res.status(409).json({message: `Student already exists in this class!!!`})
+    }
+
+    const updateClass = await Classes.findByIdAndUpdate(
+      { _id: id1 },
+      {
+        $push: { enrolledStudents: id2 },
+      },
+      { new: true }
+    );
+
+    if (updateClass) {
+      // UPDATE CLASS ACCESS STATUS
+      const newClassAccessStatus = new ClassAccessStatus({
+        classId: id1,
+        studentId: id2,
+        classAccessStatus: true,
+      });
+
+      await newClassAccessStatus.save();
+
+      // UPDATE FEE FIRST TIME
+      // let forUpdate = totalFee-amountPaid;
+      const feeUpdate = new Fee({
+        classId: id1,
+        studentId: id2,
+        totalFee,
+        detailFee: [
+          {
+            feeMonth,
+            paid,
+            amountPaid,
+          },
+        ],
+      });
+
+      await feeUpdate.save();
+
+      // UPDATE STUDENT
+      const updateStudent = await Students.findByIdAndUpdate(
+        { _id: id2 },
+        {
+          $push: { classes: id1, feeDetail: feeUpdate._id },
+        },
+        { new: true }
+      );
+    }
+
+    return res.status(200).json({
+      message: `Student with ${id2} is enrolled in course ${id1} successfully!!!`,
+    });
+  } catch (error) {
     console.log("Something went wrong!!! ");
     res.status(500).json(error);
   }
 });
 
 // UPDATE FEE DETAIL
-router.put('/update-fee', AdminAuthenticateToken, async (req, res) => {
+router.put("/update-fee/:id1/:id2", AdminAuthenticateToken, async (req, res) => {
   try {
-    const {classId, studentId, feeMonth } = req.body;
+    const {id1, id2} = req.params;
+    const { feeMonth, paid, amountPaid } = req.body;
 
     await Fee.findOneAndUpdate(
-      {classId, studentId},
+      { classId: id1, studentId: id2 },
       {
         $push: {
           detailFee: {
             feeMonth,
-            paid: true
-          }
-        }
+            paid,
+            amountPaid
+          },
+        },
       }
-    )
+    );
 
-    res.status(200).json({ message: 'Fee updated successfully.' });
-  } catch(error) {
+    res.status(200).json({ message: `Fee for ${feeMonth} is updated successfully.` });
+    
+  } catch (error) {
     console.log("Something went wrong!!! ");
     res.status(500).json(error);
   }
-})
+});
 
 export default router;

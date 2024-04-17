@@ -16,6 +16,14 @@ const classSchema = new mongoose.Schema({
   totalHours: {
     type: Number
   },
+  appliedStudents: {
+    type: [
+      {
+        type: mongoose.Schema.Types.ObjectId
+      }
+    ],
+    default: []
+  },
   enrolledStudents: {
     type: [
         {

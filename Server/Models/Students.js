@@ -5,9 +5,21 @@ const studentSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  parent: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true
+  phone: {
+    type: String,
+    required: true,
+  },
+  password: {
+    type: String,
+    required: true,
+  },
+  appliedClasses: {
+    type: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+      },
+    ],
+    default: [],
   },
   classes: {
     type: [
@@ -18,12 +30,20 @@ const studentSchema = new mongoose.Schema({
     default: [],
   },
   attendanceDetail: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Attendance"
+    type: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Attendance",
+      },
+    ],
   },
   feeDetail: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Fee"
+    type: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Fee",
+      },
+    ],
   },
   createdAt: {
     type: Date,

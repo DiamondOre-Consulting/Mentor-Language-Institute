@@ -9,10 +9,6 @@ const teacherSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  username: {
-    type: String,
-    required: true,
-  },
   phone: {
     type: String,
     required: true,

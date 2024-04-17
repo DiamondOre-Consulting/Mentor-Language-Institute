@@ -9,16 +9,22 @@ const feeSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: true
   },
+  totalFee: {
+    type: Number,
+    required: true
+  },
   detailFee: {
     type: [
       {
         feeMonth: {
-            type: Date,
-            default: Date.now
+            type: String,
         },
         paid: {
             type: Boolean,
             default: null
+        },
+        amountPaid: {
+          type: Number,
         }
       },
     ],
