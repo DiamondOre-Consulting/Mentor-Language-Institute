@@ -2,8 +2,9 @@ import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import Students from "../Models/Students";
-import StudentAuthenticateToken from "../Middlewares/StudentAuthenticateToken";
+import Students from "../Models/Students.js";
+import StudentAuthenticateToken from "../Middlewares/StudentAuthenticateToken.js";
+import Classes from "../Models/Classes.js";
 
 dotenv.config();
 
@@ -44,8 +45,61 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.get('all-courses', StudentAuthenticateToken, async (req, res) => {
-    
+router.get('/all-courses', StudentAuthenticateToken, async (req, res) => {
+    try {
+        const allCourses = await Classes.find({});
+
+        res.status(200).json(allCourses);
+    } catch(error) {
+        console.log("Something went wrong!!! ");
+        res.status(500).json(error);
+    }
+})
+
+router.get('/all-courses/:id', StudentAuthenticateToken, async (req, res) => {
+    try {
+        const {id} = req.params;
+
+        const singleCourse = await Classes.findById({_id: id});
+
+        res.status(200).json(singleCourse);
+    } catch(error) {
+        console.log("Something went wrong!!! ");
+        res.status(500).json(error);
+    }
+});
+
+router.post('/apply-course/:id', StudentAuthenticateToken, async (req, res) => {
+    try {
+        const {id} = req.params;
+        const {userId} = req.user;
+
+        const userApplied = await Classes.findOne({appliedStudents: userId});
+        if(userApplied) {
+            return res.status(409).json({message: "Student has already applied in this course!!!"});;
+        }
+
+        const userRegistered = await Classes.findOne({enrolledStudents: userId});
+        if(userRegistered) {
+            return res.status(408).json({message: "Student has already registered in this course!!!"});
+        }
+
+        const classUpdate = await Classes.findOneAndUpdate(
+            {_id: id},
+            {
+                $push: {appliedStudents: userId}
+            },
+            {new: true}
+        );
+
+        const studentUpdate = await Students.findOneAndUpdate({
+            {}
+        })
+
+    } catch(error) {
+        console.log("Something went wrong!!! ");
+        res.status(500).json(error); 
+    }
 })
 
 export default router;

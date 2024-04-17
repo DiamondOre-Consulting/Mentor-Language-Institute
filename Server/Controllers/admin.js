@@ -173,8 +173,8 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
 
     const teacher = Teachers.exists({ phone });
 
-    if (!teacher) {
-      return res.status(409).json({ message: "Admin user already exists" });
+    if (teacher) {
+      return res.status(409).json({ message: "Teacher has already registered" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -372,7 +372,7 @@ router.put("/update-fee/:id1/:id2", AdminAuthenticateToken, async (req, res) => 
     );
 
     res.status(200).json({ message: `Fee for ${feeMonth} is updated successfully.` });
-    
+
   } catch (error) {
     console.log("Something went wrong!!! ");
     res.status(500).json(error);

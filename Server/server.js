@@ -20,13 +20,11 @@ mongoose
     console.error("MongoDB connection error:", error);
   });
 
-app.get("/", (req, res) => {
-  res.send("Hello Mentor Language Institute!!!");
-});
-
 import AdminController from "./Controllers/admin.js"
+import StudentController from "./Controllers/student.js";
 
 app.use('/api/admin-confi', AdminController);
+app.use('/api/students', StudentController);
 
 app.get('/', (req, res) => {
     res.send("Hello Mentor Language Institute")
