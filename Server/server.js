@@ -22,9 +22,11 @@ mongoose
 
 import AdminController from "./Controllers/admin.js"
 import StudentController from "./Controllers/student.js";
+import TeacherController from "./Controllers/teacher.js";
 
 app.use('/api/admin-confi', AdminController);
 app.use('/api/students', StudentController);
+app.use('/api/teachers', TeacherController);
 
 app.get('/', (req, res) => {
     res.send("Hello Mentor Language Institute")

@@ -171,7 +171,7 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
   try {
     const { name, phone, password } = req.body;
 
-    const teacher = Teachers.exists({ phone });
+    const teacher = await Teachers.exists({ phone });
 
     if (teacher) {
       return res.status(409).json({ message: "Teacher has already registered" });

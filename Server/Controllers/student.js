@@ -46,6 +46,31 @@ router.post("/login", async (req, res) => {
   }
 });
 
+router.get('/my-profile', StudentAuthenticateToken, async (req, res) => {
+    try {
+        const { phone } = req.user;
+
+        const student = await Students.findOne({ phone: phone });
+    
+        if (!student) {
+          return res.status(404).json({ message: "Student not find" });
+        }
+    
+        const { name, appliedClasses, classes, attendanceDetail, feeDetail } = student;
+        res.status(200).json({
+          name,
+          phone,
+          appliedClasses,
+          classes,
+          attendanceDetail,
+          feeDetail
+        });
+    } catch(error) {
+        console.log("Something went wrong!!! ");
+        res.status(500).json(error);
+    }
+})
+
 router.get('/all-courses', StudentAuthenticateToken, async (req, res) => {
     try {
         const allCourses = await Classes.find({});
