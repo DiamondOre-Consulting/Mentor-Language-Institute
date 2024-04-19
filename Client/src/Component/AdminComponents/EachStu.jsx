@@ -1,11 +1,110 @@
-import React, { useState } from 'react';
+
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import axios from "axios";
+import { useJwt } from "react-jwt";
+
 
 const EachStu = () => {
+
   const [activeTab, setActiveTab] = useState('personal');
+  const [classes, setAllClasses] = useState([]);
+
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
   };
+
+  // each student personal details 
+
+
+  const navigate = useNavigate();
+  const [studentsDetails, setStudentsDetails] = useState(null);
+
+
+  const { id } = useParams();
+  console.log(id);
+
+  const { decodedToken } = useJwt(localStorage.getItem("token"));
+  const token = localStorage.getItem("token");
+  if (!token) {
+    navigate("/login"); // Redirect to login page if not authenticated
+    return;
+  }
+
+  //   const userName = decodedToken ? decodedToken.name : "No Name Found";
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      // No token found, redirect to login page
+      navigate("/login");
+    } else {
+      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
+
+      if (tokenExpiration && tokenExpiration < Date.now()) {
+        // Token expired, remove from local storage and redirect to login page
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    }
+
+    const fetchStudentDetails = async () => {
+      try {
+        // Fetch student details
+        const studentResponse = await axios.get(`http://localhost:7000/api/admin-confi/all-students/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (studentResponse.status === 200) {
+          // Set student details
+          setStudentsDetails(studentResponse.data);
+          // Fetch classes associated with the student
+          const classIds = studentResponse.data.classes;
+          const classesData = [];
+          for (const classId of classIds) {
+            const classResponse = await axios.get(`http://localhost:7000/api/admin-confi/all-classes/${classId}`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+            if (classResponse.status === 200) {
+              console.log("response", classResponse.data)
+              classesData.push(classResponse.data);
+
+              const teacherId = classResponse.data.teachBy;
+              const teacherResponse = await axios.get(`http://localhost:7000/api/admin-confi/all-teachers/${teacherId}`, {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+              if (teacherResponse.status === 200) {
+                // Add teacher information to class data
+                classResponse.data.teacher = teacherResponse.data;
+              }
+            }
+          }
+         
+          // Set classes
+          setAllClasses(classesData);
+        }
+        
+    
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchStudentDetails();
+  }, [decodedToken]);
+
+
+  // eachstudents classes 
+
+
+
+
   return (
     <>
       <div class="bg-orange-500 flex justify-between">
@@ -15,9 +114,9 @@ const EachStu = () => {
         </div>
         <div class="bg-orange-500  max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <h1 class=" text-3xl font-semibold  tracking-tight text-gray-100">
-            Charlot Daniel Abbot
+            {studentsDetails?.name}
           </h1>
-          <p class="ml-10 text-gray-200">zoyas3423@gmail.com</p>
+          <p class="ml-10 text-gray-200">{studentsDetails?.phone}</p>
         </div>
 
         <div class="bg-orange-500 mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -39,7 +138,6 @@ const EachStu = () => {
         <div class=" max-w-7xl py-0 ">
           <div class="md:flex no-wrap md:-mx-2  ">
 
-
             <div class="w-full mx-2   md:block lg:block md:-mt-24 sm:mt-0">
 
               <div class="hidden md:block lg:block">
@@ -54,7 +152,7 @@ const EachStu = () => {
                     <a class="rounded-sm bg-white inline-block py-2 px-4 border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold" href="#" onClick={() => handleTabClick('FeeDetails')}>Fee Details</a>
                   </li>
                   <li class="mr-1">
-                    <a class="rounded-sm bg-white inline-block py-2 px-4 border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold" href="#"onClick={() => handleTabClick('AttendenceDetails')}>Attendence Details</a>
+                    <a class="rounded-sm bg-white inline-block py-2 px-4 border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold" href="#" onClick={() => handleTabClick('AttendenceDetails')}>Attendence Details</a>
                   </li>
 
 
@@ -67,11 +165,11 @@ const EachStu = () => {
                     <ul class="mt-2 text-gray-700">
                       <li class="flex border-y py-2">
                         <span class="font-bold w-24">Full name:</span>
-                        <span class="text-gray-700">Amanda S. Ross</span>
+                        <span class="text-gray-700">{studentsDetails?.name}</span>
                       </li>
                       <li class="flex border-b py-2">
-                        <span class="font-bold w-24">Birthday:</span>
-                        <span class="text-gray-700">24 Jul, 1991</span>
+                        <span class="font-bold w-24">phone:</span>
+                        <span class="text-gray-700">{studentsDetails?.phone}</span>
                       </li>
                       <li class="flex border-b py-2">
                         <span class="font-bold w-24">Joined:</span>
@@ -117,15 +215,18 @@ const EachStu = () => {
               {
                 activeTab === 'EnrolledCourses' && (
                   <div className='grid grid-cols-4 gap-2 bg-white pt-10 '>
-
-
-                    <a href="#" class="block max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
-
-                      <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">JavaScript</h5>
-                      <p class="font-normal text-sm text-gray-700 dark:text-gray-400">Teacher :- <span>John</span></p>
-                      <p class="font-normal text-sm text-gray-700 dark:text-gray-400">Duration :- <span>44hrs</span></p>
-                      <p class="font-normal text-sm text-gray-700 dark:text-gray-400">Total Enrolled Students :- <span>95</span></p>
-                    </a>
+                    {classes.length === 0 ? (
+                      <div>No classes are there</div>
+                    ) : (
+                      classes.map((course) => (
+                        <a href="#" class="block max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
+                          <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{course?.classTitle}</h5>
+                          <p class="font-normal text-sm text-gray-700 dark:text-gray-400">classSchedule:- <span>{course?.classSchedule}</span></p>
+                          <p class="font-normal text-sm text-gray-700 dark:text-gray-400">Duration :- <span>{course?.totalHours}</span></p>
+                          <p class="font-normal text-sm text-gray-700 dark:text-gray-400">Teach By :- <span>{course?.teacher.name}</span></p>
+                        </a>
+                      ))
+                    )}
                   </div>
                 )
               }
@@ -135,7 +236,7 @@ const EachStu = () => {
 
                   <div className='bg-white pt-10'>
                     <select>
-                    <option>Select Course</option>
+                      <option>Select Course</option>
                       <option>HTML </option>
                       <option>CSS</option>
                       <option>JAVASCRIPT</option>
@@ -154,30 +255,30 @@ const EachStu = () => {
                               <th scope="col" class="px-6 py-3">
                                 Status
                               </th>
-                              
+
                             </tr>
                           </thead>
                           <tbody>
                             <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
                               <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                Adminssion Fee 
+                                Adminssion Fee
                               </th>
                               <td class="px-6 py-4 text-green-500">
                                 Submitted
                               </td>
-                              
+
                             </tr>
                             <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
                               <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                               March
+                                March
                               </th>
                               <td class="px-6 py-4 text-red-400">
                                 Due
                               </td>
-                              
-                              
+
+
                             </tr>
-                          
+
                           </tbody>
                         </table>
                       </div>
@@ -197,19 +298,19 @@ const EachStu = () => {
 
                   <div className='bg-white pt-10'>
                     <div className='flex '>
-                    <select>
-                    <option>Select Course</option>
-                      <option>HTML </option>
-                      <option>CSS</option>
-                      <option>JAVASCRIPT</option>
-                    </select>
+                      <select>
+                        <option>Select Course</option>
+                        <option>HTML </option>
+                        <option>CSS</option>
+                        <option>JAVASCRIPT</option>
+                      </select>
 
-                    <select className='ml-4'>
-                    <option>Select Month</option>
-                      <option>January</option>
-                      <option>February</option>
-                      <option>March</option>
-                    </select>
+                      <select className='ml-4'>
+                        <option>Select Month</option>
+                        <option>January</option>
+                        <option>February</option>
+                        <option>March</option>
+                      </select>
                     </div>
 
                     <div>
@@ -220,12 +321,12 @@ const EachStu = () => {
                           <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                             <tr>
                               <th scope="col" class="px-6 py-3">
-                               Date
+                                Date
                               </th>
                               <th scope="col" class="px-6 py-3">
                                 Status
                               </th>
-                              
+
                             </tr>
                           </thead>
                           <tbody>
@@ -236,19 +337,19 @@ const EachStu = () => {
                               <td class="px-6 py-4 text-green-500">
                                 Present
                               </td>
-                              
+
                             </tr>
                             <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
                               <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                               3/4/2009
+                                3/4/2009
                               </th>
                               <td class="px-6 py-4 text-red-400">
                                 Absent
                               </td>
-                              
-                              
+
+
                             </tr>
-                          
+
                           </tbody>
                         </table>
                       </div>

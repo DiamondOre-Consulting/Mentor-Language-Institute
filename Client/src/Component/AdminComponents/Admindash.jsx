@@ -9,11 +9,10 @@ import Allcourses from './Allcourses'
 import EachTeacher from './EachTeacher'
 import EachStu from './EachStu'
 import Message from './Message'
+import Eachcourse from './Eachcourse'
 
 
 const Admindash = () => {
-
-
 
 
     return (
@@ -27,10 +26,11 @@ const Admindash = () => {
                             <Route path="/home" element={<Home />} />
                             <Route path='/allstudents' element={<Allstudents />} />
                             <Route path='/allteachers' element={<AllTeachers />} />
-                            <Route path='/allteacher/eachteacher' element={<EachTeacher/>}/>
-                            <Route path='/allstudents/eachstudent' element={<EachStu/>}/>
+                            <Route path='/allteacher/:id' element={<EachTeacher/>}/>
+                            <Route path='/allstudents/:id' element={<EachStu/>}/>
                             <Route path='/messages' element={<Message/>}/>
                             <Route path='/allcourses' element={<Allcourses />} />
+                            <Route path='/allcourses/:id' element={<Eachcourse/>}/>
                             <Route path='/register' element={<Register />} />
                             {/* Add more routes for additional components */}
                         </Routes>

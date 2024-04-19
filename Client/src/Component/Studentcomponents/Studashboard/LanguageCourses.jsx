@@ -1,20 +1,11 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import axios from "axios";
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
-import hindi from '../../../assets/hindi.png'
-import dutch from '../../../assets/dutch.png'
-import english from '../../../assets/english.png'
-import chinese from '../../../assets/chinese.png'
-import french from '../../../assets/french.png'
-import german from '../../../assets/german.png'
-import italian from '../../../assets/italian.png'
-import japanese from '../../../assets/japanese.png'
-import korean from '../../../assets/korean.png'
-import portugese from '../../../assets/portugese.png'
-import russian from '../../../assets/russian.png'
-import sanskrit from '../../../assets/sanskrit.png'
-import spanish from '../../../assets/spanish.png'
+
+
 
 
 
@@ -22,6 +13,7 @@ const LanguageCourses = () => {
 
     const [showPopup, setShowPopup] = useState(false);
     const [showPopupEnroll, setShowPopupEnroll] = useState(false);
+    const [selectedCourseId, setSelectedCourseId] = useState(null);
 
 
     const handleClose = () => {
@@ -29,10 +21,17 @@ const LanguageCourses = () => {
         setShowPopupEnroll(true)
     };
 
-    const handleEnrollClose = () =>{
-        
+    const handleEnrollClose = () => {
+
         setShowPopupEnroll(false)
     }
+
+    
+    const handleEnrollClick = (courseId) => {
+        console.log("Clicked on Enroll Now for course ID:", courseId);
+        setSelectedCourseId(courseId);
+        setShowPopup(true);
+    };
 
     const settings = {
         centerMode: true,
@@ -62,27 +61,115 @@ const LanguageCourses = () => {
         ]
     };
 
+    console.log("selected id ",selectedCourseId);
+
+    // each course
+    const [Eachcourse , setEachCourse] = useState(null);
+    useEffect(() => {
+        console.log("Selected Course ID:", selectedCourseId); 
+        const fetchEachCourse = async () => {
+            try {
+                // Check if selectedCourseId is not null
+                if (selectedCourseId) {
+                    const token = localStorage.getItem("token");
+                    if (!token) {
+                        console.error("No token found");
+                        navigate("/login");
+                        return;
+                    }
+                    const response = await axios.get(
+                        `http://localhost:7000/api/students/all-courses/${selectedCourseId}`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`
+                            }
+                        }
+                    );
+                    if (response.status === 200) {
+                        console.log(response.data);
+                        const eachcourses = response.data;
+                        console.log(eachcourses);
+                        setEachCourse(eachcourses);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching courses:", error);
+            }
+        };
+    
+        fetchEachCourse();
+    }, [selectedCourseId]); // Add selectedCourseId as dependency
+    
+
+
+    const [allCourses, setAllCourses] = useState([]);
+
+    useEffect(() => {
+        const fetchAllcourses = async () => {
+            try {
+                const token = localStorage.getItem("token");
+
+                if (!token) {
+                    console.error("No token found");
+                    navigate("/login");
+                    return;
+                }
+
+
+                const response = await axios.get(
+                    "http://localhost:7000/api/students/all-courses",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    }
+                );
+                if (response.status == 200) {
+                    console.log(response.data);
+                    const allcourses = response.data;
+                    console.log(allcourses);
+                    setAllCourses(allcourses);
+                }
+            } catch (error) {
+                console.error("Error fetching courses:", error);
+
+            }
+        };
+
+        fetchAllcourses();
+    }, []);
+
+
     return (
         <>
             <div className='px-10 '>
                 <h1 className='text-4xl font-bold mb-24 text-gray-900'>Language Courses</h1>
 
                 <div className='slider-container PY-10'>
-                    <Slider {...settings}>
-                        <div className='w-full '><img className='w-2/3 transition-all duration-700 hover:-translate-y-2 hover:shadow-xl cursor-pointer' src={hindi} alt="" onClick={() => setShowPopup(true)} /></div>
-                        <div className='w-full '><img className='w-2/3 transition-all duration-700 hover:-translate-y-2 hover:shadow-xl cursor-pointer' src={dutch} alt="" onClick={() => setShowPopup(true)} /></div>
-                        <div className='w-full '><img className='w-2/3 transition-all duration-700 hover:-translate-y-2 hover:shadow-xl cursor-pointer' src={english} alt="" onClick={() => setShowPopup(true)} /></div>
-                        <div className='w-full '><img className='w-2/3 transition-all duration-700 hover:-translate-y-2 hover:shadow-xl cursor-pointer' src={chinese} alt="" onClick={() => setShowPopup(true)} /></div>
-                        <div className='w-full '><img className='w-2/3 transition-all duration-700 hover:-translate-y-2 hover:shadow-xl cursor-pointer' src={french} alt="" onClick={() => setShowPopup(true)} /></div>
-                        <div className='w-full '><img className='w-2/3 transition-all duration-700 hover:-translate-y-2 hover:shadow-xl cursor-pointer' src={german} alt="" onClick={() => setShowPopup(true)} /></div>
-                        <div className='w-full '><img className='w-2/3 transition-all duration-700 hover:-translate-y-2 hover:shadow-xl cursor-pointer' src={italian} alt="" onClick={() => setShowPopup(true)} /></div>
-                        <div className='w-full '><img className='w-2/3 transition-all duration-700 hover:-translate-y-2 hover:shadow-xl cursor-pointer' src={japanese} alt="" onClick={() => setShowPopup(true)} /></div>
-                        <div className='w-full '><img className='w-2/3 transition-all duration-700 hover:-translate-y-2 hover:shadow-xl cursor-pointer' src={korean} alt="" onClick={() => setShowPopup(true)} /></div>
-                        <div className='w-full '><img className='w-2/3 transition-all duration-700 hover:-translate-y-2 hover:shadow-xl cursor-pointer' src={portugese} alt="" onClick={() => setShowPopup(true)} /></div>
-                        <div className='w-full '><img className='w-2/3 transition-all duration-700 hover:-translate-y-2 hover:shadow-xl cursor-pointer' src={russian} alt="" onClick={() => setShowPopup(true)} /></div>
-                        <div className='w-full '><img className='w-2/3 transition-all duration-700 hover:-translate-y-2 hover:shadow-xl cursor-pointer' src={sanskrit} alt="" onClick={() => setShowPopup(true)} /></div>
-                        <div className='w-full '><img className='w-2/3 transition-all duration-700 hover:-translate-y-2 hover:shadow-xl cursor-pointer' src={spanish} alt="" onClick={() => setShowPopup(true)} /></div>
-                    </Slider>
+                    {
+                        <Slider {...settings} >
+                            {allCourses.map((course) => (
+                                
+                                <div key={course._id} className='relative bg-white border border-gray-200 rounded-lg overflow-hidden shadow-md transform hover:scale-105 h-64  transition duration-'>
+                                    {/* Notebook Lines */}
+                                    {/* <div className='absolute inset-0 bg-gradient-to-b from-orange-200 to-gray-100 opacity-50'></div> */}
+
+                                    {/* Content */}
+                                    <div className='p-6  mt-8 cursor-pointer'>
+                                        <h1 className='text-xl font-bold mb-2'>{course.classTitle}</h1>
+                                        <p className='text-gray-600 mb-4'>Mentor Language Institute</p>
+
+                                        {/* Button */}
+                                        <button className="block z-10 w-full px-4 py-2 cursor-pointer hover:bg-orange-500 bg-orange-400 text-sm font-semibold text-white rounded-lg shadow-md focus:outline-none hover:bg-orange-600 transition duration-300"onClick={() => handleEnrollClick(course._id)}>
+                                            Enroll Now
+                                        </button>
+                                    </div>
+                                </div>
+
+
+                            ))}
+                        </Slider>
+                    }
 
                     {showPopup && (
                         <div className="fixed inset-0 flex items-center justify-center">
@@ -90,12 +177,11 @@ const LanguageCourses = () => {
                             <section className="rounded-lg shadow-xl bg-white w-4/5 sm:w-3/5 lg:w-1/3  grid grid-cols-2">
                                 <img src="https://t4.ftcdn.net/jpg/06/23/40/73/360_F_623407391_wtq6RVJUq2RGb2e3D0ykn5zJOqfJhOSc.jpg" className='h-full' alt="" />
                                 <div className="p-6 text-left">
-                                    <h2 className="text-xl font-bold text-teal-green-900 mb-4">Hindi</h2>
-                                    <p className="text-sm text-gray-600 ">Teacher name :-  <span>John</span></p>
-                                    <p className="text-sm text-gray-600 ">Schedule :-  <span>M/W/F</span></p>
-                                    <p className="text-sm text-gray-600 mb-6">Dusration :- <span>42hrs</span></p>
+                                    <h2 className="text-xl font-bold text-teal-green-900 mb-4">{Eachcourse?.classTitle}</h2>
+                                    <p className="text-sm text-gray-600 ">Schedule :-  <span>{Eachcourse?.classSchedule}</span></p>
+                                    <p className="text-sm text-gray-600 mb-6">Dusration :- <span>{Eachcourse?.totalHours}</span></p>
                                     <button
-                                        className="block w-full px-4 py-2 bg-orange-500 text-sm font-semibold text-white rounded-lg shadow-md  focus:outline-none "
+                                        className="block w-full z-10 px-4 py-2 bg-orange-500 text-sm font-semibold text-white rounded-lg shadow-md  focus:outline-none "
                                         onClick={handleClose}
                                     >
                                         Enrolled Now
@@ -109,7 +195,7 @@ const LanguageCourses = () => {
                         <div className="fixed inset-0 flex items-center justify-center">
 
                             <section className="rounded-lg shadow-xl bg-white w-4/5 sm:w-3/5 lg:w-1/3">
-                               
+
                                 <div className="p-6 text-left">
                                     <h2 className="text-xl font-bold text-teal-green-900 mb-4">Thankyou For Enrolling!!</h2>
                                     <p className="text-sm text-gray-600 mb-6">We Will connect you soon</p>
@@ -137,6 +223,9 @@ const LanguageCourses = () => {
         align-items: center;
         justify-content: center;
         font-size: 0px;
+        position: absolute;
+        top: 50%; 
+        transform: translateY(-50%); 
         cursor: pointer;
         z-index: 1; /* Ensure the buttons are above the slider */
     }
@@ -147,12 +236,18 @@ const LanguageCourses = () => {
     }
 
     .slick-prev {
+        
         left: 10px;
     }
+
+   
 
     .slick-next {
         right: 10px;
     }
+   
+    
+   
     
 `}</style>
 

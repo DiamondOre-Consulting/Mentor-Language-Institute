@@ -1,23 +1,96 @@
-import React from 'react'
+
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import axios from "axios";
+import { useJwt } from "react-jwt";
 
 const EachTeacher = () => {
+
+    const navigate = useNavigate();
+  const [teacherDetails, setTeacherDetails] = useState(null);
+
+
+  const { id } = useParams();
+  console.log(id);
+
+  const { decodedToken } = useJwt(localStorage.getItem("token"));
+  const token = localStorage.getItem("token");
+  if (!token) {
+    navigate("/login"); // Redirect to login page if not authenticated
+    return;
+  }
+
+//   const userName = decodedToken ? decodedToken.name : "No Name Found";
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      // No token found, redirect to login page
+      navigate("/login");
+    } else {
+      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
+
+      if (tokenExpiration && tokenExpiration < Date.now()) {
+        // Token expired, remove from local storage and redirect to login page
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    }
+
+    const fetchTeacherDetails = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          // Token not found in local storage, handle the error or redirect to the login page
+          console.error("No token found");
+          navigate("/login");
+          return;
+        }
+
+        // Fetch associates data from the backend
+        const response = await axios.get(
+          `http://localhost:7000/api/admin-confi/all-teachers/${id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (response.status == 200) {
+            const oneteacher = response.data;
+            console.log(oneteacher);
+         
+          setTeacherDetails(response.data);
+    
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchTeacherDetails();
+  }, [decodedToken]);
+
+
+
   return (
    <>
            <div class="w-full h-40">
                 <img src="https://t4.ftcdn.net/jpg/03/16/92/61/360_F_316926143_cVdnI6bJPbhlo1yZVTJk0R0sjBx4vVnO.jpg" class="w-full h-full rounded-tl-lg rounded-tr-lg"/>
             </div>
             <div class="flex flex-col items-center -mt-20">
-                <img src="https://vojislavd.com/ta-template-demo/assets/img/profile.jpg" class="w-40 border-4 border-white rounded-full"/>
+                <img src="https://media.istockphoto.com/id/1300845620/vector/user-icon-flat-isolated-on-white-background-user-symbol-vector-illustration.jpg?s=612x612&w=0&k=20&c=yBeyba0hUkh14_jgv1OKqIH0CCSWU_4ckRkAoy2p73o=" class="w-40 border-4 border-white rounded-full"/>
                 <div class="flex items-center space-x-2 mt-2">
-                    <p class="text-2xl">Amanda Ross</p>
+                    <p class="text-2xl">{teacherDetails?.name}</p>
                     <span class="bg-blue-500 rounded-full p-1" title="Verified">
                         <svg xmlns="http://www.w3.org/2000/svg" class="text-gray-100 h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path>
                         </svg>
                     </span>
                 </div>
-                <p class="text-gray-700">Senior Software Engineer at Tailwind CSS</p>
-                <p class="text-sm text-gray-500">New York, USA</p>
+                <p class="text-gray-700">Phone: {teacherDetails?.phone}</p>
+               
             </div>
             {/* <div class="flex-1 flex flex-col items-center lg:items-end justify-end px-8 mt-2">
                 <div class="flex items-center space-x-4 mt-2">
@@ -44,17 +117,14 @@ const EachTeacher = () => {
                     <ul class="mt-2 text-gray-700">
                         <li class="flex border-y py-2">
                             <span class="font-bold w-24">Full name:</span>
-                            <span class="text-gray-700">Amanda S. Ross</span>
+                            <span class="text-gray-700">{teacherDetails?.name}</span>
                         </li>
 
-                        <li class="flex border-b py-2">
-                            <span class="font-bold w-24">Email:</span>
-                            <span class="text-gray-700">amandaross@example.com</span>
-                        </li>
+                
 
                         <li class="flex border-b py-2">
                             <span class="font-bold w-24">Mobile:</span>
-                            <span class="text-gray-700">(123) 123-1234</span>
+                            <span class="text-gray-700">{teacherDetails?.phone}</span>
                         </li>
                        
                         <li class="flex border-b py-2">
