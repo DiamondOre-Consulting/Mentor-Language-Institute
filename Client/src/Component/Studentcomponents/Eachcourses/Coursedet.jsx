@@ -1,4 +1,6 @@
-import React from 'react'
+import axios from 'axios';
+import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Tabs } from "flowbite-react";
 import { HiAdjustments, HiClipboardList } from "react-icons/hi";
 import { FaBook } from 'react-icons/fa';
@@ -6,13 +8,84 @@ import { MdDashboard } from "react-icons/md";
 
 const Coursedet = () => {
 
+    const [studentData, setStudentData] = useState(null);
+    const [classData, setClassData] = useState(null);
+    const [allEnrollclassData, setAllClassData] = useState([])
+
+    useEffect(() => {
+
+        const fetchStudentData = async () => {
+            try {
+                const token = localStorage.getItem("token");
+
+                if (!token) {
+                    // Token not found in local storage, handle the error or redirect to the login page
+                    console.error("No token found");
+                    navigate("/login");
+                    return;
+                }
+
+                // Fetch associates data from the backend
+                const response = await axios.get(
+                    "http://localhost:7000/api/students/my-profile",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+                if (response.status == 200) {
+                    console.log("studetails", response.data);
+                    const studentdetails = response.data;
+                    setStudentData(studentdetails);
+
+                    const classes = response.data.classes;
+                    console.log("classes", classes)
+                    const allEnrollClassData = [];
+
+                    for (const classId of classes) {
+
+                        const classResponse = await axios.get(
+                            `http://localhost:7000/api/students/all-courses/${classId}`,
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${token}`,
+                                },
+                            }
+                        );
+
+                        if (classResponse.status === 200) {
+                            const classData = classResponse.data;
+                            console.log("Enrolled class details:", classData);
+                            setClassData(classData);
+                            allEnrollClassData.push(classData);
+
+                        }
+                    }
+                    setAllClassData(allEnrollClassData);
+                    console.log("enroll class array", allEnrollclassData);
+
+
+                } else {
+                    console.log(response.data);
+
+                }
+            } catch (error) {
+                console.error("Error fetching student data:", error);
+
+            }
+        };
+
+        fetchStudentData();
+    }, [])
+
 
     return (
         <>
             <div className='p-10 md:p-20 '>
                 <div className='grid grid-cols-1 gap-2 md:grid-cols-3'>
                     <div className='col-span-2'>
-                        <h1 className='text-4xl font-bold'>JavaScript Fundamentals</h1>
+                        <h1 className='text-4xl font-bold'>{classData?.classTitle}</h1>
                         <div className='pt-4'>
                             <div className='flex justify-between'>
                                 <div className='flex'>
@@ -25,7 +98,7 @@ const Coursedet = () => {
 
                                 <div className='mx-2'>
                                     <p className='text-gray-700 font-bold'>Duration</p>
-                                    <p className='text-gray-600 -mt-1'>23hours</p>
+                                    <p className='text-gray-600 -mt-1'>{classData?.totalHours}hours</p>
 
                                 </div>
 
@@ -48,7 +121,7 @@ const Coursedet = () => {
                                                                 Student Name
                                                             </th>
                                                             <td class="px-6 py-4">
-                                                                John
+                                                                {studentData?.name}
                                                             </td>
 
                                                         </tr>
@@ -57,7 +130,7 @@ const Coursedet = () => {
                                                                 Course Tilte
                                                             </th>
                                                             <td class="px-6 py-4">
-                                                                Fundamental javascript
+                                                                {classData?.classTitle}
                                                             </td>
 
                                                         </tr>
@@ -74,7 +147,7 @@ const Coursedet = () => {
                                                                 Total Hours
                                                             </th>
                                                             <td class="px-6 py-4">
-                                                                40hrs
+                                                                {classData?.totalHours}hours
                                                             </td>
 
                                                         </tr>
@@ -92,7 +165,7 @@ const Coursedet = () => {
                                                                 Schedule
                                                             </th>
                                                             <td class="px-6 py-4">
-                                                                M/W/F
+                                                                {classData?.classSchedule}
                                                             </td>
                                                         </tr>
 
@@ -237,14 +310,16 @@ const Coursedet = () => {
                         <div className='flex'>
                             <div className='flex-col mx-3 cursor-pointer'>
                                 <p className='text-gray-700 font-bold text-xl mb-2'>All Courses</p>
-                                <p className='py-1 hover:text-orange-500'>JavaScript</p>
-                                <p className='hover:text-orange-500'>HTML</p>
-                                <p className='py-1 hover:text-orange-500'>CSS</p>
-                                <p className='hover:text-orange-500'>Java</p>
-                                <p className='py-1 hover:text-orange-500'>JavaScript</p>
-                                <p className='hover:text-orange-500'>HTML</p>
-                                <p className='py-1 hover:text-orange-500'>CSS</p>
-                                <p className='hover:text-orange-500'>Java</p>
+                                {allEnrollclassData.length === 0 ? (
+                                    <p className='text-center font-bold bg-orange-400 p-4 flex items-center justify-center text-gray-200 rounded-md'>No Enrolled Courses are there</p>
+                                ) : (
+                                    allEnrollclassData.map((enroll) => (
+                                        <div key={enroll._id}>
+                                            <p className='py-1 hover:text-orange-500'>{enroll?.classTitle}</p>
+                                        </div>
+                                    ))
+                                )}
+
                             </div>
 
                         </div>

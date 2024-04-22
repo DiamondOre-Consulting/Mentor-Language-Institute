@@ -1,7 +1,75 @@
-import React from 'react'
+import axios from 'axios';
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 const Courseheropage = () => {
+    const [studentData, setStudentData] = useState(null);
+    const [classData, setClassData] = useState(null)
+
+    useEffect(() => {
+
+        const fetchStudentData = async () => {
+            try {
+                const token = localStorage.getItem("token");
+
+                if (!token) {
+                    // Token not found in local storage, handle the error or redirect to the login page
+                    console.error("No token found");
+                    navigate("/login");
+                    return;
+                }
+
+                // Fetch associates data from the backend
+                const response = await axios.get(
+                    "http://localhost:7000/api/students/my-profile",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+                if (response.status == 200) {
+                    console.log("studetails",response.data);
+                    const studentdetails= response.data;
+                    setStudentData(studentdetails);
+
+                    const classes = response.data.classes;
+                   console.log("classes",classes)
+
+                    for (const classId of classes) {
+
+                        const classResponse = await axios.get(
+                            `http://localhost:7000/api/students/all-courses/${classId}`,
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${token}`,
+                                },
+                            }
+                        );
+
+                        if (classResponse.status === 200) {
+                            const classData = classResponse.data;
+                            console.log("Enrolled class details:", classData);
+                            setClassData(classData);
+                           
+                        }
+                    }
+                
+                    
+
+                } else {
+                    console.log(response.data);
+
+                }
+            } catch (error) {
+                console.error("Error fetching student data:", error);
+
+            }
+        };
+
+        fetchStudentData();
+    }, [])
+
     
     return (
         <>
@@ -15,7 +83,7 @@ const Courseheropage = () => {
                     <div className='flex items-center'>
                         <div className='bg-orange-500 h-20 w-1'></div>
                         <div className='flex flex-col mx-2'>
-                            <h1 className="text-4xl font-bold">JavaScript Fundamentals</h1>
+                            <h1 className="text-4xl font-bold">{classData?.classTitle}</h1>
                         </div>
                     </div>
                 </div>

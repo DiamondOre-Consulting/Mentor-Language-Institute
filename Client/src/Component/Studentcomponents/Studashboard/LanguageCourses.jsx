@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import axios from "axios";
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
@@ -14,8 +14,9 @@ const LanguageCourses = () => {
     const [showPopup, setShowPopup] = useState(false);
     const [showPopupEnroll, setShowPopupEnroll] = useState(false);
     const [selectedCourseId, setSelectedCourseId] = useState(null);
+    const [popupMessage, setPopupMessage] = useState(null);
 
-
+    const { id } = useParams();
     const handleClose = () => {
         setShowPopup(false);
         setShowPopupEnroll(true)
@@ -26,7 +27,7 @@ const LanguageCourses = () => {
         setShowPopupEnroll(false)
     }
 
-    
+
     const handleEnrollClick = (courseId) => {
         console.log("Clicked on Enroll Now for course ID:", courseId);
         setSelectedCourseId(courseId);
@@ -61,12 +62,12 @@ const LanguageCourses = () => {
         ]
     };
 
-    console.log("selected id ",selectedCourseId);
+    console.log("selected id ", selectedCourseId);
 
     // each course
-    const [Eachcourse , setEachCourse] = useState(null);
+    const [Eachcourse, setEachCourse] = useState(null);
     useEffect(() => {
-        console.log("Selected Course ID:", selectedCourseId); 
+        console.log("Selected Course ID:", selectedCourseId);
         const fetchEachCourse = async () => {
             try {
                 // Check if selectedCourseId is not null
@@ -96,10 +97,10 @@ const LanguageCourses = () => {
                 console.error("Error fetching courses:", error);
             }
         };
-    
+
         fetchEachCourse();
-    }, [selectedCourseId]); // Add selectedCourseId as dependency
-    
+    }, [selectedCourseId]);
+
 
 
     const [allCourses, setAllCourses] = useState([]);
@@ -139,6 +140,53 @@ const LanguageCourses = () => {
         fetchAllcourses();
     }, []);
 
+    // apply course 
+    console.log("courseid", selectedCourseId)
+
+    const handleApplyCourse = async (selectedCourseId) => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.error('No token found');
+                return;
+            }
+
+            const response = await axios.post(
+                `http://localhost:7000/api/students/apply-course/${selectedCourseId}`,
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            if (response.status === 200) {
+                console.log('Successfully applied for course');
+                setShowPopup(false);
+                setShowPopupEnroll(true);
+
+            }
+        } catch (error) {
+            console.error('Error applying in course:', error);
+            if (error.response) {
+                const status = error.response.status;
+                if (status === 409) {
+                    console.log("Student has already applied in this course!!!")
+                    setPopupMessage("Student has already applied in this course!!!")
+                    setShowPopup(false)
+                }
+                else if (status === 408) {
+                    console.log('Student is already enrolled in this course!!!');
+                    setPopupMessage("Student is already enrolled in this course!!!");
+                    setShowPopup(false)
+
+                }
+
+            }
+        }
+    };
+
 
     return (
         <>
@@ -149,7 +197,7 @@ const LanguageCourses = () => {
                     {
                         <Slider {...settings} >
                             {allCourses.map((course) => (
-                                
+
                                 <div key={course._id} className='relative bg-white border border-gray-200 rounded-lg overflow-hidden shadow-md transform hover:scale-105 h-64  transition duration-'>
                                     {/* Notebook Lines */}
                                     {/* <div className='absolute inset-0 bg-gradient-to-b from-orange-200 to-gray-100 opacity-50'></div> */}
@@ -160,8 +208,8 @@ const LanguageCourses = () => {
                                         <p className='text-gray-600 mb-4'>Mentor Language Institute</p>
 
                                         {/* Button */}
-                                        <button className="block z-10 w-full px-4 py-2 cursor-pointer hover:bg-orange-500 bg-orange-400 text-sm font-semibold text-white rounded-lg shadow-md focus:outline-none hover:bg-orange-600 transition duration-300"onClick={() => handleEnrollClick(course._id)}>
-                                            Enroll Now
+                                        <button className="block z-10 w-full px-4 py-2 cursor-pointer hover:bg-orange-500 bg-orange-400 text-sm font-semibold text-white rounded-lg shadow-md focus:outline-none hover:bg-orange-600 transition duration-300" onClick={() => handleEnrollClick(course._id)}>
+                                            Apply
                                         </button>
                                     </div>
                                 </div>
@@ -182,9 +230,9 @@ const LanguageCourses = () => {
                                     <p className="text-sm text-gray-600 mb-6">Dusration :- <span>{Eachcourse?.totalHours}</span></p>
                                     <button
                                         className="block w-full z-10 px-4 py-2 bg-orange-500 text-sm font-semibold text-white rounded-lg shadow-md  focus:outline-none "
-                                        onClick={handleClose}
+                                        onClick={() => handleApplyCourse(selectedCourseId)}
                                     >
-                                        Enrolled Now
+                                        Apply Now
                                     </button>
                                 </div>
                             </section>
@@ -207,6 +255,17 @@ const LanguageCourses = () => {
                                     </button>
                                 </div>
                             </section>
+                        </div>
+                    )}
+
+                    {popupMessage && (
+                        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50 z-50">
+
+                            <div className="bg-white p-4 rounded-lg shadow-md">
+                                <svg class="h-6 w-6 text-red-500 float-right -mt-2 cursor-pointer" onClick={() => setPopupMessage(null)} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <line x1="18" y1="6" x2="6" y2="18" />  <line x1="6" y1="6" x2="18" y2="18" /></svg>
+                                <p className="text-lg font-bold mt-4 text-green-700">{popupMessage}</p>
+                                {/* <button className="bg-orange-500 text-white py-2 px-4 rounded-md" onClick={() => setPopupMessage(null)}>Close</button> */}
+                            </div>
                         </div>
                     )}
 

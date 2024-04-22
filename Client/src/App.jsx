@@ -26,7 +26,7 @@ function App() {
           <Route path='/' element={<Parentsignup />} />
           <Route path='/login' element={<Login />} />
           <Route path='/main-dashboard' element={<Maindash />} />
-          <Route path='/student-each-course' element={<StudentEachcourses/>} />
+          <Route path='/student-each-course/:id' element={<StudentEachcourses/>} />
           <Route path='/admin-dashboard/*' element={<Admin/>}/>
           <Route path='/teacher-dashboard/*' element={<Teachermain/>}/>
          

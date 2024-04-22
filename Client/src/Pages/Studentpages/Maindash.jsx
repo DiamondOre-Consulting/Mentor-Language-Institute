@@ -34,7 +34,9 @@ const Maindash = () => {
           }
         );
         if (response.status == 200) {
-          console.log(response.data);
+          console.log("studentdata",response.data);
+          const all = response.data;
+          setStudentData(all);
      
         } else {
           console.log(response.data);

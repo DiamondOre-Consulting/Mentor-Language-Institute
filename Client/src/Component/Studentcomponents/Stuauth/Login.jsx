@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
@@ -88,6 +88,52 @@ const Login = () => {
                 }
                 else {
                     console.error("Error adding Student:", status);
+                    setError("Login Details Are Wrong!!");
+                }
+            }
+        }
+    }
+
+
+    // TEACHER LOGIN 
+
+    const handleTeacherLogin = async (e) => {
+        e.preventDefault();
+        setError(null);
+
+        try {
+            const response = await axios.post("http://localhost:7000/api/teachers/login-teacher",
+                {
+                    phone,
+                    password
+                });
+
+            if (response.status === 200) {
+                const token = response.data.token;
+
+                console.log(token)
+                localStorage.setItem("token", token);
+                console.log("Logged in successfully as Teacher");
+                navigate("/teacher-dashboard");
+
+            } else {
+                console.log("Login failed");
+                setError("Login Details Are Wrong!!");
+                // Handle login error
+            }
+        } catch (error) {
+            if (error.response) {
+                const status = error.response.status;
+                if (status === 401) {
+                    console.log("invalid phone no");
+                    setError("Invalid Phone No");
+                }
+                else if (status === 402) {
+                    console.log("invalid passward")
+                    setError("Invalid password No");
+                }
+                else {
+                    console.error("Error login teacher:", status);
                     setError("Login Details Are Wrong!!");
                 }
             }
@@ -314,20 +360,38 @@ const Login = () => {
 
                                             </div>
 
-                                            <form class="space-y-4 md:space-y-6" action="#">
+                                            <form class="space-y-4 md:space-y-6" action="#" onSubmit={handleTeacherLogin}>
 
                                                 <div>
-                                                    <input type="phone" name="phone" id="phone" placeholder="Enter Phone" class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
+                                                    <input type="text" name="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Enter Phone" class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
                                                 </div>
                                                 <div>
-                                                    <input type="password" name="password" id="password" placeholder="Enter Your password" class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
+                                                    <label htmlFor="password" className="sr-only">
+                                                        Password
+                                                    </label>
+                                                    <div className="relative">
+                                                        <input
+                                                            className="w-full rounded-lg border-1 p-4 pe-12 text-sm shadow-sm"
+                                                            type={showPassword ? 'text' : 'password'}
+                                                            placeholder="Password"
+                                                            value={password}
+                                                            onChange={(e) => SetPassword(e.target.value)}
+                                                        />
+
+                                                    </div>
+
                                                 </div>
 
 
                                                 <div class="flex items-center justify-between">
                                                     <div class="flex items-start">
                                                         <div class="flex items-center h-5">
-                                                            <input id="remember" aria-describedby="remember" type="checkbox" class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-gray-900 dark:ring-offset-gray-800" required="" />
+                                                            <input aria-describedby="remember" id="check"
+                                                                type="checkbox"
+                                                                value={showPassword}
+                                                                onChange={() =>
+                                                                    setShowPassword((prev) => !prev)
+                                                                } class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-gray-900 dark:ring-offset-gray-800" required="" />
                                                         </div>
                                                         <div class="ml-3 text-sm">
                                                             <label for="remember" class="text-gray-500 dark:text-gray-300">Show password</label>
@@ -336,7 +400,7 @@ const Login = () => {
                                                     <a href="#" class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">Forgot password?</a>
                                                 </div>
                                                 <div className='w-full'>
-                                                    <Link to={'/main-dashboard'}><button className='bg-orange-400 text-white w-full p-2 rounded-md'>Login</button></Link>
+                                                    <button className='bg-orange-400 text-white w-full p-2 rounded-md'>Login</button>
                                                 </div>
 
                                                 <a href="#" class="text-center flex items-center justify-center text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">Do not have account?<Link to={'/'} className='underline'>Sign up</Link></a>
