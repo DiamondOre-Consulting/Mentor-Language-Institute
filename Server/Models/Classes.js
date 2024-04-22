@@ -14,23 +14,31 @@ const classSchema = new mongoose.Schema({
     required: true,
   },
   totalHours: {
-    type: Number
+    type: Number,
   },
   appliedStudents: {
     type: [
       {
-        type: mongoose.Schema.Types.ObjectId
-      }
+        type: mongoose.Schema.Types.ObjectId,
+      },
     ],
-    default: []
+    default: [],
   },
   enrolledStudents: {
     type: [
-        {
-            type: mongoose.Schema.Types.ObjectId
-        }
+      {
+        type: mongoose.Schema.Types.ObjectId,
+      },
     ],
-    default: []
+    default: [],
+  },
+  dailyClasses: {
+    type: [
+      {
+        type: String,
+      },
+    ],
+    default: [],
   },
   createdAt: {
     type: Date,

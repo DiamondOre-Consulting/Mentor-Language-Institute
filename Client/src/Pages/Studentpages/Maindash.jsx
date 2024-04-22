@@ -11,7 +11,7 @@ import SpecialCourses from '../../Component/Studentcomponents/Studashboard/Speci
 const Maindash = () => {
 
   const [studentData , setStudentData] =useState(null);
-
+  
   useEffect(()=>{
     const fetchStudentData = async () => {
       try {
@@ -34,8 +34,9 @@ const Maindash = () => {
           }
         );
         if (response.status == 200) {
-          console.log(response.data);
-     
+          console.log(response.data.name);
+          setStudentData(response.data.name);
+          
         } else {
           console.log(response.data);
           
@@ -51,7 +52,7 @@ const Maindash = () => {
   return (
     <>
         <StudentNav/>
-        <Studenthero/>
+        <Studenthero naming={studentData} />
         <EnrolledCourses/>
         <LanguageCourses/>
         <SpecialCourses/>

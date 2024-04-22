@@ -46,155 +46,186 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.get('/my-profile', StudentAuthenticateToken, async (req, res) => {
-    try {
-        const { phone } = req.user;
+router.get("/my-profile", StudentAuthenticateToken, async (req, res) => {
+  try {
+    const { phone } = req.user;
 
-        const student = await Students.findOne({ phone: phone });
-    
-        if (!student) {
-          return res.status(404).json({ message: "Student not find" });
-        }
-    
-        const { name, appliedClasses, classes, attendanceDetail, feeDetail } = student;
-        res.status(200).json({
-          name,
-          phone,
-          appliedClasses,
-          classes,
-          attendanceDetail,
-          feeDetail
-        });
-    } catch(error) {
-        console.log("Something went wrong!!! ");
-        res.status(500).json(error);
+    const student = await Students.findOne({ phone: phone });
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not find" });
     }
-})
 
-router.get('/all-courses', StudentAuthenticateToken, async (req, res) => {
-    try {
-        const allCourses = await Classes.find({});
-
-        res.status(200).json(allCourses);
-    } catch(error) {
-        console.log("Something went wrong!!! ");
-        res.status(500).json(error);
-    }
-})
-
-router.get('/all-courses/:id', StudentAuthenticateToken, async (req, res) => {
-    try {
-        const {id} = req.params;
-
-        const singleCourse = await Classes.findById({_id: id});
-
-        res.status(200).json(singleCourse);
-    } catch(error) {
-        console.log("Something went wrong!!! ");
-        res.status(500).json(error);
-    }
+    const { name, appliedClasses, classes, attendanceDetail, feeDetail } =
+      student;
+    res.status(200).json({
+      name,
+      phone,
+      appliedClasses,
+      classes,
+      attendanceDetail,
+      feeDetail,
+    });
+  } catch (error) {
+    console.log("Something went wrong!!! ");
+    res.status(500).json(error);
+  }
 });
 
-router.post('/apply-course/:id', StudentAuthenticateToken, async (req, res) => {
-    try {
-        const {id} = req.params;
-        const {userId} = req.user;
+router.get("/all-courses", StudentAuthenticateToken, async (req, res) => {
+  try {
+    const allCourses = await Classes.find({});
 
-        const userApplied = await Classes.findOne({appliedStudents: userId});
-        if(userApplied) {
-            return res.status(409).json({message: "Student has already applied in this course!!!"});;
-        }
+    res.status(200).json(allCourses);
+  } catch (error) {
+    console.log("Something went wrong!!! ");
+    res.status(500).json(error);
+  }
+});
 
-        const userRegistered = await Classes.findOne({enrolledStudents: userId});
-        if(userRegistered) {
-            return res.status(408).json({message: "Student has already registered in this course!!!"});
-        }
+router.get("/all-courses/:id", StudentAuthenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
 
-        const classUpdate = await Classes.findOneAndUpdate(
-            {_id: id},
-            {
-                $push: {appliedStudents: userId}
-            },
-            {new: true}
-        );
+    const singleCourse = await Classes.findById({ _id: id });
 
-        const studentUpdate = await Students.findOneAndUpdate(
-            {_id: userId},
-            {
-                $push: {appliedClasses: id}
-            }
-        );
+    res.status(200).json(singleCourse);
+  } catch (error) {
+    console.log("Something went wrong!!! ");
+    res.status(500).json(error);
+  }
+});
 
-        res.status(200).json({message: "Student has applied for a course successfully!!!"});
+router.post("/apply-course/:id", StudentAuthenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.user;
 
-    } catch(error) {
-        console.log("Something went wrong!!! ");
-        res.status(500).json(error); 
+    const userApplied = await Classes.findOne({ appliedStudents: userId });
+    if (userApplied) {
+      return res
+        .status(409)
+        .json({ message: "Student has already applied in this course!!!" });
     }
-})
 
-router.post('/enroll-course/:id', StudentAuthenticateToken, async (req, res) => {
+    const userRegistered = await Classes.findOne({ enrolledStudents: userId });
+    if (userRegistered) {
+      return res
+        .status(408)
+        .json({ message: "Student has already registered in this course!!!" });
+    }
+
+    const classUpdate = await Classes.findOneAndUpdate(
+      { _id: id },
+      {
+        $push: { appliedStudents: userId },
+      },
+      { new: true }
+    );
+
+    const studentUpdate = await Students.findOneAndUpdate(
+      { _id: userId },
+      {
+        $push: { appliedClasses: id },
+      }
+    );
+
+    res
+      .status(200)
+      .json({ message: "Student has applied for a course successfully!!!" });
+  } catch (error) {
+    console.log("Something went wrong!!! ");
+    res.status(500).json(error);
+  }
+});
+
+router.post(
+  "/enroll-course/:id",
+  StudentAuthenticateToken,
+  async (req, res) => {
     try {
-        const {id} = req.params;
-        const {userId} = req.user;
-        const { totalFee, feeMonth, paid, amountPaid } = req.body;
+      const { id } = req.params;
+      const { userId } = req.user;
+      const { totalFee, feeMonth, paid, amountPaid } = req.body;
 
-        const userRegistered = await Classes.findOne({enrolledStudents: userId});
-        if(userRegistered) {
-            return res.status(408).json({message: "Student has already registered in this course!!!"});
-        }
+      const userRegistered = await Classes.findOne({
+        enrolledStudents: userId,
+      });
+      if (userRegistered) {
+        return res.status(408).json({
+          message: "Student has already registered in this course!!!",
+        });
+      }
 
-        const updateClass = await Classes.findByIdAndUpdate(
-            { _id: id },
+      const updateClass = await Classes.findByIdAndUpdate(
+        { _id: id },
+        {
+          $push: { enrolledStudents: userId },
+        },
+        { new: true }
+      );
+
+      if (updateClass) {
+        // UPDATE CLASS ACCESS STATUS
+        const newClassAccessStatus = new ClassAccessStatus({
+          classId: id,
+          studentId: userId,
+          classAccessStatus: true,
+        });
+
+        await newClassAccessStatus.save();
+
+        // UPDATE FEE FIRST TIME
+        // let forUpdate = totalFee-amountPaid;
+        const feeUpdate = new Fee({
+          classId: id,
+          studentId: userId,
+          totalFee,
+          detailFee: [
             {
-              $push: { enrolledStudents: userId },
+              feeMonth,
+              paid,
+              amountPaid,
             },
-            { new: true }
-          );
+          ],
+        });
 
-          if (updateClass) {
-            // UPDATE CLASS ACCESS STATUS
-            const newClassAccessStatus = new ClassAccessStatus({
-              classId: id,
-              studentId: userId,
-              classAccessStatus: true,
-            });
-      
-            await newClassAccessStatus.save();
-      
-            // UPDATE FEE FIRST TIME
-            // let forUpdate = totalFee-amountPaid;
-            const feeUpdate = new Fee({
-              classId: id,
-              studentId: userId,
-              totalFee,
-              detailFee: [
-                {
-                  feeMonth,
-                  paid,
-                  amountPaid,
-                },
-              ],
-            });
-      
-            await feeUpdate.save();
-      
-            // UPDATE STUDENT
-            const updateStudent = await Students.findByIdAndUpdate(
-              { _id: userId },
-              {
-                $push: { classes: id, feeDetail: feeUpdate._id },
-              },
-              { new: true }
-            );
+        await feeUpdate.save();
+
+        // UPDATE STUDENT
+        const updateStudent = await Students.findByIdAndUpdate(
+          { _id: userId },
+          {
+            $push: { classes: id, feeDetail: feeUpdate._id },
+          },
+          { new: true }
+        );
+
+        // Remove id from appliedClasses array of Student
+        await Students.findByIdAndUpdate(
+          { _id: userId },
+          {
+            $pull: { appliedClasses: id },
           }
+        );
 
-          res.status(200).json({message: "Student has been enrolled in the course successfully!!!"})
+        // Remove userId from appliedStudents array of Class
+        await Classes.findByIdAndUpdate(
+          { _id: id },
+          {
+            $pull: { appliedStudents: userId },
+          }
+        );
+      }
 
-    } catch(error) {
-        console.log("Something went wrong!!! ");
-        res.status(500).json(error);
+      res.status(200).json({
+        message: "Student has been enrolled in the course successfully!!!",
+      });
+    } catch (error) {
+      console.log("Something went wrong!!! ");
+      res.status(500).json(error);
     }
-})
+  }
+);
 
 export default router;

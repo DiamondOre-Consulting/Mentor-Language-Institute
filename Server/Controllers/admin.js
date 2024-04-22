@@ -256,7 +256,7 @@ router.post("/add-student", AdminAuthenticateToken, async (req, res) => {
       .json({ message: `New student has been registered successfully!!!` });
   } catch (error) {
     console.log("Something went wrong!!! ");
-    res.status(500).json(error);
+    res.status(500).json(error); 
   }
 });
 
@@ -277,7 +277,7 @@ router.get("/all-students/:id", AdminAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const singleStudent = await Students.findById({ _id: id });
+    const singleStudent = await Students.findById({ _id: id }); 
 
     return res.status(200).json(singleStudent);
   } catch (error) {

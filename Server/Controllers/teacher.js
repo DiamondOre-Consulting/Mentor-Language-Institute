@@ -3,6 +3,10 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import Teachers from "../Models/Teachers.js";
+import TeacherAuthenticateToken from "../Middlewares/TeacherAuthenticateToken.js";
+import Classes from "../Models/Classes.js";
+import Students from "../Models/Students.js";
+import Attendance from "../Models/Attendance.js";
 
 dotenv.config();
 
@@ -44,6 +48,104 @@ router.post("/login-teacher", async (req, res) => {
   }
 });
 
+// ADD-ATTENDANCE-CLASS
+router.post("/schedule-class/:id", TeacherAuthenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { date } = req.body;
 
+    const addNewClass = await Classes.findByIdAndUpdate(
+      { _id: id },
+      {
+        $push: { dailyClasses: date },
+      },
+      { new: true }
+    );
+
+    // Get all student ids
+    const allStudents = await Students.find({}, { _id: 1 });
+
+    const studentIds = allStudents.map((student) => student._id);
+
+    // Check if there's an existing document in Attendance collection for each student
+    for (const studentId of studentIds) {
+      const existingAttendance = await Attendance.findOne({
+        classId: id,
+        studentId,
+      });
+
+      if (existingAttendance) {
+        // If existing document found, update it
+        await Attendance.findByIdAndUpdate(
+          existingAttendance._id,
+          {
+            $push: { detailAttendance: { classDate: date } },
+          },
+          { new: true }
+        );
+      } else {
+        // If no existing document found, create a new one
+        const studentExist = await Classes.findOne({_id: id, enrolledStudents: studentId});
+        if(!studentExist) {
+           return res.status(405).json({message: "Student is not enrolled in this course!!!"}); 
+        }
+        const newAttendance = new Attendance({
+          classId: id,
+          studentId,
+          detailAttendance: [{ classDate: date }],
+        });
+
+        await newAttendance.save();
+
+        const pushScheduledClass = await Students.findByIdAndUpdate(
+            {_id: studentId},
+            {
+                $push: {attendanceDetail: newAttendance._id}
+            },
+            {new: true}
+        )
+      }
+    }
+
+    res.status(200).json({message: "New class is scheduled"})
+  } catch (error) {
+    console.log("Something went wrong!!! ");
+    res.status(500).json(error);
+  }
+});
+
+router.put('/update-class-hours/:id', TeacherAuthenticateToken, async (req, res) => {
+    try {
+        const {id} = req.params;
+        const {updatedHours} = req.body;
+
+        const singleClass = await Classes.findByIdAndUpdate(
+            {_id: id},
+            { $inc: { totalHours: updatedHours } },
+            { new: true }
+        );
+
+        res.status(200).json({message: "Total hours of the class has been increased successfully!!!"});
+    } catch(error) {
+        console.log("Something went wrong!!! ", error);
+        res.status(500).json(error);
+    }
+})
+
+router.put('/update-attendance/:id1/:id2', TeacherAuthenticateToken, async (req, res) => {
+    try {
+        const {id1, id2} = req.params;
+        const {attendanceDate, present} = req.body;
+
+        const studentAttendance = await Attendance.findOne({classId: id1, studentId: id2, detailAttendance: {classDate: attendanceDate}});
+
+        res.status(200).json(studentAttendance);
+        
+
+    } catch(error) {
+        console.log("Something went wrong!!! ", error);
+        res.status(500).json(error);
+    }
+})
 
 export default router;
