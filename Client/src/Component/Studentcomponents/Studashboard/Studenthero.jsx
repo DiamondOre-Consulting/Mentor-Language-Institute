@@ -1,21 +1,60 @@
 import React, { useEffect, useState } from "react";
 import TextTransition, { presets } from "react-text-transition";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from 'react-i18next';
+import axios from "axios";
 
 const TEXTS = ["Welcome", "नमस्ते", "Hola", "Bonjour", "こんにちは"];
-const name = "zoya";
-const Studenthero = (props) => {
-  const [index, setIndex] = useState(0);
+
+const Studenthero = () => {
+
   const { t, i18n } = useTranslation();
-  const languages = ['en', 'ja', 'hi']; // Add more languages as needed
+  const [index, setIndex] = useState(0);
+  const [userName, setUserName] = useState('');
+  const languages = ['en', 'hi', 'es', 'fr', 'ja']; // Assuming language codes are en, hi, es, fr, ja
   const [currentLanguageIndex, setCurrentLanguageIndex] = useState(0);
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      setIndex((index) => index + 1);
-    }, 3000); // Change the interval time as needed
-    return () => clearInterval(intervalId);
-  }, []);
+    const interval = setInterval(() => {
+      setIndex((index) => (index + 1) % TEXTS.length);
+      const nextLanguageIndex = (currentLanguageIndex + 1) % languages.length;
+      setCurrentLanguageIndex(nextLanguageIndex);
+      i18n.changeLanguage(languages[nextLanguageIndex]);
+      fetchStudentData(languages[nextLanguageIndex]);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [currentLanguageIndex, i18n, languages]);
+
+  const fetchStudentData = async (language) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        console.error("No token found");
+        return;
+      }
+
+      const response = await axios.get(
+        "http://localhost:7000/api/students/my-profile",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        const studentData = response.data;
+        // Assuming the API response contains the student's name for different languages
+        const studentName = studentData.name[language];
+        setUserName(studentName);
+      } else {
+        console.log(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching student data:", error);
+    }
+  };
 
   return (
     <>
@@ -23,10 +62,11 @@ const Studenthero = (props) => {
         <div class="grid max-w-screen-xl px-4 py-8 mx-auto lg:gap-8 xl:gap-0 lg:py-16 lg:grid-cols-12">
           <div class="mr-auto place-self-center lg:col-span-7">
             <h1 class="max-w-2xl mb-4 text-4xl font-extrabold tracking-tight leading-none md:text-5xl xl:text-6xl dark:text-white">
+
               <TextTransition springConfig={presets.wobbly}>
-                {TEXTS[index % TEXTS.length]}
+                {TEXTS[index]}
               </TextTransition>
-              {props.naming}
+              <h1>{t('user.name')}: {userName}</h1>
             </h1>
 
             <p class="max-w-2xl mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-md dark:text-gray-400">

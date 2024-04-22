@@ -34,16 +34,11 @@ const Maindash = () => {
           }
         );
         if (response.status == 200) {
-<<<<<<< HEAD
-          console.log("studentdata",response.data);
-          const all = response.data;
-          setStudentData(all);
-     
-=======
-          console.log(response.data.name);
+          // console.log(response.data.name);
+          const stu= response.data.name;
+          console.log(stu)
           setStudentData(response.data.name);
           
->>>>>>> 2efe3bb75a72406e0029f49b23cad2a0609532f8
         } else {
           console.log(response.data);
           
