@@ -48,6 +48,33 @@ router.post("/login-teacher", async (req, res) => {
   }
 });
 
+// MY PROFILE
+router.get('/my-profile', TeacherAuthenticateToken, async (req, res) => {
+    try {
+        const {userId, role, name, phone} = req.user;
+
+        const myProfile = await Teachers.findById({_id: userId});
+
+        if (!myProfile) {
+            return res.status(404).json({ message: "Teacher not found" });
+          }
+      
+          const { myClasses, myScheduledClasses } =
+            myProfile;
+          res.status(200).json({
+            userId,
+            role,
+            name,
+            phone,
+            myClasses,
+            myScheduledClasses
+          });
+    } catch(error) {
+        console.log("Something went wrong!!! ");
+        res.status(500).json(error);
+    }
+})
+
 // ADD-ATTENDANCE-CLASS
 router.post("/schedule-class/:id", TeacherAuthenticateToken, async (req, res) => {
   try {
@@ -87,7 +114,8 @@ router.post("/schedule-class/:id", TeacherAuthenticateToken, async (req, res) =>
         // If no existing document found, create a new one
         const studentExist = await Classes.findOne({_id: id, enrolledStudents: studentId});
         if(!studentExist) {
-           return res.status(405).json({message: "Student is not enrolled in this course!!!"}); 
+            console.log(`Student with ID ${studentId} is not enrolled in this course. Skipping...`);
+            continue;
         }
         const newAttendance = new Attendance({
           classId: id,
@@ -137,9 +165,21 @@ router.put('/update-attendance/:id1/:id2', TeacherAuthenticateToken, async (req,
         const {id1, id2} = req.params;
         const {attendanceDate, present} = req.body;
 
-        const studentAttendance = await Attendance.findOne({classId: id1, studentId: id2, detailAttendance: {classDate: attendanceDate}});
+        const updatedAttendance = await Attendance.findOneAndUpdate(
+            {
+                classId: id1,
+                studentId: id2,
+                "detailAttendance.classDate": attendanceDate
+            },
+            { $set: { "detailAttendance.$.present": present } },
+            { new: true }
+        );
 
-        res.status(200).json(studentAttendance);
+        if (!updatedAttendance) {
+            return res.status(404).json({ message: 'Attendance record not found.' });
+        }
+
+        res.status(200).json(updatedAttendance);
         
 
     } catch(error) {
