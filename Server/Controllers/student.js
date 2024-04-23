@@ -6,6 +6,7 @@ import Students from "../Models/Students.js";
 import StudentAuthenticateToken from "../Middlewares/StudentAuthenticateToken.js";
 import Classes from "../Models/Classes.js";
 import ClassAccessStatus from "../Models/ClassAccessStatus.js";
+import Teachers from "../Models/Teachers.js";
 
 dotenv.config();
 
@@ -95,6 +96,23 @@ router.get("/all-courses/:id", StudentAuthenticateToken, async (req, res) => {
     res.status(500).json(error);
   }
 });
+
+router.get("/teacher/:id", StudentAuthenticateToken, async (req, res) => {
+    try {
+        const {id} = req.params;
+
+        const myTeacher = await Teachers.findById({_id: id});
+
+        if(!myTeacher) {
+            return res.status(409).json({message: "Teacher not found"});
+        }
+
+        res.status(200).json(myTeacher);
+    } catch(error) {
+        console.log("Something went wrong!!! ");
+        res.status(500).json(error);
+    }
+})
 
 router.post("/apply-course/:id", StudentAuthenticateToken, async (req, res) => {
   try {
