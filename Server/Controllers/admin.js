@@ -131,6 +131,14 @@ router.post("/add-new-class", AdminAuthenticateToken, async (req, res) => {
 
     await newClass.save();
 
+    const updateTeacher = await Teachers.findByIdAndUpdate(
+      {_id: teachBy},
+      {
+        $push: {myClasses: newClass._id}
+      },
+      {new: true}
+    )
+
     return res
       .status(200)
       .json({ message: "new class has added!!!", newClass });
