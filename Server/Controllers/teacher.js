@@ -114,6 +114,7 @@ router.post("/schedule-class/:id", TeacherAuthenticateToken, async (req, res) =>
   try {
     const { id } = req.params;
     const { date } = req.body;
+    const {userId}  = req.user;
 
     const addNewClass = await Classes.findByIdAndUpdate(
       { _id: id },
@@ -144,6 +145,9 @@ router.post("/schedule-class/:id", TeacherAuthenticateToken, async (req, res) =>
           },
           { new: true }
         );
+
+        // MY SCHEDULED CLASSES DATES IS LEFT
+
       } else {
         // If no existing document found, create a new one
         const studentExist = await Classes.findOne({_id: id, enrolledStudents: studentId});
@@ -218,6 +222,42 @@ router.put('/update-attendance/:id1/:id2', TeacherAuthenticateToken, async (req,
 
     } catch(error) {
         console.log("Something went wrong!!! ", error);
+        res.status(500).json(error);
+    }
+})
+
+// ALL STUDENTS IN A CLASS
+router.get("/class/all-students/:id", TeacherAuthenticateToken, async (req, res) => {
+    try {
+        const {id} = req.params;
+
+        const allStudents = await Students.find({classes: id}, {password: 0});
+
+        if(!allStudents) {
+            return res.status(404).json({message: "No student is enrolled in this course."});
+        }
+
+        res.status(200).json(allStudents);
+    } catch(error) {
+        console.log("Something went wrong!!! ");
+        res.status(500).json(error);
+    }
+})
+
+// SINGLE STUDENT IN A CLASS
+router.get("/student/:id", TeacherAuthenticateToken, async (req, res) => {
+    try {
+        const {id} = req.params;
+
+        const student = await Students.findById({_id: id}, {password: 0});
+
+        if(!student) {
+            return res.status(404).json({message: "Student not found"});
+        }
+
+        res.status(200).json(student);
+    } catch(error) {
+        console.log("Something went wrong!!! ");
         res.status(500).json(error);
     }
 })
