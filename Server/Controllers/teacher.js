@@ -75,6 +75,40 @@ router.get('/my-profile', TeacherAuthenticateToken, async (req, res) => {
     }
 })
 
+router.get('/my-classes', TeacherAuthenticateToken, async (req, res) => {
+    try {
+        const {userId} = req.user;
+
+        const allMyClasses = await Classes.find({teachBy: userId});
+
+        if(!allMyClasses) {
+            return res.status(405).json({message: "No classes has been assigned to you"});
+        }
+
+        res.status(200).json(allMyClasses);
+    } catch(error) {
+        console.log("Something went wrong!!! ");
+        res.status(500).json(error);
+    }
+})
+
+router.get('/my-classes/:id', TeacherAuthenticateToken, async (req, res) => {
+    try {
+        const {id} = req.params;
+
+        const getClassById = await Classes.findById({_id: id});
+
+        if(!getClassById) {
+            return res.status(405).json({message: "Class not found"});
+        }
+
+        res.status(200).json(getClassById);
+    } catch(error) {
+        console.log("Something went wrong!!! ");
+        res.status(500).json(error);
+    }
+})
+
 // ADD-ATTENDANCE-CLASS
 router.post("/schedule-class/:id", TeacherAuthenticateToken, async (req, res) => {
   try {
