@@ -119,14 +119,14 @@ router.post("/apply-course/:id", StudentAuthenticateToken, async (req, res) => {
     const { id } = req.params;
     const { userId } = req.user;
 
-    const userApplied = await Classes.findOne({ appliedStudents: userId });
+    const userApplied = await Classes.findOne({_id: id, appliedStudents: userId });
     if (userApplied) {
       return res
         .status(409)
         .json({ message: "Student has already applied in this course!!!" });
     }
 
-    const userRegistered = await Classes.findOne({ enrolledStudents: userId });
+    const userRegistered = await Classes.findOne({_id: id,  enrolledStudents: userId });
     if (userRegistered) {
       return res
         .status(408)
