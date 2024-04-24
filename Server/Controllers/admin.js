@@ -387,4 +387,18 @@ router.put("/update-fee/:id1/:id2", AdminAuthenticateToken, async (req, res) => 
   }
 });
 
+// Get attenancce dill
+router.get('/attendance/:id1/:id2', AdminAuthenticateToken, async (req, res) => {
+  try {
+      const {id1, id2} = req.params;
+
+      const attendanceById = await Attendance.findOne({studentId: id2, classId: id1});
+
+      res.status(200).json(attendanceById)
+  } catch(error) {
+      console.log("Something went wrong!!! ");
+      res.status(500).json(error);
+  }
+})
+
 export default router;

@@ -198,6 +198,19 @@ router.put('/update-class-hours/:id', TeacherAuthenticateToken, async (req, res)
     }
 })
 
+router.get('/attendance/:id1/:id2', TeacherAuthenticateToken, async (req, res) => {
+    try {
+        const {id1, id2} = req.params;
+
+        const attendanceById = await Attendance.findOne({studentId: id2, classId: id1});
+
+        res.status(200).json(attendanceById)
+    } catch(error) {
+        console.log("Something went wrong!!! ");
+        res.status(500).json(error);
+    }
+})
+
 router.put('/update-attendance/:id1/:id2', TeacherAuthenticateToken, async (req, res) => {
     try {
         const {id1, id2} = req.params;

@@ -3,11 +3,11 @@ import cors from "cors";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import http from "http";
-// import socketIo from "socket.io";
+// import socket from 'socket.io';
 
 const app = express();
 const server = http.createServer(app);
-// const io = socketIo(server);
+// const io = new Server(server);
 dotenv.config();
 
 app.use(express.json());
@@ -26,6 +26,30 @@ const PORT = 7000;
 //   socket.on('send_message', (data) => {
 //     // Broadcast the message to all connected clients
 //     io.emit('receive_message', data);
+//   });
+// });
+
+// const io = socket(server,{
+//   cors :{
+//     origin : '*',
+//     credentials : true
+//   }
+// })
+
+// global.onlineUsers = new Map();
+
+// Socket.io setup
+// io.on('connection', (socket) => {
+//   console.log('A user connected');
+
+//   // Handle real-time events here
+//   // Example: socket.on('chat message', (message) => { ... });
+//   socket.on('sendMessage', (message) => {
+//     io.emit('message', message);
+//   });
+
+//   socket.on('disconnect', () => {
+//     console.log('A user disconnected');
 //   });
 // });
 
