@@ -9,6 +9,7 @@ import Teachers from "../Models/Teachers.js";
 import Students from "../Models/Students.js";
 import Fee from "../Models/Fee.js";
 import ClassAccessStatus from "../Models/ClassAccessStatus.js";
+import Attendance from "../Models/Attendance.js";
 
 dotenv.config();
 
@@ -392,11 +393,11 @@ router.get('/attendance/:id1/:id2', AdminAuthenticateToken, async (req, res) => 
   try {
       const {id1, id2} = req.params;
 
-      const attendanceById = await Attendance.findOne({studentId: id2, classId: id1});
+      const attendanceById = await Attendance.findOne({classId: id1,studentId: id2});
 
       res.status(200).json(attendanceById)
   } catch(error) {
-      console.log("Something went wrong!!! ");
+      console.log("Something went wrong!!! ", error);
       res.status(500).json(error);
   }
 })
