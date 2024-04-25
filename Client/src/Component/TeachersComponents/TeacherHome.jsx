@@ -1,29 +1,224 @@
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom';
+import axios from "axios";
 
+const TeacherHome = ({ teacherData }) => {
 
-const TeacherHome = () => {
+    const navigate = useNavigate();
     const [showPopup, setShowPopup] = useState(false);
     const [showPopupCourses, setShowPopupCourses] = useState(false);
-    const [showScheduleClass , setShowScheduleClass] =  useState(false);
+    const [showScheduleClass, setShowScheduleClass] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [classesData, setClassesData] = useState([]);
+    const [selectedClassId, setSelectedClassId] = useState(null);
+    const [date, setDate] = useState(null);
+    const [oneClassDetails, setOneClassDetails] = useState("");
+    const [alldetails, setAllDetails] = useState();
+    const [bottompopup, setBottomPopUp] = useState(false);
+
+
+    const handleDateChange = (event) => {
+        const selectedDate = new Date(event.target.value);
+        const day = selectedDate.getDate().toString().padStart(2, '0');
+        const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+        const year = selectedDate.getFullYear();
+        const formattedDate = `${day}-${month}-${year}`;
+        setDate(formattedDate);
+    };
+
 
     const handleClose = () => {
         setShowPopup(false);
     };
 
-    const handleCloseScheduleClass = () =>{
+    const handleCloseScheduleClass = () => {
         setShowScheduleClass(false)
     }
 
     const handleCloseCourses = () => {
         setShowPopupCourses(false);
+        setShowScheduleClass(false)
+    };
+    const handleViewClass = (classId) => {
+        setSelectedClassId(classId); // Set the selected class ID
+        console.log("selected class id", selectedClassId)
+        setShowPopupCourses(true); // Open the popup to view options
     };
 
 
     const toggleDropdown = () => {
         setIsOpen(!isOpen);
     };
+
+
+
+
+    useEffect(() => {
+        const fetchAllTeachersCourses = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                if (!token) {
+                    // No token found, redirect to login page
+                    navigate("/login");
+                    return;
+                }
+
+                const classIds = teacherData.myClasses;
+                const classesData = [];
+                for (const classId of classIds) {
+                    const classResponse = await axios.get(`http://localhost:7000/api/teachers/my-classes/${classId}`, {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    });
+                    if (classResponse.status === 200) {
+                        console.log("classdata", classResponse.data);
+                        classesData.push(classResponse.data);
+                    }
+                }
+                setClassesData(classesData);
+                console.log("class data of teacher", classesData)
+            } catch (error) {
+                console.error("Error fetching teachers' classes:", error);
+            }
+        };
+
+        if (teacherData && teacherData.myClasses) {
+            fetchAllTeachersCourses();
+        }
+    }, [teacherData]);
+
+
+
+    const handleScheduleClass = async () => {
+
+
+        try {
+
+            const token = localStorage.getItem("token");
+            if (!token) {
+                // No token found, redirect to login page
+                navigate("/login");
+                return;
+            }
+            console.log("selected schedule", selectedClassId)
+            const response = await axios.post(
+                `http://localhost:7000/api/teachers/schedule-class/${selectedClassId}`,
+                { date },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (response.status === 200) {
+                console.log("done");
+                console.log(response.data)
+                console.log(date)
+                setShowScheduleClass(false);
+
+            }
+        } catch (error) {
+            setError('Failed to schedule the class. Please try again later.');
+        }
+    };
+
+    console.log(date)
+    useEffect(() => {
+
+        const allDetails = async () => {
+
+            try {
+                const token = localStorage.getItem("token");
+                if (!token) {
+                    // No token found, redirect to login page
+                    navigate("/login");
+                    return;
+                }
+
+                const classresponse = await axios.get(`http://localhost:7000/api/teachers/my-classes/${selectedClassId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                })
+
+                if (classresponse.status === 200) {
+                    const oneclass = classresponse.data;
+                    setOneClassDetails(oneclass)
+                    console.log("selected class details", oneClassDetails)
+
+
+                }
+
+                const allsturesponse = await axios.get(`http://localhost:7000/api/teachers/class/all-students/${selectedClassId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+
+                if (allsturesponse.status === 200) {
+                    console.log("allsturesponsedata", allsturesponse.data)
+                    setAllDetails(allsturesponse.data);
+                    console.log(alldetails)
+                }
+
+
+            }
+            catch (error) {
+                // setError('all students');
+            }
+
+        }
+
+
+
+        allDetails();
+
+
+    }, [])
+
+
+
+
+    const [allCourses, setAllCourses] = useState([]);
+
+    useEffect(() => {
+        const fetchAllcourses = async () => {
+            try {
+                const token = localStorage.getItem("token");
+
+                if (!token) {
+                    console.error("No token found");
+                    navigate("/login");
+                    return;
+                }
+
+
+                const response = await axios.get(
+                    "http://localhost:7000/api/teachers/my-classes",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    }
+                );
+                if (response.status == 200) {
+                    console.log(response.data);
+                    const allcourses = response.data;
+                    console.log(allcourses);
+                    setAllCourses(allcourses);
+                }
+            } catch (error) {
+                console.error("Error fetching courses:", error);
+
+            }
+        };
+
+        fetchAllcourses();
+    }, []);
+
 
     return (
         <>
@@ -36,30 +231,22 @@ const TeacherHome = () => {
                             <div className='w-24 h-1 border-rounded bg-orange-500 mb-4'></div>
 
                             <div className='grid grid-cols-3 gap-4 py-4'>
-                                <div className=' border rounded-md  border-0 shadow-xl hover:shadow-none cursor-pointer'>
-                                    <div className='px-2 py-3 col-span-1 bg-orange-500 rounded-md'>
-                                        <span className='text-sm text-white'>Course</span>
-                                        <p className='   font-bold text-white '>JavaScript Fundamentals</p>
-                                        <a className='text-gray-100 flex items-center text-sm mt-4 justify-end ' onClick={() => setShowPopupCourses(true)}>Veiw <svg class="h-4 w-4 text-gray-100" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <polyline points="9 6 15 12 9 18" /></svg></a>
-                                    </div>
+                                {classesData.length === 0 ? (
+                                    <div>No classes are there</div>
+                                ) : (
+                                    classesData.map((course) => (
+                                        <div className=' border rounded-md  border-0 shadow-xl hover:shadow-none cursor-pointer'>
+                                            <div className='px-2 py-3 col-span-1 bg-orange-500 rounded-md'>
+                                                <span className='text-sm text-white'>Course</span>
+                                                <p className='   font-bold text-white '>{course.classTitle}</p>
+                                                <a className='text-gray-100 flex items-center text-sm mt-4 justify-end ' onClick={() => handleViewClass(course._id)}>Veiw <svg class="h-4 w-4 text-gray-100" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <polyline points="9 6 15 12 9 18" /></svg></a>
+                                            </div>
 
-                                </div>
-                                <div className=' border rounded-md shadow-xl hover:shadow-none border-0'>
-                                    <div className='px-2 py-3 col-span-1 bg-orange-500 rounded-md'>
-                                        <span className='text-sm text-white'>Course</span>
-                                        <p className='   font-bold text-white '>JavaScript Fundamentals</p>
-                                        <Link to={'/student-each-course'} className='text-gray-100 flex items-center  text-sm mt-4 justify-end '>Veiw <svg class="h-4 w-4 text-gray-100" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <polyline points="9 6 15 12 9 18" /></svg></Link>
-                                    </div>
+                                        </div>
+                                    ))
+                                )}
 
-                                </div>
-                                <div className=' border rounded-md shadow-xl hover:shadow-none border-0'>
-                                    <div className='px-2 py-3 col-span-1 bg-orange-500 rounded-md'>
-                                        <span className='text-sm text-white'>Course</span>
-                                        <p className='   font-bold text-white '>JavaScript Fundamentals</p>
-                                        <Link to={'/student-each-course'} className='text-gray-100 flex items-center  text-sm mt-4 justify-end '>Veiw <svg class="h-4 w-4 text-gray-100" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <polyline points="9 6 15 12 9 18" /></svg></Link>
-                                    </div>
 
-                                </div>
 
                             </div>
                         </div>
@@ -69,10 +256,11 @@ const TeacherHome = () => {
                             <div className='w-24 h-1 border-rounded bg-orange-500 mb-4'></div>
 
                             <div className='grid grid-cols-3 gap-4 py-4'>
+
                                 <div className=' border rounded-md shadow-lg border-0'>
                                     <div className='px-2 py-3 col-span-1 bg-orange-500 rounded-md'>
                                         <span className='text-sm text-white'>Course</span>
-                                        <p className='   font-bold text-white '>JavaScript Fundamentals</p>
+                                        <p className='font-bold text-white '>JavaScript Fundamentals</p>
                                         <a className='text-gray-100 flex items-center  text-sm mt-4 justify-end cursor-pointer' onClick={() => setShowPopup(true)}>Apply <svg class="h-4 w-4 text-gray-100" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <polyline points="9 6 15 12 9 18" /></svg></a>
                                     </div>
 
@@ -168,44 +356,63 @@ const TeacherHome = () => {
                 <div className="fixed inset-0 flex items-center justify-center">
 
                     <section className="rounded-lg shadow-xl bg-white w-4/5 sm:w-3/5 lg:w-1/4">
-                    <svg class="h-5 w-5 text-red-500 float-right mr-1 mt-1 " onClick={handleCloseCourses} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z"/>  <line x1="18" y1="6" x2="6" y2="18" />  <line x1="6" y1="6" x2="18" y2="18" /></svg>
+                        <svg class="h-5 w-5 text-red-500 float-right mr-1 mt-1 " onClick={handleCloseCourses} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <line x1="18" y1="6" x2="6" y2="18" />  <line x1="6" y1="6" x2="18" y2="18" /></svg>
                         <div className="p-6 text-left ">
                             <div className='flex  items-center justify-between mt-2'>
                                 <div>
-                                    <Link to={'/teacher-dashboard/allstudents'}  className='p-2 bg-orange-500 rounded-md text-gray-100 cursor-pointer'>My Students</Link>
+                                    <Link
+
+                                        to={`/teacher-dashboard/allstudents/${selectedClassId}`}
+
+                                        className='p-2 bg-orange-500 rounded-md text-gray-100 cursor-pointer'>My Students</Link>
                                 </div>
                                 <div>
-                                    <p className='p-2 bg-orange-500 rounded-md text-gray-100 cursor-pointer'onClick={() => setShowScheduleClass(true)}>Add New Class</p>
+                                    <p className='p-2 bg-orange-500 rounded-md text-gray-100 cursor-pointer' onClick={() => setShowScheduleClass(true)}>Add New Class</p>
                                 </div>
 
                             </div>
-                           
-                           
+
+
                         </div>
                     </section>
                 </div>
             )}
 
 
-           {showScheduleClass && (
+            {showScheduleClass && (
                 <div className="fixed inset-0 flex items-center justify-center">
 
                     <section className="rounded-lg shadow-xl bg-white w-4/5 sm:w-3/5 lg:w-1/3">
+                        <svg class="h-5 w-5 text-red-500 float-right mr-1 mt-1 " onClick={handleCloseCourses} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <line x1="18" y1="6" x2="6" y2="18" />  <line x1="6" y1="6" x2="18" y2="18" /></svg>
 
                         <div className="p-6 text-left">
-                            <h2 className="text-xl font-bold text-teal-green-900 mb-4">Thankyou !!</h2>
-                            <p className="text-sm text-gray-600 mb-6">Your Class Has Been Scheduled</p>
-                            <Link to={'/teacher-dashboard/allstudents'}
+                            <h2 className="text-xl font-bold text-teal-green-900 mb-4">Select Date</h2>
+                            <input type='date' className='w-full mb-4' value={date} // Bind the value to the date state variable
+                                onChange={handleDateChange} />
+
+                            <Link onClick={handleScheduleClass}
                                 className="block w-full px-4 py-2 bg-orange-400 text-center hover:bg-orange-500 text-sm font-semibold text-white rounded-lg shadow-md  focus:outline-none "
-                               
+
                             >
-                                Mark Attendence
+                                Schedule Class
                             </Link>
                         </div>
                     </section>
                 </div>
             )}
 
+
+            {
+                bottompopup && (
+
+                    <div className='flex absolute bottom-1'>
+                        <h1>hello</h1>
+
+                    </div>
+
+
+                )
+            }
 
 
 

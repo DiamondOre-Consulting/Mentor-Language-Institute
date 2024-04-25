@@ -49,8 +49,9 @@ const Courseheropage = () => {
 
                         if (classResponse.status === 200) {
                             const classData = classResponse.data;
-                            console.log("Enrolled class details:", classData);
+                            console.log("Enrolled class details:", classData); 
                             setClassData(classData);
+                            
                            
                         }
                     }

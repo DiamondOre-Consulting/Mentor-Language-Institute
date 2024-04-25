@@ -9,8 +9,11 @@ const Eachcourse = () => {
 
     const navigate = useNavigate();
     const [courseDetails, setCourseDetails] = useState(null);
+    const [activeTab, setActiveTab] = useState('enrolled');
 
-
+    const handleTabSwitch = (tab) => {
+        setActiveTab(tab);
+    };
 
     const { id } = useParams();
     console.log(id);
@@ -98,15 +101,36 @@ const Eachcourse = () => {
                         if (studentResponse.status === 200) {
                             const studentData = studentResponse.data;
                             console.log("Enrolled student details:", studentData);
-
                             enrolledStudentsDetails.push(studentData);
                         }
                     }
 
-                    // Set course details including teacher and enrolled students
+                    // Fetch details of applied students
+                    const applyStudents = courseData.appliedStudents;
+                    const appliedStudentsDetails = [];
+
+                    for (const studentId of applyStudents) {
+                        const studentResponse = await axios.get(
+                            `http://localhost:7000/api/admin-confi/all-students/${studentId}`,
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${token}`,
+                                },
+                            }
+                        );
+
+                        if (studentResponse.status === 200) {
+                            const studentData = studentResponse.data;
+                            console.log("Applied student details:", studentData);
+                            appliedStudentsDetails.push(studentData);
+                        }
+                    }
+
+                    // Set course details including teacher, enrolled students, and applied students
                     setCourseDetails({
                         ...courseData,
                         enrolledStudents: enrolledStudentsDetails,
+                        appliedStudents: appliedStudentsDetails
                     });
                 }
             } catch (error) {
@@ -114,10 +138,11 @@ const Eachcourse = () => {
             }
         };
 
+
         fetchCourseDetails();
     }, [decodedToken]);
 
-
+    console.log("coursedetails", courseDetails)
     return (
         <>
             <div>
@@ -165,24 +190,32 @@ const Eachcourse = () => {
                 </div>
 
                 <div>
-                    <div className="border border-1 border-orange-500 text-gray-800 w-full  mt-10 grid  grid-cols-2   rounded-md">
-                        <div className="text-center p-4 hover:bg-orange-500 hover:text-white cursor-pointer">Enrolled Students</div>
-                        <div className="text-center p-4 hover:bg-orange-500 hover:text-white cursor-pointer">Applied Students</div>
+                    <div className="border border-1 border-orange-500 text-gray-800 w-full mt-10 grid grid-cols-2 rounded-md">
+                        <div className={`text-center p-4 hover:bg-orange-500 hover:text-white cursor-pointer ${activeTab === 'enrolled' ? 'bg-orange-500 text-white' : ''}`} onClick={() => handleTabSwitch('enrolled')}>
+                            Enrolled Students
+                        </div>
+                        <div className={`text-center p-4 hover:bg-orange-500 hover:text-white cursor-pointer ${activeTab === 'applied' ? 'bg-orange-500 text-white' : ''}`} onClick={() => handleTabSwitch('applied')}>
+                            Applied Students
+                        </div>
                     </div>
 
 
                     <div className="mt-8">
                         <div className="grid grid-cols-4 gap-2">
-                            {courseDetails?.enrolledStudents.length === 0 ? (
-                                <div>No classes are there</div>
-                            ) : (
-                                courseDetails?.enrolledStudents.map((student) => (
+                            {activeTab === 'enrolled' && courseDetails?.enrolledStudents && courseDetails.enrolledStudents.map((student) => (
+                                <div key={student._id} className="border border-1 p-4">
+                                    <p>Name: <span>{student.name}</span></p>
+                                    <p>Phone: <span>{student.phone}</span></p>
+                                </div>
+                            ))}
+                            {activeTab === 'applied' && courseDetails?.appliedStudents
+                                && courseDetails.appliedStudents
+                                .map((student) => (
                                     <div key={student._id} className="border border-1 p-4">
                                         <p>Name: <span>{student.name}</span></p>
                                         <p>Phone: <span>{student.phone}</span></p>
                                     </div>
-                                ))
-                            )}
+                                ))}
 
                         </div>
 

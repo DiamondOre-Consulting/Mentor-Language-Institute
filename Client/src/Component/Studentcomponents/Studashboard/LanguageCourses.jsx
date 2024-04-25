@@ -1,16 +1,13 @@
 import React, { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import axios from "axios";
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 
-
-
-
-
 const LanguageCourses = () => {
-
+    
+    const navigate = useNavigate();
     const [showPopup, setShowPopup] = useState(false);
     const [showPopupEnroll, setShowPopupEnroll] = useState(false);
     const [selectedCourseId, setSelectedCourseId] = useState(null);
@@ -23,8 +20,8 @@ const LanguageCourses = () => {
     };
 
     const handleEnrollClose = () => {
-
-        setShowPopupEnroll(false)
+         
+           setShowPopupEnroll(false)
     }
 
 
@@ -32,6 +29,7 @@ const LanguageCourses = () => {
         console.log("Clicked on Enroll Now for course ID:", courseId);
         setSelectedCourseId(courseId);
         setShowPopup(true);
+        setPopupMessage(null);
     };
 
     const settings = {
@@ -144,12 +142,17 @@ const LanguageCourses = () => {
     console.log("courseid", selectedCourseId)
 
     const handleApplyCourse = async (selectedCourseId) => {
+
         try {
+            setPopupMessage(null);
+            setShowPopup(false);
+            
             const token = localStorage.getItem('token');
             if (!token) {
                 console.error('No token found');
                 return;
             }
+            console.log("after try block applied course ",selectedCourseId)
 
             const response = await axios.post(
                 `http://localhost:7000/api/students/apply-course/${selectedCourseId}`,
@@ -160,12 +163,16 @@ const LanguageCourses = () => {
                     }
                 }
             );
-
+            
             if (response.status === 200) {
                 console.log('Successfully applied for course');
                 setShowPopup(false);
                 setShowPopupEnroll(true);
+                setSelectedCourseId(null);
 
+            }
+            else{
+                console.log("some errors occurred")
             }
         } catch (error) {
             console.error('Error applying in course:', error);
