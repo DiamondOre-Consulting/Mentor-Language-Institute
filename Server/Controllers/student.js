@@ -8,6 +8,7 @@ import Classes from "../Models/Classes.js";
 import ClassAccessStatus from "../Models/ClassAccessStatus.js";
 import Teachers from "../Models/Teachers.js";
 import Attendance from "../Models/Attendance.js";
+import Fee from "../Models/Fee.js";
 
 dotenv.config();
 
@@ -258,6 +259,23 @@ router.get("/my-attendance/:id", StudentAuthenticateToken, async (req, res) => {
         }
 
         res.status(200).json(attendanceDetails);
+    } catch(error) {
+        console.log("Something went wrong!!! ");
+        res.status(500).json(error);
+    }
+})
+
+router.get("/my-fee-details/:id", StudentAuthenticateToken, async (req, res) => {
+    try {
+        const {id} = req.params;
+        const {userId} = req.user;
+
+        const myFeeDetails = await Fee.findOne({classId: id, studentId: userId});
+        if(!myFeeDetails) {
+            return res.status(403).json({message: "No records found!!!"});
+        }
+
+        res.status(200).json(myFeeDetails);
     } catch(error) {
         console.log("Something went wrong!!! ");
         res.status(500).json(error);

@@ -388,7 +388,7 @@ router.put("/update-fee/:id1/:id2", AdminAuthenticateToken, async (req, res) => 
   }
 });
 
-// Get attenancce dill
+// GET ATTENDANCE DETAIL OF A STUDENT OF A CLASS
 router.get('/attendance/:id1/:id2', AdminAuthenticateToken, async (req, res) => {
   try {
       const {id1, id2} = req.params;
@@ -399,6 +399,23 @@ router.get('/attendance/:id1/:id2', AdminAuthenticateToken, async (req, res) => 
   } catch(error) {
       console.log("Something went wrong!!! ", error);
       res.status(500).json(error);
+  }
+})
+
+// GET FEE DETAIL OF A STUDENT OF A CLASS
+router.get('/fee/:id1/:id2', AdminAuthenticateToken, async (req, res) => {
+  try {
+    const {id1, id2} = req.params;
+
+    const feeById = await Fee.findOne({classId: id1, studentId: id2});
+    if(!feeById) {
+      return res.status(403).json({message: "No record found!!!"});
+    }
+
+    res.status(200).json(feeById);
+  } catch(error) {
+    console.log("Something went wrong!!!", error);
+    res.status(500).json(error);
   }
 })
 
