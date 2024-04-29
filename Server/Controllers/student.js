@@ -283,19 +283,56 @@ router.get("/my-fee-details/:id", StudentAuthenticateToken, async (req, res) => 
     }
 })
 
-cron.schedule('0 4 29 * *', async () => { // 10 am IST is 4 am UTC
-    const students = await Students.find();
-    const currentMonth = new Date().getMonth() + 1; // Get current month (1-12)
+// Schedule the cron job to run on the 8th of every month at 10 am IST
+cron.schedule('0 8 29 * *', async () => { // 10 am IST is 4 am UTC
+    try {
+        const students = await Students.find().populate('feeDetail');
 
-    students.forEach(async (student) => {
-        const feeDetails = student.feeDetails.find(detail => detail.month === currentMonth);
-        if (!feeDetails || !feeDetails.paid) {
-            // Fee is due, send reminder
-            const phoneNumber = student.phoneNumber;
-            const message = `Reminder: Your fee is due for this month. Please pay as soon as possible.`;
-            smsService.sendSMS(phoneNumber, message);
+        const currentMonth = new Date().getMonth() + 1; // Get current month (1-12)
+        // const currentYear = new Date().getFullYear(); // Get current year
+
+        // for (const student of students) {
+        //     for (const fee of student.feeDetail) {
+        //         const detailFeeForCurrentMonth = fee.detailFee.find(detail => {
+        //             const [feeMonth] = detail.feeMonth;
+        //             return feeMonth === currentMonth ;
+        //         });
+
+        //         if (!detailFeeForCurrentMonth || !detailFeeForCurrentMonth.paid) {
+        //             // Fee is due, send reminder
+        //             const singleClass = await Classes.findById({_id: fee.classId})
+        //             const phoneNumber = student.phone;
+        //             const message = `Reminder: Your fee of ${singleClass.classTitle
+        //             } is due for this month. Please pay as soon as possible.`;
+        //             // 
+        //             res.status(200).json(message)
+        //             // break; // Stop checking other fees for this student
+        //         }
+        //     }
+        // }
+
+        const student = await Students.findById({_id: '662f4b44d925278aadab41fe'})
+
+        for (const fee of student.feeDetail) {
+            const detailFeeForCurrentMonth = fee.detailFee.find(detail => {
+                const [feeMonth] = detail.feeMonth;
+                return feeMonth === currentMonth ;
+            });
+
+            if (!detailFeeForCurrentMonth || !detailFeeForCurrentMonth.paid) {
+                // Fee is due, send reminder
+                const singleClass = await Classes.findById({_id: fee.classId})
+                const phoneNumber = student.phone;
+                const message = `Reminder: Your fee of ${singleClass.classTitle
+                } is due for this month. Please pay as soon as possible.`;
+                // 
+                res.status(200).json(message)
+                // break; // Stop checking other fees for this student
+            }
         }
-    });
+    } catch (error) {
+        console.error('Error occurred during fee reminder scheduling:', error);
+    }
 });
 
 export default router;

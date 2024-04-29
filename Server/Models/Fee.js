@@ -17,7 +17,7 @@ const feeSchema = new mongoose.Schema({
     type: [
       {
         feeMonth: {
-            type: String,
+            type: Number,
         },
         paid: {
             type: Boolean,
