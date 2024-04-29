@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import cron from "node-cron";
 import Students from "../Models/Students.js";
 import StudentAuthenticateToken from "../Middlewares/StudentAuthenticateToken.js";
 import Classes from "../Models/Classes.js";
@@ -281,5 +282,20 @@ router.get("/my-fee-details/:id", StudentAuthenticateToken, async (req, res) => 
         res.status(500).json(error);
     }
 })
+
+cron.schedule('0 4 29 * *', async () => { // 10 am IST is 4 am UTC
+    const students = await Students.find();
+    const currentMonth = new Date().getMonth() + 1; // Get current month (1-12)
+
+    students.forEach(async (student) => {
+        const feeDetails = student.feeDetails.find(detail => detail.month === currentMonth);
+        if (!feeDetails || !feeDetails.paid) {
+            // Fee is due, send reminder
+            const phoneNumber = student.phoneNumber;
+            const message = `Reminder: Your fee is due for this month. Please pay as soon as possible.`;
+            smsService.sendSMS(phoneNumber, message);
+        }
+    });
+});
 
 export default router;

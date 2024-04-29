@@ -301,7 +301,7 @@ router.put("/enroll-student/:id1/:id2", async (req, res) => {
     const { id1, id2 } = req.params;
     const { totalFee, feeMonth, paid, amountPaid } = req.body;
 
-    const studentExist = await Classes.findOne({enrolledStudents: id2});
+    const studentExist = await Classes.findOne({_id: id, enrolledStudents: id2});
 
     if(studentExist) {
       return res.status(409).json({message: `Student already exists in this class!!!`})
