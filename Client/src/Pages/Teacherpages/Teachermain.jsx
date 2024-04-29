@@ -1,10 +1,12 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import TeacherSidebar from '../../Component/TeachersComponents/TeacherSidebar'
 import TeacherDashboard from '../../Component/TeachersComponents/TeacherDashboard'
+import axios from "axios";
+import { useNavigate } from 'react-router-dom';
 
 const Teachermain = () => {
-
-  const [teacherData , setTeacherData] =useState(null);
+  const navigate = useNavigate();
+  const [teacherData , setTeacherData] =useState("");
 
   useEffect(()=>{
     const fetchTeacherData = async () => {
@@ -28,9 +30,10 @@ const Teachermain = () => {
           }
         );
         if (response.status == 200) {
-          console.log("teacherdata",response.data);
+          // console.log("teacherdata",response.data);
           const all = response.data;
-          setStudentData(all);
+          setTeacherData(response.data);
+          console.log("teachermain data",teacherData)
      
         } else {
           console.log(response.data);
@@ -42,14 +45,14 @@ const Teachermain = () => {
       }
     };
 
-    fetchStudentData();
+    fetchTeacherData();
   },[])
 
   return (
     <>
        <TeacherSidebar/>
       <div className="admin-content">
-        <TeacherDashboard/>
+        <TeacherDashboard teacherData={teacherData}/>
       </div>
     </>
   )

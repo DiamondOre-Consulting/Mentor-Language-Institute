@@ -66,7 +66,7 @@ const Studenthero = () => {
               <TextTransition springConfig={presets.wobbly}>
                 {TEXTS[index]}
               </TextTransition>
-              <h1>{t('user.name')}: {userName}</h1>
+              {/* <h1>{t('user.name')}: {userName}</h1> */}
             </h1>
 
             <p class="max-w-2xl mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-md dark:text-gray-400">

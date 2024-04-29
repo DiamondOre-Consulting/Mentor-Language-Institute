@@ -1,9 +1,9 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 const EnrolledCourses = () => {
-
+    const navigate = useNavigate();
     const [studentData, setStudentData] = useState(null);
     const [classData, setClassData] = useState([])
 

@@ -23,7 +23,7 @@ const Admindash = () => {
                     <div className="flex-grow p-4">
                         <Routes>
                             <Route path="/" element={<Home />} />
-                            <Route path="/home" element={<Home />} />
+                            <Route path="/" element={<Home />} />
                             <Route path='/allstudents' element={<Allstudents />} />
                             <Route path='/allteachers' element={<AllTeachers />} />
                             <Route path='/allteacher/:id' element={<EachTeacher/>}/>
