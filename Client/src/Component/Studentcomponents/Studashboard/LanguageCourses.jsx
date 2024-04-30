@@ -197,8 +197,8 @@ const LanguageCourses = () => {
 
     return (
         <>
-            <div className='px-10 '>
-                <h1 className='text-4xl font-bold mb-24 text-gray-900'>Language Courses</h1>
+            <div className='px-10 'id='courses'>
+                <h1 className='text-3xl md:text-4xl font-bold mb-10 md:mb-24 text-gray-900'>Language Courses</h1>
 
                 <div className='slider-container PY-10'>
                     {

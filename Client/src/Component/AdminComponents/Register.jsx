@@ -8,6 +8,8 @@ import { useJwt } from "react-jwt";
 const Register = () => {
 
     const [activeTab, setActiveTab] = useState(0);
+    const [showPassword, setShowPassword] = useState(false);
+
 
     const handleTabClick = (index) => {
         setActiveTab(index);
@@ -43,31 +45,31 @@ const Register = () => {
 
     const handleAddCourse = async (e) => {
         e.preventDefault();
-    
+
         try {
             const token = localStorage.getItem("token");
-    
+
             if (!token) {
                 console.error("No token found");
                 navigate("/login");
                 return;
             }
-    
+
             let classScheduleString = '';
-    
+
             Object.entries(selectedDays).forEach(([day, isChecked]) => {
                 if (isChecked) {
                     classScheduleString += day.substring(0, 3) + ' ';
                 }
             });
-    
+
             const formData = {
                 classTitle: formValues.classTitle,
                 teachBy: formValues.teachBy,
                 totalHours: formValues.totalHours,
                 classSchedule: classScheduleString.trim(), // Ensure the schedule is trimmed
             };
-    
+
             const response = await axios.post(
                 "http://localhost:7000/api/admin-confi/add-new-class",
                 formData,
@@ -77,7 +79,7 @@ const Register = () => {
                     },
                 }
             );
-    
+
             if (response.status === 200) {
                 console.log("New course has been added");
                 setPopupMessage("New course has been added");
@@ -118,7 +120,7 @@ const Register = () => {
             }
         }
     };
-    
+
 
     // fetch teacher data
     const [allTeachers, setAllTeachers] = useState([]);
@@ -199,6 +201,9 @@ const Register = () => {
             if (response.status === 200) {
                 console.log("Teacher added successfully");
                 setPopupMessage("Teacher registered successfully");
+                setName("");
+                setPhone("");
+                setPassword("");
             } else if (response.status === 409) {
                 console.log("Teacher already registered");
                 setPopupMessage("Teacher already registered");
@@ -267,6 +272,9 @@ const Register = () => {
             } else if (response.status === 409) {
                 console.log("student already registered");
                 setPopupMessage("student already registered");
+                setName("");
+                setPhone("");
+                setPhone("");
             } else {
                 console.log("Error adding student:", response.status);
                 setPopupMessage("Error registering student");
@@ -293,21 +301,21 @@ const Register = () => {
     return (
         <div className=''>
             <div className="flex flex-col justify-center items-center">
-                <div className="flex space-x-4 ">
+                <div className="flex space-x-2 md:space-x-4">
                     <button
-                        className={`py-2 px-4 border-b-2 ${activeTab === 0 ? 'border-orange-500' : 'border-transparent'} focus:outline-none`}
+                        className={`py-2 px-0 md:px-4 border-b-2 ${activeTab === 0 ? 'border-orange-500' : 'border-transparent'} focus:outline-none`}
                         onClick={() => handleTabClick(0)}
                     >
                         Register Student
                     </button>
                     <button
-                        className={`py-2 px-4 border-b-2 ${activeTab === 1 ? 'border-orange-500' : 'border-transparent'} focus:outline-none`}
+                        className={`py-2 px-0 md:px-4 border-b-2 ${activeTab === 1 ? 'border-orange-500' : 'border-transparent'} focus:outline-none`}
                         onClick={() => handleTabClick(1)}
                     >
                         Register Teacher
                     </button>
                     <button
-                        className={`py-2 px-4 border-b-2 ${activeTab === 2 ? 'border-orange-500' : 'border-transparent'} focus:outline-none`}
+                        className={`py-2 px-0 md:px-4 border-b-2 ${activeTab === 2 ? 'border-orange-500' : 'border-transparent'} focus:outline-none`}
                         onClick={() => handleTabClick(2)}
                     >
                         Add New Courses
@@ -319,11 +327,11 @@ const Register = () => {
                             <div class="flex flex-col items-center justify-center px-6 py-8 w-full">
                                 <div class="w-full max-w-screen-xl bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
                                     <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-                                        <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white mx-20">
+                                        <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white md:mx-20">
                                             Register Student
                                         </h1>
-                                        <div className='w-22 h-0.5 bg-orange-500 border-rounded'></div>
-                                        <form class="space-y-4 md:space-y-6" action="#" onSubmit={handleStudentRegister}>
+                                        <div className='md:w-22 h-0.5 bg-orange-500 border-rounded'></div>
+                                        <form class="space-y-4 md:space-y-6"  onSubmit={handleStudentRegister}>
                                             <div>
                                                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white w-full">Name</label>
                                                 <input type="text" name="name" value={name} onChange={(e) => setName(e.target.value)} class=" bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter Student Name" required="" />
@@ -333,8 +341,12 @@ const Register = () => {
                                                 <input type="phone" name="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Enter Phone No" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
                                             </div>
                                             <div>
-                                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">password</label>
-                                                <input type="password" name="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
+                                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password</label>
+                                                <input type={showPassword ? "text" : "password"} name="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
+                                            </div>
+                                            <div class="flex items-center mt-2">
+                                                <input type="checkbox" class="mr-2" onChange={() => setShowPassword(!showPassword)} />
+                                                <label class="text-sm font-medium text-gray-900 dark:text-white cursor-pointer" onClick={() => setShowPassword(!showPassword)}>Show Password</label>
                                             </div>
 
                                             <button className='bg-orange-400 py-2 w-full rounded-md text-white'>Submit</button>
@@ -350,7 +362,7 @@ const Register = () => {
                             <div class="flex flex-col items-center justify-center px-6 py-8 w-full">
                                 <div class="w-full max-w-screen-xl bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
                                     <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-                                        <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white mx-20">
+                                        <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white md:mx-20">
                                             Register Teacher
                                         </h1>
                                         <div className='w-22 h-0.5 bg-orange-500 border-rounded'></div>
@@ -364,8 +376,12 @@ const Register = () => {
                                                 <input type="phone" name="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Enter Phone No" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
                                             </div>
                                             <div>
-                                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">password</label>
-                                                <input type="password" name="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
+                                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password</label>
+                                                <input type={showPassword ? "text" : "password"} name="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
+                                            </div>
+                                            <div class="flex items-center mt-2">
+                                                <input type="checkbox" class="mr-2" onChange={() => setShowPassword(!showPassword)} />
+                                                <label class="text-sm font-medium text-gray-900 dark:text-white cursor-pointer" onClick={() => setShowPassword(!showPassword)}>Show Password</label>
                                             </div>
 
                                             <button className='bg-orange-400 py-2 w-full rounded-md text-white'>Submit</button>
@@ -381,7 +397,7 @@ const Register = () => {
                             <div class="flex flex-col items-center justify-center px-6 py-8 w-full">
                                 <div class="w-full max-w-screen-xl bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
                                     <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-                                        <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white mx-20">
+                                        <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white md:mx-20">
                                             Add New Course
                                         </h1>
                                         <div className='w-22 h-0.5 bg-orange-500 border-rounded'></div>

@@ -68,10 +68,10 @@ const EnrolledCourses = () => {
 
     return (
         <>
-            <div className='px-10 mt-8'>
-                <h1 className='text-4xl font-bold text-gray-900'>Enrolled Courses</h1>
+            <div className='px-10 mt-8' >
+                <h1 className='text-4xl font-bold text-gray-900'id="enrolledcourse">Enrolled Courses</h1>
 
-                <div className='grid grid-cols-4 gap-8 py-20'>
+                <div className='grid grid-cols-1 md:grid-cols-4 gap-8 py-20'>
                     {classData.length === 0 ? (
                         <p className='text-center font-bold bg-orange-400 p-4 flex items-center justify-center text-gray-200 rounded-md'>No Enrolled Courses are there</p>
                     ) : (

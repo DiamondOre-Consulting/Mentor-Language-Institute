@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import axios from "axios";
 
+
+
+
+
 const TeacherHome = ({ teacherData }) => {
 
     const navigate = useNavigate();
@@ -10,11 +14,12 @@ const TeacherHome = ({ teacherData }) => {
     const [showScheduleClass, setShowScheduleClass] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [classesData, setClassesData] = useState([]);
-    const [selectedClassId, setSelectedClassId] = useState(null);
+    const [selectedClassId, setSelectedClassId] = useState("");
     const [date, setDate] = useState(null);
     const [oneClassDetails, setOneClassDetails] = useState("");
     const [alldetails, setAllDetails] = useState();
     const [bottompopup, setBottomPopUp] = useState(false);
+
 
 
     const handleDateChange = (event) => {
@@ -117,6 +122,11 @@ const TeacherHome = ({ teacherData }) => {
                 console.log(response.data)
                 console.log(date)
                 setShowScheduleClass(false);
+                setShowPopup(true)
+                setTimeout(() => {
+                    setShowPopup(false);
+                }, 2000);
+            
 
             }
         } catch (error) {
@@ -220,6 +230,8 @@ const TeacherHome = ({ teacherData }) => {
     }, []);
 
 
+   
+
     return (
         <>
             <div>
@@ -230,7 +242,7 @@ const TeacherHome = ({ teacherData }) => {
                             <h1 className='text-2xl font-bold'>My Courses</h1>
                             <div className='w-24 h-1 border-rounded bg-orange-500 mb-4'></div>
 
-                            <div className='grid grid-cols-3 gap-4 py-4'>
+                            <div className='grid grid-cols-1 md:grid-cols-3 gap-4 py-4'>
                                 {classesData.length === 0 ? (
                                     <div>No classes are there</div>
                                 ) : (
@@ -246,16 +258,14 @@ const TeacherHome = ({ teacherData }) => {
                                     ))
                                 )}
 
-
-
                             </div>
                         </div>
 
                         <div className='py-14'>
-                            <h1 className='text-2xl font-bold'>Request For New Courses</h1>
+                            <h1 className='text-2xl font-bold'>Request For New Courses (Optional)</h1>
                             <div className='w-24 h-1 border-rounded bg-orange-500 mb-4'></div>
 
-                            <div className='grid grid-cols-3 gap-4 py-4'>
+                            <div className='grid grid-cols-1 md:grid-cols-3 gap-4 py-4'>
 
                                 <div className=' border rounded-md shadow-lg border-0'>
                                     <div className='px-2 py-3 col-span-1 bg-orange-500 rounded-md'>
@@ -280,12 +290,40 @@ const TeacherHome = ({ teacherData }) => {
                                 <div class="flex items-start gap-2.5">
                                     <img class="w-8 h-8 rounded-full" src="https://static.vecteezy.com/system/resources/thumbnails/001/993/889/small/beautiful-latin-woman-avatar-character-icon-free-vector.jpg" alt="Jese image" />
                                     <div class="flex flex-col gap-1 w-full max-w-[320px]">
-                                        <div class="flex items-center space-x-2 rtl:space-x-reverse">
-                                            <span class="text-sm font-semibold text-gray-900 dark:text-white">Bonnie Green</span>
-                                            <span class="text-sm font-normal text-gray-500 dark:text-gray-400">11:46</span>
-                                        </div>
                                         <div class="flex flex-col leading-1.5 p-4 border-gray-200 bg-orange-500 shadow-md backdrop-filter backdrop-blur-md bg-opacity-20 rounded-e-xl rounded-es-xl dark:bg-gray-700">
-                                            <p class="text-sm font-normal text-gray-900 dark:text-white">How to enroll for this course?</p>
+                                            <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                                                <span class="text-sm font-semibold text-gray-900 dark:text-white">Bonnie Green</span>
+                                                <span class="text-sm font-normal text-gray-500 dark:text-gray-400">11:46</span>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                    <button id="dropdownMenuIconButton" onClick={toggleDropdown} data-dropdown-toggle="dropdownDots" data-dropdown-placement="bottom-start" class="inline-flex self-center items-center p-2 text-sm font-medium text-center text-gray-900 bg-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none dark:text-white focus:ring-gray-50 dark:bg-gray-900 dark:hover:bg-gray-800 dark:focus:ring-gray-600" type="button">
+                                        <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 4 15">
+                                            <path d="M3.5 1.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 6.041a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 5.959a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" />
+                                        </svg>
+                                    </button>
+                                    {isOpen && (
+                                        <div className="z-10 absolute right-10 mt-16 bg-white divide-y divide-gray-100 rounded-lg shadow w-20 dark:bg-gray-700 dark:divide-gray-600">
+                                            <ul className="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownMenuIconButton">
+                                                <li>
+                                                    <a href="#" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Reply</a>
+                                                </li>
+
+
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div class="flex items-start mt-4 gap-2.5">
+                                    <img class="w-8 h-8 rounded-full" src="https://static.vecteezy.com/system/resources/thumbnails/001/993/889/small/beautiful-latin-woman-avatar-character-icon-free-vector.jpg" alt="Jese image" />
+                                    <div class="flex flex-col gap-1 w-full max-w-[320px]">
+                                        <div class="flex flex-col leading-1.5 p-4 border-gray-200 bg-orange-500 shadow-md backdrop-filter backdrop-blur-md bg-opacity-20 rounded-e-xl rounded-es-xl dark:bg-gray-700">
+                                            <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                                                <span class="text-sm font-semibold text-gray-900 dark:text-white">jennie</span>
+                                                <span class="text-sm font-normal text-gray-500 dark:text-gray-400">11:46</span>
+                                            </div>
                                         </div>
 
                                     </div>
@@ -311,7 +349,7 @@ const TeacherHome = ({ teacherData }) => {
 
 
                             <div className=' row-span-2'>
-                                <h1 className='font-bold text-lg'>Today's Classes</h1>
+                                <h1 className='font-bold text-lg'>Today's Classes (Optional)</h1>
                                 <div className='w-16 h-0.5 bg-orange-500 mb-6'></div>
                                 <div className='border border-1 border-orange-500 flex p-2 justify-between rounded-md items-center'>
                                     <div className='text-sm'>
@@ -335,44 +373,28 @@ const TeacherHome = ({ teacherData }) => {
 
             {showPopup && (
                 <div className="fixed inset-0 flex items-center justify-center">
-
-                    <section className="rounded-lg shadow-xl bg-white w-4/5 sm:w-3/5 lg:w-1/3">
-
-                        <div className="p-6 text-left">
-                            <h2 className="text-xl font-bold text-teal-green-900 mb-4">Thankyou For Applying</h2>
-                            <p className="text-sm text-gray-600 mb-6">Your Request Has Been Submitted We Will Connect You Soon.</p>
-                            <button
-                                className="block w-full px-4 py-2 bg-orange-400 hover:bg-orange-500 text-sm font-semibold text-white rounded-lg shadow-md  focus:outline-none "
-                                onClick={handleClose}
-                            >
-                                close
-                            </button>
-                        </div>
+                    {/* <div className="fixed inset-0 bg-black bg-opacity-50"></div> */}
+                    <section className="absolute bg-black bg-opacity-50 top-10 right-10 rounded-lg shadow-xl w-64 p-2 text-center">
+                        <h2 className="text-md font-semibold opacity-100 text-gray-100">Your class has been scheduled</h2>
                     </section>
                 </div>
             )}
 
             {showPopupCourses && (
-                <div className="fixed inset-0 flex items-center justify-center">
-
-                    <section className="rounded-lg shadow-xl bg-white w-4/5 sm:w-3/5 lg:w-1/4">
-                        <svg class="h-5 w-5 text-red-500 float-right mr-1 mt-1 " onClick={handleCloseCourses} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <line x1="18" y1="6" x2="6" y2="18" />  <line x1="6" y1="6" x2="18" y2="18" /></svg>
+                <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50">
+                    <section className="rounded-lg shadow-xl bg-white w-4/5 sm:w-3/5 lg:w-1/4 relative">
+                        <svg className="h-5 w-5 bg-red-600 cursor-pointer p-1 text-2xl rounded-full text-gray-50 absolute top-0 right-0 m-2" onClick={handleCloseCourses} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <line x1="18" y1="6" x2="6" y2="18" />  <line x1="6" y1="6" x2="18" y2="18" /></svg>
                         <div className="p-6 text-left ">
                             <div className='flex  items-center justify-between mt-2'>
                                 <div>
                                     <Link
-
                                         to={`/teacher-dashboard/allstudents/${selectedClassId}`}
-
                                         className='p-2 bg-orange-500 rounded-md text-gray-100 cursor-pointer'>My Students</Link>
                                 </div>
                                 <div>
-                                    <p className='p-2 bg-orange-500 rounded-md text-gray-100 cursor-pointer' onClick={() => setShowScheduleClass(true)}>Add New Class</p>
+                                    <p className='p-2 bg-orange-500 rounded-md text-gray-100 cursor-pointer' onClick={() => setShowScheduleClass(true) }>Add New Class</p>
                                 </div>
-
                             </div>
-
-
                         </div>
                     </section>
                 </div>
@@ -380,14 +402,14 @@ const TeacherHome = ({ teacherData }) => {
 
 
             {showScheduleClass && (
-                <div className="fixed inset-0 flex items-center justify-center">
+                <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50">
 
                     <section className="rounded-lg shadow-xl bg-white w-4/5 sm:w-3/5 lg:w-1/3">
-                        <svg class="h-5 w-5 text-red-500 float-right mr-1 mt-1 " onClick={handleCloseCourses} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <line x1="18" y1="6" x2="6" y2="18" />  <line x1="6" y1="6" x2="18" y2="18" /></svg>
+                        <svg class="h-5 w-5 bg-red-600 cursor-pointer p-1 rounded-full text-gray-100 float-right mr-1 mt-1 " onClick={handleCloseCourses} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <line x1="18" y1="6" x2="6" y2="18" />  <line x1="6" y1="6" x2="18" y2="18" /></svg>
 
                         <div className="p-6 text-left">
                             <h2 className="text-xl font-bold text-teal-green-900 mb-4">Select Date</h2>
-                            <input type='date' className='w-full mb-4' value={date} // Bind the value to the date state variable
+                            <input type='date' className='w-full mb-4' value={date ? date.split('-').reverse().join('-') : ''}  // Bind the value to the date state variable
                                 onChange={handleDateChange} />
 
                             <Link onClick={handleScheduleClass}
@@ -400,6 +422,7 @@ const TeacherHome = ({ teacherData }) => {
                     </section>
                 </div>
             )}
+
 
 
             {

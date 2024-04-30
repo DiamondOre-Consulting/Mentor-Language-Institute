@@ -146,8 +146,8 @@ const Eachcourse = () => {
     return (
         <>
             <div>
-                <h1 className='text-2xl font-bold '>{courseDetails?.classTitle}</h1>
-                <div class="grid grid-cols-2 gap-4 2xl:w-1/3">
+                <h1 className='text-2xl md:px-0 px-4 font-bold md:mb-1 mb-4'>{courseDetails?.classTitle}</h1>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 2xl:w-1/3">
                     <div class="flex-1  bg-white rounded-lg shadow-xl p-8">
                         <h4 class="text-xl text-gray-900 font-bold">Course Details</h4>
                         <ul class="mt-2 text-gray-700">
@@ -161,7 +161,7 @@ const Eachcourse = () => {
                             </li>
                             <li class="flex border-b py-2">
                                 <span class="font-bold w-32">Created At:</span>
-                                <span class="text-gray-700">{courseDetails?.createdAt}</span>
+                                <span class="text-gray-700">{new Date(courseDetails?.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                             </li>
 
 
@@ -181,7 +181,7 @@ const Eachcourse = () => {
                             </li>
                             <li class="flex border-b py-2">
                                 <span class="font-bold w-32">Joined At:</span>
-                                <span class="text-gray-700">{courseDetails?.createdAt}</span>
+                                <span class="text-gray-700">{new Date(courseDetails?.teacher.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                             </li>
 
                         </ul>
@@ -201,21 +201,21 @@ const Eachcourse = () => {
 
 
                     <div className="mt-8">
-                        <div className="grid grid-cols-4 gap-2">
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                             {activeTab === 'enrolled' && courseDetails?.enrolledStudents && courseDetails.enrolledStudents.map((student) => (
-                                <div key={student._id} className="border border-1 p-4">
+                                <div key={student._id} className="border border-1 p-4 shadow-xl bg-orange-500 text-gray-100 rounded-md">
                                     <p>Name: <span>{student.name}</span></p>
                                     <p>Phone: <span>{student.phone}</span></p>
                                 </div>
                             ))}
                             {activeTab === 'applied' && courseDetails?.appliedStudents
                                 && courseDetails.appliedStudents
-                                .map((student) => (
-                                    <div key={student._id} className="border border-1 p-4">
-                                        <p>Name: <span>{student.name}</span></p>
-                                        <p>Phone: <span>{student.phone}</span></p>
-                                    </div>
-                                ))}
+                                    .map((student) => (
+                                        <div key={student._id} className="border border-1 p-4 shadow-xl bg-orange-500 text-gray-100 rounded-md">
+                                            <p>Name: <span>{student.name}</span></p>
+                                            <p>Phone: <span>{student.phone}</span></p>
+                                        </div>
+                                    ))}
 
                         </div>
 

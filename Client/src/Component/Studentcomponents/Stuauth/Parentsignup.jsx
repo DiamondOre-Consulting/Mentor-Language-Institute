@@ -18,14 +18,14 @@ const Parentlog = () => {
         <>
         <Navbar/>
         
-            <section class="relative -mt-12">
+            <section class="relative mt-10 md:-mt-12">
 
                 <div class="flex flex-col items-center justify-center mt-16 lg:py-0 ">
                     <div class="md:w-full sm:w-1/2 bg-white rounded-lg shadow border-t-4 border-orange-400 md:mt-0 sm:max-w-md xl:p-0">
                         <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
                             <div className='flex justify-between items-center'>
                                 <h1 class="text-xl  font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
-                                    Registeration Form
+                                   Student Registeration Form
                                 </h1>
                                 {/* <img src={logo} alt="" className='w-24' /> */}
 
@@ -63,7 +63,7 @@ const Parentlog = () => {
                                     <Link to={'/main-dashboard'}><button className='bg-orange-400 text-white w-full p-2 rounded-md'>Register</button></Link>
                                 </div>
 
-                                <a href="#" class="text-center flex items-center justify-center text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">Already Have Account?<Link to={'/login'} className='underline'>Sign in</Link></a>
+                                <a href="#" class="text-center flex items-center justify-center text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">Already Have Account?<Link to={'/student-login'} className='underline'>Sign in</Link></a>
 
                             </form>
                         </div>

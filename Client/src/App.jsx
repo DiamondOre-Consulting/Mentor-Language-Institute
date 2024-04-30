@@ -12,6 +12,7 @@ import Maindash from './Pages/Studentpages/Maindash'
 import StudentEachcourses from './Pages/Studentpages/StudentEachcourses'
 import { Sidebar } from 'flowbite-react'
 import Teachermain from './Pages/Teacherpages/Teachermain'
+import StudentLogin from './Component/Studentcomponents/Stuauth/StudentLogin'
 
 
 
@@ -25,6 +26,7 @@ function App() {
         <Routes>
           <Route path='/' element={<Parentsignup />} />
           <Route path='/login' element={<Login />} />
+          <Route path='/student-login' element={<StudentLogin/>}/>
           <Route path='/main-dashboard' element={<Maindash />} />
           <Route path='/student-each-course/:id' element={<StudentEachcourses/>} />
           <Route path='/admin-dashboard/*' element={<Admin/>}/>

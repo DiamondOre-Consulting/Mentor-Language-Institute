@@ -1,8 +1,9 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 
 const Courseheropage = () => {
+    const { id } = useParams();
     const [studentData, setStudentData] = useState(null);
     const [classData, setClassData] = useState(null)
 
@@ -36,10 +37,10 @@ const Courseheropage = () => {
                     const classes = response.data.classes;
                    console.log("classes",classes)
 
-                    for (const classId of classes) {
+                   
 
                         const classResponse = await axios.get(
-                            `http://localhost:7000/api/students/all-courses/${classId}`,
+                            `http://localhost:7000/api/students/all-courses/${id}`,
                             {
                                 headers: {
                                     Authorization: `Bearer ${token}`,
@@ -50,12 +51,9 @@ const Courseheropage = () => {
                         if (classResponse.status === 200) {
                             const classData = classResponse.data;
                             console.log("Enrolled class details:", classData); 
-                            setClassData(classData);
-                            
+                            setClassData(classData);     
                            
                         }
-                    }
-                
                     
 
                 } else {

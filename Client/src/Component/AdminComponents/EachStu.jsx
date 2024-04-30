@@ -15,7 +15,13 @@ const EachStu = () => {
   const { decodedToken } = useJwt(localStorage.getItem("token"));
   const token = localStorage.getItem("token");
   const [attendenceDetails, setAttendenceDetails] = useState(null);
+  const [feedetails, setFeeDetails] = useState(null);
   const [selectedCourseId, setSelectedCourseId] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [amount, setAmount] = useState('');
+  const [paidStatus, setPaidStatus] = useState('');
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
 
   useEffect(() => {
     if (!token) {
@@ -66,6 +72,9 @@ const EachStu = () => {
     setSelectedCourseId(event.target.value);
   };
 
+
+  // attendence 
+
   useEffect(() => {
     const fetchAttendanceDetails = async () => {
       try {
@@ -90,63 +99,145 @@ const EachStu = () => {
   }, [selectedCourseId, id, token]);
 
 
+  // getfee
+
+  const numberToMonthName = {
+    1: "January",
+    2: "February",
+    3: "March",
+    4: "April",
+    5: "May",
+    6: "June",
+    7: "July",
+    8: "August",
+    9: "September",
+    10: "October",
+    11: "November",
+    12: "December"
+  };
+
+
+  useEffect(() => {
+    const fetchFeeDetails = async () => {
+      try {
+        if (selectedCourseId) {
+          const FeeResponse = await axios.get(`http://localhost:7000/api/admin-confi/fee/${selectedCourseId}/${id}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          if (FeeResponse.status === 200) {
+            console.log("Fee details:", FeeResponse.data);
+            const feeDetailsWithMonthNames = {
+              ...FeeResponse.data,
+              detailFee: FeeResponse.data.detailFee.map((fee) => ({
+                ...fee,
+                feeMonth: numberToMonthName[fee.feeMonth] // Convert month number to name
+              }))
+            };
+            setFeeDetails(feeDetailsWithMonthNames);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching attendance details:", error);
+      }
+    };
+
+    // Fetch attendance details when the selected course ID changes
+    fetchFeeDetails();
+  }, [selectedCourseId, id, token]);
+
+
+  // fee update 
+
+  const monthNameToNumber = {
+    "January": 1,
+    "February": 2,
+    "March": 3,
+    "April": 4,
+    "May": 5,
+    "June": 6,
+    "July": 7,
+    "August": 8,
+    "September": 9,
+    "October": 10,
+    "November": 11,
+    "December": 12
+  };
+
+  const handleFeeUpdate = async () => {
+    try {
+
+      if (!selectedMonth || !amount || !paidStatus) {
+        alert("Please fill in all fields.");
+        return;
+      }
+
+      const response = await axios.put(`http://localhost:7000/api/admin-confi/update-fee/${selectedCourseId}/${id}`, {
+        feeMonth: monthNameToNumber[selectedMonth], 
+        paid: paidStatus === "true",
+        amountPaid: amount
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.status === 200) {
+        console.log("Fee updated successfully");
+        const updatedFeeDetails = [...feedetails.detailFee];
+        updatedFeeDetails.push({
+          feeMonth: selectedMonth,
+          amountPaid: amount,
+          paid: paidStatus === "true"
+        });
+        setFeeDetails({ ...feedetails, detailFee: updatedFeeDetails });
+        // Optionally, you can update the fee details state after successful update
+      }
+    } catch (error) {
+      console.error("Error updating fee:", error);
+    }
+  };
+
+
+
+
+
   return (
     <>
-      <div class="bg-orange-500 flex justify-between">
-        <div class=" w-48 h-48  max-w-7xl px-4 py-10 bg-orange-500 sm:px-6 lg:px-8 hidden lg:block md:block">
-
-          {/* <img class=" flex-1 w-48 h-48 rounded-full shadow-lg" src="https://static.independent.co.uk/2023/09/14/15/WOLFPACK_Gallery_Kristin_10232022_FO_0064_aprRT.jpg?width=1200&height=1200&fit=crop" alt=""/> */}
-        </div>
-        <div class="bg-orange-500  max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <h1 class=" text-3xl font-semibold  tracking-tight text-gray-100">
+        <div class="px-4 sm:px-1 lg:px-8">
+          <h1 class=" text-3xl font-semibold  tracking-tight text-gray-900">
             {studentsDetails?.name}
           </h1>
-          <p class="ml-10 text-gray-200">{studentsDetails?.phone}</p>
+          <p class="text-gray-500">{studentsDetails?.phone}</p>
         </div>
 
-        <div class="bg-orange-500 mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-
-          <div class="flex justify-between">
-
-
-            <div class="flex-1">
-
-            </div>
-
-
-          </div>
-
-        </div>
-
-      </div>
       <main>
-        <div class=" max-w-7xl py-0 ">
-          <div class="md:flex no-wrap md:-mx-2  ">
+        <div class="mt-4 md:mt-32 md:max-w-7xl py-0 ">
+          <div class="flex flex-wrap  md:-mx-2  ">
+            <div class="w-full mx-2 md:block lg:block md:-mt-24 sm:mt-0">
 
-            <div class="w-full mx-2   md:block lg:block md:-mt-24 sm:mt-0">
-
-              <div class="hidden md:block lg:block">
+              <div class="block lg:block overflow-scroll">
                 <ul class="flex bg-white ">
                   <li class=" mr-1">
-                    <a class="rounded-sm bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-blue-700 font-semibold shadow-md" href="#" onClick={() => handleTabClick('personal')}>Personal Information</a>
+                    <a class="rounded-sm bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-orange-500 font-semibold shadow-md" href="#" onClick={() => handleTabClick('personal')}>Personal Information</a>
                   </li>
                   <li class="mr-1">
-                    <a class="rounded-sm bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold" href="#" onClick={() => handleTabClick('EnrolledCourses')}>Enrolled Courses</a>
+                    <a class="rounded-sm bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-orange-500 font-semibold" href="#" onClick={() => handleTabClick('EnrolledCourses')}>Enrolled Courses</a>
                   </li>
                   <li class="mr-1">
-                    <a class="rounded-sm bg-white inline-block py-2 px-4 border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold" href="#" onClick={() => handleTabClick('FeeDetails')}>Fee Details</a>
+                    <a class="rounded-sm bg-white inline-block py-2 px-4 border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-orange-500 font-semibold" href="#" onClick={() => handleTabClick('FeeDetails')}>Fee Details</a>
                   </li>
                   <li class="mr-1">
-                    <a class="rounded-sm bg-white inline-block py-2 px-4 border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold" href="#" onClick={() => handleTabClick('AttendenceDetails')}>Attendence Details</a>
+                    <a class="rounded-sm bg-white inline-block py-2 px-4 border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-orange-500 font-semibold" href="#" onClick={() => handleTabClick('AttendenceDetails')}>Attendence Details</a>
                   </li>
 
 
                 </ul>
               </div>
               {activeTab === 'personal' && (
-                <div class="w-full flex flex-col 2xl:w-1/3">
+                <div class="w-full mt-8 flex flex-col 2xl:w-1/3">
                   <div class="flex-1 bg-white rounded-lg shadow-xl p-8">
-                    <h4 class="text-xl text-gray-900 font-bold">Personal Info</h4>
+                    
                     <ul class="mt-2 text-gray-700">
                       <li class="flex border-y py-2">
                         <span class="font-bold w-24">Full name:</span>
@@ -166,13 +257,13 @@ const EachStu = () => {
 
               {
                 activeTab === 'EnrolledCourses' && (
-                  <div className='grid grid-cols-4 gap-2 bg-white pt-10 '>
+                  <div className='grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-2 bg-white pt-10 '>
                     {classes.length === 0 ? (
                       <div>No classes are there</div>
                     ) : (
                       classes.map((course) => (
                         <a href="#" class="block max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
-                          <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{course?.classTitle}</h5>
+                          <h5 class="mb-2 text-md md:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{course?.classTitle}</h5>
                           <p class="font-normal text-sm text-gray-700 dark:text-gray-400">classSchedule:- <span>{course?.classSchedule}</span></p>
                           <p class="font-normal text-sm text-gray-700 dark:text-gray-400">Duration :- <span>{course?.totalHours}</span></p>
                           <p class="font-normal text-sm text-gray-700 dark:text-gray-400">Teach By :- <span>{course?.teacher ? course.teacher.name : 'Unknown'}</span></p>
@@ -188,11 +279,11 @@ const EachStu = () => {
                 activeTab === 'FeeDetails' && (
 
                   <div className='bg-white pt-10'>
-                    <select>
-                      <option>Select Course</option>
-                      <option>HTML </option>
-                      <option>CSS</option>
-                      <option>JAVASCRIPT</option>
+                    <select onChange={handleCourseSelection}>
+                      <option value="">Select Course</option>
+                      {classes.map(course => (
+                        <option key={course._id} value={course._id}>{course.classTitle}</option>
+                      ))}
                     </select>
 
                     <div>
@@ -206,33 +297,57 @@ const EachStu = () => {
                                 Month
                               </th>
                               <th scope="col" class="px-6 py-3">
+                                Amount
+                              </th>
+                              <th scope="col" class="px-6 py-3">
                                 Status
                               </th>
 
                             </tr>
                           </thead>
                           <tbody>
-                            {
 
-                            }
-                            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                              <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                Adminssion Fee
-                              </th>
-                              <td class="px-6 py-4 text-green-500">
-                                Submitted
+                            {feedetails && feedetails.detailFee.map((fee) => (
+                              <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                  {fee.feeMonth}
+                                </th>
+
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                  {fee.amountPaid}
+                                </th>
+
+                                <td className={`px-6 py-4 ${fee.paid ? 'text-green-500' : 'text-red-400'}`}>
+                                  {fee.paid ? 'Submitted' : 'Due'}
+                                </td>
+                              </tr>
+
+
+                            ))}
+
+                            <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                <select className="" onChange={(e) => setSelectedMonth(e.target.value)}>
+                                  <option>Select Month</option>
+                                  {months.map((month, index) => (
+                                    <option key={index} value={month}>{month}</option>
+                                  ))}
+                                </select>
                               </td>
 
-                            </tr>
-                            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                              <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                March
-                              </th>
-                              <td class="px-6 py-4 text-red-400">
-                                Due
+                              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                <input type="text" className="" placeholder="Enter Amount" value={amount} onChange={(e) => setAmount(e.target.value)}></input>
                               </td>
 
+                              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                <select value={paidStatus} onChange={(e) => setPaidStatus(e.target.value)}>
+                                  <option>Select Status</option>
+                                  <option value="true">True</option>
 
+
+                                </select>
+                                <button className="bg-green-600 text-gray-200 py-2 px-4 ml-2 rounded-md" onClick={handleFeeUpdate}>Update Fee</button>
+                              </td>
                             </tr>
 
                           </tbody>

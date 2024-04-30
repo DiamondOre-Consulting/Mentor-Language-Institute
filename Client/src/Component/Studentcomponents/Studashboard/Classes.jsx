@@ -16,7 +16,7 @@ const Classes = () => {
                             </p>
                         </div>
 
-                        <div className='grid grid-cols-5 gap-2 gap-y-4 mt-10 mb-10'>
+                        <div className='grid grid-cols-1 md:grid-cols-5 gap-2 gap-y-4 mt-10 mb-10'>
 
                             <div className='border col-span-2 border-1 h-60 rounded-md relative'>  
                                 <div
@@ -60,7 +60,7 @@ const Classes = () => {
                           
                         </div>
 
-                        <div className='grid grid-cols-5 gap-2 gap-y-4 mt-10 mb-10'>
+                        <div className='grid grid-cols-1 md:grid-cols-5 gap-2 gap-y-4 mt-10 mb-10'>
 
                         <div className='col-span-2 h-60 rounded-md' style={{ backgroundImage: "url('https://resize.indiatvnews.com/en/resize/newbucket/1200_-/2023/08/cbse-2-1691847358.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}></div>
                         <div className='col-span-3 h-60 rounded-md' style={{ backgroundImage: "url('https://www.genesisglobalschool.edu.in/wp-content/uploads/2022/03/NormalPosts602560883-1.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}></div>

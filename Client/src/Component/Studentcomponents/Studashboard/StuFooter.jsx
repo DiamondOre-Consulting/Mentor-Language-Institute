@@ -18,10 +18,10 @@ const StuFooter = () => {
                                 <a href="#" class="hover:underline me-4 md:me-6">Home</a>
                             </li>
                             <li>
-                                <a href="#" class="hover:underline me-4 md:me-6">Enrolled Courses</a>
+                                <a href="#enrolledcourse" class="hover:underline me-4 md:me-6">Enrolled Courses</a>
                             </li>
                             <li>
-                                <a href="#" class="hover:underline me-4 md:me-6">Classes </a>
+                                <a href="#classes" class="hover:underline me-4 md:me-6">Classes </a>
                             </li>
                             
                         </ul>

@@ -6,9 +6,10 @@ const Navbar = () => {
     <>
         <div className='flex justify-between items-center pt-4 px-10'>
             <img src={logo} alt="" className='w-32'/>
-            <select>
+            <select className='w-28'>
                 <option>Help?</option>
-                <option>+918458495</option>
+                <option>+91-9999466159</option>
+                <option className='text-wrap '>mentor.languageclasses@gmail.com</option>
             </select>
 
         </div>

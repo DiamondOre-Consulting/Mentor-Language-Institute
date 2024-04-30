@@ -51,7 +51,7 @@ const AllTeachers = () => {
       <div class=" grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 2xl:grid-cols-8 gap-8 mt-8">
         {allTeachers.map((allteachers) => (
         <Link to={`/admin-dashboard/allteacher/${allteachers?._id}`} href="#" class="flex flex-col items-center justify-center text-gray-800 hover:text-blue-600" title="View Profile">
-          <img src="https://media.istockphoto.com/id/1300845620/vector/user-icon-flat-isolated-on-white-background-user-symbol-vector-illustration.jpg?s=612x612&w=0&k=20&c=yBeyba0hUkh14_jgv1OKqIH0CCSWU_4ckRkAoy2p73o=" class="w-16 rounded-full"/>
+          <img src="https://media.istockphoto.com/id/1300845620/vector/user-icon-flat-isolated-on-white-background-user-symbol-vector-illustration.jpg?s=612x612&w=0&k=20&c=yBeyba0hUkh14_jgv1OKqIH0CCSWU_4ckRkAoy2p73o=" class="w-24 rounded-full"/>
             <p class="text-center font-bold text-sm mt-1">{allteachers?.name}</p>
             <p class="text-xs text-gray-500 text-center">{allteachers?.phone}</p>
         </Link>
