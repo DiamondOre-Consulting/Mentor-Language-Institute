@@ -140,15 +140,24 @@ const Message = () => {
 
       if (response.status === 200) {
         console.log(response.data.message);
-        setPopupMessage('Successfully enrolled!');
+        setPopupMessage('Successfully Enrolled!');
         setIsFormOpen(false);
       } else if (response.status === 409) {
         console.log("Student already registered!");
-        setPopupMessage('Student already registered!');
+        setPopupMessage('Student already Enrolled!');
       }
     } catch (error) {
-      console.error("Error enrolling students:", error);
-      setPopupMessage('Error enrolling students!');
+      if (error.response) {
+        const status = error.response.status;
+        if (status === 409) {
+            console.log("Student already registered!");
+            setPopupMessage('Student already Enrolled!');
+        }
+        else {
+            console.error("Error login teacher:", status);
+            setError("Login Details Are Wrong!!");
+        }
+    }
     }
   };
 

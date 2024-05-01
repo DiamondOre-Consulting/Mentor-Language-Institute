@@ -20,6 +20,7 @@ const EachStu = () => {
   const [selectedMonth, setSelectedMonth] = useState('');
   const [amount, setAmount] = useState('');
   const [paidStatus, setPaidStatus] = useState('');
+  const [totafee , setTotalFee] = useState('');
   const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 
@@ -128,6 +129,7 @@ const EachStu = () => {
           });
           if (FeeResponse.status === 200) {
             console.log("Fee details:", FeeResponse.data);
+            setTotalFee(FeeResponse.data.totalFee)
             const feeDetailsWithMonthNames = {
               ...FeeResponse.data,
               detailFee: FeeResponse.data.detailFee.map((fee) => ({
@@ -216,7 +218,7 @@ const EachStu = () => {
           <div class="flex flex-wrap  md:-mx-2  ">
             <div class="w-full mx-2 md:block lg:block md:-mt-24 sm:mt-0">
 
-              <div class="block lg:block overflow-scroll">
+              <div class="block lg:block overflow-scroll md:overflow-hidden">
                 <ul class="flex bg-white ">
                   <li class=" mr-1">
                     <a class="rounded-sm bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-orange-500 font-semibold shadow-md" href="#" onClick={() => handleTabClick('personal')}>Personal Information</a>
@@ -290,6 +292,7 @@ const EachStu = () => {
 
 
                       <div class="relative overflow-x-auto mt-8">
+                        <span className=" mb-1 float-right rounded-md  mr-3">Total Fee:- {totafee}</span>
                         <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
                           <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                             <tr>

@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom'
 
 
 const Admin = () => {
-
+  const navigate = useNavigate();
   // const [adminData , setAdminData] =useState([])
 
   useEffect(()=>{
@@ -16,7 +16,7 @@ const Admin = () => {
         const token = localStorage.getItem("token");
 
         if (!token) {
-          // Token not found in local storage, handle the error or redirect to the login page
+          
           console.error("No token found");
           navigate("/login");
           return;
@@ -45,25 +45,27 @@ const Admin = () => {
     };
 
     fetchAdminData();
-  },[])
+  },[navigate])
 
 
-  const navigate = useNavigate();
+
   const { decodedToken } = useJwt(localStorage.getItem("token"));
+  console.log("token decoded",decodedToken);
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
-      // No token found, redirect to login page
       navigate("/login");
     } else {
-      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
+      const tokenExpiration = decodedToken ? (decodedToken.exp * 1000) + (20 * 1000) : 0; // Token expiration time in milliseconds, 20 seconds added
+
 
       if (tokenExpiration && tokenExpiration < Date.now()) {
         localStorage.removeItem("token");
+        console.log("Token Expired")
         navigate("/login");
       }
     }
-  }, [decodedToken])
+  }, [decodedToken , navigate])
   return (
     <>
 

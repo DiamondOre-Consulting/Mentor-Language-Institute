@@ -252,7 +252,7 @@ const LanguageCourses = () => {
                             <section className="rounded-lg shadow-xl bg-white w-4/5 sm:w-3/5 lg:w-1/3">
 
                                 <div className="p-6 text-left">
-                                    <h2 className="text-xl font-bold text-teal-green-900 mb-4">Thankyou For Enrolling!!</h2>
+                                    <h2 className="text-xl font-bold text-teal-green-900 mb-4">Thankyou For Applying!!</h2>
                                     <p className="text-sm text-gray-600 mb-6">We Will connect you soon</p>
                                     <button
                                         className="block w-full px-4 py-2 bg-orange-500 text-sm font-semibold text-white rounded-lg shadow-md  focus:outline-none "
@@ -266,7 +266,7 @@ const LanguageCourses = () => {
                     )}
 
                     {popupMessage && (
-                        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50 z-50">
+                        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
 
                             <div className="bg-white p-4 rounded-lg shadow-md">
                                 <svg class="h-6 w-6 text-red-500 float-right -mt-2 cursor-pointer" onClick={() => setPopupMessage(null)} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <line x1="18" y1="6" x2="6" y2="18" />  <line x1="6" y1="6" x2="18" y2="18" /></svg>

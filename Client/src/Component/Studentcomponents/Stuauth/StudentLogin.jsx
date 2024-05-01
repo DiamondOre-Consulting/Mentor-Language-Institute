@@ -3,6 +3,15 @@ import Navbar from './Navbar'
 import Footer from './Footer'
 import { Link, useNavigate } from 'react-router-dom';
 import axios from "axios";
+import { ClipLoader } from "react-spinners";
+import { css } from "@emotion/react";
+
+const override = css`
+  display: block;
+  margin: 0 auto;
+  border-color: red;
+`;
+
 
 const StudentLogin = () => {
     const navigate = useNavigate();
@@ -10,10 +19,12 @@ const StudentLogin = () => {
     const [password, SetPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     const handleStudentLogin = async (e) => {
         e.preventDefault();
         setError(null);
+        setLoading(true);
 
         try {
             const response = await axios.post("http://localhost:7000/api/students/login",
@@ -52,18 +63,26 @@ const StudentLogin = () => {
                 }
             }
         }
+        finally {
+            setLoading(false);
+        }
     }
     return (
         <>
             <Navbar />
+            {loading && (
+                <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+                    <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
+                </div>
+            )}
             <div class="mt-20 md:mt-12 flex items-center justify-center">
                 <div class="bg-white dark:bg-gray-900 shadow-xl rounded-lg px-8 py-6 w-3/4 md:max-w-md">
                     <h1 class="text-3xl font-bold text-center mb-1 dark:text-gray-200">LOGIN</h1>
                     <div className='md:w-96 h-0.5 rounded bg-orange-500 mb-4'></div>
-                    <form  onSubmit={handleStudentLogin} className=''>
+                    <form onSubmit={handleStudentLogin} className=''>
                         <div class="mb-4">
-                            <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone</label>
-                            <input type="text" name="phone" value={phone} onChange={(e) => setPhone(e.target.value)} class="shadow-sm rounded-md w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Your Phone No" required />
+                            <label for="phone" class="block text-sm font-medium text-gray-700  mb-2">Phone</label>
+                            <input type="text" name="phone" value={phone} onChange={(e) => setPhone(e.target.value)} class="shadow-sm rounded-md w-full px-3 py-2 border border-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Your Phone No" required />
                         </div>
                         <div class="mb-4">
                             <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password</label>

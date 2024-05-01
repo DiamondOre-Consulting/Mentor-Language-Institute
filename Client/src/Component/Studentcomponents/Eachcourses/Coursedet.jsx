@@ -205,13 +205,6 @@ const Coursedet = () => {
     }, [id]);
 
 
-
-    // Fetch allEnrolled 
-
-    
-
-
-
     
     return (
         <>
@@ -285,7 +278,7 @@ const Coursedet = () => {
                                                                 Course Price
                                                             </th>
                                                             <td class="px-6 py-4">
-                                                                {feedetails?.totalFee}
+                                                                {feedetails?.totalFee}Rs
                                                             </td>
 
                                                         </tr>
@@ -313,9 +306,9 @@ const Coursedet = () => {
                                             <p className='text-2xl text-orange-500 font-bold mb-6'>Attendence Details</p>
 
 
-                                            <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+                                            <div class="overflow-auto max-h-96 overflow-x-auto shadow-md sm:rounded-lg">
                                                 <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                                                    <thead class="text-xs text-gray-100 uppercase bg-orange-400 dark:bg-gray-700 dark:text-gray-400">
+                                                    <thead class="sticky top-0 text-xs text-gray-100 uppercase bg-orange-400 dark:bg-gray-700 dark:text-gray-400">
                                                         <tr>
                                                             <th scope="col" class="px-6 py-3">
                                                                 Date
@@ -326,7 +319,7 @@ const Coursedet = () => {
 
                                                         </tr>
                                                     </thead>
-                                                    <tbody>
+                                                    <tbody className='overflow-y-auto max-h-80'>
                                                         {attendenceDetails && attendenceDetails.detailAttendance.length === 0 ? (
                                                             <p>No attendance details available</p>
                                                         ) : (

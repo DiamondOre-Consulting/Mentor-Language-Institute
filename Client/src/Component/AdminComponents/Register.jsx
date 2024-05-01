@@ -4,11 +4,22 @@ import { MdDashboard } from "react-icons/md";
 import { useNavigate } from 'react-router-dom';
 import axios from "axios";
 import { useJwt } from "react-jwt";
+import { ClipLoader } from "react-spinners";
+import { css } from "@emotion/react";
+
+const override = css`
+  display: block;
+  margin: 0 auto;
+  border-color: red;
+`;
+
 
 const Register = () => {
 
     const [activeTab, setActiveTab] = useState(0);
     const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+
 
 
     const handleTabClick = (index) => {
@@ -44,6 +55,7 @@ const Register = () => {
     const navigate = useNavigate();
 
     const handleAddCourse = async (e) => {
+        setLoading(true);
         e.preventDefault();
 
         try {
@@ -82,7 +94,7 @@ const Register = () => {
 
             if (response.status === 200) {
                 console.log("New course has been added");
-                setPopupMessage("New course has been added");
+                setPopupMessage("New Course Has Been Added");
                 setFormValues({
                     classTitle: "",
                     teachBy: "",
@@ -118,6 +130,9 @@ const Register = () => {
                 console.error("Error adding course:", error.message);
                 setPopupMessage("Error adding course");
             }
+        }
+        finally {
+            setLoading(false);
         }
     };
 
@@ -169,6 +184,7 @@ const Register = () => {
     const [popupMessage, setPopupMessage] = useState(null);
 
     const handleteacherRegister = async (e) => {
+        setLoading(true);
         e.preventDefault();
         setPopupMessage(null)
 
@@ -226,6 +242,9 @@ const Register = () => {
                 setPopupMessage("Error registering teacher");
             }
         }
+        finally {
+            setLoading(false);
+        }
     };
 
 
@@ -237,6 +256,7 @@ const Register = () => {
     // register students
 
     const handleStudentRegister = async (e) => {
+        setLoading(true);
         e.preventDefault();
         setPopupMessage(null)
 
@@ -268,38 +288,45 @@ const Register = () => {
 
             if (response.status === 200) {
                 console.log("student added successfully");
-                setPopupMessage("Student registered successfully");
-            } else if (response.status === 409) {
-                console.log("student already registered");
-                setPopupMessage("student already registered");
+                setPopupMessage("Student Registered Successfully");
                 setName("");
                 setPhone("");
                 setPhone("");
+            } else if (response.status === 409) {
+                console.log("student already registered");
+                setPopupMessage("Student Already Registered");
             } else {
                 console.log("Error adding student:", response.status);
-                setPopupMessage("Error registering student");
+                setPopupMessage("Error Registering Student");
             }
         } catch (error) {
             if (error.response) {
                 const status = error.response.status;
                 if (status === 409) {
                     console.log("Student already registered");
-                    setPopupMessage("Student already registered");
+                    setPopupMessage("Student Already Registered");
                 } else {
                     console.error("Error adding Student:", status);
-                    setPopupMessage("Error registering student");
+                    setPopupMessage("Error Registering Student");
                 }
             } else {
                 console.error("Error adding student:", error.message);
-                setPopupMessage("Error registering student");
+                setPopupMessage("Error Registering Student");
             }
+        }
+        finally {
+            setLoading(false);
         }
     };
 
 
-
     return (
         <div className=''>
+            {loading && (
+                <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+                    <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
+                </div>
+            )}
             <div className="flex flex-col justify-center items-center">
                 <div className="flex space-x-2 md:space-x-4">
                     <button
@@ -331,7 +358,7 @@ const Register = () => {
                                             Register Student
                                         </h1>
                                         <div className='md:w-22 h-0.5 bg-orange-500 border-rounded'></div>
-                                        <form class="space-y-4 md:space-y-6"  onSubmit={handleStudentRegister}>
+                                        <form class="space-y-4 md:space-y-6" onSubmit={handleStudentRegister}>
                                             <div>
                                                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white w-full">Name</label>
                                                 <input type="text" name="name" value={name} onChange={(e) => setName(e.target.value)} class=" bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter Student Name" required="" />
@@ -469,7 +496,7 @@ const Register = () => {
             </div>
 
             {popupMessage && (
-                <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50 z-50">
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
 
                     <div className="bg-white p-4 rounded-lg shadow-md">
                         <svg class="h-6 w-6 text-red-500 float-right -mt-2 cursor-pointer" onClick={() => setPopupMessage(null)} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <line x1="18" y1="6" x2="6" y2="18" />  <line x1="6" y1="6" x2="18" y2="18" /></svg>

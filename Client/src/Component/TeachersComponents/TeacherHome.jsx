@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import axios from "axios";
+import { ClipLoader } from "react-spinners";
+import { css } from "@emotion/react";
 
-
-
+const override = css`
+  display: block;
+  margin: 0 auto;
+  border-color: red;
+`;
 
 
 const TeacherHome = ({ teacherData }) => {
@@ -19,6 +24,7 @@ const TeacherHome = ({ teacherData }) => {
     const [oneClassDetails, setOneClassDetails] = useState("");
     const [alldetails, setAllDetails] = useState();
     const [bottompopup, setBottomPopUp] = useState(false);
+    const [loading, setLoading] = useState(false);
 
 
 
@@ -126,7 +132,7 @@ const TeacherHome = ({ teacherData }) => {
                 setTimeout(() => {
                     setShowPopup(false);
                 }, 2000);
-            
+
 
             }
         } catch (error) {
@@ -187,7 +193,7 @@ const TeacherHome = ({ teacherData }) => {
         allDetails();
 
 
-    }, [])
+    }, [selectedClassId])
 
 
 
@@ -196,6 +202,7 @@ const TeacherHome = ({ teacherData }) => {
 
     useEffect(() => {
         const fetchAllcourses = async () => {
+            setLoading(true);
             try {
                 const token = localStorage.getItem("token");
 
@@ -221,30 +228,47 @@ const TeacherHome = ({ teacherData }) => {
                     setAllCourses(allcourses);
                 }
             } catch (error) {
-                console.error("Error fetching courses:", error);
+                if (error.response) {
+                    const status = error.response.status;
+                    if (status === 405) {
+                        console.log("no class has been assigned to you");
 
+                    } else {
+                        console.error("no class has been assigned you", status);
+
+                    }
+                }
+            }
+            finally {
+                setLoading(false);
             }
         };
-
         fetchAllcourses();
+
     }, []);
 
 
-   
+
 
     return (
         <>
+            {loading && (
+                <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+                    <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
+                </div>
+            )}
             <div>
-                <div className='grid grid-cols-10  gap-8'>
+                <div className='grid md:grid-cols-10 gap-8'>
 
-                    <div className=' col-span-7'>
+                    <div className='col-span-7'>
                         <div>
                             <h1 className='text-2xl font-bold'>My Courses</h1>
                             <div className='w-24 h-1 border-rounded bg-orange-500 mb-4'></div>
 
                             <div className='grid grid-cols-1 md:grid-cols-3 gap-4 py-4'>
+
                                 {classesData.length === 0 ? (
-                                    <div>No classes are there</div>
+                                    <div>No class has been assigned to you </div>
                                 ) : (
                                     classesData.map((course) => (
                                         <div className=' border rounded-md  border-0 shadow-xl hover:shadow-none cursor-pointer'>
@@ -261,7 +285,7 @@ const TeacherHome = ({ teacherData }) => {
                             </div>
                         </div>
 
-                        <div className='py-14'>
+                        <div className='py-14 '>
                             <h1 className='text-2xl font-bold'>Request For New Courses (Optional)</h1>
                             <div className='w-24 h-1 border-rounded bg-orange-500 mb-4'></div>
 
@@ -283,8 +307,8 @@ const TeacherHome = ({ teacherData }) => {
 
                     <div className='col-span-3 '>
 
-                        <div className='grid grid-rows-8 grid-flow-col gap-4'>
-                            <div className='row-span-5'>
+                        <div className='grid grid-rows-8 grid-flow-col gap-4 '>
+                            <div className='row-span-5 hidden md:block '>
                                 <h1 className='font-bold text-lg'>Recent Messages</h1>
                                 <div className='w-16 h-0.5 bg-orange-500 mb-6'></div>
                                 <div class="flex items-start gap-2.5">
@@ -348,7 +372,7 @@ const TeacherHome = ({ teacherData }) => {
 
 
 
-                            <div className=' row-span-2'>
+                            <div className='hidden md:block row-span-2'>
                                 <h1 className='font-bold text-lg'>Today's Classes (Optional)</h1>
                                 <div className='w-16 h-0.5 bg-orange-500 mb-6'></div>
                                 <div className='border border-1 border-orange-500 flex p-2 justify-between rounded-md items-center'>
@@ -374,7 +398,7 @@ const TeacherHome = ({ teacherData }) => {
             {showPopup && (
                 <div className="fixed inset-0 flex items-center justify-center">
                     {/* <div className="fixed inset-0 bg-black bg-opacity-50"></div> */}
-                    <section className="absolute bg-black bg-opacity-50 top-10 right-10 rounded-lg shadow-xl w-64 p-2 text-center">
+                    <section className="absolute bg-black top-10 right-10 rounded-lg shadow-xl w-64 p-2 text-center">
                         <h2 className="text-md font-semibold opacity-100 text-gray-100">Your class has been scheduled</h2>
                     </section>
                 </div>
@@ -392,7 +416,7 @@ const TeacherHome = ({ teacherData }) => {
                                         className='p-2 bg-orange-500 rounded-md text-gray-100 cursor-pointer'>My Students</Link>
                                 </div>
                                 <div>
-                                    <p className='p-2 bg-orange-500 rounded-md text-gray-100 cursor-pointer' onClick={() => setShowScheduleClass(true) }>Add New Class</p>
+                                    <p className='p-2 bg-orange-500 rounded-md text-gray-100 cursor-pointer' onClick={() => setShowScheduleClass(true)}>Add New Class</p>
                                 </div>
                             </div>
                         </div>
@@ -408,7 +432,8 @@ const TeacherHome = ({ teacherData }) => {
                         <svg class="h-5 w-5 bg-red-600 cursor-pointer p-1 rounded-full text-gray-100 float-right mr-1 mt-1 " onClick={handleCloseCourses} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <line x1="18" y1="6" x2="6" y2="18" />  <line x1="6" y1="6" x2="18" y2="18" /></svg>
 
                         <div className="p-6 text-left">
-                            <h2 className="text-xl font-bold text-teal-green-900 mb-4">Select Date</h2>
+                            <p className='font-bold text-xl md:text-3xl text-black'>{oneClassDetails.classTitle}</p>
+                            <h2 className="text-normal font-bold text-teal-green-900 mb-1"> Select Date</h2>
                             <input type='date' className='w-full mb-4' value={date ? date.split('-').reverse().join('-') : ''}  // Bind the value to the date state variable
                                 onChange={handleDateChange} />
 
@@ -425,17 +450,7 @@ const TeacherHome = ({ teacherData }) => {
 
 
 
-            {
-                bottompopup && (
-
-                    <div className='flex absolute bottom-1'>
-                        <h1>hello</h1>
-
-                    </div>
-
-
-                )
-            }
+          
 
 
 

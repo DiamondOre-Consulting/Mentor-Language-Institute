@@ -244,7 +244,9 @@ const TeacherAllStudents = () => {
     };
     // console.log(alldetails)
 
-   
+    const handleClose = () => {
+        setShowPopup(false);
+    };
 
     return (
         <>
@@ -294,6 +296,7 @@ const TeacherAllStudents = () => {
                 <div className="fixed inset-0 flex items-center justify-center">
                     <div className="absolute inset-0 bg-gray-800 opacity-50"></div>
                     <div className="relative bg-white p-6 rounded-lg shadow-xl">
+                    <svg className="h-5 w-5 bg-red-600 cursor-pointer p-1 text-2xl rounded-full text-gray-50 absolute top-0 right-0 m-2" onClick={handleClose} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <line x1="18" y1="6" x2="6" y2="18" />  <line x1="6" y1="6" x2="18" y2="18" /></svg>
                         <p className="mb-4">Mark Attendance for {selectedDate}</p>
                         <button className="mr-4 bg-green-500 text-white px-4 py-2 rounded-md" onClick={() => handleMarkAttendance(selectedDate, 'present')}>Present</button>
                         <button className="bg-red-500 text-white px-4 py-2 rounded-md" onClick={() => handleMarkAttendance(selectedDate, 'absent')}>Absent</button>
