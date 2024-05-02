@@ -17,6 +17,38 @@ const secretKey = process.env.STUDENT_JWT_SECRET;
 
 const router = express.Router();
 
+router.post("/signup", async (req, res) => {
+    try {
+        
+        const {name, phone, password} = req.body;
+
+        const studentUser = await Students.findOne({ phone });
+
+        if (studentUser) {
+          return res
+            .status(409)
+            .json({ message: "Student with this phone number already exist!!!" });
+        }
+    
+        const hashedPassword = await bcrypt.hash(password, 10);
+    
+        const newStudent = new Students({
+          name,
+          phone,
+          password: hashedPassword,
+        });
+    
+        await newStudent.save();
+    
+        return res
+          .status(200)
+          .json({ message: `New student has been registered successfully!!!` });
+    } catch(error) {
+        console.log("Something went wrong!!! ");
+        res.status(500).json(error);
+    }
+})
+
 router.post("/login", async (req, res) => {
   try {
     const { phone, password } = req.body;
@@ -283,56 +315,6 @@ router.get("/my-fee-details/:id", StudentAuthenticateToken, async (req, res) => 
     }
 })
 
-// Schedule the cron job to run on the 8th of every month at 10 am IST
-cron.schedule('0 8 29 * *', async () => { // 10 am IST is 4 am UTC
-    try {
-        const students = await Students.find().populate('feeDetail');
 
-        const currentMonth = new Date().getMonth() + 1; // Get current month (1-12)
-        // const currentYear = new Date().getFullYear(); // Get current year
-
-        // for (const student of students) {
-        //     for (const fee of student.feeDetail) {
-        //         const detailFeeForCurrentMonth = fee.detailFee.find(detail => {
-        //             const [feeMonth] = detail.feeMonth;
-        //             return feeMonth === currentMonth ;
-        //         });
-
-        //         if (!detailFeeForCurrentMonth || !detailFeeForCurrentMonth.paid) {
-        //             // Fee is due, send reminder
-        //             const singleClass = await Classes.findById({_id: fee.classId})
-        //             const phoneNumber = student.phone;
-        //             const message = `Reminder: Your fee of ${singleClass.classTitle
-        //             } is due for this month. Please pay as soon as possible.`;
-        //             // 
-        //             res.status(200).json(message)
-        //             // break; // Stop checking other fees for this student
-        //         }
-        //     }
-        // }
-
-        const student = await Students.findById({_id: '662f4b44d925278aadab41fe'})
-
-        for (const fee of student.feeDetail) {
-            const detailFeeForCurrentMonth = fee.detailFee.find(detail => {
-                const [feeMonth] = detail.feeMonth;
-                return feeMonth === currentMonth ;
-            });
-
-            if (!detailFeeForCurrentMonth || !detailFeeForCurrentMonth.paid) {
-                // Fee is due, send reminder
-                const singleClass = await Classes.findById({_id: fee.classId})
-                const phoneNumber = student.phone;
-                const message = `Reminder: Your fee of ${singleClass.classTitle
-                } is due for this month. Please pay as soon as possible.`;
-                // 
-                res.status(200).json(message)
-                // break; // Stop checking other fees for this student
-            }
-        }
-    } catch (error) {
-        console.error('Error occurred during fee reminder scheduling:', error);
-    }
-});
 
 export default router;

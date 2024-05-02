@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import http from "http";
 // import socket from 'socket.io';
+import feeReminderScheduler from "./feeReminderScheduler.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -65,10 +66,14 @@ mongoose
 import AdminController from "./Controllers/admin.js"
 import StudentController from "./Controllers/student.js";
 import TeacherController from "./Controllers/teacher.js";
+import Students from "./Models/Students.js";
+import Classes from "./Models/Classes.js";
 
 app.use('/api/admin-confi', AdminController);
 app.use('/api/students', StudentController);
 app.use('/api/teachers', TeacherController);
+
+feeReminderScheduler();
 
 app.get('/', (req, res) => {
     res.send("Hello Mentor Language Institute")
