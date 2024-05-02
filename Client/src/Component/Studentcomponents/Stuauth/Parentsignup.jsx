@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import logo from '..//..//..//assets/logo.png'
 import Navbar from './Navbar';
+import axios from 'axios'; 
 import Footer from './Footer';
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
@@ -13,8 +14,7 @@ const override = css`
 `;
 
 const Parentlog = () => {
-
-
+     const navigate = useNavigate();
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
@@ -34,15 +34,6 @@ const Parentlog = () => {
 
         try {
 
-            const token = localStorage.getItem("token");
-
-            if (!token) {
-                console.error("No token found");
-                navigate("/login");
-                return;
-            }
-            console.log(token)
-
             const response = await axios.post(
                 "http://localhost:7000/api/students/signup",
                 {
@@ -51,11 +42,6 @@ const Parentlog = () => {
                     password,
                 },
 
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
             );
 
             if (response.status === 200) {
@@ -64,6 +50,7 @@ const Parentlog = () => {
                 setName("");
                 setPhone("");
                 setPassword("");
+                navigate('/student-login')
             } else if (response.status === 409) {
                 console.log("student already registered");
                 setPopupMessage("Student Already Registered");
@@ -96,7 +83,11 @@ const Parentlog = () => {
             <Navbar />
 
             <section class="relative mt-10 md:-mt-12">
-
+            {loading && (
+                <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+                    <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
+                </div>
+            )}
                 <div class="flex flex-col items-center justify-center mt-16 lg:py-0 ">
                     <div class="md:w-full sm:w-1/2 bg-white rounded-lg shadow border-t-4 border-orange-400 md:mt-0 sm:max-w-md xl:p-0">
                         <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
@@ -128,7 +119,7 @@ const Parentlog = () => {
                                     <label class="text-sm font-medium text-gray-900 dark:text-white cursor-pointer" onClick={() => setShowPassword(!showPassword)}>Show Password</label>
                                 </div>
                                 <div className='w-full'>
-                                    <Link to={'/main-dashboard'}><button className='bg-orange-400 text-white w-full p-2 rounded-md'>Register</button></Link>
+                                    <button className='bg-orange-400 text-white w-full p-2 rounded-md'>Register</button>
                                 </div>
 
                                 <a href="#" class="text-center flex items-center justify-center text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">Already Have Account?<Link to={'/student-login'} className='underline'>Sign in</Link></a>

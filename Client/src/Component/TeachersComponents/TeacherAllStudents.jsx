@@ -23,7 +23,7 @@ const TeacherAllStudents = () => {
     const [showPopup, setShowPopup] = useState(false);
     const [studentId, setStudentId] = useState([]);
     const [selectedstudentId, setSelectedStudentId] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const determineBgColor = (attendanceDetail) => {
         if (!attendanceDetail) return 'bg-gray-100';
@@ -55,12 +55,12 @@ const TeacherAllStudents = () => {
 
                 if (allStudentsResponse.status === 200) {
                     setAllDetails(allStudentsResponse.data);
+                    setLoading(false); 
                 }
+                
             } catch (error) {
                 console.log(error);
-            } finally {
-                setLoading(false);
-            }
+            } 
            
         };
 
@@ -70,6 +70,7 @@ const TeacherAllStudents = () => {
     const fetchCourseDetails = async () => {
         try {
             setLoading(true)
+          
             const token = localStorage.getItem('token');
 
             if (!token) {
@@ -88,13 +89,12 @@ const TeacherAllStudents = () => {
                 const courseData = response.data;
                 setStudentId(courseData.enrolledStudents);
                 setEachCourse(courseData.dailyClasses);
+                setLoading(false); 
             }
         } catch (error) {
             console.log(error);
         }
-        finally {
-            setLoading(false);
-        }
+        
     };
 
     useEffect(() => {
@@ -127,16 +127,16 @@ const TeacherAllStudents = () => {
 
                     if (attendanceResponse.status === 200) {
                         attendanceDetailsMap[stu] = attendanceResponse.data.detailAttendance;
+                        setLoading(false); 
                     }
                 }
 
                 setAttendanceDetailsMap(attendanceDetailsMap);
+                setLoading(false); 
             } catch (error) {
                 console.log(error);
             }
-            finally {
-                setLoading(false);
-            }
+            
         };
 
         fetchAttendanceDetails();
