@@ -291,7 +291,7 @@ const Register = () => {
                 setPopupMessage("Student Registered Successfully");
                 setName("");
                 setPhone("");
-                setPhone("");
+                setPassword("");
             } else if (response.status === 409) {
                 console.log("student already registered");
                 setPopupMessage("Student Already Registered");
