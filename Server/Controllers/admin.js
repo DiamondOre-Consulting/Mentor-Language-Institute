@@ -346,7 +346,7 @@ router.put("/enroll-student/:id1/:id2", async (req, res) => {
       const updateStudent = await Students.findByIdAndUpdate(
         { _id: id2 },
         {
-          $push: { classes: id1, feeDetail: feeUpdate._id },
+          $push: { classes: id1, feeDetail: feeUpdate._id },  
           $pull: { appliedClasses: id1 },
         },
         { new: true }
