@@ -330,7 +330,7 @@ const TeacherHome = ({ teacherData }) => {
                                                 </Tooltip>
 
 
-                                                <a className='text-gray-100 flex items-center text-sm mt-4 justify-end ' onClick={() => handleViewClass(course._id)}>Veiw <svg class="h-4 w-4 text-gray-100" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <polyline points="9 6 15 12 9 18" /></svg></a>
+                                                <a className='text-gray-100 flex items-center text-sm mt-1 justify-end ' onClick={() => handleViewClass(course._id)}>Veiw <svg class="h-4 w-4 text-gray-100" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <polyline points="9 6 15 12 9 18" /></svg></a>
                                             </div>
 
                                         </div>

@@ -13,30 +13,16 @@ const EachTeacher = () => {
   const { id } = useParams();
   console.log(id);
 
-  const { decodedToken } = useJwt(localStorage.getItem("token"));
+ 
   const token = localStorage.getItem("token");
-  if (!token) {
-    navigate("/login"); // Redirect to login page if not authenticated
-    return;
-  }
-
-//   const userName = decodedToken ? decodedToken.name : "No Name Found";
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
       // No token found, redirect to login page
       navigate("/login");
-    } else {
-      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
-
-      if (tokenExpiration && tokenExpiration < Date.now()) {
-        // Token expired, remove from local storage and redirect to login page
-        localStorage.removeItem("token");
-        navigate("/login");
-      }
-    }
-
+    } 
+    
     const fetchTeacherDetails = async () => {
       try {
         const token = localStorage.getItem("token");
