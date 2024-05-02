@@ -1,14 +1,25 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import axios from "axios";
+import { ClipLoader } from "react-spinners";
+import { css } from "@emotion/react";
+
+const override = css`
+  display: block;
+  margin: 0 auto;
+  border-color: red;
+`;
+
 
 const Allcourses = () => {
 
   const [allCourses, setAllCourses] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchAllcourses = async () => {
       try {
+        setLoading(true)
         const token = localStorage.getItem("token");
 
         if (!token) {
@@ -36,6 +47,9 @@ const Allcourses = () => {
         console.error("Error fetching courses:", error);
 
       }
+      finally {
+        setLoading(false);
+      }
     };
 
     fetchAllcourses();
@@ -46,6 +60,11 @@ const Allcourses = () => {
     <>
       <h1 className='text-4xl mb-1 font-semibold text-center'>All Courses</h1>
       <div className='w-44 rounded h-1 bg-orange-500 text-center mb-8 mx-auto'></div>
+      {loading && (
+        <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+          <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
+        </div>
+      )}
 
       <div className='grid grid-cols-2 md:grid-cols-4 gap-2'>
 

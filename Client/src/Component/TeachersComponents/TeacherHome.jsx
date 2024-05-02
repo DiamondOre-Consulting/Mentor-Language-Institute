@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from "axios";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
+import { Button, Tooltip } from "flowbite-react";
+
 
 const override = css`
   display: block;
@@ -25,8 +27,11 @@ const TeacherHome = ({ teacherData }) => {
     const [alldetails, setAllDetails] = useState();
     const [bottompopup, setBottomPopUp] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [updateHoursInput, setUpdateHoursInput] = useState(0);
+    const [selectedClassIdToUpdate, setSelectedClassIdToUpdate] = useState("");
+    const [showUpdateHoursPopup, setShowUpdateHoursPopup] = useState(false);
 
-
+    const token = localStorage.getItem("token");
 
     const handleDateChange = (event) => {
         const selectedDate = new Date(event.target.value);
@@ -52,9 +57,16 @@ const TeacherHome = ({ teacherData }) => {
     };
     const handleViewClass = (classId) => {
         setSelectedClassId(classId); // Set the selected class ID
-        console.log("selected class id", selectedClassId)
-        setShowPopupCourses(true); // Open the popup to view options
+        console.log("selected class id", selectedClassId) 
+       setShowPopupCourses(true);
+      
     };
+
+    const handleveiw = (classId)=>{
+        setSelectedClassId(classId);
+        setShowUpdateHoursPopup(true);
+        
+    }
 
 
     const toggleDropdown = () => {
@@ -64,7 +76,7 @@ const TeacherHome = ({ teacherData }) => {
 
 
 
-    useEffect(() => {
+  
         const fetchAllTeachersCourses = async () => {
             try {
                 const token = localStorage.getItem("token");
@@ -97,18 +109,21 @@ const TeacherHome = ({ teacherData }) => {
         if (teacherData && teacherData.myClasses) {
             fetchAllTeachersCourses();
         }
-    }, [teacherData]);
+ 
+
+        useEffect(()=>{
+            fetchAllTeachersCourses();
+    
+        },[teacherData])
 
 
 
     const handleScheduleClass = async () => {
-
-
         try {
 
             const token = localStorage.getItem("token");
             if (!token) {
-                // No token found, redirect to login page
+
                 navigate("/login");
                 return;
             }
@@ -249,6 +264,39 @@ const TeacherHome = ({ teacherData }) => {
 
 
 
+    // update hours 
+    const handleUpdateHours = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                navigate("/login");
+                return;
+            }
+
+            const response = await axios.put(
+                `http://localhost:7000/api/teachers/update-class-hours/${selectedClassId}`,
+                { updatedHours: updateHoursInput },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (response.status === 200) {
+                fetchAllTeachersCourses();
+                console.log("Hours updated successfully");
+                setShowUpdateHoursPopup(false);
+                setShowPopupCourses(false);
+            
+            }
+        } catch (error) {
+            console.error("Failed to update hours:", error);
+            // Handle error
+        }
+    };
+
+
 
     return (
         <>
@@ -259,22 +307,29 @@ const TeacherHome = ({ teacherData }) => {
             )}
             <div>
                 <div className='grid md:grid-cols-10 gap-8'>
-
                     <div className='col-span-7'>
                         <div>
                             <h1 className='text-2xl font-bold'>My Courses</h1>
                             <div className='w-24 h-1 border-rounded bg-orange-500 mb-4'></div>
 
-                            <div className='grid grid-cols-1 md:grid-cols-3 gap-4 py-4'>
+                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4 py-4'>
 
                                 {classesData.length === 0 ? (
                                     <div>No class has been assigned to you </div>
                                 ) : (
                                     classesData.map((course) => (
                                         <div className=' border rounded-md  border-0 shadow-xl hover:shadow-none cursor-pointer'>
-                                            <div className='px-2 py-3 col-span-1 bg-orange-500 rounded-md'>
+                                            <div className='px-2 py-3 col-span-1 bg-orange-500 rounded-md '>
                                                 <span className='text-sm text-white'>Course</span>
-                                                <p className='   font-bold text-white '>{course.classTitle}</p>
+                                                <p className='text-xl font-bold text-white '>{course.classTitle}</p>
+                                                <div className='w-20 h-0.5 bg-orange-100 mb-2'></div>
+                                                <p className='text-sm  text-gray-100 '>{course.classSchedule}</p>
+                                                
+                                                <Tooltip content="Click To Edit Hours ">
+                                                    <Button><p className='text-sm text-gray-50 -ml-5 -mt-3' onClick={() => handleveiw(course._id)}>Total hours <span className='bg-gray-50 text-bold text-black px-1 rounded-full'>{course.totalHours}</span></p></Button>
+                                                </Tooltip>
+
+
                                                 <a className='text-gray-100 flex items-center text-sm mt-4 justify-end ' onClick={() => handleViewClass(course._id)}>Veiw <svg class="h-4 w-4 text-gray-100" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <polyline points="9 6 15 12 9 18" /></svg></a>
                                             </div>
 
@@ -437,12 +492,28 @@ const TeacherHome = ({ teacherData }) => {
                             <input type='date' className='w-full mb-4' value={date ? date.split('-').reverse().join('-') : ''}  // Bind the value to the date state variable
                                 onChange={handleDateChange} />
 
-                            <Link onClick={handleScheduleClass}
-                                className="block w-full px-4 py-2 bg-orange-400 text-center hover:bg-orange-500 text-sm font-semibold text-white rounded-lg shadow-md  focus:outline-none "
+                            <a onClick={handleScheduleClass}
+                                className="block w-full px-4 py-2 bg-orange-400 text-center hover:bg-orange-500 text-sm font-semibold text-white rounded-lg shadow-md  focus:outline-none cursor-pointer"
 
                             >
                                 Schedule Class
-                            </Link>
+                            </a>
+                        </div>
+                    </section>
+                </div>
+            )}
+
+
+{showUpdateHoursPopup && (
+                <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50">
+                    <section className="rounded-lg shadow-xl bg-white w-4/5 sm:w-3/5 lg:w-1/4 relative">
+                        <svg className="h-5 w-5 bg-red-600 cursor-pointer p-1 text-2xl rounded-full text-gray-50 absolute top-0 right-0 m-2" onClick={() => setShowUpdateHoursPopup(false)} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <line x1="18" y1="6" x2="6" y2="18" />  <line x1="6" y1="6" x2="18" y2="18" /></svg>
+                        <div className="p-6 text-left ">
+                            {/* Add input field and update button */}
+                            <div className="flex items-center mt-4">
+                                <input type="number" value={updateHoursInput} onChange={(e) => setUpdateHoursInput(e.target.value)} className="w-20 px-2 py-1 border rounded-md mr-2" />
+                                <button onClick={handleUpdateHours} className="bg-green-500 text-white px-4 py-1 rounded-md">Update Hours</button>
+                            </div>
                         </div>
                     </section>
                 </div>
@@ -450,7 +521,8 @@ const TeacherHome = ({ teacherData }) => {
 
 
 
-          
+
+
 
 
 

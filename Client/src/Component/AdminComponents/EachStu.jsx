@@ -3,6 +3,14 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { useJwt } from "react-jwt";
+import { ClipLoader } from "react-spinners";
+import { css } from "@emotion/react";
+
+const override = css`
+  display: block;
+  margin: 0 auto;
+  border-color: red;
+`;
 
 
 const EachStu = () => {
@@ -21,26 +29,26 @@ const EachStu = () => {
   const [amount, setAmount] = useState('');
   const [paidStatus, setPaidStatus] = useState('');
   const [totafee , setTotalFee] = useState('');
+  const [loading, setLoading] = useState(false);
   const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 
   useEffect(() => {
-    if (!token) {
-      navigate("/login"); // Redirect to login page if not authenticated
-      return;
-    }
-
     const fetchStudentDetails = async () => {
+      
       try {
+        setLoading(true);
+        // Fetch student details
         const studentResponse = await axios.get(`http://localhost:7000/api/admin-confi/all-students/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-
         if (studentResponse.status === 200) {
+          // Set student details
           setStudentsDetails(studentResponse.data);
-
+          
+          // Fetch classes associated with the student
           const classIds = studentResponse.data.classes;
           const classesData = [];
           for (const classId of classIds) {
@@ -49,21 +57,36 @@ const EachStu = () => {
                 Authorization: `Bearer ${token}`,
               },
             });
-
             if (classResponse.status === 200) {
               classesData.push(classResponse.data);
+              
+              // Fetch teacher associated with this class
+              const teacherId = classResponse.data.teachBy;
+              const teacherResponse = await axios.get(`http://localhost:7000/api/admin-confi/all-teachers/${teacherId}`, {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+              if (teacherResponse.status === 200) {
+                // Add teacher information to class data
+                classResponse.data.teacher = teacherResponse.data;
+              }
             }
           }
-
+          // Set classes
           setAllClasses(classesData);
         }
       } catch (error) {
         console.log(error);
       }
+      finally {
+        setLoading(false);
+    }
     };
-
+  
     fetchStudentDetails();
-  }, [id, token, navigate]);
+  }, [id, token]);
+  
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
@@ -78,6 +101,7 @@ const EachStu = () => {
 
   useEffect(() => {
     const fetchAttendanceDetails = async () => {
+      setLoading(true)
       try {
         if (selectedCourseId) {
           const attendanceResponse = await axios.get(`http://localhost:7000/api/admin-confi/attendance/${selectedCourseId}/${id}`, {
@@ -92,7 +116,9 @@ const EachStu = () => {
         }
       } catch (error) {
         console.error("Error fetching attendance details:", error);
-      }
+      } finally {
+        setLoading(false);
+    }
     };
 
     // Fetch attendance details when the selected course ID changes
@@ -201,11 +227,15 @@ const EachStu = () => {
   };
 
 
-
+console.log(classes)
 
 
   return (
-    <>
+    <>  {loading && (
+      <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+          <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
+      </div>
+  )}
         <div class="px-4 sm:px-1 lg:px-8">
           <h1 class=" text-3xl font-semibold  tracking-tight text-gray-900">
             {studentsDetails?.name}
@@ -221,16 +251,16 @@ const EachStu = () => {
               <div class="block lg:block overflow-scroll md:overflow-hidden">
                 <ul class="flex bg-white ">
                   <li class=" mr-1">
-                    <a class="rounded-sm bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-orange-500 font-semibold shadow-md" href="#" onClick={() => handleTabClick('personal')}>Personal Information</a>
+                    <a class="rounded-sm bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-orange-500 font-semibold shadow-md cursor-pointer"  onClick={() => handleTabClick('personal')}>Personal Information</a>
                   </li>
                   <li class="mr-1">
-                    <a class="rounded-sm bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-orange-500 font-semibold" href="#" onClick={() => handleTabClick('EnrolledCourses')}>Enrolled Courses</a>
+                    <a class="rounded-sm bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-orange-500 font-semibold cursor-pointer"  onClick={() => handleTabClick('EnrolledCourses')}>Enrolled Courses</a>
                   </li>
                   <li class="mr-1">
-                    <a class="rounded-sm bg-white inline-block py-2 px-4 border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-orange-500 font-semibold" href="#" onClick={() => handleTabClick('FeeDetails')}>Fee Details</a>
+                    <a class="rounded-sm bg-white inline-block py-2 px-4 border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-orange-500 font-semibold cursor-pointer"  onClick={() => handleTabClick('FeeDetails')}>Fee Details</a>
                   </li>
                   <li class="mr-1">
-                    <a class="rounded-sm bg-white inline-block py-2 px-4 border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-orange-500 font-semibold" href="#" onClick={() => handleTabClick('AttendenceDetails')}>Attendence Details</a>
+                    <a class="rounded-sm bg-white inline-block py-2 px-4 border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-orange-500 font-semibold cursor-pointer"  onClick={() => handleTabClick('AttendenceDetails')}>Attendence Details</a>
                   </li>
 
 
@@ -264,8 +294,8 @@ const EachStu = () => {
                       <div>No classes are there</div>
                     ) : (
                       classes.map((course) => (
-                        <a href="#" class="block max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
-                          <h5 class="mb-2 text-md md:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{course?.classTitle}</h5>
+                        <a  class="block max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
+                          <h5 class="mb-2 text-md md:text-xl font-bold tracking-tight text-gray-900 dark:text-white">{course?.classTitle}</h5>
                           <p class="font-normal text-sm text-gray-700 dark:text-gray-400">classSchedule:- <span>{course?.classSchedule}</span></p>
                           <p class="font-normal text-sm text-gray-700 dark:text-gray-400">Duration :- <span>{course?.totalHours}</span></p>
                           <p class="font-normal text-sm text-gray-700 dark:text-gray-400">Teach By :- <span>{course?.teacher ? course.teacher.name : 'Unknown'}</span></p>

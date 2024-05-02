@@ -1,15 +1,26 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import axios from "axios";
+import { ClipLoader } from "react-spinners";
+import { css } from "@emotion/react";
+
+const override = css`
+  display: block;
+  margin: 0 auto;
+  border-color: red;
+`;
+
 
 
 
 const Allstudents = () => {
 
     const [allStudents, setAllStudents] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         const fetchAllStudents = async () => {
+            setLoading(true);
             try {
                 const token = localStorage.getItem("token");
 
@@ -38,7 +49,11 @@ const Allstudents = () => {
                 console.error("Error fetching associates:", error);
 
             }
+            finally {
+                setLoading(false);
+            }
         };
+        
 
         fetchAllStudents();
     }, []);
@@ -50,7 +65,11 @@ const Allstudents = () => {
 
             <h1 className='text-4xl mb-1 font-semibold text-center'>All Students</h1>
             <div className='w-44 rounded h-1 bg-orange-500 text-center mb-8 mx-auto'></div>
-
+            {loading && (
+                <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+                    <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
+                </div>
+            )}
             <div className='grid grid-cols-2 md:grid-cols-4 gap-2'>
                 {allStudents.map((students) => (
                     <Link to={`/admin-dashboard/allstudents/${students?._id}`} class="block max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 cursor-pointer">

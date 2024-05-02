@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import axios from "axios";
+import { ClipLoader } from "react-spinners";
+import { css } from "@emotion/react";
+
+const override = css`
+  display: block;
+  margin: 0 auto;
+  border-color: red;
+`;
+
 
 const Message = () => {
   const [allStudents, setAllStudents] = useState([]);
@@ -16,10 +25,12 @@ const Message = () => {
   const [popupMessage, setPopupMessage] = useState('');
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [selectedClassId, setSelectedClassId] = useState('');
-
+  const [loading, setLoading] = useState(false);
+  
   useEffect(() => {
     const fetchAllStudents = async () => {
       try {
+        setLoading(true);
         const token = localStorage.getItem("token");
         if (!token) {
           console.error("No token found");
@@ -65,6 +76,9 @@ const Message = () => {
         }
       } catch (error) {
         console.error("Error fetching students:", error);
+      }
+      finally {
+        setLoading(false);
       }
     };
 
@@ -112,6 +126,7 @@ const Message = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      setLoading(true)
       const token = localStorage.getItem("token");
       if (!token) {
         console.error("No token found");
@@ -156,8 +171,12 @@ const Message = () => {
         else {
             console.error("Error login teacher:", status);
             setError("Login Details Are Wrong!!");
-        }
+      }
     }
+    
+    }
+    finally {
+      setLoading(false);
     }
   };
 
@@ -165,6 +184,11 @@ const Message = () => {
 
   return (
     <>
+     {loading && (
+        <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+          <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
+        </div>
+      )}
       <div className='grid md:px-0 px-8 grid-cols-1 md:grid-cols-3 md:mt-0 mt-4 gap-4'>
         {stuDetails.map((student, index) => (
           <div className="flex items-start gap-2.5" key={index}>

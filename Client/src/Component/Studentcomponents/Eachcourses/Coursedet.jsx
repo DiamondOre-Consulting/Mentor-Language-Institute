@@ -1,10 +1,21 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link , useNavigate, useParams } from 'react-router-dom'
 import { Tabs } from "flowbite-react";
 import { HiAdjustments, HiClipboardList } from "react-icons/hi";
 import { FaBook } from 'react-icons/fa';
 import { MdDashboard } from "react-icons/md";
+import { ClipLoader } from "react-spinners";
+import { css } from "@emotion/react";
+
+const override = css`
+  display: block;
+  margin: 0 auto;
+  border-color: red;
+`;
+
+
+
 
 const Coursedet = () => {
 
@@ -15,9 +26,11 @@ const Coursedet = () => {
     const [allEnrollclassData, setAllClassData] = useState([])
     const [feedetails, setFeeDetails] = useState(null);
     const [myenroll , setEnroll] = useState("");
+    const [loading, setLoading] = useState(false);
     useEffect(() => {
 
         const fetchStudentData = async () => {
+            setLoading(true)
             try {
                 const token = localStorage.getItem("token");
 
@@ -109,6 +122,9 @@ const Coursedet = () => {
                 console.error("Error fetching student data:", error);
 
             }
+            finally {
+                setLoading(false);
+            }
         };
 
         fetchStudentData();
@@ -120,7 +136,9 @@ const Coursedet = () => {
 
     useEffect(() => {
         const fetchAttendanceDetails = async () => {
+            
             try {
+                setLoading(true)
                 const token = localStorage.getItem("token");
 
                 if (!token) {
@@ -143,6 +161,9 @@ const Coursedet = () => {
 
             } catch (error) {
                 console.error("Error fetching attendance details:", error);
+            }
+            finally {
+                setLoading(false);
             }
         };
 
@@ -170,6 +191,7 @@ const Coursedet = () => {
     useEffect(() => {
         const fetchFeeDetails = async () => {
             try {
+                setLoading(true)
                 const token = localStorage.getItem("token");
 
                 if (!token) {
@@ -198,6 +220,9 @@ const Coursedet = () => {
             } catch (error) {
                 console.error("Error fetching Fee details:", error);
             }
+            finally {
+                setLoading(false);
+            }
         };
 
         // Fetch attendance details when the selected course ID changes
@@ -207,7 +232,11 @@ const Coursedet = () => {
 
     
     return (
-        <>
+        <> {loading && (
+            <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+                <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
+            </div>
+        )}
             <div className='p-10 md:p-20 '>
                 <div className='grid grid-cols-1 gap-2 md:grid-cols-3'>
                     <div className='col-span-2'>
@@ -235,7 +264,7 @@ const Coursedet = () => {
                                             <p className='md:text-2xl text-orange-500 font-bold mb-6'>Course Details</p>
 
 
-                                            <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+                                        <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
                                                 <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
                                                     <tbody>
                                                         <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">

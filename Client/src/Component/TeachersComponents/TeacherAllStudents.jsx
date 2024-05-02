@@ -2,6 +2,15 @@ import React, { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import axios from "axios";
+import { ClipLoader } from "react-spinners";
+import { css } from "@emotion/react";
+
+const override = css`
+  display: block;
+  margin: 0 auto;
+  border-color: red;
+`;
+
 
 
 const TeacherAllStudents = () => {
@@ -15,7 +24,8 @@ const TeacherAllStudents = () => {
     const [studentId, setStudentId] = useState();
     const [stuids, setStuIds] = useState('');
     const [attendenceDetails, setAttendenceDetails] = useState(null);
-    const [selectedstudentId, setSelectedStudentId] = useState(null)
+    const [selectedstudentId, setSelectedStudentId] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     // console.log("Selected Class ID:", selectedClassId);
 
@@ -25,6 +35,7 @@ const TeacherAllStudents = () => {
         const allDetails = async () => {
 
             try {
+                setLoading(true)
                 const token = localStorage.getItem("token");
                 if (!token) {
                     // No token found, redirect to login page
@@ -52,6 +63,9 @@ const TeacherAllStudents = () => {
                 console.log(error)
                 // setError('all students');
             }
+            finally {
+                setLoading(false);
+            }
 
         }
 
@@ -66,6 +80,7 @@ const TeacherAllStudents = () => {
 
     const fetchCourseDetails = async () => {
         try {
+            setLoading(true)
             const token = localStorage.getItem("token");
 
             if (!token) {
@@ -87,12 +102,12 @@ const TeacherAllStudents = () => {
                 const courseData = response.data;
                 setStudentId(courseData.enrolledStudents);
                 setEachCourse(courseData.dailyClasses);
-
-
-
             }
         } catch (error) {
             console.log(error);
+        }
+        finally {
+            setLoading(false);
         }
     };
 
@@ -100,6 +115,7 @@ const TeacherAllStudents = () => {
 
     const fetchAttendanceDetails = async () => {
         try {
+            setLoading(true)
             const token = localStorage.getItem("token");
             const attendanceDetailsMap = {};
 
@@ -139,12 +155,17 @@ const TeacherAllStudents = () => {
             console.log(error);
             return [];
         }
+        finally {
+            setLoading(false);
+        }
     };
 
 
     useEffect(() => {
+        setLoading(true)
         fetchAttendanceDetails();
         fetchCourseDetails();
+        setLoading(false)
     }, []);
 
     
@@ -253,6 +274,11 @@ const TeacherAllStudents = () => {
 
             <h1 className='text-4xl mb-1 font-semibold text-start'>Enrolled Students</h1>
             <div className='w-44 rounded h-1 bg-orange-500 text-start mb-8 '></div>
+            {loading && (
+                        <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+                            <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
+                        </div>
+                    )}
 
             <div className='grid grid-cols-1 md:grid-cols-3 gap-2'>
                 {alldetails.map((student) => (

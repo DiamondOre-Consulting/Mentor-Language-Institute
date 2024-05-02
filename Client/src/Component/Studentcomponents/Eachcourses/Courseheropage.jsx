@@ -82,15 +82,15 @@ const Courseheropage = () => {
                 <div class="absolute inset-0">
                     <img src="https://images.unsplash.com/photo-1522252234503-e356532cafd5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NzEyNjZ8MHwxfHNlYXJjaHw2fHxjb2RlfGVufDB8MHx8fDE2OTQwOTg0MTZ8MA&ixlib=rb-4.0.3&q=80&w=1080" alt="Background Image" class="object-cover object-center w-full h-full" />
                     <div class="absolute inset-0 bg-black opacity-50">
-                        <li className='relative group z-50 flex items-center float-right p-4 cursor-pointer'>
-                            <Link className="block py-2 px-3 text-gray-200  rounded md:p-0" aria-current="page" onClick={handleLogout}>Logout</Link>
-                            <svg class="h-6 w-6 text-gray-200 mx-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />  <polyline points="16 17 21 12 16 7" />  <line x1="21" y1="12" x2="9" y2="12" /></svg>
-                        </li>
                     </div>
 
                 </div>
-
+                <li className='relative group z-50 flex items-center float-right mr-1 p-4 cursor-pointer'>
+                    <Link className="block py-2 px-3 text-gray-200  rounded md:p-0" aria-current="page" onClick={handleLogout}>Logout</Link>
+                    <svg class="h-6 w-6 text-gray-200 mx-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />  <polyline points="16 17 21 12 16 7" />  <line x1="21" y1="12" x2="9" y2="12" /></svg>
+                </li>
                 <div class="relative z-10 flex flex-col justify-start py-10 px-10 h-full text-center">
+
                     <div className='flex items-center'>
                         <div className='bg-orange-500 h-20 w-1'></div>
                         <div className='flex flex-col mx-2'>

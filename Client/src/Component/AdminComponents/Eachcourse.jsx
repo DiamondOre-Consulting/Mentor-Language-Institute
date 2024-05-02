@@ -3,6 +3,15 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { useJwt } from "react-jwt";
+import { ClipLoader } from "react-spinners";
+import { css } from "@emotion/react";
+
+const override = css`
+  display: block;
+  margin: 0 auto;
+  border-color: red;
+`;
+
 
 
 const Eachcourse = () => {
@@ -10,6 +19,7 @@ const Eachcourse = () => {
     const navigate = useNavigate();
     const [courseDetails, setCourseDetails] = useState(null);
     const [activeTab, setActiveTab] = useState('enrolled');
+    const [loading, setLoading] = useState(false);
 
     const handleTabSwitch = (tab) => {
         setActiveTab(tab);
@@ -44,6 +54,8 @@ const Eachcourse = () => {
 
         const fetchCourseDetails = async () => {
             try {
+                setLoading(true)
+                
                 const token = localStorage.getItem("token");
 
                 if (!token) {
@@ -136,6 +148,9 @@ const Eachcourse = () => {
             } catch (error) {
                 console.log(error);
             }
+            finally {
+                setLoading(false);
+              }
         };
 
 
@@ -146,6 +161,11 @@ const Eachcourse = () => {
     return (
         <>
             <div>
+            {loading && (
+        <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+          <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
+        </div>
+      )}
                 <h1 className='text-2xl md:px-0 px-4 font-bold md:mb-1 mb-4'>{courseDetails?.classTitle}</h1>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 2xl:w-1/3">
                     <div class="flex-1  bg-white rounded-lg shadow-xl p-8">

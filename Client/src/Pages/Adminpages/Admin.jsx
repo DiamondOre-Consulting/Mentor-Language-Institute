@@ -49,23 +49,7 @@ const Admin = () => {
 
 
 
-  const { decodedToken } = useJwt(localStorage.getItem("token"));
-  console.log("token decoded",decodedToken);
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login");
-    } else {
-      const tokenExpiration = decodedToken ? (decodedToken.exp * 1000) + (20 * 1000) : 0; // Token expiration time in milliseconds, 20 seconds added
-
-
-      if (tokenExpiration && tokenExpiration < Date.now()) {
-        localStorage.removeItem("token");
-        console.log("Token Expired")
-        navigate("/login");
-      }
-    }
-  }, [decodedToken , navigate])
+ 
   return (
     <>
 
