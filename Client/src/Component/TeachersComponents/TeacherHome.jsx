@@ -326,7 +326,7 @@ const TeacherHome = ({ teacherData }) => {
                                                 <p className='text-sm  text-gray-100 '>{course.classSchedule}</p>
                                                 
                                                 <Tooltip content="Click To Edit Hours ">
-                                                    <Button><p className='text-sm text-gray-50 -ml-5 -mt-3' onClick={() => handleveiw(course._id)}>Total hours <span className='bg-gray-50 text-bold text-black px-1 rounded-full'>{course.totalHours}</span></p></Button>
+                                                    <Button><span className='text-sm text-gray-50 -ml-5 -mt-3' onClick={() => handleveiw(course._id)}>Total hours <span className='bg-gray-50 text-bold text-black px-1 rounded-full'>{course.totalHours}</span></span></Button>
                                                 </Tooltip>
 
 
@@ -471,7 +471,7 @@ const TeacherHome = ({ teacherData }) => {
                                         className='p-2 bg-orange-500 rounded-md text-gray-100 cursor-pointer'>My Students</Link>
                                 </div>
                                 <div>
-                                    <p className='p-2 bg-orange-500 rounded-md text-gray-100 cursor-pointer' onClick={() => setShowScheduleClass(true)}>Add New Class</p>
+                                    <p className='p-2 bg-orange-500 rounded-md text-gray-100 cursor-pointer' onClick={() => setShowScheduleClass(true)}>Schedule Class</p>
                                 </div>
                             </div>
                         </div>

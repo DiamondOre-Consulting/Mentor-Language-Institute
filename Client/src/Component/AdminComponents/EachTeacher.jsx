@@ -56,7 +56,7 @@ const EachTeacher = () => {
     };
 
     fetchTeacherDetails();
-  }, [decodedToken]);
+  }, []);
 
 
 

@@ -252,7 +252,11 @@ const Message = () => {
 
               <div className="mb-4">
                 <label htmlFor="paid" className="block text-sm font-medium text-gray-700">Paid:</label>
-                <input type="text" id="paid" name="paid" value={formData.paid} onChange={handleChange} className="mt-1 p-2 border border-gray-300 rounded-md w-full" required />
+                <select value={formData.paid} onChange={(e) => setFormData({ ...formData, paid: e.target.value })} className="w-full">
+                  <option>Select Status</option>
+                  <option value="true">Yes</option>
+                </select>
+ 
               </div>
               <div className="mb-4">
                 <label htmlFor="amountPaid" className="block text-sm font-medium text-gray-700">Amount Paid:</label>

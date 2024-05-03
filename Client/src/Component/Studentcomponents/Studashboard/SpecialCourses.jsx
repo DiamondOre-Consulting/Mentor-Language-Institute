@@ -5,7 +5,7 @@ import toefl from '..//..//..//assets/toefl.jpg'
 import ap from '..//..//..//assets/ap.jpg'
 import english from '..//..//..//assets/english.webp'
 import personality from '..//..//..//assets/persnality.webp'
-import cuet from '..//..//..//assets/cuet.png'
+import cuet from '..//..//..//assets/cuet1.jpg'
 
 const SpecialCourses = () => {
     return (
@@ -25,7 +25,7 @@ const SpecialCourses = () => {
                                 <div className='border border-1 h-60 rounded-md' style={{ backgroundImage: `url(${sat})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
                                 <div className='border border-1 h-60 rounded-md' style={{ backgroundImage: `url(${toefl})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
                                 <div className='border border-1 h-60 rounded-md' style={{ backgroundImage: `url(${ap})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
-                                <div className='border border-1 h-60 rounded-md' style={{ backgroundImage: `url(${cuet})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
+                                <div className='border border-1 h-60 rounded-md' style={{ backgroundImage: `url(${cuet})`, backgroundSize: "contain", backgroundPosition: "center" ,backgroundRepeat:"no-repeat"}}></div>
                                 <div className='border border-1 h-60 rounded-md' style={{ backgroundImage: `url(${english})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
                                 <div className='border border-1 h-60 rounded-md md:col-span-3' style={{ backgroundImage: `url(${personality})`, backgroundSize: "contain", backgroundPosition: "center" }}></div>
                             </div>
