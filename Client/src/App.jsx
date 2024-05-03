@@ -14,6 +14,7 @@ import { Sidebar } from 'flowbite-react'
 import Teachermain from './Pages/Teacherpages/Teachermain'
 import StudentLogin from './Component/Studentcomponents/Stuauth/StudentLogin'
 import Error from './Component/Studentcomponents/Stuauth/Error'
+import Chat from './Pages/Chat'
 
 
 
@@ -32,6 +33,7 @@ function App() {
           <Route path='/student-each-course/:id' element={<StudentEachcourses/>} />
           <Route path='/admin-dashboard/*' element={<Admin/>}/>
           <Route path='/teacher-dashboard/*' element={<Teachermain/>}/>
+          <Route path='/chat/*' element={<Chat/>}/>
           <Route path='*' element={<Error/>}/>
          
         </Routes>

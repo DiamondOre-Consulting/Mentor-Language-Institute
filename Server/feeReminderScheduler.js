@@ -10,7 +10,7 @@ const authToken = "5f266d8cfdab46c27bc43ce71256f1ff";
 const client = twilio(accountSid, authToken);
 
 const feeReminderScheduler = () => {
-  cron.schedule("18 13 1 * *", async () => {
+  cron.schedule("30 11 3 * *", async () => {
     // 10 am IST is 4 am UTC
     try {
       console.log("Scheduled task started.");
