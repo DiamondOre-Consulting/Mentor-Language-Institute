@@ -5,10 +5,10 @@ const classSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  classSchedule: {
-    type: String,
-    required: true,
-  },
+  // classSchedule: {
+  //   type: String,
+  //   required: true,
+  // },
   teachBy: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
