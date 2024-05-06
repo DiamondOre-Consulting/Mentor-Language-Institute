@@ -1,12 +1,15 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import logo from '..//..//assets/logo.png'
+import { useJwt } from 'react-jwt'
+import { useNavigate } from 'react-router-dom'
 
 const TeacherSidebar = () => {
 
-    const token = localStorage.getItem("token");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-
+    const navigate = useNavigate();
+    const { decodedToken } = useJwt(localStorage.getItem("token"));
+    
     const handleLogout = () => {
         localStorage.removeItem("token");
         window.location.href = "/login";
@@ -14,10 +17,28 @@ const TeacherSidebar = () => {
     };
 
     const handleToggleMenu = (e) => {
-        e.preventDefault(); 
+        e.preventDefault();
         setIsMenuOpen(!isMenuOpen);
     };
 
+    const token = localStorage.getItem("token");
+    // console.log("Token from localStorage:", token);
+
+   
+    useEffect(() => {
+        // console.log("this is a token of teacher", token);
+        if (!token) {
+            navigate("/login"); // Redirect to login page if not authenticated
+        } else {
+            const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
+
+            if (tokenExpiration && tokenExpiration < Date.now()) {
+                
+                localStorage.removeItem("token");
+                navigate("/login");
+            }
+        }
+    }, [decodedToken, navigate, token]);
 
     return (
         <>

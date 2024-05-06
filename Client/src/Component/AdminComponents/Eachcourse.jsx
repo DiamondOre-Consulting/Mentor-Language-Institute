@@ -142,7 +142,7 @@ const Eachcourse = () => {
 
 
         fetchCourseDetails();
-    }, [decodedToken]);
+    }, []);
 
     console.log("coursedetails", courseDetails)
     return (
@@ -159,11 +159,11 @@ const Eachcourse = () => {
                         <h4 class="text-xl text-gray-900 font-bold">Course Details</h4>
                         <ul class="mt-2 text-gray-700">
                             <li class="flex border-y py-2">
-                                <span class="font-bold w-32">Schedule:</span>
-                                <span class="text-gray-700">{courseDetails?.classSchedule}</span>
+                                <span class="font-bold w-32">Title:</span>
+                                <span class="text-gray-700">{courseDetails?.classTitle}</span>
                             </li>
                             <li class="flex border-b py-2">
-                                <span class="font-bold w-32">Total Hourse:</span>
+                                <span class="font-bold w-32">Total Hours:</span>
                                 <span class="text-gray-700">{courseDetails?.totalHours}</span>
                             </li>
                             <li class="flex border-b py-2">

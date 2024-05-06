@@ -5,11 +5,10 @@ import { useJwt } from 'react-jwt'
 import { useNavigate } from 'react-router-dom'
 
 const AdminSidebar = () => {
-    
+
     const navigate = useNavigate();
-    const token = localStorage.getItem("token");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    
+
 
     const handleLogout = () => {
         localStorage.removeItem("token");
@@ -23,6 +22,33 @@ const AdminSidebar = () => {
     };
 
 
+
+    
+
+    const { decodedToken } = useJwt(localStorage.getItem("token"));
+    const token = localStorage.getItem("token");
+    // console.log("this is",token)
+    if (!token) {
+      navigate("/login"); // Redirect to login page if not authenticated
+      return;
+    }
+  
+    useEffect(() => {
+      const token = localStorage.getItem("token");
+      console.log(token)
+      if (!token) {
+        // No token found, redirect to login page
+        navigate("/login");
+      } else {
+        const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
+  
+        if (tokenExpiration && tokenExpiration < Date.now()) {
+          // Token expired, remove from local storage and redirect to login page
+          localStorage.removeItem("token");
+          navigate("/login");
+        }
+      }
+    }, [decodedToken])
 
 
     return (
@@ -146,7 +172,6 @@ const AdminSidebar = () => {
                                 <span class="flex-1 ms-3 whitespace-nowrap">Logout</span>
                             </a>
                         </li>
-
                     </ul>
                 </div>
 

@@ -17,6 +17,7 @@ const Allstudents = () => {
 
     const [allStudents, setAllStudents] = useState([]);
     const [loading, setLoading] = useState(false);
+    
 
     useEffect(() => {
         const fetchAllStudents = async () => {
@@ -75,7 +76,8 @@ const Allstudents = () => {
                     <Link to={`/admin-dashboard/allstudents/${students?._id}`} class="block max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 cursor-pointer">
                         <h5 class="mb-1 text-xl font-bold tracking-tight text-gray-900 dark:text-white">{students.name}</h5>
                         <p class="font-normal text-sm text-gray-700 dark:text-gray-400">phone :- <span>{students.phone}</span></p>
-                        <Link to={`/admin-dashboard/allstudents/${students?._id}`} className=' text-sm text-orange-500 flex items-center  text-md mt-4 justify-end '>Veiw <svg class="h-4 w-4 text-orange-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <polyline points="9 6 15 12 9 18" /></svg></Link>
+                        {/* <Link to={`/admin-dashboard/allstudents/${students?._id}`} className=' text-sm text-orange-500 flex items-center  text-md mt-4 justify-end '>View <svg class="h-4 w-4 text-orange-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <polyline points="9 6 15 12 9 18" /></svg></Link> */}
+                        <span className='flex justify-end bg-orange-500 rounded-full px-1 py-1 mb-1 justify-center text-center mt-4 text-gray-100'>Deactivate Account</span>
                     </Link>
                 ))}
             </div>

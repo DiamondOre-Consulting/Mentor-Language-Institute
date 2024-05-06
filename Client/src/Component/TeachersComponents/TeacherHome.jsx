@@ -26,12 +26,11 @@ const TeacherHome = ({ teacherData }) => {
     const [oneClassDetails, setOneClassDetails] = useState("");
     const [alldetails, setAllDetails] = useState();
     const [bottompopup, setBottomPopUp] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [updateHoursInput, setUpdateHoursInput] = useState(0);
     const [selectedClassIdToUpdate, setSelectedClassIdToUpdate] = useState("");
     const [showUpdateHoursPopup, setShowUpdateHoursPopup] = useState(false);
-
-    const token = localStorage.getItem("token");
+    
 
     const handleDateChange = (event) => {
         const selectedDate = new Date(event.target.value);
@@ -57,15 +56,15 @@ const TeacherHome = ({ teacherData }) => {
     };
     const handleViewClass = (classId) => {
         setSelectedClassId(classId); // Set the selected class ID
-        console.log("selected class id", selectedClassId) 
-       setShowPopupCourses(true);
-      
+        // console.log("selected class id", selectedClassId)
+        setShowPopupCourses(true);
+
     };
 
-    const handleveiw = (classId)=>{
+    const handleveiw = (classId) => {
         setSelectedClassId(classId);
         setShowUpdateHoursPopup(true);
-        
+
     }
 
 
@@ -76,45 +75,48 @@ const TeacherHome = ({ teacherData }) => {
 
 
 
-  
-        const fetchAllTeachersCourses = async () => {
-            try {
-                const token = localStorage.getItem("token");
-                if (!token) {
-                    // No token found, redirect to login page
-                    navigate("/login");
-                    return;
-                }
 
-                const classIds = teacherData.myClasses;
-                const classesData = [];
-                for (const classId of classIds) {
-                    const classResponse = await axios.get(`http://localhost:7000/api/teachers/my-classes/${classId}`, {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    });
-                    if (classResponse.status === 200) {
-                        console.log("classdata", classResponse.data);
-                        classesData.push(classResponse.data);
-                    }
-                }
-                setClassesData(classesData);
-                console.log("class data of teacher", classesData)
-            } catch (error) {
-                console.error("Error fetching teachers' classes:", error);
+    const fetchAllTeachersCourses = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                // No token found, redirect to login page
+                navigate("/login");
+                return;
             }
-        };
 
-        if (teacherData && teacherData.myClasses) {
-            fetchAllTeachersCourses();
+            const classIds = teacherData.myClasses;
+            const classesData = [];
+            for (const classId of classIds) {
+                const classResponse = await axios.get(`http://localhost:7000/api/teachers/my-classes/${classId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                if (classResponse.status === 200) {
+                    // console.log("classdata", classResponse.data);
+                    classesData.push(classResponse.data);
+                }
+            }
+            setClassesData(classesData);
+            // console.log("class data of teacher", classesData)
+        } catch (error) {
+          
+            console.error("Error fetching teachers' classes:", error);
         }
- 
+      
+    };
 
-        useEffect(()=>{
-            fetchAllTeachersCourses();
-    
-        },[teacherData])
+    if (teacherData && teacherData.myClasses) {
+        fetchAllTeachersCourses();
+    }
+
+
+    useEffect(() => {
+        fetchAllTeachersCourses();
+        
+
+    }, [teacherData])
 
 
 
@@ -127,7 +129,7 @@ const TeacherHome = ({ teacherData }) => {
                 navigate("/login");
                 return;
             }
-            console.log("selected schedule", selectedClassId)
+            // console.log("selected schedule", selectedClassId)
             const response = await axios.post(
                 `http://localhost:7000/api/teachers/schedule-class/${selectedClassId}`,
                 { date },
@@ -140,8 +142,8 @@ const TeacherHome = ({ teacherData }) => {
 
             if (response.status === 200) {
                 console.log("done");
-                console.log(response.data)
-                console.log(date)
+                // console.log(response.data)
+                // console.log(date)
                 setShowScheduleClass(false);
                 setShowPopup(true)
                 setTimeout(() => {
@@ -155,7 +157,7 @@ const TeacherHome = ({ teacherData }) => {
         }
     };
 
-    console.log(date)
+    // console.log(date)
     useEffect(() => {
 
         const allDetails = async () => {
@@ -190,9 +192,9 @@ const TeacherHome = ({ teacherData }) => {
 
 
                 if (allsturesponse.status === 200) {
-                    console.log("allsturesponsedata", allsturesponse.data)
+                    // console.log("allsturesponsedata", allsturesponse.data)
                     setAllDetails(allsturesponse.data);
-                    console.log(alldetails)
+                    // console.log(alldetails)
                 }
 
 
@@ -200,6 +202,7 @@ const TeacherHome = ({ teacherData }) => {
             catch (error) {
                 // setError('all students');
             }
+          
 
         }
 
@@ -217,7 +220,7 @@ const TeacherHome = ({ teacherData }) => {
 
     useEffect(() => {
         const fetchAllcourses = async () => {
-            setLoading(true);
+            // setLoading(true);
             try {
                 const token = localStorage.getItem("token");
 
@@ -237,9 +240,9 @@ const TeacherHome = ({ teacherData }) => {
                     }
                 );
                 if (response.status == 200) {
-                    console.log(response.data);
+                    // console.log(response.data);
                     const allcourses = response.data;
-                    console.log(allcourses);
+                    // console.log(allcourses);
                     setAllCourses(allcourses);
                 }
             } catch (error) {
@@ -247,6 +250,7 @@ const TeacherHome = ({ teacherData }) => {
                     const status = error.response.status;
                     if (status === 405) {
                         console.log("no class has been assigned to you");
+                        alert("no class has been assigned to you")
 
                     } else {
                         console.error("no class has been assigned you", status);
@@ -288,7 +292,7 @@ const TeacherHome = ({ teacherData }) => {
                 console.log("Hours updated successfully");
                 setShowUpdateHoursPopup(false);
                 setShowPopupCourses(false);
-            
+
             }
         } catch (error) {
             console.error("Failed to update hours:", error);
@@ -300,64 +304,55 @@ const TeacherHome = ({ teacherData }) => {
 
     return (
         <>
-            {loading && (
-                <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
-                    <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
-                </div>
-            )}
+
             <div>
                 <div className='grid md:grid-cols-10 gap-8'>
                     <div className='col-span-7'>
                         <div>
+                            <h1 className='text-3xl font-semibold mb-10 text-gray-600'><span className='text-4xl'>Welcome !! </span><br></br><span className='text-orange-500 font-bold'>{teacherData?.name}</span></h1>
                             <h1 className='text-2xl font-bold'>My Courses</h1>
                             <div className='w-24 h-1 border-rounded bg-orange-500 mb-4'></div>
 
                             <div className='grid grid-cols-1 md:grid-cols-2 gap-4 py-4'>
-
-                                {classesData.length === 0 ? (
-                                    <div>No class has been assigned to you </div>
-                                ) : (
-                                    classesData.map((course) => (
-                                        <div className=' border rounded-md  border-0 shadow-xl hover:shadow-none cursor-pointer'>
-                                            <div className='px-2 py-3 col-span-1 bg-orange-500 rounded-md '>
-                                                <span className='text-sm text-white'>Course</span>
-                                                <p className='text-xl font-bold text-white '>{course.classTitle}</p>
-                                                <div className='w-20 h-0.5 bg-orange-100 mb-2'></div>
-                                                <p className='text-sm  text-gray-100 '>{course.classSchedule}</p>
-                                                
-                                                <Tooltip content="Click To Edit Hours ">
-                                                    <Button><span className='text-sm text-gray-50 -ml-5 -mt-3' onClick={() => handleveiw(course._id)}>Total hours <span className='bg-gray-50 text-bold text-black px-1 rounded-full'>{course.totalHours}</span></span></Button>
-                                                </Tooltip>
-
-
-                                                <a className='text-gray-100 flex items-center text-sm mt-1 justify-end ' onClick={() => handleViewClass(course._id)}>Veiw <svg class="h-4 w-4 text-gray-100" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <polyline points="9 6 15 12 9 18" /></svg></a>
-                                            </div>
-
-                                        </div>
-                                    ))
-                                )}
-
-                            </div>
-                        </div>
-
-                        <div className='py-14 '>
-                            <h1 className='text-2xl font-bold'>Request For New Courses (Optional)</h1>
-                            <div className='w-24 h-1 border-rounded bg-orange-500 mb-4'></div>
-
-                            <div className='grid grid-cols-1 md:grid-cols-3 gap-4 py-4'>
-
-                                <div className=' border rounded-md shadow-lg border-0'>
-                                    <div className='px-2 py-3 col-span-1 bg-orange-500 rounded-md'>
-                                        <span className='text-sm text-white'>Course</span>
-                                        <p className='font-bold text-white '>JavaScript Fundamentals</p>
-                                        <a className='text-gray-100 flex items-center  text-sm mt-4 justify-end cursor-pointer' onClick={() => setShowPopup(true)}>Apply <svg class="h-4 w-4 text-gray-100" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <polyline points="9 6 15 12 9 18" /></svg></a>
+                                {loading ? (
+                                    <div style={override}>
+                                        <ClipLoader color={"#FFA500"} loading={loading} size={30} />
                                     </div>
+                                ) : (
+                                   
+                                        classesData.map((course) => (
+                                            <div className=' border rounded-md border-0 shadow-xl hover:shadow-none cursor-pointer' key={course._id}>
+                                                <div className='px-2 py-3 col-span-1 bg-orange-500 rounded-md'>
+                                                    <span className='text-sm text-white'>Course</span>
+                                                    <p className='text-xl font-bold text-white'>{course.classTitle}</p>
+                                                    <div className='w-20 h-0.5 bg-orange-100 mb-2'></div>
+                                                    {/* <p className='text-sm text-gray-100'>{course.classSchedule}</p> */}
 
-                                </div>
+                                                    <Tooltip content="Click To Edit Hours">
+                                                        <Button>
+                                                            <span className='text-sm text-gray-50 -ml-5 -mt-3' onClick={() => handleveiw(course._id)}>
+                                                                Total hours <span className='bg-gray-50 text-bold text-black px-1 rounded-full'>{course.totalHours}</span>
+                                                            </span>
+                                                        </Button>
+                                                    </Tooltip>
 
-
+                                                    <a className='text-gray-100 flex items-center text-sm mt-1 justify-end' onClick={() => handleViewClass(course._id)}>
+                                                        View
+                                                        <svg className="h-4 w-4 text-gray-100" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path stroke="none" d="M0 0h24v24H0z" />
+                                                            <polyline points="9 6 15 12 9 18" />
+                                                        </svg>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        ))
+                    
+                                )}
                             </div>
+
                         </div>
+
+
                     </div>
 
                     <div className='col-span-3 '>
@@ -504,7 +499,7 @@ const TeacherHome = ({ teacherData }) => {
             )}
 
 
-{showUpdateHoursPopup && (
+            {showUpdateHoursPopup && (
                 <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50">
                     <section className="rounded-lg shadow-xl bg-white w-4/5 sm:w-3/5 lg:w-1/4 relative">
                         <svg className="h-5 w-5 bg-red-600 cursor-pointer p-1 text-2xl rounded-full text-gray-50 absolute top-0 right-0 m-2" onClick={() => setShowUpdateHoursPopup(false)} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <line x1="18" y1="6" x2="6" y2="18" />  <line x1="6" y1="6" x2="18" y2="18" /></svg>

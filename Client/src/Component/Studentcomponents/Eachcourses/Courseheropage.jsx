@@ -85,10 +85,19 @@ const Courseheropage = () => {
                     </div>
 
                 </div>
-                <li className='relative group z-50 flex items-center float-right mr-1 p-4 cursor-pointer'>
-                    <Link className="block py-2 px-3 text-gray-200  rounded md:p-0" aria-current="page" onClick={handleLogout}>Logout</Link>
-                    <svg class="h-6 w-6 text-gray-200 mx-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />  <polyline points="16 17 21 12 16 7" />  <line x1="21" y1="12" x2="9" y2="12" /></svg>
-                </li>
+
+                <div className='flex justify-end items-center'>
+                    <select className='z-90 bg-transparent w-24  rounded-full focus:border-gray-200  border-1 border-gray-400  relative group z-50 flex items-center float-right mr-1 cursor-pointer'>
+                        <option className='text-gray-900 '>Help?</option>
+                        <option className='text-gray-900'>+91-9999466159</option>
+                        <option className='text-wrap text-gray-900'>mentor.languageclasses@gmail.com</option>
+                    </select>
+                    <li className='relative group z-50 flex items-center float-right mr-1 p-4 cursor-pointer'>
+                        <Link className="block py-2 px-3 text-gray-200  rounded md:p-0" aria-current="page" onClick={handleLogout}>Logout</Link>
+                        <svg class="h-6 w-6 text-gray-200 mx-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />  <polyline points="16 17 21 12 16 7" />  <line x1="21" y1="12" x2="9" y2="12" /></svg>
+                    </li>
+                </div>
+
                 <div class="relative z-10 flex flex-col justify-start py-10 px-10 h-full text-center">
 
                     <div className='flex items-center'>

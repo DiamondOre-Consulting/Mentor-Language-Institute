@@ -1,7 +1,7 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
 import { Link , useNavigate, useParams } from 'react-router-dom'
-import { Tabs } from "flowbite-react";
+import { Footer, Tabs } from "flowbite-react";
 import { HiAdjustments, HiClipboardList } from "react-icons/hi";
 import { FaBook } from 'react-icons/fa';
 import { MdDashboard } from "react-icons/md";
@@ -298,7 +298,7 @@ const Coursedet = () => {
                                                                 Total Hours
                                                             </th>
                                                             <td class="px-6 py-4">
-                                                                {classData?.totalHours}hours
+                                                                {classData?.totalHours} hours
                                                             </td>
 
                                                         </tr>
@@ -307,18 +307,18 @@ const Coursedet = () => {
                                                                 Course Price
                                                             </th>
                                                             <td class="px-6 py-4">
-                                                                {feedetails?.totalFee}Rs
+                                                                ₹ {feedetails?.totalFee}
                                                             </td>
 
                                                         </tr>
-                                                        <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
+                                                        {/* <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
                                                             <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                                                 Schedule
                                                             </th>
                                                             <td class="px-6 py-4">
                                                                 {classData?.classSchedule}
                                                             </td>
-                                                        </tr>
+                                                        </tr> */}
 
 
 
@@ -330,9 +330,9 @@ const Coursedet = () => {
 
                                         </div>
                                     </Tabs.Item>
-                                    <Tabs.Item title="Attendence Details" icon={MdDashboard} className="focus:outline-none">
+                                    <Tabs.Item title="Attendance Details" icon={MdDashboard} className="focus:outline-none">
                                         <div className=''>
-                                            <p className='text-2xl text-orange-500 font-bold mb-6'>Attendence Details</p>
+                                            <p className='text-2xl text-orange-500 font-bold mb-6'>Attendance Details</p>
 
 
                                             <div class="overflow-auto max-h-96 overflow-x-auto shadow-md sm:rounded-lg">
@@ -350,7 +350,7 @@ const Coursedet = () => {
                                                     </thead>
                                                     <tbody className='overflow-y-auto max-h-80'>
                                                         {attendenceDetails && attendenceDetails.detailAttendance.length === 0 ? (
-                                                            <p>No attendance details available</p>
+                                                            <p>No Attendance details available</p>
                                                         ) : (
                                                             attendenceDetails && attendenceDetails.detailAttendance.map((attendance) => (
                                                                 <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
@@ -463,6 +463,7 @@ const Coursedet = () => {
                 </div>
 
             </div>
+            
         </>
     )
 }

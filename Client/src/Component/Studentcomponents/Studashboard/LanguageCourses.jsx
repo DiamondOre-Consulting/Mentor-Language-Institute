@@ -45,7 +45,7 @@ const LanguageCourses = () => {
                     arrows: false,
                     centerMode: true,
                     centerPadding: '40px',
-                    slidesToShow: 3
+                    slidesToShow: 4
                 }
             },
             {
@@ -180,12 +180,12 @@ const LanguageCourses = () => {
                 const status = error.response.status;
                 if (status === 409) {
                     console.log("Student has already applied in this course!!!")
-                    setPopupMessage("Student has already applied in this course!!!")
+                    setPopupMessage("You Have Already Applied For This Course!!!")
                     setShowPopup(false)
                 }
                 else if (status === 408) {
                     console.log('Student is already enrolled in this course!!!');
-                    setPopupMessage("Student is already enrolled in this course!!!");
+                    setPopupMessage("You Are Already Enrolled In This Course!!!");
                     setShowPopup(false)
 
                 }
@@ -212,7 +212,7 @@ const LanguageCourses = () => {
                                     {/* Content */}
                                     <div className='p-6  mt-8 cursor-pointer'>
                                         <h1 className='text-xl font-bold mb-2'>{course.classTitle}</h1>
-                                        <p className='text-gray-600 mb-4'>Mentor Language Institute</p>
+                                        <p className='text-gray-600 mb-4 uppercase'>Mentor  Institute</p>
 
                                         {/* Button */}
                                         <button className="block z-10 w-full px-4 py-2 cursor-pointer hover:bg-orange-500 bg-orange-400 text-sm font-semibold text-white rounded-lg shadow-md focus:outline-none hover:bg-orange-600 transition duration-300" onClick={() => handleEnrollClick(course._id)}>
@@ -236,8 +236,8 @@ const LanguageCourses = () => {
                                 <div className="p-6 text-left">
 
                                     <h2 className="text-xl font-bold text-teal-green-900 mb-4">{Eachcourse?.classTitle}</h2>
-                                    <p className="text-sm text-gray-600 ">Schedule :-  <span>{Eachcourse?.classSchedule}</span></p>
-                                    <p className="text-sm text-gray-600 mb-6">Dusration :- <span>{Eachcourse?.totalHours}</span></p>
+                                    {/* <p className="text-sm text-gray-600 ">Schedule :-  <span>{Eachcourse?.classSchedule}</span></p> */}
+                                    <p className="text-sm text-gray-600 mb-6">Total Hours :- <span>{Eachcourse?.totalHours}</span></p>
                                     <button
                                         className="block w-full z-10 px-4 py-2 bg-orange-500 text-sm font-semibold text-white rounded-lg shadow-md  focus:outline-none "
                                         onClick={() => handleApplyCourse(selectedCourseId)}
@@ -271,7 +271,7 @@ const LanguageCourses = () => {
                     {popupMessage && (
                         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
 
-                            <div className="bg-white p-4 rounded-lg shadow-md">
+                            <div className="bg-white p-4 rounded-lg shadow-md w-4/5 sm:w-3/5 lg:w-1/3">
                                 <svg class="h-6 w-6 text-red-500 float-right -mt-2 cursor-pointer" onClick={() => setPopupMessage(null)} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <line x1="18" y1="6" x2="6" y2="18" />  <line x1="6" y1="6" x2="18" y2="18" /></svg>
                                 <p className="text-lg font-bold mt-4 text-green-700">{popupMessage}</p>
                                 {/* <button className="bg-orange-500 text-white py-2 px-4 rounded-md" onClick={() => setPopupMessage(null)}>Close</button> */}

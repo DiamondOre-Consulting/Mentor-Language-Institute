@@ -122,7 +122,7 @@ const Parentlog = () => {
                                     <button className='bg-orange-400 text-white w-full p-2 rounded-md'>Register</button>
                                 </div>
 
-                                <a href="#" class="text-center flex items-center justify-center text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">Already Have Account?<Link to={'/student-login'} className='underline'>Sign in</Link></a>
+                                <a href="#" class="text-center flex items-center justify-center text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">Already Have Account? <Link to={'/student-login'} className='underline ml-1'>  Sign in</Link></a>
 
                             </form>
                             {popupMessage && (

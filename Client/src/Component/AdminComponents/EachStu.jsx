@@ -260,7 +260,7 @@ console.log(classes)
                     <a class="rounded-sm bg-white inline-block py-2 px-4 border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-orange-500 font-semibold cursor-pointer"  onClick={() => handleTabClick('FeeDetails')}>Fee Details</a>
                   </li>
                   <li class="mr-1">
-                    <a class="rounded-sm bg-white inline-block py-2 px-4 border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-orange-500 font-semibold cursor-pointer"  onClick={() => handleTabClick('AttendenceDetails')}>Attendence Details</a>
+                    <a class="rounded-sm bg-white inline-block py-2 px-4 border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-orange-500 font-semibold cursor-pointer"  onClick={() => handleTabClick('AttendanceDetails')}>Attendance Details</a>
                   </li>
 
 
@@ -296,7 +296,7 @@ console.log(classes)
                       classes.map((course) => (
                         <a  class="block max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
                           <h5 class="mb-2 text-md md:text-xl font-bold tracking-tight text-gray-900 dark:text-white">{course?.classTitle}</h5>
-                          <p class="font-normal text-sm text-gray-700 dark:text-gray-400">classSchedule:- <span>{course?.classSchedule}</span></p>
+                          {/* <p class="font-normal text-sm text-gray-700 dark:text-gray-400">classSchedule:- <span>{course?.classSchedule}</span></p> */}
                           <p class="font-normal text-sm text-gray-700 dark:text-gray-400">Duration :- <span>{course?.totalHours}</span></p>
                           <p class="font-normal text-sm text-gray-700 dark:text-gray-400">Teach By :- <span>{course?.teacher ? course.teacher.name : 'Unknown'}</span></p>
                         </a>
@@ -398,7 +398,7 @@ console.log(classes)
               {
 
                 // person will select course the month the date come when the enrolld and thart month make the logic if sunday hai to write sunday
-                activeTab === 'AttendenceDetails' && (
+                activeTab === 'AttendanceDetails' && (
 
                   <div className='bg-white pt-10'>
                     <div className='flex '>

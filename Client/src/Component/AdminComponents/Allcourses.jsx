@@ -71,10 +71,11 @@ const Allcourses = () => {
         {allCourses.map((course) => (
           <Link to={`/admin-dashboard/allcourses/${course?._id}`} class="block max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
 
-            <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{course?.classTitle}</h5>
-            <p class="font-normal text-sm text-gray-700 dark:text-gray-400">Schedule :- <span>{course?.classSchedule}</span></p>
+            <h5 class=" text-xl font-bold tracking-tight text-gray-900 dark:text-white">{course?.classTitle}</h5>
+            <div className='w-22 h-0.5 border-rounded bg-orange-500 mb-6'></div>
+            {/* <p class="font-normal text-sm text-gray-700 dark:text-gray-400">Schedule :- <span>{course?.classSchedule}</span></p> */}
             <p class="font-normal text-sm text-gray-700 dark:text-gray-400">Duration :- <span>{course?.totalHours}hrs</span></p>
-            <p class="font-normal text-sm text-gray-700 dark:text-gray-400">Total Enrolled Students :- <span>{course.enrolledStudents.length}</span></p>
+            <p class="font-normal text-sm text-gray-700 dark:text-gray-400">Enrolled Students :- <span>{course.enrolledStudents.length}</span></p>
           </Link>
         ))}
       </div>

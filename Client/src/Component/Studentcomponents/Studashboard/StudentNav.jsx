@@ -30,10 +30,14 @@ const StudentNav = () => {
         <nav className="">
             <div className=" flex flex-wrap items-center justify-between mx-auto p-4">
                 <a href="/" className="flex items-center space-x-3 rtl:space-x-reverse">
-                    <img src={logo} className="h-16" alt="logo" />
+                    <img src={logo} className="h-12 md:h-16" alt="logo" />
                 </a>
-
-                    <ul className="items-center font-sm flex flex-col p-4 md:p-0 border border-0 md:border-gray-100 rounded-lg md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0">
+                    <ul className="items-center  font-sm flex p-4 md:p-0 border border-0 md:border-gray-100 rounded-lg md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0">
+                    <select className='w-24 md:w-28 h-10  rounded-full focus:border-gray-200  border-1 border-gray-600  cursor-pointer'>
+                        <option className=''>Help?</option>
+                        <option className=''>+91-9999466159</option>
+                        <option className='text-wrap '>mentor.languageclasses@gmail.com</option>
+                    </select>
                         <li className='relative group flex items-center'>
                             <Link to="#" className="block py-2 px-3 text-black opacity-1 rounded md:p-0" aria-current="page"   onClick = { handleLogout }>Logout</Link>
                             <svg class="h-6 w-6 text-gray-700 mx-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />  <polyline points="16 17 21 12 16 7" />  <line x1="21" y1="12" x2="9" y2="12" /></svg>

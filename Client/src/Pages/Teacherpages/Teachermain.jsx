@@ -2,11 +2,15 @@ import React, { useEffect, useState } from 'react'
 import TeacherSidebar from '../../Component/TeachersComponents/TeacherSidebar'
 import TeacherDashboard from '../../Component/TeachersComponents/TeacherDashboard'
 import axios from "axios";
+import { useJwt } from 'react-jwt'
 import { useNavigate } from 'react-router-dom';
 
 const Teachermain = () => {
   const navigate = useNavigate();
   const [teacherData , setTeacherData] =useState("");
+  const { decodedToken } = useJwt(localStorage.getItem("token"));
+  const token = localStorage.getItem("token");
+  console.log(token )
 
   useEffect(()=>{
     const fetchTeacherData = async () => {
@@ -47,6 +51,23 @@ const Teachermain = () => {
 
     fetchTeacherData();
   },[])
+
+
+
+  useEffect(() => {
+    console.log("this is a token of teacher", token);
+    if (!token) {
+        navigate("/login"); // Redirect to login page if not authenticated
+    } else {
+        const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
+
+        if (tokenExpiration && tokenExpiration < Date.now()) {
+            
+            localStorage.removeItem("token");
+            navigate("/login");
+        }
+    }
+}, [decodedToken, navigate, token]);
 
   return (
     <>

@@ -63,7 +63,7 @@ const Studenthero = () => {
   return (
     <>
       <section className="bg-white  md:mb-20">
-        <div className="max-w-screen-xl items-center px-4 py-8 mx-auto lg:grid lg:grid-cols-12">
+        <div className="max-w-screen-xl items-center px-5 md:px-4 py-8 mx-auto lg:grid lg:grid-cols-12">
           <div className="lg:col-span-7">
             {userName && (
               <h1 className="max-w-2xl mb-2 md:mb-4 text-4xl font-extrabold tracking-tight leading-none md:text-5xl xl:text-6xl dark:text-white">
@@ -73,7 +73,7 @@ const Studenthero = () => {
               </h1>
             )}
             <p className="max-w-2xl mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-md dark:text-gray-400">
-              Mentor Language Institute: Your Pathway to Proficiency. Unlock fluency and broaden horizons with our expert guidance. Join us and embark on a journey of linguistic excellence
+              Mentor Institute: Your Pathway to Proficiency. Unlock fluency and broaden horizons with our expert guidance. Join us and embark on a journey of linguistic excellence
             </p>
             <a href="#courses" className="px-5 py-3 text-base font-medium text-center text-gray-900 bg-orange-500 text-white rounded-lg hover:bg-orange-500 focus:ring-4 hover:text-white focus:ring-gray-100 dark:text-white dark:border-gray-700 dark:hover:bg-gray-700 dark:focus:ring-gray-800">
               Explore Courses
@@ -84,7 +84,7 @@ const Studenthero = () => {
           </div>
         </div>
       </section>
-      <div className="h-1 w-64 mx-auto mt-24 bg-orange-500"></div>
+      <div className="h-1 w-64 mx-auto mt-10 md:mt-24 bg-orange-500"></div>
     </>
   );
 };

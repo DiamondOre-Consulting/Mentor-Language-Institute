@@ -31,25 +31,25 @@ const Register = () => {
     // admin
     const [formValues, setFormValues] = useState({
         classTitle: "",
-        classSchedule: "",
+        // classSchedule: "",
         teachBy: "",
         totalHours: "",
     });
 
-    const [selectedDays, setSelectedDays] = useState({
-        Mon: false,
-        Tue: false,
-        Wed: false,
-        Thu: false,
-        Fri: false,
-        Sat: false,
-        Sun: false,
-    });
+    // const [selectedDays, setSelectedDays] = useState({
+    //     Mon: false,
+    //     Tue: false,
+    //     Wed: false,
+    //     Thu: false,
+    //     Fri: false,
+    //     Sat: false,
+    //     Sun: false,
+    // });
 
-    const handleCheckboxChange = (event) => {
-        const { name, checked } = event.target;
-        setSelectedDays({ ...selectedDays, [name]: checked });
-    };
+    // const handleCheckboxChange = (event) => {
+    //     const { name, checked } = event.target;
+    //     setSelectedDays({ ...selectedDays, [name]: checked });
+    // };
 
 
     const navigate = useNavigate();
@@ -67,19 +67,19 @@ const Register = () => {
                 return;
             }
 
-            let classScheduleString = '';
+            // let classScheduleString = '';
 
-            Object.entries(selectedDays).forEach(([day, isChecked]) => {
-                if (isChecked) {
-                    classScheduleString += day.substring(0, 3) + ' ';
-                }
-            });
+            // Object.entries(selectedDays).forEach(([day, isChecked]) => {
+            //     if (isChecked) {
+            //         classScheduleString += day.substring(0, 3) + ' ';
+            //     }
+            // });
 
             const formData = {
                 classTitle: formValues.classTitle,
                 teachBy: formValues.teachBy,
                 totalHours: formValues.totalHours,
-                classSchedule: classScheduleString.trim(), // Ensure the schedule is trimmed
+                // classSchedule: classScheduleString.trim(), // Ensure the schedule is trimmed
             };
 
             const response = await axios.post(
@@ -100,15 +100,15 @@ const Register = () => {
                     teachBy: "",
                     totalHours: "",
                 });
-                setSelectedDays({
-                    Mon: false,
-                    Tue: false,
-                    Wed: false,
-                    Thu: false,
-                    Fri: false,
-                    Sat: false,
-                    Sun: false,
-                });
+                // setSelectedDays({
+                //     Mon: false,
+                //     Tue: false,
+                //     Wed: false,
+                //     Thu: false,
+                //     Fri: false,
+                //     Sat: false,
+                //     Sun: false,
+                // });
             } else if (response.status === 404) {
                 console.log("Admin not found");
                 setPopupMessage("Admin not found");
@@ -357,7 +357,7 @@ const Register = () => {
                                         <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white md:mx-20">
                                             Register Student
                                         </h1>
-                                        <div className='md:w-22 h-0.5 bg-orange-500 border-rounded'></div>
+                                        <div className=' md:w-22 h-0.5 bg-orange-500 border-rounded'></div>
                                         <form class="space-y-4 md:space-y-6" onSubmit={handleStudentRegister}>
                                             <div>
                                                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white w-full">Name</label>
@@ -454,7 +454,7 @@ const Register = () => {
                                                     ))}
                                                 </select>
                                             </div>
-                                            <div>
+                                            {/* <div>
                                                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Schedule</label>
                                                 <ul className="flex flex-wrap items-center w-full text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg sm:flex sm:dark:bg-gray-700 sm:dark:border-gray-600 sm:dark:text-white">
 
@@ -482,7 +482,7 @@ const Register = () => {
                                                         </li>
                                                     ))}
                                                 </ul>
-                                            </div>
+                                            </div> */}
 
                                             <button className='bg-orange-400 py-2 w-full rounded-md text-white'>Submit</button>
 

@@ -35,8 +35,10 @@ const Login = () => {
                 username,
                 password
             });
+            console.log("inside")
     
             if (response.status === 200) {
+                console.log(response.data)
                 const token = response.data.token;
                 // Store the token in local storage
                 console.log(token);
@@ -53,7 +55,7 @@ const Login = () => {
                 const status = error.response.status;
                 if (status === 401) {
                     console.log("Invalid phone number");
-                    setError("Invalid Phone Number");
+                    setError("Login Details Are Wrong!!");
                 } else {
                     console.error("Error logging in:", status);
                     setError("Login Details Are Wrong!!");
