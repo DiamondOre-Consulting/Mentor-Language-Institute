@@ -59,6 +59,8 @@ const Maindash = () => {
 
   const { decodedToken } = useJwt(localStorage.getItem("token"));
   const token = localStorage.getItem("token");
+  // console.log(decodedToken)
+  // console.log(token)
   if (!token) {
     navigate("/login"); // Redirect to login page if not authenticated
     return;

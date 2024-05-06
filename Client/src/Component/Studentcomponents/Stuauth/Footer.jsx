@@ -1,8 +1,30 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import logo from '..//..//..//assets/logo.png';
 import { Link } from 'react-router-dom';
+import { useJwt } from 'react-jwt'
+import { useNavigate } from 'react-router-dom'
 
 const Footer = () => {
+    const navigate = useNavigate();
+    const token = localStorage.getItem("token");
+    const { decodedToken } = useJwt(token || "No decoded Token Found yet");
+    console.log(token)
+
+    const handleSignup = () => {
+        if (token && decodedToken && decodedToken.exp * 1000 > Date.now()) {
+            if (decodedToken.role === 'admin') {
+                navigate('/admin-dashboard');
+            } else if (decodedToken.role === 'teacher') {
+                navigate('/teacher-dashboard');
+            } else {
+                navigate('/login');
+            }
+        } else {
+            navigate('/login');
+        }
+    }
+
+
     return (
         <footer className="bg-white rounded-lg shadow dark:bg-gray-900 m-4 mt-20">
             <div className="w-full max-w-screen-xl mx-auto p-4 md:py-8">
@@ -12,10 +34,10 @@ const Footer = () => {
                 
                     <ul className="flex items-center text-sm font-medium text-gray-500 sm:mb-0">
                         <li>
-                            <Link to={'/student-login'} className="hover:underline me-4 md:me-6 text-sm md:text-normal">Student Login</Link>
+                            <Link to={'/student-login'} className="cursor-pointer hover:underline me-4 md:me-6 text-sm md:text-normal">Student Login</Link>
                         </li>
                         <li>
-                            <Link to={'/login'} className="hover:underline me-4 md:me-6 text-sm md:text-normal">Teacher /Admin Login</Link>
+                            <span onClick={handleSignup}  className=" cursor-pointer hover:underline me-4 md:me-6 text-sm md:text-normal">Teacher /Admin Login</span>
                         </li>
                     </ul>
                 </div>
