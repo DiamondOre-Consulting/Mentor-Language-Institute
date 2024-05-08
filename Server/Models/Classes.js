@@ -35,7 +35,12 @@ const classSchema = new mongoose.Schema({
   dailyClasses: {
     type: [
       {
-        type: String,
+        classDate: {
+          type: String
+        },
+        numberOfClasses: {
+          type: mongoose.Types.Decimal128
+        }
       },
     ],
     default: [],

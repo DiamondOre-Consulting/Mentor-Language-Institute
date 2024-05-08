@@ -9,8 +9,8 @@ const attendanceSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: true
   },
-  completedHours: {
-    type: Number,
+  totalClassesTaken: {
+    type: mongoose.Types.Decimal128,
     default: 0
   },
   detailAttendance: {
@@ -20,10 +20,14 @@ const attendanceSchema = new mongoose.Schema({
             type: String,
             default: Date.now
         },
-        present: {
-            type: Boolean,
-            default: null
-        }
+        numberOfClassesTaken: {
+          type: mongoose.Types.Decimal128,
+          default: 0
+        },
+        commission: {
+          type: Number,
+          default: 0
+        } 
       },
     ],
     default: [],
