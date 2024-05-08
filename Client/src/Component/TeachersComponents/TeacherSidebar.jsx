@@ -26,7 +26,7 @@ const TeacherSidebar = () => {
 
    
     useEffect(() => {
-        // console.log("this is a token of teacher", token);
+        console.log("this is a token of teacher", token);
         if (!token) {
             navigate("/login"); // Redirect to login page if not authenticated
         } else {
@@ -38,7 +38,7 @@ const TeacherSidebar = () => {
                 navigate("/login");
             }
         }
-    }, [decodedToken, navigate, token]);
+    }, [decodedToken]);
 
     return (
         <>

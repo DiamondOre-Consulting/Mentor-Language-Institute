@@ -57,7 +57,7 @@ const Teachermain = () => {
   useEffect(() => {
     console.log("this is a token of teacher", token);
     if (!token) {
-        navigate("/login"); // Redirect to login page if not authenticated
+        navigate("/login"); 
     } else {
         const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
 
@@ -67,7 +67,7 @@ const Teachermain = () => {
             navigate("/login");
         }
     }
-}, [decodedToken, navigate, token]);
+}, [decodedToken]);
 
   return (
     <>

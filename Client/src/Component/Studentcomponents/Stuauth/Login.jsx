@@ -102,7 +102,7 @@ const Login = () => {
                         }
                         else if (status === 402) {
                             console.log("invalid passward")
-                            setError("Invalid password No");
+                            setError("Invalid password");
                         }
                         else {
                             console.error("Error login teacher:", status);

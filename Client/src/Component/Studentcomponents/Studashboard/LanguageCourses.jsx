@@ -6,7 +6,7 @@ import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 
 const LanguageCourses = () => {
-    
+
     const navigate = useNavigate();
     const [showPopup, setShowPopup] = useState(false);
     const [showPopupEnroll, setShowPopupEnroll] = useState(false);
@@ -20,8 +20,8 @@ const LanguageCourses = () => {
     };
 
     const handleEnrollClose = () => {
-         
-           setShowPopupEnroll(false)
+
+        setShowPopupEnroll(false)
     }
 
 
@@ -146,13 +146,13 @@ const LanguageCourses = () => {
         try {
             setPopupMessage(null);
             setShowPopup(false);
-            
+
             const token = localStorage.getItem('token');
             if (!token) {
                 console.error('No token found');
                 return;
             }
-            console.log("after try block applied course ",selectedCourseId)
+            console.log("after try block applied course ", selectedCourseId)
 
             const response = await axios.post(
                 `http://localhost:7000/api/students/apply-course/${selectedCourseId}`,
@@ -163,7 +163,7 @@ const LanguageCourses = () => {
                     }
                 }
             );
-            
+
             if (response.status === 200) {
                 console.log('Successfully applied for course');
                 setShowPopup(false);
@@ -171,7 +171,7 @@ const LanguageCourses = () => {
                 setSelectedCourseId(null);
 
             }
-            else{
+            else {
                 console.log("some errors occurred")
             }
         } catch (error) {
@@ -197,7 +197,7 @@ const LanguageCourses = () => {
 
     return (
         <>
-            <div className='px-10 'id='courses'>
+            <div className='px-10 ' id='courses'>
                 <h1 className='text-3xl md:text-4xl font-bold mb-10 md:mb-24 text-gray-900'>Language Courses</h1>
 
                 <div className='slider-container PY-10'>
@@ -212,7 +212,7 @@ const LanguageCourses = () => {
                                     {/* Content */}
                                     <div className='p-6  mt-8 cursor-pointer'>
                                         <h1 className='text-xl font-bold mb-2'>{course.classTitle}</h1>
-                                        <p className='text-gray-600 mb-4 uppercase'>Mentor  Institute</p>
+                                        <p className='text-gray-600 mb-4 uppercase'>Mentor Institute</p>
 
                                         {/* Button */}
                                         <button className="block z-10 w-full px-4 py-2 cursor-pointer hover:bg-orange-500 bg-orange-400 text-sm font-semibold text-white rounded-lg shadow-md focus:outline-none hover:bg-orange-600 transition duration-300" onClick={() => handleEnrollClick(course._id)}>
@@ -230,9 +230,9 @@ const LanguageCourses = () => {
                         <div className="fixed inset-0 flex items-center justify-center">
 
                             <section className="rounded-lg shadow-xl bg-white w-4/5 sm:w-3/5 lg:w-1/3  grid grid-cols-2">
-                                
+
                                 <img src="https://t4.ftcdn.net/jpg/06/23/40/73/360_F_623407391_wtq6RVJUq2RGb2e3D0ykn5zJOqfJhOSc.jpg" className='h-full' alt="" />
-                                
+
                                 <div className="p-6 text-left">
 
                                     <h2 className="text-xl font-bold text-teal-green-900 mb-4">{Eachcourse?.classTitle}</h2>

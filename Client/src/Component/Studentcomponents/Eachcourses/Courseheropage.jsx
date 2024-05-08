@@ -5,7 +5,8 @@ import { Link, useParams } from 'react-router-dom'
 const Courseheropage = () => {
     const { id } = useParams();
     const [studentData, setStudentData] = useState(null);
-    const [classData, setClassData] = useState(null)
+    const [classData, setClassData] = useState(null);
+    
 
     useEffect(() => {
 
@@ -87,6 +88,9 @@ const Courseheropage = () => {
                 </div>
 
                 <div className='flex justify-end items-center'>
+                    <li className='relative group z-50 flex items-center float-right mr-1 p-4 cursor-pointer'>
+                        <Link to={'/student-chat'} className="block py-2 px-3 text-gray-200  rounded md:px-2 md:py-1 rounded-full bg-orange-400 " aria-current="page" >Chat Now</Link>
+                    </li>
                     <select className='z-90 bg-transparent w-24  rounded-full focus:border-gray-200  border-1 border-gray-400  relative group z-50 flex items-center float-right mr-1 cursor-pointer'>
                         <option className='text-gray-900 '>Help?</option>
                         <option className='text-gray-900'>+91-9999466159</option>

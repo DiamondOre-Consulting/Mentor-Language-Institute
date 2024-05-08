@@ -15,13 +15,13 @@ const TeacherDashboard = ({ teacherData }) => {
 
   const { decodedToken } = useJwt(localStorage.getItem("token"));
   const token = localStorage.getItem("token");
-  // console.log("this is token", token)
+  console.log("this is token", token)
   const navigate = useNavigate();
 
   useEffect(() => {
     // console.log("this is a token of teacher", token);
     if (!token) {
-      navigate("/login"); // Redirect to login page if not authenticated
+      navigate("/login"); 
     } else {
       const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
 
@@ -31,7 +31,7 @@ const TeacherDashboard = ({ teacherData }) => {
         navigate("/login");
       }
     }
-  }, [decodedToken, navigate, token]);
+  }, [decodedToken]);
 
   return (
     <>
@@ -43,6 +43,7 @@ const TeacherDashboard = ({ teacherData }) => {
               <Route path='/message' element={<TeacherMessage />} />
               <Route path='/myaccount' element={<TeacherProfile teacherData={teacherData} />} />
               <Route path='/allstudents/:selectedClassId' element={<TeacherAllStudentEachCourse />} />
+  
               {/* <Route path='/allstudents/:selectedClassId' element={<TeacherAllStudents/>}/> */}
               {/* <Route path='/attendance' element={<UpdateAttendence/>}/> */}
 

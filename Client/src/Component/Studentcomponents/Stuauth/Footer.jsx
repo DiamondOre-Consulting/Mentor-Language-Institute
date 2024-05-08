@@ -29,7 +29,7 @@ const Footer = () => {
         <footer className="bg-white rounded-lg shadow dark:bg-gray-900 m-4 mt-20">
             <div className="w-full max-w-screen-xl mx-auto p-4 md:py-8">
             <div class="sm:flex flex items-center sm:items-center justify-between  sm:justify-between">
-                        <img src={logo} className="h-8 md:h-20" alt="Flowbite Logo" />
+                        {/* <img src={logo} className="h-8 md:h-20" alt="Flowbite Logo" /> */}
                         <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white"></span>
                 
                     <ul className="flex items-center text-sm font-medium text-gray-500 sm:mb-0">

@@ -160,6 +160,7 @@ const Message = () => {
       } else if (response.status === 409) {
         console.log("Student already registered!");
         setPopupMessage('Student already Enrolled!');
+        setIsFormOpen(false);;
       }
     } catch (error) {
       if (error.response) {
@@ -167,6 +168,7 @@ const Message = () => {
         if (status === 409) {
             console.log("Student already registered!");
             setPopupMessage('Student already Enrolled!');
+            setIsFormOpen(false);;
         }
         else {
             console.error("Error login teacher:", status);
@@ -189,6 +191,9 @@ const Message = () => {
           <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
         </div>
       )}
+
+<h1 className='text-4xl mb-1 font-semibold text-center'>All Applied Students</h1>
+      <div className='w-44 rounded h-1 bg-orange-500 text-center mb-12 mx-auto'></div>
       <div className='grid md:px-0 px-8 grid-cols-1 md:grid-cols-3 md:mt-0 mt-4 gap-4'>
         {stuDetails.map((student, index) => (
           <div className="flex items-start gap-2.5" key={index}>
@@ -233,7 +238,7 @@ const Message = () => {
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
                 <label htmlFor="totalFee" className="block text-sm font-medium text-gray-700">Total Fee:</label>
-                <input type="text" id="totalFee" name="totalFee" value={formData.totalFee} onChange={handleChange} className="mt-1 p-2 border border-gray-300 rounded-md w-full" required />
+                <input type="text" id="totalFee" name="totalFee" value={formData.totalFee} onChange={handleChange} className="mt-1 p-2 border border-gray-500 rounded-md w-full" required />
               </div>
               <div className="mb-4">
                 <label htmlFor="feeMonth" className="block text-sm font-medium text-gray-700">Fee Month:</label>
@@ -260,7 +265,7 @@ const Message = () => {
               </div>
               <div className="mb-4">
                 <label htmlFor="amountPaid" className="block text-sm font-medium text-gray-700">Amount Paid:</label>
-                <input type="text" id="amountPaid" name="amountPaid" value={formData.amountPaid} onChange={handleChange} className="mt-1 p-2 border border-gray-300 rounded-md w-full" required />
+                <input type="text" id="amountPaid" name="amountPaid" value={formData.amountPaid} onChange={handleChange} className="mt-1 p-2 border border-gray-500 rounded-md w-full" required />
               </div>
               <div className="flex justify-end">
                 <button type="button" onClick={closeForm} className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 mr-2">Close</button>

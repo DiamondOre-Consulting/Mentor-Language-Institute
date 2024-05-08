@@ -51,11 +51,11 @@ const StudentLogin = () => {
                 const status = error.response.status;
                 if (status === 401) {
                     console.log("invalid phone no");
-                    setError("Invalid Phone No");
+                    setError("Invalid Phone NO");
                 }
                 else if (status === 402) {
                     console.log("invalid passward")
-                    setError("Invalid password No");
+                    setError("Invalid Password ");
                 }
                 else {
                     console.error("Error adding Student:", status);
