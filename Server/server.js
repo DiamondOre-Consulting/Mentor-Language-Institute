@@ -12,7 +12,7 @@ const server = createServer(app);
 // const io = new Server(server);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: "http://192.168.29.235:5173",
     methods: ['GET','POST'],
     credentials: true
   }
@@ -67,9 +67,9 @@ io.on('connection', (socket) => {
   console.log('New client connected');
   console.log("Id: ", socket.id);
 
-  socket.on('message', (data) => {
-    console.log(data);
-    socket.broadcast.emit('received', data)
+  socket.on('message', ( {room, message}) => {
+    console.log({room, message});
+    io.to(room).emit('received', message)
   })
   
   socket.on('disconnect', () => {

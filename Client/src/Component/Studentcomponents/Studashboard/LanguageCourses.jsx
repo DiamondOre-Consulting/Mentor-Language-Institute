@@ -77,7 +77,7 @@ const LanguageCourses = () => {
                         return;
                     }
                     const response = await axios.get(
-                        `http://localhost:7000/api/students/all-courses/${selectedCourseId}`,
+                        `http://192.168.29.235:7000/api/students/all-courses/${selectedCourseId}`,
                         {
                             headers: {
                                 Authorization: `Bearer ${token}`
@@ -116,7 +116,7 @@ const LanguageCourses = () => {
 
 
                 const response = await axios.get(
-                    "http://localhost:7000/api/students/all-courses",
+                    "http://192.168.29.235:7000/api/students/all-courses",
                     {
                         headers: {
                             Authorization: `Bearer ${token}`
@@ -155,7 +155,7 @@ const LanguageCourses = () => {
             console.log("after try block applied course ", selectedCourseId)
 
             const response = await axios.post(
-                `http://localhost:7000/api/students/apply-course/${selectedCourseId}`,
+                `http://192.168.29.235:7000/api/students/apply-course/${selectedCourseId}`,
                 {},
                 {
                     headers: {

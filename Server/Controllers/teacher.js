@@ -113,13 +113,12 @@ router.get('/my-classes/:id', TeacherAuthenticateToken, async (req, res) => {
 router.post("/schedule-class/:id", TeacherAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { date } = req.body;
-    const {userId}  = req.user;
+    const { date, numberOfClasses } = req.body;
 
     const addNewClass = await Classes.findByIdAndUpdate(
       { _id: id },
       {
-        $push: { dailyClasses: date },
+        $push: { dailyClasses: date, numberOfClasses },
       },
       { new: true }
     );
@@ -201,8 +200,9 @@ router.put('/update-class-hours/:id', TeacherAuthenticateToken, async (req, res)
 router.get('/attendance/:id1/:id2', TeacherAuthenticateToken, async (req, res) => {
     try {
         const {id1, id2} = req.params;
+        const {attendanceDate} = req.body
 
-        const attendanceById = await Attendance.findOne({studentId: id2, classId: id1});
+        const attendanceById = await Attendance.findOne({studentId: id2, classId: id1, "detailAttendance.classDate": attendanceDate});
 
         res.status(200).json(attendanceById)
     } catch(error) {
@@ -214,15 +214,18 @@ router.get('/attendance/:id1/:id2', TeacherAuthenticateToken, async (req, res) =
 router.put('/update-attendance/:id1/:id2', TeacherAuthenticateToken, async (req, res) => {
     try {
         const {id1, id2} = req.params;
-        const {attendanceDate, present} = req.body;
+        const { attendanceDate, numberOfClassesTaken } = req.body;
 
         const updatedAttendance = await Attendance.findOneAndUpdate(
             {
                 classId: id1,
                 studentId: id2,
-                "detailAttendance.classDate": attendanceDate
+                "detailAttendance.classDate": attendanceDate,
             },
-            { $set: { "detailAttendance.$.present": present } },
+            {
+              $set: {totalClassesTaken: totalClassesTaken + (numberOfClassesTaken - updatedAttendance.detailAttendance.numberOfClassesTaken)},
+              $push: {detailAttendance: {numberOfClassesTaken: numberOfClassesTaken}}
+            },
             { new: true }
         );
 
