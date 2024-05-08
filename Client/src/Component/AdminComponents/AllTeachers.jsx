@@ -21,7 +21,7 @@ const AllTeachers = () => {
 
        
         const response = await axios.get(
-          "http://localhost:7000/api/admin-confi/all-teachers",
+          "http://192.168.29.235:7000/api/admin-confi/all-teachers",
           {
             headers: {
               Authorization: `Bearer ${token}`

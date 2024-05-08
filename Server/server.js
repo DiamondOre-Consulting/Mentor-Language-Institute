@@ -67,9 +67,9 @@ io.on('connection', (socket) => {
   console.log('New client connected');
   console.log("Id: ", socket.id);
 
-  socket.on('message', (data) => {
-    console.log(data);
-    socket.broadcast.emit('received', data)
+  socket.on('message', ( {room, message}) => {
+    console.log({room, message});
+    io.to(room).emit('received', message)
   })
   
   socket.on('disconnect', () => {

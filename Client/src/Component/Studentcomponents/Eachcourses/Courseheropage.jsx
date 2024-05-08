@@ -22,7 +22,7 @@ const Courseheropage = () => {
 
                 // Fetch associates data from the backend
                 const response = await axios.get(
-                    "http://localhost:7000/api/students/my-profile",
+                    "http://192.168.29.235:7000/api/students/my-profile",
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -40,7 +40,7 @@ const Courseheropage = () => {
 
 
                     const classResponse = await axios.get(
-                        `http://localhost:7000/api/students/all-courses/${id}`,
+                        `http://192.168.29.235:7000/api/students/all-courses/${id}`,
                         {
                             headers: {
                                 Authorization: `Bearer ${token}`,

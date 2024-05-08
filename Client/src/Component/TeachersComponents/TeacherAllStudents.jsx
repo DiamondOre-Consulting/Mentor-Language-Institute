@@ -47,7 +47,7 @@ const TeacherAllStudents = () => {
                     return;
                 }
 
-                const allStudentsResponse = await axios.get(`http://localhost:7000/api/teachers/class/all-students/${selectedClassId}`, {
+                const allStudentsResponse = await axios.get(`http://192.168.29.235:7000/api/teachers/class/all-students/${selectedClassId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -79,7 +79,7 @@ const TeacherAllStudents = () => {
                 return;
             }
 
-            const response = await axios.get(`http://localhost:7000/api/teachers/my-classes/${selectedClassId}`, {
+            const response = await axios.get(`http://192.168.29.235:7000/api/teachers/my-classes/${selectedClassId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -119,7 +119,7 @@ const TeacherAllStudents = () => {
                 }
 
                 for (const stu of studentId) {
-                    const attendanceResponse = await axios.get(`http://localhost:7000/api/teachers/attendance/${selectedClassId}/${stu}`, {
+                    const attendanceResponse = await axios.get(`http://192.168.29.235:7000/api/teachers/attendance/${selectedClassId}/${stu}`, {
                         headers: {
                             Authorization: `Bearer ${token}`,
                         },
@@ -157,7 +157,7 @@ const TeacherAllStudents = () => {
             }
 
             const response = await axios.put(
-                `http://localhost:7000/api/teachers/update-attendance/${selectedClassId}/${selectedstudentId}`,
+                `http://192.168.29.235:7000/api/teachers/update-attendance/${selectedClassId}/${selectedstudentId}`,
                 {
                     attendanceDate: selectedDate,
                     present: attendanceStatus === 'present',

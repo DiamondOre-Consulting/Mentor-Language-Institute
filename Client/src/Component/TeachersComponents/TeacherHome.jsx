@@ -88,7 +88,7 @@ const TeacherHome = ({ teacherData }) => {
             const classIds = teacherData.myClasses;
             const classesData = [];
             for (const classId of classIds) {
-                const classResponse = await axios.get(`http://localhost:7000/api/teachers/my-classes/${classId}`, {
+                const classResponse = await axios.get(`http://192.168.29.235:7000/api/teachers/my-classes/${classId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -131,7 +131,7 @@ const TeacherHome = ({ teacherData }) => {
             }
             // console.log("selected schedule", selectedClassId)
             const response = await axios.post(
-                `http://localhost:7000/api/teachers/schedule-class/${selectedClassId}`,
+                `http://192.168.29.235:7000/api/teachers/schedule-class/${selectedClassId}`,
                 { date },
                 {
                     headers: {
@@ -170,7 +170,7 @@ const TeacherHome = ({ teacherData }) => {
                     return;
                 }
 
-                const classresponse = await axios.get(`http://localhost:7000/api/teachers/my-classes/${selectedClassId}`, {
+                const classresponse = await axios.get(`http://192.168.29.235:7000/api/teachers/my-classes/${selectedClassId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -184,7 +184,7 @@ const TeacherHome = ({ teacherData }) => {
 
                 }
 
-                const allsturesponse = await axios.get(`http://localhost:7000/api/teachers/class/all-students/${selectedClassId}`, {
+                const allsturesponse = await axios.get(`http://192.168.29.235:7000/api/teachers/class/all-students/${selectedClassId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -232,7 +232,7 @@ const TeacherHome = ({ teacherData }) => {
 
 
                 const response = await axios.get(
-                    "http://localhost:7000/api/teachers/my-classes",
+                    "http://192.168.29.235:7000/api/teachers/my-classes",
                     {
                         headers: {
                             Authorization: `Bearer ${token}`
@@ -278,7 +278,7 @@ const TeacherHome = ({ teacherData }) => {
             }
 
             const response = await axios.put(
-                `http://localhost:7000/api/teachers/update-class-hours/${selectedClassId}`,
+                `http://192.168.29.235:7000/api/teachers/update-class-hours/${selectedClassId}`,
                 { updatedHours: updateHoursInput },
                 {
                     headers: {

@@ -28,7 +28,7 @@ const Maindash = () => {
 
         // Fetch associates data from the backend
         const response = await axios.get(
-          "http://localhost:7000/api/students/my-profile",
+          "http://192.168.29.235:7000/api/students/my-profile",
           {
             headers: {
               Authorization: `Bearer ${token}`,
