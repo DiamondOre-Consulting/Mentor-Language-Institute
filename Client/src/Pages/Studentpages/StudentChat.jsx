@@ -27,7 +27,7 @@ const StudentChat = () => {
 
                 // Fetch associates data from the backend
                 const response = await axios.get(
-                    "http://localhost:7000/api/students/my-profile",
+                    "http://192.168.29.235:7000/api/students/my-profile",
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -43,7 +43,7 @@ const StudentChat = () => {
                     for (const classId of classes) {
 
                         const classResponse = await axios.get(
-                            `http://localhost:7000/api/students/all-courses/${classId}`,
+                            `http://192.168.29.235:7000/api/students/all-courses/${classId}`,
                             {
                                 headers: {
                                     Authorization: `Bearer ${token}`,
@@ -91,7 +91,7 @@ const StudentChat = () => {
 
                 const teacherPromises = Array.from(uniqueTeacherIds).map(async (teacherId) => {
                     const teacherResponse = await axios.get(
-                        `http://localhost:7000/api/students/teacher/${teacherId}`,
+                        `http://192.168.29.235:7000/api/students/teacher/${teacherId}`,
                         {
                             headers: {
                                 Authorization: `Bearer ${token}`,

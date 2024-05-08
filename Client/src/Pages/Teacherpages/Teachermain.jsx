@@ -12,6 +12,31 @@ const Teachermain = () => {
   const token = localStorage.getItem("token");
   console.log(token )
 
+  console.log(token)
+  if (!token) {
+    navigate("/login"); // Redirect to login page if not authenticated
+    return;
+  }
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      // No token found, redirect to login page
+      navigate("/login");
+    } else {
+      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
+      console.log(tokenExpiration)
+
+      if (tokenExpiration && tokenExpiration < Date.now()) {
+        // Token expired, remove from local storage and redirect to login page
+        localStorage.removeItem("token");
+        navigate("/admin-login");
+      }
+    }
+  }, [decodedToken])
+
+
+
   useEffect(()=>{
     const fetchTeacherData = async () => {
       try {
@@ -50,24 +75,11 @@ const Teachermain = () => {
     };
 
     fetchTeacherData();
-  },[])
+  },[decodedToken])
 
 
 
-  useEffect(() => {
-    console.log("this is a token of teacher", token);
-    if (!token) {
-        navigate("/login"); 
-    } else {
-        const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
 
-        if (tokenExpiration && tokenExpiration < Date.now()) {
-            
-            localStorage.removeItem("token");
-            navigate("/login");
-        }
-    }
-}, [decodedToken]);
 
   return (
     <>

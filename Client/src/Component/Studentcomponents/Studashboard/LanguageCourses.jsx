@@ -40,7 +40,7 @@ const LanguageCourses = () => {
         autoplaySpeed: 2000,
         responsive: [
             {
-                breakpoint: 768,
+                breakpoint: 1200,
                 settings: {
                     arrows: false,
                     centerMode: true,
@@ -48,6 +48,26 @@ const LanguageCourses = () => {
                     slidesToShow: 4
                 }
             },
+            
+            {
+                breakpoint: 992,
+                settings: {
+                    arrows: false,
+                    centerMode: true,
+                    centerPadding: '40px',
+                    slidesToShow: 3
+                }
+            },
+            {
+                breakpoint: 768,
+                settings: {
+                    arrows: false,
+                    centerMode: true,
+                    centerPadding: '40px',
+                    slidesToShow: 2
+                }
+            },
+           
             {
                 breakpoint: 480,
                 settings: {
@@ -215,7 +235,7 @@ const LanguageCourses = () => {
                                         <p className='text-gray-600 mb-4 uppercase'>Mentor Institute</p>
 
                                         {/* Button */}
-                                        <button className="block z-10 w-full px-4 py-2 cursor-pointer hover:bg-orange-500 bg-orange-400 text-sm font-semibold text-white rounded-lg shadow-md focus:outline-none hover:bg-orange-600 transition duration-300" onClick={() => handleEnrollClick(course._id)}>
+                                        <button className="mt-10 block z-10 w-full px-4 py-2 cursor-pointer hover:bg-orange-500 bg-orange-400 text-sm font-semibold text-white rounded-lg shadow-md focus:outline-none hover:bg-orange-600 transition duration-300" onClick={() => handleEnrollClick(course._id)}>
                                             Apply
                                         </button>
                                     </div>

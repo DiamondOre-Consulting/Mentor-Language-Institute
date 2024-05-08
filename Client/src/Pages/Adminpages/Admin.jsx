@@ -10,6 +10,30 @@ import { useNavigate } from 'react-router-dom'
 const Admin = () => {
   const navigate = useNavigate();
   // const [adminData , setAdminData] =useState([])
+  const { decodedToken } = useJwt(localStorage.getItem("token"));
+  const token = localStorage.getItem("token");
+  console.log(token)
+  if (!token) {
+    navigate("/login"); // Redirect to login page if not authenticated
+    return;
+  }
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      // No token found, redirect to login page
+      navigate("/login");
+    } else {
+      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
+      console.log(tokenExpiration)
+
+      if (tokenExpiration && tokenExpiration < Date.now()) {
+        // Token expired, remove from local storage and redirect to login page
+        localStorage.removeItem("token");
+        navigate("/admin-login");
+      }
+    }
+  }, [decodedToken])
 
   useEffect(() => {
     const fetchAdminData = async () => {
@@ -46,34 +70,11 @@ const Admin = () => {
     };
 
     fetchAdminData();
-  }, [navigate])
+  }, [navigate , decodedToken])
 
 
 
-  const { decodedToken } = useJwt(localStorage.getItem("token"));
-  const token = localStorage.getItem("token");
-  console.log(token)
-  if (!token) {
-    navigate("/login"); // Redirect to login page if not authenticated
-    return;
-  }
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      // No token found, redirect to login page
-      navigate("/login");
-    } else {
-      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
-      console.log(tokenExpiration)
-
-      if (tokenExpiration && tokenExpiration < Date.now()) {
-        // Token expired, remove from local storage and redirect to login page
-        localStorage.removeItem("token");
-        navigate("/admin-login");
-      }
-    }
-  }, [decodedToken])
+ 
 
 
 
