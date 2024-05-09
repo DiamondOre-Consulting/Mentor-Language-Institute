@@ -49,7 +49,7 @@ const Admin = () => {
 
         // Fetch associates data from the backend
         const response = await axios.get(
-          "http://192.168.29.235:7000/api/admin-confi/my-profile",
+          "http://localhost:7000/api/admin-confi/my-profile",
           {
             headers: {
               Authorization: `Bearer ${token}`,

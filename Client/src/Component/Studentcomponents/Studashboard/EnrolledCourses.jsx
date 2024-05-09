@@ -21,7 +21,7 @@ const EnrolledCourses = () => {
 
                 // Fetch associates data from the backend
                 const response = await axios.get(
-                    "http://192.168.29.235:7000/api/students/my-profile",
+                    "http://localhost:7000/api/students/my-profile",
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -37,7 +37,7 @@ const EnrolledCourses = () => {
                     for (const classId of classes) {
 
                         const classResponse = await axios.get(
-                            `http://192.168.29.235:7000/api/students/all-courses/${classId}`,
+                            `http://localhost:7000/api/students/all-courses/${classId}`,
                             {
                                 headers: {
                                     Authorization: `Bearer ${token}`,

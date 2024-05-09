@@ -3,8 +3,8 @@ import io from 'socket.io-client';
 
 const Chat = () => {
 
-  const socket = useMemo(() => io('http://192.168.29.235:7000'), [])
-  // const socket = io('http://192.168.29.235:7000')
+  const socket = useMemo(() => io('http://localhost:7000'), [])
+  // const socket = io('http://localhost:7000')
     
     // const currentUser = "Wall.E";
     // const recipient = "Eva";

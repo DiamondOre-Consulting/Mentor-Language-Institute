@@ -83,7 +83,7 @@ const Register = () => {
             };
 
             const response = await axios.post(
-                "http://192.168.29.235:7000/api/admin-confi/add-new-class",
+                "http://localhost:7000/api/admin-confi/add-new-class",
                 formData,
                 {
                     headers: {
@@ -153,7 +153,7 @@ const Register = () => {
 
 
                 const response = await axios.get(
-                    "http://192.168.29.235:7000/api/admin-confi/all-teachers",
+                    "http://localhost:7000/api/admin-confi/all-teachers",
                     {
                         headers: {
                             Authorization: `Bearer ${token}`
@@ -200,7 +200,7 @@ const Register = () => {
             console.log(token)
 
             const response = await axios.post(
-                "http://192.168.29.235:7000/api/admin-confi/add-teacher",
+                "http://localhost:7000/api/admin-confi/add-teacher",
                 {
                     name,
                     phone,
@@ -272,7 +272,7 @@ const Register = () => {
             console.log(token)
 
             const response = await axios.post(
-                "http://192.168.29.235:7000/api/admin-confi/add-student",
+                "http://localhost:7000/api/admin-confi/add-student",
                 {
                     name,
                     phone,

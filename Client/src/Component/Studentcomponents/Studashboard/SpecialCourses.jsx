@@ -20,7 +20,7 @@ const SpecialCourses = () => {
                                 </h2>
                             </div>
 
-                            <div className='grid grid-cols-1 md:grid-cols-5 gap-2 gap-y-4 mt-10 mb-0'>
+                            <div className='grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-2 gap-y-4 mt-10 mb-0'>
                                 <div className='border border-1 h-60 rounded-md' style={{ backgroundImage: `url(${ielts})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
                                 <div className='border border-1 h-60 rounded-md' style={{ backgroundImage: `url(${sat})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
                                 <div className='border border-1 h-60 rounded-md' style={{ backgroundImage: `url(${toefl})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>

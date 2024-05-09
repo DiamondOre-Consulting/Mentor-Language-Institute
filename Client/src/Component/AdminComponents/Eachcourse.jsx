@@ -54,7 +54,7 @@ const Eachcourse = () => {
 
                 // Fetch course details
                 const response = await axios.get(
-                    `http://192.168.29.235:7000/api/admin-confi/all-classes/${id}`,
+                    `http://localhost:7000/api/admin-confi/all-classes/${id}`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -69,7 +69,7 @@ const Eachcourse = () => {
                     // Fetch teacher details
                     const teacherId = courseData.teachBy;
                     const teacherResponse = await axios.get(
-                        `http://192.168.29.235:7000/api/admin-confi/all-teachers/${teacherId}`,
+                        `http://localhost:7000/api/admin-confi/all-teachers/${teacherId}`,
                         {
                             headers: {
                                 Authorization: `Bearer ${token}`,
@@ -89,7 +89,7 @@ const Eachcourse = () => {
 
                     for (const studentId of enrolledStudents) {
                         const studentResponse = await axios.get(
-                            `http://192.168.29.235:7000/api/admin-confi/all-students/${studentId}`,
+                            `http://localhost:7000/api/admin-confi/all-students/${studentId}`,
                             {
                                 headers: {
                                     Authorization: `Bearer ${token}`,
@@ -110,7 +110,7 @@ const Eachcourse = () => {
 
                     for (const studentId of applyStudents) {
                         const studentResponse = await axios.get(
-                            `http://192.168.29.235:7000/api/admin-confi/all-students/${studentId}`,
+                            `http://localhost:7000/api/admin-confi/all-students/${studentId}`,
                             {
                                 headers: {
                                     Authorization: `Bearer ${token}`,

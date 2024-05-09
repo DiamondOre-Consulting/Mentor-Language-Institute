@@ -48,7 +48,7 @@ const LanguageCourses = () => {
                     slidesToShow: 4
                 }
             },
-            
+
             {
                 breakpoint: 992,
                 settings: {
@@ -67,7 +67,7 @@ const LanguageCourses = () => {
                     slidesToShow: 2
                 }
             },
-           
+
             {
                 breakpoint: 480,
                 settings: {
@@ -97,7 +97,7 @@ const LanguageCourses = () => {
                         return;
                     }
                     const response = await axios.get(
-                        `http://192.168.29.235:7000/api/students/all-courses/${selectedCourseId}`,
+                        `http://localhost:7000/api/students/all-courses/${selectedCourseId}`,
                         {
                             headers: {
                                 Authorization: `Bearer ${token}`
@@ -136,7 +136,7 @@ const LanguageCourses = () => {
 
 
                 const response = await axios.get(
-                    "http://192.168.29.235:7000/api/students/all-courses",
+                    "http://localhost:7000/api/students/all-courses",
                     {
                         headers: {
                             Authorization: `Bearer ${token}`
@@ -175,7 +175,7 @@ const LanguageCourses = () => {
             console.log("after try block applied course ", selectedCourseId)
 
             const response = await axios.post(
-                `http://192.168.29.235:7000/api/students/apply-course/${selectedCourseId}`,
+                `http://localhost:7000/api/students/apply-course/${selectedCourseId}`,
                 {},
                 {
                     headers: {
@@ -225,19 +225,21 @@ const LanguageCourses = () => {
                         <Slider {...settings} >
                             {allCourses.map((course) => (
 
-                                <div key={course._id} className='relative bg-white border border-gray-200 rounded-lg overflow-hidden shadow-md transform hover:scale-105 h-64  transition duration-'>
+                                <div key={course._id} className='relative bg-white border border-gray-200 rounded-lg overflow-hidden shadow-md transform hover:scale-105 h-56  transition duration-'>
                                     {/* Notebook Lines */}
                                     {/* <div className='absolute inset-0 bg-gradient-to-b from-orange-200 to-gray-100 opacity-50'></div> */}
 
                                     {/* Content */}
-                                    <div className='p-6  mt-8 cursor-pointer'>
-                                        <h1 className='text-xl font-bold mb-2'>{course.classTitle}</h1>
-                                        <p className='text-gray-600 mb-4 uppercase'>Mentor Institute</p>
+                                    <div className="px-4 py-8 grid grid-cols-1 h-56 gap-4 content-between">
+                                        <div>
+                                            <h1 className="text-xl font-bold mb-2">{course.classTitle}</h1>
+                                            <p className="text-gray-600  uppercase">Mentor Institute</p></div>
 
-                                        {/* Button */}
-                                        <button className="mt-10 block z-10 w-full px-4 py-2 cursor-pointer hover:bg-orange-500 bg-orange-400 text-sm font-semibold text-white rounded-lg shadow-md focus:outline-none hover:bg-orange-600 transition duration-300" onClick={() => handleEnrollClick(course._id)}>
+
+                                        <button className="block w-full px-4 py-2 cursor-pointer hover:bg-orange-500 bg-orange-400 text-sm font-semibold text-white rounded-lg shadow-md focus:outline-none hover:bg-orange-600 transition duration-300" onClick={() => handleEnrollClick(course._id)}>
                                             Apply
                                         </button>
+
                                     </div>
                                 </div>
 

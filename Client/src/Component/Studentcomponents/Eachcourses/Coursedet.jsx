@@ -43,7 +43,7 @@ const Coursedet = () => {
 
                 // Fetch associates data from the backend
                 const response = await axios.get(
-                    "http://192.168.29.235:7000/api/students/my-profile",
+                    "http://localhost:7000/api/students/my-profile",
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -62,7 +62,7 @@ const Coursedet = () => {
                     for(const ids of classes){
 
                         const AllEnrollResponse = await axios.get(
-                            `http://192.168.29.235:7000/api/students/all-courses/${ids}`,
+                            `http://localhost:7000/api/students/all-courses/${ids}`,
                             {
                                 headers: {
                                     Authorization: `Bearer ${token}`,
@@ -83,7 +83,7 @@ const Coursedet = () => {
 
                     const allEnrollClassData = [];
                         const classResponse = await axios.get(
-                            `http://192.168.29.235:7000/api/students/all-courses/${id}`,
+                            `http://localhost:7000/api/students/all-courses/${id}`,
                             {
                                 headers: {
                                     Authorization: `Bearer ${token}`,
@@ -98,7 +98,7 @@ const Coursedet = () => {
                             allEnrollClassData.push(classData);
 
                             const teacherId = classResponse.data.teachBy;
-                            const teacherResponse = await axios.get(`http://192.168.29.235:7000/api/students/teacher/${teacherId}`, {
+                            const teacherResponse = await axios.get(`http://localhost:7000/api/students/teacher/${teacherId}`, {
                                 headers: {
                                     Authorization: `Bearer ${token}`,
                                 },
@@ -149,7 +149,7 @@ const Coursedet = () => {
                 }
 
 
-                const attendanceResponse = await axios.get(`http://192.168.29.235:7000/api/students/my-attendance/${id}`, {
+                const attendanceResponse = await axios.get(`http://localhost:7000/api/students/my-attendance/${id}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -201,7 +201,7 @@ const Coursedet = () => {
                     return;
                 }
 
-                const FeeResponse = await axios.get(`http://192.168.29.235:7000/api/students/my-fee-details/${id}`, {
+                const FeeResponse = await axios.get(`http://localhost:7000/api/students/my-fee-details/${id}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },

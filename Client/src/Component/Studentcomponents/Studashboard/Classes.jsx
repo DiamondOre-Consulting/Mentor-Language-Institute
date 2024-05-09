@@ -60,12 +60,12 @@ const Classes = () => {
                           
                         </div>
 
-                        <div className='grid grid-cols-1 md:grid-cols-5 gap-2 gap-y-4 mt-10 mb-10'>
+                        <div className='grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-2 gap-y-4 mt-10 mb-10'>
 
-                        <div className='col-span-2 h-60 rounded-md' style={{ backgroundImage: "url('https://resize.indiatvnews.com/en/resize/newbucket/1200_-/2023/08/cbse-2-1691847358.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}></div>
-                        <div className='col-span-3 h-60 rounded-md' style={{ backgroundImage: "url('https://www.genesisglobalschool.edu.in/wp-content/uploads/2022/03/NormalPosts602560883-1.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}></div>
-                        <div className='col-span-3 h-60 rounded-md' style={{ backgroundImage: "url('https://cdn1.byjus.com/wp-content/uploads/2018/11/icse/2015/12/15074328/icse.png')", backgroundSize: "cover", backgroundPosition: "center" }}></div>
-                        <div className='col-span-2 h-60 rounded-md' style={{ backgroundImage: "url('https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/IGCSE_cover.jpg/640px-IGCSE_cover.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}></div>
+                        <div className='md:col-span-4 lg:col-span-2 h-60 rounded-md' style={{ backgroundImage: "url('https://resize.indiatvnews.com/en/resize/newbucket/1200_-/2023/08/cbse-2-1691847358.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}></div>
+                        <div className='md:col-span-4 lg:col-span-3 h-60 rounded-md' style={{ backgroundImage: "url('https://www.genesisglobalschool.edu.in/wp-content/uploads/2022/03/NormalPosts602560883-1.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}></div>
+                        <div className='md:col-span-4 lg:col-span-3 h-60 rounded-md' style={{ backgroundImage: "url('https://cdn1.byjus.com/wp-content/uploads/2018/11/icse/2015/12/15074328/icse.png')", backgroundSize: "cover", backgroundPosition: "center" }}></div>
+                        <div className='md:col-span-4 lg:col-span-2 h-60 rounded-md' style={{ backgroundImage: "url('https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/IGCSE_cover.jpg/640px-IGCSE_cover.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}></div>
                            
                           
 

@@ -24,7 +24,7 @@ const Home = () => {
 
 
                 const response = await axios.get(
-                    "http://192.168.29.235:7000/api/admin-confi/all-students",
+                    "http://localhost:7000/api/admin-confi/all-students",
                     {
                         headers: {
                             Authorization: `Bearer ${token}`
@@ -60,7 +60,7 @@ const Home = () => {
 
 
         const response = await axios.get(
-          "http://192.168.29.235:7000/api/admin-confi/all-classes",
+          "http://localhost:7000/api/admin-confi/all-classes",
           {
             headers: {
               Authorization: `Bearer ${token}`
@@ -97,7 +97,7 @@ useEffect(() => {
 
        
         const response = await axios.get(
-          "http://192.168.29.235:7000/api/admin-confi/all-teachers",
+          "http://localhost:7000/api/admin-confi/all-teachers",
           {
             headers: {
               Authorization: `Bearer ${token}`

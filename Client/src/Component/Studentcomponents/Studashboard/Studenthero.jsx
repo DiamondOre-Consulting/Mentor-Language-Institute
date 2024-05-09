@@ -34,7 +34,7 @@ const Studenthero = () => {
       }
 
       const response = await axios.get(
-        "http://192.168.29.235:7000/api/students/my-profile",
+        "http://localhost:7000/api/students/my-profile",
         {
           headers: {
             Authorization: `Bearer ${token}`,

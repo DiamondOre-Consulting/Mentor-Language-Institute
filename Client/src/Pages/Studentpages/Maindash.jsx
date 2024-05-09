@@ -18,7 +18,7 @@ const Maindash = () => {
   const token = localStorage.getItem("token");
 
   if (!token) {
-    navigate("/login");
+    navigate("/student-login");
     return;
   }
 
@@ -27,7 +27,7 @@ const Maindash = () => {
 
     if (!token) {
 
-      navigate("/login");
+      navigate("/student-login");
     } else {
       const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
 
@@ -53,7 +53,7 @@ const Maindash = () => {
 
         // Fetch associates data from the backend
         const response = await axios.get(
-          "http://192.168.29.235:7000/api/students/my-profile",
+          "http://localhost:7000/api/students/my-profile",
           {
             headers: {
               Authorization: `Bearer ${token}`,
