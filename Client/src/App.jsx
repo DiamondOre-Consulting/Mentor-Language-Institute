@@ -36,7 +36,7 @@ function App() {
           <Route path='/admin-dashboard/*' element={<Admin/>}/>
           <Route path='/teacher-dashboard/*' element={<Teachermain/>}/>
           <Route path='/chat/*' element={<Chat/>}/>
-          <Route path='*' element={<Error/>}/>
+          <Route path='/*' element={<Error/>}/>
          
         </Routes>
       </BrowserRouter>
