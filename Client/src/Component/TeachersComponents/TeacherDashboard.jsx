@@ -13,25 +13,7 @@ import { useNavigate } from 'react-router-dom'
 const TeacherDashboard = ({ teacherData }) => {
   console.log("teacherdata in teacherdashboard", teacherData)
 
-  const { decodedToken } = useJwt(localStorage.getItem("token"));
-  const token = localStorage.getItem("token");
-  console.log("this is token", token)
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    // console.log("this is a token of teacher", token);
-    if (!token) {
-      navigate("/login"); 
-    } else {
-      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
-
-      if (tokenExpiration && tokenExpiration < Date.now()) {
-
-        localStorage.removeItem("token");
-        navigate("/login");
-      }
-    }
-  }, [decodedToken]);
 
   return (
     <>

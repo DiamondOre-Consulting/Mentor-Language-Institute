@@ -126,7 +126,7 @@ const TeacherAllStudentEachCourse = () => {
         console.log('Student ID:', studentId);
         console.log('Student Name:', studentName);
         setSelectedStudentName(studentName);
-        setShowPopup(true ,studentName);
+        setShowPopup(true);
     };
 
     return (
@@ -150,11 +150,11 @@ const TeacherAllStudentEachCourse = () => {
                     <div>
                         <Select>
                             <option>Select Date</option>
-                            {courseDetails.dailyClasses && courseDetails.dailyClasses.map((date) => {
+                            {/* {courseDetails.dailyClasses && courseDetails.dailyClasses.map((date) => {
                                 return (
                                     <option key={date}>{date}</option>
                                 );
-                            })}
+                            })} */}
                         </Select>
                     </div>
                     <div className='ml-6'>
@@ -190,9 +190,10 @@ const TeacherAllStudentEachCourse = () => {
                         </thead>
                         <tbody>
                             {
-                                allDetails.map((student) => {
+                                allDetails.map((student , index) => {
+                                    console.log(`Object at index ${index}:`, student);
                                     return (
-                                        <tr key={student.id} class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 ">
+                                        <tr key={student._id} class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 ">
                                             <th scope="row" class="  flex items-center pl-6 pr-14  md:pl-6 md:pr-6 py-4 text-gray-900 whitespace-nowrap bg-orange-50">
                                                 <img class="w-6 h-6 md:w-10 md:h-10 rounded-full" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTc3hMXsYcyINCaXkRBhVyEjHMQszmNStck2ELBWXKUYw&s" alt="Jese image" />
                                                 <div class="ps-3">
@@ -296,7 +297,7 @@ const TeacherAllStudentEachCourse = () => {
 
                     <div className="relative bg-white p-6 rounded-lg shadow-xl">
                         <svg className="h-5 w-5 bg-red-600 cursor-pointer p-1 text-2xl -mb-1 rounded-full text-gray-50 absolute top-0 right-0 m-2" onClick={() => setShowPopup(false)} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <line x1="18" y1="6" x2="6" y2="18" />  <line x1="6" y1="6" x2="18" y2="18" /></svg>
-                        <p className="mb-4 font-bold text-xl">{selectedStudentName}</p>
+                        <p className="mb-4 font-bold text-xl"></p>
                         <div className='flex items-center'>
                             <input type='number' placeholder=' classes Taken'/>
                             <button className='bg-green-500 p-2 text-gray-100 '>Update</button>

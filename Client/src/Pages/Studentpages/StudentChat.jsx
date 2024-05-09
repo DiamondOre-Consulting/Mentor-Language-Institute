@@ -31,7 +31,7 @@ const StudentChat = () => {
 
         if (!token) {
 
-            navigate("/login");
+            navigate("/student-login");
         } else {
             const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
 

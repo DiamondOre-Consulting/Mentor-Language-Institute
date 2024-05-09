@@ -30,7 +30,7 @@ const Teachermain = () => {
       if (tokenExpiration && tokenExpiration < Date.now()) {
         // Token expired, remove from local storage and redirect to login page
         localStorage.removeItem("token");
-        navigate("/admin-login");
+        navigate("/login");
       }
     }
   }, [decodedToken])

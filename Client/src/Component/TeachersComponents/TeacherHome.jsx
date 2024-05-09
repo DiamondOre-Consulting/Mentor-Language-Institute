@@ -23,6 +23,7 @@ const TeacherHome = ({ teacherData }) => {
     const [classesData, setClassesData] = useState([]);
     const [selectedClassId, setSelectedClassId] = useState("");
     const [date, setDate] = useState(null);
+    const [numberOfClasses, setNumberOfClasses] = useState("");
     const [oneClassDetails, setOneClassDetails] = useState("");
     const [alldetails, setAllDetails] = useState();
     const [bottompopup, setBottomPopUp] = useState(false);
@@ -30,7 +31,7 @@ const TeacherHome = ({ teacherData }) => {
     const [updateHoursInput, setUpdateHoursInput] = useState(0);
     const [selectedClassIdToUpdate, setSelectedClassIdToUpdate] = useState("");
     const [showUpdateHoursPopup, setShowUpdateHoursPopup] = useState(false);
-    
+
 
     const handleDateChange = (event) => {
         const selectedDate = new Date(event.target.value);
@@ -39,6 +40,7 @@ const TeacherHome = ({ teacherData }) => {
         const year = selectedDate.getFullYear();
         const formattedDate = `${day}-${month}-${year}`;
         setDate(formattedDate);
+        console.log(date)
     };
 
 
@@ -101,10 +103,10 @@ const TeacherHome = ({ teacherData }) => {
             setClassesData(classesData);
             // console.log("class data of teacher", classesData)
         } catch (error) {
-          
+
             console.error("Error fetching teachers' classes:", error);
         }
-      
+
     };
 
     if (teacherData && teacherData.myClasses) {
@@ -114,7 +116,7 @@ const TeacherHome = ({ teacherData }) => {
 
     useEffect(() => {
         fetchAllTeachersCourses();
-        
+
 
     }, [teacherData])
 
@@ -132,7 +134,7 @@ const TeacherHome = ({ teacherData }) => {
             // console.log("selected schedule", selectedClassId)
             const response = await axios.post(
                 `http://localhost:7000/api/teachers/schedule-class/${selectedClassId}`,
-                { date },
+                { date ,numberOfClasses },
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -153,7 +155,7 @@ const TeacherHome = ({ teacherData }) => {
 
             }
         } catch (error) {
-            setError('Failed to schedule the class. Please try again later.');
+            console.log('Failed to schedule the class. Please try again later.', error);
         }
     };
 
@@ -202,7 +204,7 @@ const TeacherHome = ({ teacherData }) => {
             catch (error) {
                 // setError('all students');
             }
-          
+
 
         }
 
@@ -319,34 +321,34 @@ const TeacherHome = ({ teacherData }) => {
                                         <ClipLoader color={"#FFA500"} loading={loading} size={30} />
                                     </div>
                                 ) : (
-                                   
-                                        classesData.map((course) => (
-                                            <div className=' border rounded-md border-0 shadow-xl hover:shadow-none cursor-pointer' key={course._id}>
-                                                <div className='px-2 py-3 col-span-1 bg-orange-500 rounded-md'>
-                                                    <span className='text-sm text-white'>Course</span>
-                                                    <p className='text-xl font-bold text-white'>{course.classTitle}</p>
-                                                    <div className='w-20 h-0.5 bg-orange-100 mb-2'></div>
-                                                    {/* <p className='text-sm text-gray-100'>{course.classSchedule}</p> */}
 
-                                                    <Tooltip content="Click To Edit Hours">
-                                                        <Button>
-                                                            <span className='text-sm text-gray-50 -ml-5 -mt-3' onClick={() => handleveiw(course._id)}>
-                                                                Total hours <span className='bg-gray-50 text-bold text-black px-1 rounded-full'>{course.totalHours}</span>
-                                                            </span>
-                                                        </Button>
-                                                    </Tooltip>
+                                    classesData.map((course) => (
+                                        <div className=' border rounded-md border-0 shadow-xl hover:shadow-none cursor-pointer' key={course._id}>
+                                            <div className='px-2 py-3 col-span-1 bg-orange-500 rounded-md'>
+                                                <span className='text-sm text-white'>Course</span>
+                                                <p className='text-xl font-bold text-white'>{course.classTitle}</p>
+                                                <div className='w-20 h-0.5 bg-orange-100 mb-2'></div>
+                                                {/* <p className='text-sm text-gray-100'>{course.classSchedule}</p> */}
 
-                                                    <a className='text-gray-100 flex items-center text-sm mt-1 justify-end' onClick={() => handleViewClass(course._id)}>
-                                                        View
-                                                        <svg className="h-4 w-4 text-gray-100" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                                                            <path stroke="none" d="M0 0h24v24H0z" />
-                                                            <polyline points="9 6 15 12 9 18" />
-                                                        </svg>
-                                                    </a>
-                                                </div>
+                                                <Tooltip content="Click To Edit Hours">
+                                                    <Button>
+                                                        <span className='text-sm text-gray-50 -ml-5 -mt-3' onClick={() => handleveiw(course._id)}>
+                                                            Total hours <span className='bg-gray-50 text-bold text-black px-1 rounded-full'>{course.totalHours}</span>
+                                                        </span>
+                                                    </Button>
+                                                </Tooltip>
+
+                                                <a className='text-gray-100 flex items-center text-sm mt-1 justify-end' onClick={() => handleViewClass(course._id)}>
+                                                    View
+                                                    <svg className="h-4 w-4 text-gray-100" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                                        <path stroke="none" d="M0 0h24v24H0z" />
+                                                        <polyline points="9 6 15 12 9 18" />
+                                                    </svg>
+                                                </a>
                                             </div>
-                                        ))
-                    
+                                        </div>
+                                    ))
+
                                 )}
                             </div>
 
@@ -486,6 +488,14 @@ const TeacherHome = ({ teacherData }) => {
                             <h2 className="text-normal font-bold text-teal-green-900 mb-1"> Select Date</h2>
                             <input type='date' className='w-full mb-4' value={date ? date.split('-').reverse().join('-') : ''}  // Bind the value to the date state variable
                                 onChange={handleDateChange} />
+
+                            <input
+                                type="text"
+                                value={numberOfClasses}
+                                onChange={(e) => setNumberOfClasses(e.target.value)}
+                                className="w-full mb-4"
+                                placeholder="Enter Number of Classes"
+                            />
 
                             <a onClick={handleScheduleClass}
                                 className="block w-full px-4 py-2 bg-orange-400 text-center hover:bg-orange-500 text-sm font-semibold text-white rounded-lg shadow-md  focus:outline-none cursor-pointer"

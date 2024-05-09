@@ -21,24 +21,9 @@ const TeacherSidebar = () => {
         setIsMenuOpen(!isMenuOpen);
     };
 
-    const token = localStorage.getItem("token");
-    // console.log("Token from localStorage:", token);
 
    
-    useEffect(() => {
-        console.log("this is a token of teacher", token);
-        if (!token) {
-            navigate("/login"); // Redirect to login page if not authenticated
-        } else {
-            const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
-
-            if (tokenExpiration && tokenExpiration < Date.now()) {
-                
-                localStorage.removeItem("token");
-                navigate("/login");
-            }
-        }
-    }, [decodedToken]);
+   
 
     return (
         <>
