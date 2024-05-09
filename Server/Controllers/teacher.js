@@ -123,7 +123,7 @@ router.post(
       const addNewClass = await Classes.findByIdAndUpdate(
         { _id: id },
         {
-          $push: { dailyClasses: date, numberOfClasses },
+          $push: { dailyClasses: {classDate: date, numberOfClasses: numberOfClasses} },
         },
         { new: true }
       );
