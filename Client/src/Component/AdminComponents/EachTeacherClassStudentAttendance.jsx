@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { Select } from 'flowbite-react';
 
-const TeacherAllStudentEachCourse = () => {
-
+const EachTeacherClassStudentAttendance = () => {
+  
     const navigate = useNavigate();
     const { selectedClassId } = useParams();
     const [allDetails, setAllDetails] = useState([]);
@@ -28,7 +27,7 @@ const TeacherAllStudentEachCourse = () => {
                     return;
                 }
 
-                const allStudentsResponse = await axios.get(`http://localhost:7000/api/teachers/class/all-students/${selectedClassId}`, {
+                const allStudentsResponse = await axios.get(`http://localhost:7000/api/admin-confi/class/all-students/${selectedClassId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -61,7 +60,7 @@ const TeacherAllStudentEachCourse = () => {
                     return;
                 }
 
-                const response = await axios.get(`http://localhost:7000/api/teachers/my-classes/${selectedClassId}`, {
+                const response = await axios.get(`http://localhost:7000/api/admin-confi/all-classes/${selectedClassId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -98,7 +97,7 @@ const TeacherAllStudentEachCourse = () => {
                 }
 
 
-                const attendanceResponse = await axios.get(`http://localhost:7000/api/teachers/attendance/${selectedClassId}`, {
+                const attendanceResponse = await axios.get(`http://localhost:7000/api/admin-confi/attendance/${selectedClassId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -154,7 +153,7 @@ const TeacherAllStudentEachCourse = () => {
             }
     
             const response = await axios.put(
-                `http://localhost:7000/api/teachers/update-attendance/${selectedClassId}/${selectedstudentId}`,
+                `http://localhost:7000/api/admin-confi/update-attendance/${selectedClassId}/${selectedstudentId}`,
                 {
                     attendanceDate: selectedDate,
                     numberOfClassesTaken
@@ -205,7 +204,7 @@ const TeacherAllStudentEachCourse = () => {
                         <input type="text" id="table-search-users" class="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Search for users" />
                     </div>
                 </div> */}
-                <div className='flex items-center '>
+                {/* <div className='flex items-center '>
                     <div>
                         <select onChange={handleDateChange}>
                             <option>Select Date</option>
@@ -226,7 +225,7 @@ const TeacherAllStudentEachCourse = () => {
                             </div>
                         )}
                     </div>
-                </div>
+                </div> */}
 
 
 
@@ -383,4 +382,4 @@ const TeacherAllStudentEachCourse = () => {
     )
 }
 
-export default TeacherAllStudentEachCourse
+export default EachTeacherClassStudentAttendance

@@ -23,7 +23,7 @@ const TeacherHome = ({ teacherData }) => {
     const [classesData, setClassesData] = useState([]);
     const [selectedClassId, setSelectedClassId] = useState("");
     const [date, setDate] = useState(null);
-    const [numberOfClasses, setNumberOfClasses] = useState("");
+    const [numberOfClasses, setNumberOfClasses] = useState(0);
     const [oneClassDetails, setOneClassDetails] = useState("");
     const [alldetails, setAllDetails] = useState();
     const [bottompopup, setBottomPopUp] = useState(false);
@@ -244,7 +244,7 @@ const TeacherHome = ({ teacherData }) => {
                 if (response.status == 200) {
                     // console.log(response.data);
                     const allcourses = response.data;
-                    // console.log(allcourses);
+                    console.log(allcourses);
                     setAllCourses(allcourses);
                 }
             } catch (error) {
@@ -490,7 +490,7 @@ const TeacherHome = ({ teacherData }) => {
                                 onChange={handleDateChange} />
 
                             <input
-                                type="text"
+                                type="number"
                                 value={numberOfClasses}
                                 onChange={(e) => setNumberOfClasses(e.target.value)}
                                 className="w-full mb-4"

@@ -3,70 +3,138 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { useJwt } from "react-jwt";
+import { ClipLoader } from "react-spinners";
+import { css } from "@emotion/react";
+
+
+const override = css`
+  display: block;
+  margin: 0 auto;
+  border-color: red;
+`;
 
 const EachTeacher = () => {
 
     const navigate = useNavigate();
-  const [teacherDetails, setTeacherDetails] = useState(null);
+    const [teacherDetails, setTeacherDetails] = useState(null);
+    const [classIds, setClassIds] = useState([]);
+    const [classesData, setClassesData] = useState([])
+    const [loading, setLoading] = useState(true);
+    const [selectedClassId, setSelectedClassId] = useState("");
 
 
-  const { id } = useParams();
-  console.log(id);
+    const { id } = useParams();
+    console.log(id);
 
- 
-  const token = localStorage.getItem("token");
 
-  useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      // No token found, redirect to login page
-      navigate("/login");
-    } 
-    
-    const fetchTeacherDetails = async () => {
-      try {
+
+    useEffect(() => {
         const token = localStorage.getItem("token");
-
         if (!token) {
-          // Token not found in local storage, handle the error or redirect to the login page
-          console.error("No token found");
-          navigate("/login");
-          return;
+            // No token found, redirect to login page
+            navigate("/login");
         }
 
-        // Fetch associates data from the backend
-        const response = await axios.get(
-          `http://localhost:7000/api/admin-confi/all-teachers/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (response.status == 200) {
-            const oneteacher = response.data;
-            console.log(oneteacher);
-         
-          setTeacherDetails(response.data);
-    
-        }
-      } catch (error) {
-        console.log(error);
-      }
+        const fetchTeacherDetails = async () => {
+            try {
+                const token = localStorage.getItem("token");
+
+                if (!token) {
+                    // Token not found in local storage, handle the error or redirect to the login page
+                    console.error("No token found");
+                    navigate("/login");
+                    return;
+                }
+
+                // Fetch associates data from the backend
+                const response = await axios.get(
+                    `http://localhost:7000/api/admin-confi/all-teachers/${id}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+                if (response.status == 200) {
+                    const oneteacher = response.data;
+                    console.log(oneteacher);
+                    const allclassIds = response.data.myClasses
+
+                    console.log(classIds);
+
+                    setTeacherDetails(response.data);
+                    setClassIds(allclassIds);
+
+                }
+            } catch (error) {
+                console.log(error);
+            }
+        };
+
+        fetchTeacherDetails();
+    }, []);
+
+
+    //   teacher courses 
+    useEffect(() => {
+
+        const fetchAllTeachersCourses = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                if (!token) {
+                    // No token found, redirect to login page
+                    navigate("/login");
+                    return;
+                }
+
+                const classesData = [];
+                for (const classId of classIds) {
+                    const classResponse = await axios.get(`http://localhost:7000/api/admin-confi/all-classes/${classId}`, {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    });
+                    if (classResponse.status === 200) {
+                        console.log("classdata", classResponse.data);
+                        classesData.push(classResponse.data);
+                    }
+                }
+                setClassesData(classesData);
+
+            } catch (error) {
+
+                console.error("Error fetching teachers' classes:", error);
+            }
+            finally {
+                setLoading(false);
+            }
+
+        };
+
+        fetchAllTeachersCourses();
+    }, [teacherDetails])
+
+    const handleViewClass = (classId) => {
+        setSelectedClassId(classId);
+        navigate(`/admin-dashboard/${classId}`);
     };
 
-    fetchTeacherDetails();
-  }, []);
 
+    
+    return (
+        <>
+            {loading && (
+                <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+                    <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
+                </div>
+            )}
 
-
-  return (
-   <>
-           <div class="w-full h-40">
-                <img src="https://t4.ftcdn.net/jpg/03/16/92/61/360_F_316926143_cVdnI6bJPbhlo1yZVTJk0R0sjBx4vVnO.jpg" class="w-full h-full rounded-tl-lg rounded-tr-lg"/>
+            <div class="w-full h-40">
+                <img src="https://t4.ftcdn.net/jpg/03/16/92/61/360_F_316926143_cVdnI6bJPbhlo1yZVTJk0R0sjBx4vVnO.jpg" class="w-full h-full rounded-tl-lg rounded-tr-lg" />
             </div>
             <div class="flex flex-col items-center -mt-20">
-                <img src="https://media.istockphoto.com/id/1300845620/vector/user-icon-flat-isolated-on-white-background-user-symbol-vector-illustration.jpg?s=612x612&w=0&k=20&c=yBeyba0hUkh14_jgv1OKqIH0CCSWU_4ckRkAoy2p73o=" class="w-40 border-4 border-white rounded-full"/>
+                <img src="https://media.istockphoto.com/id/1300845620/vector/user-icon-flat-isolated-on-white-background-user-symbol-vector-illustration.jpg?s=612x612&w=0&k=20&c=yBeyba0hUkh14_jgv1OKqIH0CCSWU_4ckRkAoy2p73o=" class="w-40 border-4 border-white rounded-full" />
                 <div class="flex items-center space-x-2 mt-2">
                     <p class="text-2xl">{teacherDetails?.name}</p>
                     <span class="bg-blue-500 rounded-full p-1" title="Verified">
@@ -76,7 +144,7 @@ const EachTeacher = () => {
                     </span>
                 </div>
                 <p class="text-gray-700">Phone: {teacherDetails?.phone}</p>
-               
+
             </div>
             {/* <div class="flex-1 flex flex-col items-center lg:items-end justify-end px-8 mt-2">
                 <div class="flex items-center space-x-4 mt-2">
@@ -94,111 +162,71 @@ const EachTeacher = () => {
                     </button>
                 </div>
             </div> */}
-      
 
-        <div class="my-4 flex flex-col 2xl:flex-row space-y-4 2xl:space-y-0 2xl:space-x-4">
-            <div class="w-full flex flex-col 2xl:w-1/3">
-                <div class="flex-1 bg-white rounded-lg shadow-xl p-8">
-                    <h4 class="text-xl text-gray-900 font-bold">Personal Info</h4>
-                    <ul class="mt-2 text-gray-700">
-                        <li class="flex border-y py-2">
-                            <span class="font-bold w-24">Full name:</span>
-                            <span class="text-gray-700">{teacherDetails?.name}</span>
-                        </li>
 
-                
+            <div class="my-4 flex flex-col 2xl:flex-row space-y-4 2xl:space-y-0 2xl:space-x-4">
+                <div class="w-full flex flex-col 2xl:w-1/3">
+                    <div class="flex-1 bg-white rounded-lg shadow-xl p-8">
+                        <h4 class="text-xl text-gray-900 font-bold">Personal Info</h4>
+                        <ul class="mt-2 text-gray-700">
+                            <li class="flex border-y py-2">
+                                <span class="font-bold w-24">Full name:</span>
+                                <span class="text-gray-700">{teacherDetails?.name}</span>
+                            </li>
 
-                        <li class="flex border-b py-2">
-                            <span class="font-bold w-24">Mobile:</span>
-                            <span class="text-gray-700">{teacherDetails?.phone}</span>
-                        </li>
-                    
-                        
-                     
-                    </ul>
-                </div>
-                {/* <div class="flex-1 bg-white rounded-lg shadow-xl mt-4 p-8">
-                    <h4 class="text-xl text-gray-900 font-bold">Activity log</h4>
-                    <div class="relative px-4">
-                        <div class="absolute h-full border border-dashed border-opacity-20 border-secondary"></div>
 
-                        <!-- start::Timeline item -->
-                        <div class="flex items-center w-full my-6 -ml-1.5">
-                            <div class="w-1/12 z-10">
-                                <div class="w-3.5 h-3.5 bg-blue-600 rounded-full"></div>
-                            </div>
-                            <div class="w-11/12">
-                                <p class="text-sm">Profile informations changed.</p>
-                                <p class="text-xs text-gray-500">3 min ago</p>
-                            </div>
-                        </div>
-                        <!-- end::Timeline item -->
 
-                        <!-- start::Timeline item -->
-                        <div class="flex items-center w-full my-6 -ml-1.5">
-                            <div class="w-1/12 z-10">
-                                <div class="w-3.5 h-3.5 bg-blue-600 rounded-full"></div>
-                            </div>
-                            <div class="w-11/12">
-                                <p class="text-sm">
-                                    Connected with <a href="#" class="text-blue-600 font-bold">Colby Covington</a>.</p>
-                                <p class="text-xs text-gray-500">15 min ago</p>
-                            </div>
-                        </div>
-                    <!-- end::Timeline item -->
+                            <li class="flex border-b py-2">
+                                <span class="font-bold w-24">Mobile:</span>
+                                <span class="text-gray-700">{teacherDetails?.phone}</span>
+                            </li>
 
-                        <!-- start::Timeline item -->
-                        <div class="flex items-center w-full my-6 -ml-1.5">
-                            <div class="w-1/12 z-10">
-                                <div class="w-3.5 h-3.5 bg-blue-600 rounded-full"></div>
-                            </div>
-                            <div class="w-11/12">
-                                <p class="text-sm">Invoice <a href="#" class="text-blue-600 font-bold">#4563</a> was created.</p>
-                                <p class="text-xs text-gray-500">57 min ago</p>
-                            </div>
-                        </div>
-                       
-                        <div class="flex items-center w-full my-6 -ml-1.5">
-                            <div class="w-1/12 z-10">
-                                <div class="w-3.5 h-3.5 bg-blue-600 rounded-full"></div>
-                            </div>
-                            <div class="w-11/12">
-                                <p class="text-sm">
-                                    Message received from <a href="#" class="text-blue-600 font-bold">Cecilia Hendric</a>.</p>
-                                <p class="text-xs text-gray-500">1 hour ago</p>
-                            </div>
-                        </div>
-                       
-                        <div class="flex items-center w-full my-6 -ml-1.5">
-                            <div class="w-1/12 z-10">
-                                <div class="w-3.5 h-3.5 bg-blue-600 rounded-full"></div>
-                            </div>
-                            <div class="w-11/12">
-                                <p class="text-sm">New order received <a href="#" class="text-blue-600 font-bold">#OR9653</a>.</p>
-                                <p class="text-xs text-gray-500">2 hours ago</p>
-                            </div>
-                        </div>
-                        <!-- end::Timeline item -->
 
-                        <!-- start::Timeline item -->
-                        <div class="flex items-center w-full my-6 -ml-1.5">
-                            <div class="w-1/12 z-10">
-                                <div class="w-3.5 h-3.5 bg-blue-600 rounded-full"></div>
-                            </div>
-                            <div class="w-11/12">
-                                <p class="text-sm">
-                                    Message received from <a href="#" class="text-blue-600 font-bold">Jane Stillman</a>.</p>
-                                <p class="text-xs text-gray-500">2 hours ago</p>
-                            </div>
-                        </div>
-                       
+
+                        </ul>
                     </div>
-                </div> */}
+                    <div className="py-4">
+                        <h1 className="text-3xl text-gray-700 font-bold ">All Courses </h1>
+                        <div className="bg-orange-500 w-20 h-1"></div>
+                    </div>
+                    <div className="grid gap-4 grid-cols-3 bg-gray-100">
+                        {
+
+                            classesData.map((course) => (
+                                <div className=' border  rounded-md border-0 shadow-xl hover:shadow-none cursor-pointer' key={course._id}>
+                                    <div className='px-2 py-3 col-span-1 bg-orange-500 rounded-md'>
+                                        <span className='text-sm text-white'>Course</span>
+                                        <p className='text-xl font-bold text-white'>{course.classTitle}</p>
+                                        <div className='w-20 h-0.5 bg-orange-100 mb-2'></div>
+                                        {/* <p className='text-sm text-gray-100'>{course.classSchedule}</p> */}
+
+
+                                        <span className='text-sm text-gray-50  -mt-3' >
+                                            Total hours <span className='bg-gray-50 text-bold text-black px-1 rounded-full'>{course.totalHours}</span>
+                                        </span>
+
+
+
+                                        <a className='text-gray-100 flex items-center text-sm mt-1 justify-end' onClick={() => handleViewClass(course._id)}>
+                                             View
+                                           
+                                            <svg className="h-4 w-4 text-gray-100" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" />
+                                                <polyline points="9 6 15 12 9 18" />
+                                            </svg>
+                                        </a>
+                                    </div>
+                                </div>
+                            ))
+
+                        }
+
+                    </div>
+                </div>
+
             </div>
-           
-        </div>
-   </>
-  )
+        </>
+    )
 }
 
 export default EachTeacher
