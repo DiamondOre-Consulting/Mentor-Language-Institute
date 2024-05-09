@@ -24,44 +24,6 @@ app.use(cors());
 
 const PORT = 7000;
 
-// // Socket.IO event handlers
-// io.on('connection', (socket) => {
-//   console.log('A user connected');
-  
-//   socket.on('disconnect', () => {
-//     console.log('User disconnected');
-//   });
-
-//   socket.on('send_message', (data) => {
-//     // Broadcast the message to all connected clients
-//     io.emit('receive_message', data);
-//   });
-// });
-
-// const io = socket(server,{
-//   cors :{
-//     origin : '*',
-//     credentials : true
-//   }
-// })
-
-// global.onlineUsers = new Map();
-
-// Socket.io setup
-// io.on('connection', (socket) => {
-//   console.log('A user connected');
-
-//   // Handle real-time events here
-//   // Example: socket.on('chat message', (message) => { ... });
-//   socket.on('sendMessage', (message) => {
-//     io.emit('message', message);
-//   });
-
-//   socket.on('disconnect', () => {
-//     console.log('A user disconnected');
-//   });
-// });
-
 // Socket.IO logic
 io.on('connection', (socket) => {
   console.log('New client connected');

@@ -10,6 +10,7 @@ import Students from "../Models/Students.js";
 import Fee from "../Models/Fee.js";
 import ClassAccessStatus from "../Models/ClassAccessStatus.js";
 import Attendance from "../Models/Attendance.js";
+import Commission from "../Models/Commission.js";
 
 dotenv.config();
 
@@ -424,6 +425,118 @@ router.get('/fee/:id1/:id2', AdminAuthenticateToken, async (req, res) => {
     res.status(200).json(feeById);
   } catch(error) {
     console.log("Something went wrong!!!", error);
+    res.status(500).json(error);
+  }
+})
+
+// GET ATTENDANCE AND COMMISSION INFO
+router.get(
+  "/attendance/:id",
+  AdminAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { attendanceDate } = req.body;
+
+      const attendances = await Attendance.find({
+        classId: id,
+        "detailAttendance.classDate": attendanceDate,
+      });
+
+      if(!attendances) {
+        return res.status(403).json({message: "No record found!!!"});
+      }
+
+      res.status(200).json(attendances);
+    } catch (error) {
+      console.log("Something went wrong!!! ");
+      res.status(500).json(error);
+    }
+  }
+);
+
+// UPDATE TEACHER PER DAY COMMISSION OF EACH STUDENT
+router.post("/update-commission/:id", AdminAuthenticateToken, async (req, res) => {
+  try {
+    const {commission, classDate} = req.body;
+    const {id} = req.params;
+
+    const updateCommission = await Attendance.findByIdAndUpdate(
+      {_id: id, "detailAttendance.classDate": classDate},
+      {
+        $push: {
+          detailAttendance: { commission: commission}
+        }
+      },
+      {new: true}
+    );
+
+    if (!updateCommission) {
+      return res
+        .status(404)
+        .json({ message: "Record not found." });
+    }
+
+    res.status(200).json(updateCommission);
+    
+  } catch(error) {
+    console.log("Something went wrong!!! ");
+    res.status(500).json(error);
+  }
+})
+
+// GET TEACHER'S MONTHLY COMMISSION
+router.get("/monthly-commission/:id", AdminAuthenticateToken, async (req, res) => {
+  try {
+    const {id} = req.params;
+
+    const commissionById = await Commission.findOne({teacherId: id});
+    if(!commissionById) {
+      return res.status(403).json({message: "No record found!!!"});
+    }
+
+    res.status(200).json(commissionById);
+  } catch(error) {
+    console.log("Something went wrong!!! ");
+    res.status(500).json(error);
+  }
+})
+
+// UPDATE TEACHER'S MONTHLY COMMISSION
+router.put("/update-monthly-commission/:id", AdminAuthenticateToken, async (req, res) => {
+  try {
+    const {id} = req.params;
+    const {commission, paid} = req.body;
+
+    if(!commission) {
+        await Commission.findByIdAndUpdate(
+        {_id: id},
+        {
+          $set: {
+            paid: paid
+          }
+        }
+      )
+    }
+
+    const updateMonthlyCommission = await Commission.findByIdAndUpdate(
+      {_id: id},
+      {
+        $set: {
+          commission: commission,
+          paid: paid
+        }
+      }
+    )
+
+    if(!updateMonthlyCommission) {
+      return res.status(403).json({message: "Record not found!!!"});
+    }
+
+    res.status(200).json({message: "Monthly commission updated successfully"})
+
+  } catch(error) {
+    console.log("Something went wrong!!! ");
     res.status(500).json(error);
   }
 })

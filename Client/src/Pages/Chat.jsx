@@ -15,15 +15,13 @@ const Chat = () => {
     const [room, setRoom] = useState('');
     const [socketId, setSocketId] = useState('');
 
-    // console.log(messages);
-
     const sendMessage = (e) => {
       e.preventDefault();
       socket.emit('message', {room, message});
       setMessage('');
-
     };
   
+    
 
     useEffect(() => {
       // Event listener for receiving messages
