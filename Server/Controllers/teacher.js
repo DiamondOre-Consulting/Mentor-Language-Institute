@@ -255,14 +255,25 @@ router.put(
           studentId: id2,
           "detailAttendance.classDate": attendanceDate,
         },
-        {
-          $inc: {
-            totalClassesTaken: numberOfClassesTaken
+        [
+          {
+            $set: {
+              totalClassesTaken: {
+                $toString: {
+                  $add: [
+                    { $toInt: "$totalClassesTaken" },
+                    numberOfClassesTaken
+                  ]
+                }
+              }
+            }
           },
-          $push: {
-            "detailAttendance.$.numberOfClassesTaken": numberOfClassesTaken,
-          },
-        },
+          {
+            $push: {
+              "detailAttendance.$.numberOfClassesTaken": numberOfClassesTaken,
+            },
+          }
+        ],
         { new: true }
       );
 
