@@ -39,7 +39,7 @@ const classSchema = new mongoose.Schema({
           type: String
         },
         numberOfClasses: {
-          type: mongoose.Types.Decimal128
+          type: String
         }
       },
     ],
