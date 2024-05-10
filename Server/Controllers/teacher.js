@@ -256,17 +256,7 @@ router.put(
           "detailAttendance.classDate": attendanceDate,
         },
         {
-          // $set: {
-          //   totalClassesTaken: {
-          //     $toString: {
-          //       $add: [
-          //         { $toInt: "$totalClassesTaken" }, 
-          //         { $toInt: numberOfClassesTaken }  
-          //       ]
-          //     }
-          //   }
-          // },
-          $push: {
+          $set: {
             "detailAttendance.$.numberOfClassesTaken": numberOfClassesTaken,
           },
         },

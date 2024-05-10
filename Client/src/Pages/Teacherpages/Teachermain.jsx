@@ -21,7 +21,6 @@ const Teachermain = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
-      // No token found, redirect to login page
       navigate("/login");
     } else {
       const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds

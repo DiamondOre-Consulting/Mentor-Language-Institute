@@ -16,7 +16,7 @@ const TeacherAllStudentEachCourse = () => {
     const [selectedDate, setSelectedDate] = useState('');
     const [numberOfClasses, setNumberOfClasses] = useState('');
     const [selectedstudentId, setSelectedStudentId] = useState(null);
-    const [numberOfClassesTaken, setNumberOfClassesTaken] = useState(0);
+    const [numberOfClassesTaken, setNumberOfClassesTaken] = useState("");
 
 //  details of sttdent 
     useEffect(() => {
@@ -133,7 +133,7 @@ const TeacherAllStudentEachCourse = () => {
         const selectedDateObj = courseDetails.dailyClasses.find(date => date.classDate === selectedDate);
         if (selectedDateObj) {
             setSelectedDate(selectedDate);
-            setNumberOfClasses(selectedDateObj.numberOfClasses.$numberDecimal); // Access the number of classes from the selected date object
+            setNumberOfClasses(selectedDateObj.numberOfClasses); // Access the number of classes from the selected date object
         }
     };
 
@@ -231,7 +231,7 @@ const TeacherAllStudentEachCourse = () => {
 
 
                 <div className='grid grid-cols-1 md:grid-cols-1 gap-8 mt-10'>
-                    <table class="w-full text-sm text-left rtl:text-right text-gray-500  shadow-xl">
+                    <table class="w-full text-sm text-center rtl:text-right text-gray-500  shadow-xl">
                         <thead class="text-xs text-gray-100 uppercase bg-orange-500 ">
                             <tr>
 
@@ -247,9 +247,7 @@ const TeacherAllStudentEachCourse = () => {
                                 <th scope="col" class="px-6 py-3">
                                     Total Classes Taken
                                 </th>
-                                <th scope="col" class="px-6 py-3">
-                                    Total Commission
-                                </th>
+                               
                             </tr>
                         </thead>
                         <tbody>
@@ -300,16 +298,12 @@ const TeacherAllStudentEachCourse = () => {
                                 <th scope="col" class="px-6 py-3">
                                     commission
                                 </th>
-                                <th scope="col" class="px-6 py-3">
-                                    Arrear
-                                </th>
+                              
 
                                 <th scope="col" class="px-6 py-3">
                                     Paid
                                 </th>
-                                <th scope="col" class="px-6 py-3">
-                                    OutStanding
-                                </th>
+                              
                                 <th scope="col" class="px-6 py-3">
                                     Remarks(if any)
                                 </th>
@@ -333,15 +327,11 @@ const TeacherAllStudentEachCourse = () => {
                                     ₹ 7000
                                 </td>
 
-                                <td className='px-6 py-4 text-center'>
-                                    <svg class="h-8 w-8 text-green-600" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <path d="M7 12l5 5l10 -10" />  <path d="M2 12l5 5m5 -5l5 -5" /></svg>
-                                </td>
+                              
                                 <td className='px-6 py-4 text-center'>
                                     Yes
                                 </td>
-                                <td className='px-6 py-4 text-center'>
-                                    ₹ 7000
-                                </td>
+                               
                                 <td className='px-6 py-4 text-center'>
 
                                 </td>
@@ -366,7 +356,7 @@ const TeacherAllStudentEachCourse = () => {
                         <div className='flex items-center'>
 
                             <input
-                                type="number"
+                                type="text"
                                 value={numberOfClassesTaken}
                                 onChange={(e) => setNumberOfClassesTaken(e.target.value)}
                                 className="w-full "

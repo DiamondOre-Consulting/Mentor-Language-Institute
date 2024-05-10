@@ -3,13 +3,14 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 
 const EachTeacherClassStudentAttendance = () => {
-  
+
     const navigate = useNavigate();
     const { selectedClassId } = useParams();
     const [allDetails, setAllDetails] = useState([]);
     const [courseDetails, setCourseDetails] = useState([]);
     const [attendanceDetailsMap, setAttendanceDetailsMap] = useState({});
     const [studentId, setStudentId] = useState([]);
+    const [myenrolledStudentDetails, setMyEnrolledStudentsDetails] = useState([]);
     const [showPopup, setShowPopup] = useState(false);
     const [selectedStudentName, setSelectedStudentName] = useState('');
     const [selectedDate, setSelectedDate] = useState('');
@@ -17,7 +18,8 @@ const EachTeacherClassStudentAttendance = () => {
     const [selectedstudentId, setSelectedStudentId] = useState(null);
     const [numberOfClassesTaken, setNumberOfClassesTaken] = useState(0);
 
-//  details of sttdent 
+    //  details of sttdent 
+
     useEffect(() => {
         const allDetails = async () => {
             try {
@@ -71,6 +73,27 @@ const EachTeacherClassStudentAttendance = () => {
                     setCourseDetails(response.data);
                     setStudentId(courseData.enrolledStudents);
                     console.log("course details", response.data)
+                    const enrolledStudents = courseData.enrolledStudents;
+                    const enrolledStudentsDetails = [];
+
+                    for (const studentIds of enrolledStudents) {
+                        const studentResponse = await axios.get(
+                            `http://localhost:7000/api/admin-confi/all-students/${studentIds}`,
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${token}`,
+                                },
+                            }
+                        );
+
+                        if (studentResponse.status === 200) {
+                            const studentData = studentResponse.data;
+                            console.log("Enrolled student details:", studentData);
+                            enrolledStudentsDetails.push(studentData);
+                            setMyEnrolledStudentsDetails(enrolledStudentsDetails);
+                        }
+                    }
+
 
                 }
             } catch (error) {
@@ -87,35 +110,40 @@ const EachTeacherClassStudentAttendance = () => {
     useEffect(() => {
         const fetchAttendanceDetails = async () => {
             try {
-                // setLoading(true)
+
                 const token = localStorage.getItem('token');
 
 
-                if (!token || !selectedClassId) {
-                    console.error('Token, selectedClassId, or studentId not found');
+                if (!token) {
+                    console.error('Token not found');
                     return;
                 }
+          
 
+                const attendanceResponse = await axios.get(`http://localhost:7000/api/admin-confi/attendance/${selectedClassId}`,
 
-                const attendanceResponse = await axios.get(`http://localhost:7000/api/admin-confi/attendance/${selectedClassId}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
                     },
-                });
+                    {
+                        attendanceDate: selectedDate,
+                    },
 
+                )
                 if (attendanceResponse.status === 200) {
                     console.log("attendance details", attendanceResponse.data)
-
                 }
 
             } catch (error) {
-                console.log(error);
+                console.log("error in fetching attendance", error);
             }
 
         };
 
         fetchAttendanceDetails();
-    }, [selectedClassId]);
+    }, [selectedDate, selectedClassId]);
 
     const handleFetchStudentDetails = (studentId, studentName) => {
         console.log('Student ID:', studentId);
@@ -132,15 +160,15 @@ const EachTeacherClassStudentAttendance = () => {
         const selectedDateObj = courseDetails.dailyClasses.find(date => date.classDate === selectedDate);
         if (selectedDateObj) {
             setSelectedDate(selectedDate);
-            setNumberOfClasses(selectedDateObj.numberOfClasses.$numberDecimal); // Access the number of classes from the selected date object
+            setNumberOfClasses(selectedDateObj.numberOfClasses); // Access the number of classes from the selected date object
         }
     };
 
 
-    // update atendence 
+    // update commissionperday 
     console.log(selectedstudentId)
 
-    const updateAttendance = async () => {
+    const updateCommissionPerDay = async () => {
         try {
             const token = localStorage.getItem("token");
             if (!token) {
@@ -151,7 +179,7 @@ const EachTeacherClassStudentAttendance = () => {
                 alert("Please select a date first.");
                 return;
             }
-    
+
             const response = await axios.put(
                 `http://localhost:7000/api/admin-confi/update-attendance/${selectedClassId}/${selectedstudentId}`,
                 {
@@ -204,7 +232,7 @@ const EachTeacherClassStudentAttendance = () => {
                         <input type="text" id="table-search-users" class="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Search for users" />
                     </div>
                 </div> */}
-                {/* <div className='flex items-center '>
+                <div className='flex items-center '>
                     <div>
                         <select onChange={handleDateChange}>
                             <option>Select Date</option>
@@ -225,12 +253,12 @@ const EachTeacherClassStudentAttendance = () => {
                             </div>
                         )}
                     </div>
-                </div> */}
+                </div>
 
 
 
                 <div className='grid grid-cols-1 md:grid-cols-1 gap-8 mt-10'>
-                    <table class="w-full text-sm text-left rtl:text-right text-gray-500  shadow-xl">
+                    <table class="w-full text-sm text-center rtl:text-right text-gray-500  shadow-xl">
                         <thead class="text-xs text-gray-100 uppercase bg-orange-500 ">
                             <tr>
 
@@ -246,14 +274,11 @@ const EachTeacherClassStudentAttendance = () => {
                                 <th scope="col" class="px-6 py-3">
                                     Total Classes Taken
                                 </th>
-                                <th scope="col" class="px-6 py-3">
-                                    Total Commission
-                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             {
-                                allDetails.map((student, index) => {
+                                myenrolledStudentDetails.map((student, index) => {
                                     console.log(`Object at index ${index}:`, student);
 
                                     return (
@@ -266,13 +291,13 @@ const EachTeacherClassStudentAttendance = () => {
                                                 </div>
                                             </th>
                                             <td class="px-6 py-4 text-center cursor-pointer hover:bg-gray-50">
+                                                2.4
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
                                                 <div className='flex items-center justify-center' onClick={() => handleFetchStudentDetails(student._id, student.name)}>
                                                     <div>{attendanceDetailsMap[student._id]}</div>
                                                     <div className='ml-2'><svg class="h-6 w-6 text-red-600" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4" />  <line x1="13.5" y1="6.5" x2="17.5" y2="10.5" /></svg></div>
                                                 </div>
-                                            </td>
-                                            <td class="px-6 py-4 text-center">
-                                                ₹ 20,000
                                             </td>
                                         </tr>
                                     );
