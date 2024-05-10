@@ -247,7 +247,7 @@ router.put(
   async (req, res) => {
     try {
       const { id1, id2 } = req.params;
-      const { attendanceDate, numberOfClassesTaken } = req.body;
+      const { attendanceDate } = req.body;
 
       const updatedAttendance = await Attendance.findOneAndUpdate(
         {
@@ -256,16 +256,16 @@ router.put(
           "detailAttendance.classDate": attendanceDate,
         },
         {
-          $set: {
-            totalClassesTaken: {
-              $toString: {
-                $add: [
-                  { $toInt: "$totalClassesTaken" }, // Convert to integer
-                  { $toInt: numberOfClassesTaken }  // Convert to integer
-                ]
-              }
-            }
-          },
+          // $set: {
+          //   totalClassesTaken: {
+          //     $toString: {
+          //       $add: [
+          //         { $toInt: "$totalClassesTaken" }, 
+          //         { $toInt: numberOfClassesTaken }  
+          //       ]
+          //     }
+          //   }
+          // },
           $push: {
             "detailAttendance.$.numberOfClassesTaken": numberOfClassesTaken,
           },
