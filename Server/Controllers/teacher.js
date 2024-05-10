@@ -256,11 +256,8 @@ router.put(
           "detailAttendance.classDate": attendanceDate,
         },
         {
-          $set: {
-            totalClassesTaken:
-              totalClassesTaken +
-              (numberOfClassesTaken -
-                updatedAttendance.detailAttendance.numberOfClassesTaken),
+          $inc: {
+            totalClassesTaken: numberOfClassesTaken
           },
           $push: {
             detailAttendance: { numberOfClassesTaken: numberOfClassesTaken },
