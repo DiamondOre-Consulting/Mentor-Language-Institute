@@ -260,7 +260,7 @@ router.put(
             totalClassesTaken: numberOfClassesTaken
           },
           $push: {
-            detailAttendance: { numberOfClassesTaken: numberOfClassesTaken },
+            "detailAttendance.$.numberOfClassesTaken": numberOfClassesTaken,
           },
         },
         { new: true }
