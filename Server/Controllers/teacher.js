@@ -247,7 +247,7 @@ router.put(
   async (req, res) => {
     try {
       const { id1, id2 } = req.params;
-      const { attendanceDate } = req.body;
+      const { attendanceDate, numberOfClassesTaken } = req.body;
 
       const updatedAttendance = await Attendance.findOneAndUpdate(
         {
