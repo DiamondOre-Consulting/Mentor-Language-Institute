@@ -134,12 +134,12 @@ router.post("/add-new-class", AdminAuthenticateToken, async (req, res) => {
     await newClass.save();
 
     const updateTeacher = await Teachers.findByIdAndUpdate(
-      {_id: teachBy},
+      { _id: teachBy },
       {
-        $push: {myClasses: newClass._id}
+        $push: { myClasses: newClass._id },
       },
-      {new: true}
-    )
+      { new: true }
+    );
 
     return res
       .status(200)
@@ -184,7 +184,9 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
     const teacher = await Teachers.exists({ phone });
 
     if (teacher) {
-      return res.status(409).json({ message: "Teacher has already registered" });
+      return res
+        .status(409)
+        .json({ message: "Teacher has already registered" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -212,7 +214,7 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
 // GET ALL TEACHERS
 router.get("/all-teachers", AdminAuthenticateToken, async (req, res) => {
   try {
-    const allTeachers = await Teachers.find({}, {password: 0});
+    const allTeachers = await Teachers.find({}, { password: 0 });
 
     return res.status(200).json(allTeachers);
   } catch (error) {
@@ -266,7 +268,7 @@ router.post("/add-student", AdminAuthenticateToken, async (req, res) => {
       .json({ message: `New student has been registered successfully!!!` });
   } catch (error) {
     console.log("Something went wrong!!! ");
-    res.status(500).json(error); 
+    res.status(500).json(error);
   }
 });
 
@@ -287,7 +289,7 @@ router.get("/all-students/:id", AdminAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const singleStudent = await Students.findById({ _id: id }); 
+    const singleStudent = await Students.findById({ _id: id });
 
     return res.status(200).json(singleStudent);
   } catch (error) {
@@ -302,10 +304,15 @@ router.put("/enroll-student/:id1/:id2", async (req, res) => {
     const { id1, id2 } = req.params;
     const { totalFee, feeMonth, paid, amountPaid } = req.body;
 
-    const studentExist = await Classes.findOne({_id: id1, enrolledStudents: id2});
+    const studentExist = await Classes.findOne({
+      _id: id1,
+      enrolledStudents: id2,
+    });
 
-    if(studentExist) {
-      return res.status(409).json({message: `Student already exists in this class!!!`})
+    if (studentExist) {
+      return res
+        .status(409)
+        .json({ message: `Student already exists in this class!!!` });
     }
 
     const updateClass = await Classes.findByIdAndUpdate(
@@ -347,7 +354,7 @@ router.put("/enroll-student/:id1/:id2", async (req, res) => {
       const updateStudent = await Students.findByIdAndUpdate(
         { _id: id2 },
         {
-          $push: { classes: id1, feeDetail: feeUpdate._id },  
+          $push: { classes: id1, feeDetail: feeUpdate._id },
           $pull: { appliedClasses: id1 },
         },
         { new: true }
@@ -372,174 +379,196 @@ router.put("/enroll-student/:id1/:id2", async (req, res) => {
 });
 
 // UPDATE FEE DETAIL
-router.put("/update-fee/:id1/:id2", AdminAuthenticateToken, async (req, res) => {
-  try {
-    const {id1, id2} = req.params;
-    const { feeMonth, paid, amountPaid } = req.body;
-
-    await Fee.findOneAndUpdate(
-      { classId: id1, studentId: id2 },
-      {
-        $push: {
-          detailFee: {
-            feeMonth,
-            paid,
-            amountPaid
-          },
-        },
-      }
-    );
-
-    res.status(200).json({ message: `Fee for ${feeMonth} is updated successfully.` });
-
-  } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
-  }
-});
-
-// GET ATTENDANCE DETAIL OF A STUDENT OF A CLASS
-router.get('/attendance/:id1/:id2', AdminAuthenticateToken, async (req, res) => {
-  try {
-      const {id1, id2} = req.params;
-
-      const attendanceById = await Attendance.findOne({classId: id1,studentId: id2});
-
-      res.status(200).json(attendanceById)
-  } catch(error) {
-      console.log("Something went wrong!!! ", error);
-      res.status(500).json(error);
-  }
-})
-
-// GET FEE DETAIL OF A STUDENT OF A CLASS
-router.get('/fee/:id1/:id2', AdminAuthenticateToken, async (req, res) => {
-  try {
-    const {id1, id2} = req.params;
-
-    const feeById = await Fee.findOne({classId: id1, studentId: id2});
-    if(!feeById) {
-      return res.status(403).json({message: "No record found!!!"});
-    }
-
-    res.status(200).json(feeById);
-  } catch(error) {
-    console.log("Something went wrong!!!", error);
-    res.status(500).json(error);
-  }
-})
-
-// GET ATTENDANCE AND COMMISSION INFO
-router.get(
-  "/attendance/:id",
+router.put(
+  "/update-fee/:id1/:id2",
   AdminAuthenticateToken,
   async (req, res) => {
     try {
-      const { id } = req.params;
-      const { attendanceDate } = req.query; // Change req.body to req.query
+      const { id1, id2 } = req.params;
+      const { feeMonth, paid, amountPaid } = req.body;
 
-      const attendances = await Attendance.find({
-        classId: id,
-        "detailAttendance.classDate": attendanceDate,
-      });
+      await Fee.findOneAndUpdate(
+        { classId: id1, studentId: id2 },
+        {
+          $push: {
+            detailFee: {
+              feeMonth,
+              paid,
+              amountPaid,
+            },
+          },
+        }
+      );
 
-      if(attendances.length === 0) { // Check if the length is zero
-        return res.status(403).json({ message: "No record found!!!" });
-      }
-
-      res.status(200).json(attendances);
+      res
+        .status(200)
+        .json({ message: `Fee for ${feeMonth} is updated successfully.` });
     } catch (error) {
-      console.log("Something went wrong!!! ", error); // Log the error for debugging
-      res.status(500).json({ error: "Something went wrong!!!" }); // Return a generic error message
+      console.log("Something went wrong!!! ");
+      res.status(500).json(error);
     }
   }
 );
 
+// GET ATTENDANCE DETAIL OF A STUDENT OF A CLASS
+router.get(
+  "/attendance/:id1/:id2",
+  AdminAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { id1, id2 } = req.params;
+
+      const attendanceById = await Attendance.findOne({
+        classId: id1,
+        studentId: id2,
+      });
+
+      res.status(200).json(attendanceById);
+    } catch (error) {
+      console.log("Something went wrong!!! ", error);
+      res.status(500).json(error);
+    }
+  }
+);
+
+// GET FEE DETAIL OF A STUDENT OF A CLASS
+router.get("/fee/:id1/:id2", AdminAuthenticateToken, async (req, res) => {
+  try {
+    const { id1, id2 } = req.params;
+
+    const feeById = await Fee.findOne({ classId: id1, studentId: id2 });
+    if (!feeById) {
+      return res.status(403).json({ message: "No record found!!!" });
+    }
+
+    res.status(200).json(feeById);
+  } catch (error) {
+    console.log("Something went wrong!!!", error);
+    res.status(500).json(error);
+  }
+});
+
+// GET ATTENDANCE AND COMMISSION INFO
+router.get("/attendance/:id", AdminAuthenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { attendanceDate } = req.query; // Change req.body to req.query
+
+    const attendances = await Attendance.find({
+      classId: id,
+      "detailAttendance.classDate": attendanceDate,
+    });
+
+    if (attendances.length === 0) {
+      // Check if the length is zero
+      return res.status(403).json({ message: "No record found!!!" });
+    }
+
+    res.status(200).json(attendances);
+  } catch (error) {
+    console.log("Something went wrong!!! ", error); // Log the error for debugging
+    res.status(500).json({ error: "Something went wrong!!!" }); // Return a generic error message
+  }
+});
 
 // UPDATE TEACHER PER DAY COMMISSION OF EACH STUDENT
-router.post("/update-commission/:id", AdminAuthenticateToken, async (req, res) => {
-  try {
-    const {commission, classDate} = req.body;
-    const {id} = req.params;
+router.post(
+  "/update-commission/:id1/:id2",
+  AdminAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { commission, classDate } = req.body;
+      const { id1, id2 } = req.params;
 
-    const updateCommission = await Attendance.findByIdAndUpdate(
-      {_id: id, "detailAttendance.classDate": classDate},
-      {
-        $push: {
-          detailAttendance: { commission: commission}
-        }
-      },
-      {new: true}
-    );
+      const updateCommission = await Attendance.findByIdAndUpdate(
+        {
+          classId: id1,
+          studentId: id2,
+          "detailAttendance.classDate": classDate,
+        },
+        {
+          $push: {
+            detailAttendance: { commission: commission },
+          },
+        },
+        { new: true }
+      );
 
-    if (!updateCommission) {
-      return res
-        .status(404)
-        .json({ message: "Record not found." });
+      if (!updateCommission) {
+        return res.status(404).json({ message: "Record not found." });
+      }
+
+      res.status(200).json(updateCommission);
+    } catch (error) {
+      console.log("Something went wrong!!! ");
+      res.status(500).json(error);
     }
-
-    res.status(200).json(updateCommission);
-    
-  } catch(error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
   }
-})
+);
 
 // GET TEACHER'S MONTHLY COMMISSION
-router.get("/monthly-commission/:id", AdminAuthenticateToken, async (req, res) => {
-  try {
-    const {id} = req.params;
+router.get(
+  "/monthly-commission/:id",
+  AdminAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
 
-    const commissionById = await Commission.findOne({teacherId: id});
-    if(!commissionById) {
-      return res.status(403).json({message: "No record found!!!"});
+      const commissionById = await Commission.findOne({ teacherId: id });
+      if (!commissionById) {
+        return res.status(403).json({ message: "No record found!!!" });
+      }
+
+      res.status(200).json(commissionById);
+    } catch (error) {
+      console.log("Something went wrong!!! ");
+      res.status(500).json(error);
     }
-
-    res.status(200).json(commissionById);
-  } catch(error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
   }
-})
+);
 
 // UPDATE TEACHER'S MONTHLY COMMISSION
-router.put("/update-monthly-commission/:id", AdminAuthenticateToken, async (req, res) => {
-  try {
-    const {id} = req.params;
-    const {commission, paid} = req.body;
+router.put(
+  "/update-monthly-commission/:id",
+  AdminAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { commission, paid } = req.body;
 
-    if(!commission) {
+      if (!commission) {
         await Commission.findByIdAndUpdate(
-        {_id: id},
+          { _id: id },
+          {
+            $set: {
+              paid: paid,
+            },
+          }
+        );
+      }
+
+      const updateMonthlyCommission = await Commission.findByIdAndUpdate(
+        { _id: id },
         {
           $set: {
-            paid: paid
-          }
+            commission: commission,
+            paid: paid,
+          },
         }
-      )
-    }
+      );
 
-    const updateMonthlyCommission = await Commission.findByIdAndUpdate(
-      {_id: id},
-      {
-        $set: {
-          commission: commission,
-          paid: paid
-        }
+      if (!updateMonthlyCommission) {
+        return res.status(403).json({ message: "Record not found!!!" });
       }
-    )
 
-    if(!updateMonthlyCommission) {
-      return res.status(403).json({message: "Record not found!!!"});
+      res
+        .status(200)
+        .json({ message: "Monthly commission updated successfully" });
+    } catch (error) {
+      console.log("Something went wrong!!! ");
+      res.status(500).json(error);
     }
-
-    res.status(200).json({message: "Monthly commission updated successfully"})
-
-  } catch(error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
   }
-})
+);
 
 export default router;
