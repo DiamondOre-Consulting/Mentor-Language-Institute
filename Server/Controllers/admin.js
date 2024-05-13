@@ -509,13 +509,13 @@ router.post(
 
 // GET TEACHER'S MONTHLY COMMISSION
 router.get(
-  "/monthly-commission/:id",
+  "/monthly-commission/:id1/:id2",
   AdminAuthenticateToken,
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id1, id2 } = req.params;
 
-      const commissionById = await Commission.findOne({ teacherId: id });
+      const commissionById = await Commission.find({ teacherId: id1 });
       if (!commissionById) {
         return res.status(403).json({ message: "No record found!!!" });
       }

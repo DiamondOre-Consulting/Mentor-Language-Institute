@@ -57,7 +57,7 @@ const Admindash = () => {
                             <Route path='/allstudents' element={<Allstudents />} />
                             <Route path='/allteachers' element={<AllTeachers />} />
                             <Route path='/allteacher/:id' element={<EachTeacher/>}/>
-                            <Route path='/:selectedClassId' element={<EachTeacherClassStudentAttendance/>}/>
+                            <Route path='/:id/:selectedClassId' element={<EachTeacherClassStudentAttendance/>}/>
                             <Route path='/allstudents/:id' element={<EachStu/>}/>
                             <Route path='/messages' element={<Message/>}/>
                             <Route path='/allcourses' element={<Allcourses />} />

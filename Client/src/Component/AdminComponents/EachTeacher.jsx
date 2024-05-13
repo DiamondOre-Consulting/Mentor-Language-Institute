@@ -117,7 +117,7 @@ const EachTeacher = () => {
 
     const handleViewClass = (classId) => {
         setSelectedClassId(classId);
-        navigate(`/admin-dashboard/${classId}`);
+        navigate(`/admin-dashboard/${id}/${classId}`);
     };
 
 

@@ -485,13 +485,13 @@ const TeacherAllStudentEachCourse = () => {
                         </thead>
                         <tbody>
                             {monthCommissionDetails && monthCommissionDetails.map((commission, index) => (
-                                <tr key={index} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                                <tr key={index} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 cursor-pointer">
                                     <td className="px-6 py-4 text-center">{commission.monthName}</td>
                                     <td className="px-6 py-4 text-center">{commission.year}</td>
                                     <td className="px-6 py-4 text-center">{commission.classesTaken}</td>
                                     <td className="px-6 py-4 text-center">{commission.commission}</td>
-                                    <td className="px-6 py-4 text-center">{commission.paid ? "paid" : "Due"}</td>
-                                    <td className="px-6 py-4 text-center">Remarks</td>
+                                    <td className={`px-6 py-4 text-center ${commission.paid ? 'text-green-500 font-bold' : 'text-red-400'}`}>{commission.paid ? "paid" : "Unpaid"}</td>
+                                    <td className="px-6 py-4 text-center text-sm">{commission.remarks}</td>
                                 </tr>
                             ))}
 
@@ -522,22 +522,20 @@ const TeacherAllStudentEachCourse = () => {
 
 
                                 <td className='px-6 py-4 text-center'>
-                                    2000
+                                   0
                                 </td>
 
                                 <td className='px-6 py-4 text-center'>
-                                    yes
+                                  Unpaid
                                 </td>
                                 <td className='px-6 py-4 text-center'>
-                                    Remarks
+                                   
                                 </td>
                                 <td className='px-2 py-4 text-center'>
                                     <button className="bg-green-600 text-gray-200 py-1 px-2 ml-2 rounded-md" onClick={updateMonthlyCommission} >Update</button>
                                 </td>
 
                             </tr>
-
-
 
 
 

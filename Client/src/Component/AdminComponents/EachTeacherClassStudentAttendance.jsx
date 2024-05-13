@@ -5,13 +5,15 @@ import axios from 'axios';
 const EachTeacherClassStudentAttendance = () => {
 
     const navigate = useNavigate();
-    const { selectedClassId } = useParams();
+    const { id, selectedClassId } = useParams();
+
     const [allDetails, setAllDetails] = useState([]);
     const [courseDetails, setCourseDetails] = useState([]);
     const [attendanceDetailsMap, setAttendanceDetailsMap] = useState({});
     const [studentId, setStudentId] = useState([]);
     const [myenrolledStudentDetails, setMyEnrolledStudentsDetails] = useState([]);
     const [showPopup, setShowPopup] = useState(false);
+    const [showPopupMonthly, setShowPopupMonthly] = useState(false)
     const [selectedStudentName, setSelectedStudentName] = useState('');
     const [selectedDate, setSelectedDate] = useState('');
     const [numberOfClasses, setNumberOfClasses] = useState('');
@@ -19,8 +21,12 @@ const EachTeacherClassStudentAttendance = () => {
     const [numberOfClassesTaken, setNumberOfClassesTaken] = useState(0);
     const [studentDetails, setStudentsDetails] = useState([]);
     const [attendanceDetails, setAttendanceDetails] = useState([]);
-    const [commission , setCommission ] = useState('');
-
+    const [commission, setCommission] = useState('');
+    const [monthCommissionDetails, setMonthlyCommissionDetails] = useState([]);
+    const [commissionId, setCommissionId] = useState(null)
+    const [selectedMonthName, setSelectedMonthName] = useState(null);
+    const [remarks, setRemarks] = useState('');
+    const [paid, setPaid] = useState('');
 
 
 
@@ -212,13 +218,103 @@ const EachTeacherClassStudentAttendance = () => {
         }
 
     }
+
+
+
+
+    //  get monthly commission 
+    useEffect(() => {
+        const getMonthlyCommission = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    navigate('/login');
+                    return;
+                }
+
+                // const commission = [];
+
+                const monthlyCommissionReport = await axios.get(`http://localhost:7000/api/admin-confi/monthly-commission/${id}/${selectedClassId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                if (monthlyCommissionReport.status === 200) {
+                    setMonthlyCommissionDetails(monthlyCommissionReport.data);
+                    console.log("monthlycommission", monthlyCommissionReport.data);
+                }
+
+
+            } catch (error) {
+                console.log(error);
+            }
+        }
+
+        getMonthlyCommission();
+    }, [selectedClassId]);
+
+
+
+    // handleFetchMonthlyCommisssionDetails
+
+    const handleFetchMonthlyCommisssionDetails = (commissionIdIs, selectedMonth) => {
+        console.log(commissionIdIs)
+        setCommissionId(commissionIdIs);
+        setSelectedMonthName(selectedMonth)
+        setShowPopupMonthly(true);
+    };
+
+
+    // update monthly commission
+
+    const updateMonthlyCommission = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                console.log("no Token Found")
+                navigate('/login');
+            }
+           
+
+            const response = await axios.post(
+                `http://localhost:7000/api/admin-confi/update-monthly-commission/${commissionId}`,
+                {
+                    commission,
+                    paid,
+                    remarks
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (response.status === 200) {
+                console.log(response.data);
+                console.log("admin update monthly commission")
+                setShowPopupMonthly(false)
+                window.location.reload();
+               
     
-   
+                // Clear the input fields
+              setCommission("");
+              setPaid("");
+              setRemarks("")
 
-   
+             
 
 
 
+            }
+
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+    }
 
 
 
@@ -295,11 +391,11 @@ const EachTeacherClassStudentAttendance = () => {
                                         .filter(detail => detail.classDate === selectedDate) // Filter by selected date
                                         .reduce((total, detail) => total + (+detail.numberOfClassesTaken || 0), 0) : 0;
 
-                                        const teachercommission = studentAttendanceDetails ? studentAttendanceDetails.detailAttendance
+                                    const teachercommission = studentAttendanceDetails ? studentAttendanceDetails.detailAttendance
                                         .filter(details => details.classDate === selectedDate)
                                         .reduce((totalCommission, detail) => totalCommission + detail.commission, 0) : 0;
 
-                                        const showEditIcon = teachercommission === 0;
+                                    const showEditIcon = teachercommission === 0;
 
                                     return (
                                         <tr key={student._id} class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 ">
@@ -314,7 +410,7 @@ const EachTeacherClassStudentAttendance = () => {
                                                 {studentTotalClassesTaken}
                                             </td>
                                             <td class="px-6 py-4 text-center">
-                                            <div className='flex items-center justify-center'>
+                                                <div className='flex items-center justify-center'>
                                                     {showEditIcon ? (
                                                         <svg onClick={() => handleFetchStudentDetails(student._id, student.name)} class="h-6 w-6 text-red-600" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4" />  <line x1="13.5" y1="6.5" x2="17.5" y2="10.5" /></svg>
 
@@ -342,20 +438,17 @@ const EachTeacherClassStudentAttendance = () => {
                                     Month
                                 </th>
                                 <th scope="col" class="px-6 py-3">
+                                    Year
+                                </th>
+                                <th scope="col" class="px-6 py-3">
                                     Classes Taken
                                 </th>
+
                                 <th scope="col" class="px-6 py-3">
                                     commission
                                 </th>
                                 <th scope="col" class="px-6 py-3">
-                                    Arrear
-                                </th>
-
-                                <th scope="col" class="px-6 py-3">
-                                    Paid
-                                </th>
-                                <th scope="col" class="px-6 py-3">
-                                    OutStanding
+                                    paid
                                 </th>
                                 <th scope="col" class="px-6 py-3">
                                     Remarks(if any)
@@ -364,37 +457,17 @@ const EachTeacherClassStudentAttendance = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="bg-white border-b  ">
+                            {monthCommissionDetails && monthCommissionDetails.map((commission, index) => (
+                                <tr key={index} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 cursor-pointer hover:bg-gray-50" onClick={() => handleFetchMonthlyCommisssionDetails(commission._id, commission.monthName)}>
+                                    <td className="px-6 py-4 text-center">{commission.monthName}</td>
+                                    <td className="px-6 py-4 text-center">{commission.year}</td>
+                                    <td className="px-6 py-4 text-center">{commission.classesTaken}</td>
+                                    <td className="px-6 py-4 text-center">{commission.commission}</td>
+                                    <td className={`px-6 py-4 text-center ${commission.paid ? 'text-green-500 font-bold' : 'text-red-400'}`}>{commission.paid ? "paid" : "Unpaid"}</td>
 
-                                <th scope="row" class="px-6 py-4e text-bold bg-orange-50">
-                                    January
-                                </th>
-                                <td class="px-6 py-4 text-center">
-                                    <div className='flex items-center justify-center'>
-                                        <div> 12.5 </div>
-                                        <div className='ml-2'><svg class="h-6 w-6 text-red-600" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4" />  <line x1="13.5" y1="6.5" x2="17.5" y2="10.5" /></svg></div>
-                                    </div>
-                                </td>
-
-                                <td className='px-6 py-4 text-center'>
-                                    ₹ 7000
-                                </td>
-
-                                <td className='px-6 py-4 text-center'>
-                                    <svg class="h-8 w-8 text-green-600" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <path d="M7 12l5 5l10 -10" />  <path d="M2 12l5 5m5 -5l5 -5" /></svg>
-                                </td>x
-                                <td className='px-6 py-4 text-center'>
-                                    Yes
-                                </td>
-                                <td className='px-6 py-4 text-center'>
-                                    ₹ 7000
-                                </td>
-                                <td className='px-6 py-4 text-center'>
-
-                                </td>
-
-
-                            </tr>
+                                    <td className="px-6 py-4 text-center">{commission.remark}</td>
+                                </tr>
+                            ))}
 
 
                         </tbody>
@@ -425,6 +498,41 @@ const EachTeacherClassStudentAttendance = () => {
                     </div>
                 </div>
             )}
+
+
+
+
+            {showPopupMonthly && (
+                <div className="fixed inset-0 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-gray-800 opacity-50"></div>
+
+                    <div className="relative bg-white p-6 rounded-lg shadow-xl">
+                        <svg className="h-5 w-5 bg-red-600 cursor-pointer p-1 text-2xl -mb-1 rounded-full text-gray-50 absolute top-0 right-0 m-2" onClick={() => setShowPopupMonthly(false)} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <line x1="18" y1="6" x2="6" y2="18" />  <line x1="6" y1="6" x2="18" y2="18" /></svg>
+                        <p className="mb-4 font-bold text-xl">{selectedMonthName}</p>
+                        <div className='flex flex-col items-center'>
+                            <input
+                                type="number"
+                                value={commission}
+                                onChange={(e) => setCommission(e.target.value)}
+                                className="w-full mb-2"
+                                placeholder="Enter Commission Amount"
+                            />
+                            <select className="w-full mb-2" value={paid} onChange={(e) => setPaid(e.target.value)}>
+                                <option >select status</option>
+                                <option value="true">Paid</option>
+                            </select>
+                            <textarea
+                                value={remarks}
+                                onChange={(e) => setRemarks(e.target.value)}
+                                className="w-full h-24 mb-2 resize-none border rounded-md p-2"
+                                placeholder="Enter remark..."
+                            ></textarea>
+                            <button className='bg-green-500 p-2 text-gray-100' onClick={updateMonthlyCommission}>Update</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
 
         </>
     )
