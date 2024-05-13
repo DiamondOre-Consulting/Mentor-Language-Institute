@@ -169,7 +169,6 @@ const EachTeacherClassStudentAttendance = () => {
 
 
     // update commissionperday 
-    console.log(selectedstudentId)
 
     const updateCommissionPerDay = async () => {
         try {
@@ -200,10 +199,10 @@ const EachTeacherClassStudentAttendance = () => {
                 console.log(response.data);
                 console.log("commission Updated")
                 setShowPopup(false)
-                setAttendanceDetailsMap(prevAttendanceDetailsMap => ({
-                    ...prevAttendanceDetailsMap,
-                    [selectedstudentId]: numberOfClassesTaken
-                }));
+                // setAttendanceDetailsMap(prevAttendanceDetailsMap => ({
+                //     ...prevAttendanceDetailsMap,
+                //     [selectedstudentId]: numberOfClassesTaken
+                // }));
 
             }
 
@@ -213,6 +212,12 @@ const EachTeacherClassStudentAttendance = () => {
         }
 
     }
+    
+   
+
+   
+
+
 
 
 
@@ -288,7 +293,13 @@ const EachTeacherClassStudentAttendance = () => {
                                     const studentAttendanceDetails = attendanceDetails.find(attendance => attendance.studentId === student._id);
                                     const studentTotalClassesTaken = studentAttendanceDetails ? studentAttendanceDetails.detailAttendance
                                         .filter(detail => detail.classDate === selectedDate) // Filter by selected date
-                                        .reduce((total, detail) => total + parseInt(detail.numberOfClassesTaken), 0) : 0;
+                                        .reduce((total, detail) => total + (+detail.numberOfClassesTaken || 0), 0) : 0;
+
+                                        const teachercommission = studentAttendanceDetails ? studentAttendanceDetails.detailAttendance
+                                        .filter(details => details.classDate === selectedDate)
+                                        .reduce((totalCommission, detail) => totalCommission + detail.commission, 0) : 0;
+
+                                        const showEditIcon = teachercommission === 0;
 
                                     return (
                                         <tr key={student._id} class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 ">
@@ -303,9 +314,13 @@ const EachTeacherClassStudentAttendance = () => {
                                                 {studentTotalClassesTaken}
                                             </td>
                                             <td class="px-6 py-4 text-center">
-                                                <div className='flex items-center justify-center' onClick={() => handleFetchStudentDetails(student._id, student.name)}>
-                                                    <div>{attendanceDetailsMap[student._id]}</div>
-                                                    <div className='ml-2'><svg class="h-6 w-6 text-red-600" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4" />  <line x1="13.5" y1="6.5" x2="17.5" y2="10.5" /></svg></div>
+                                            <div className='flex items-center justify-center'>
+                                                    {showEditIcon ? (
+                                                        <svg onClick={() => handleFetchStudentDetails(student._id, student.name)} class="h-6 w-6 text-red-600" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4" />  <line x1="13.5" y1="6.5" x2="17.5" y2="10.5" /></svg>
+
+                                                    ) : (
+                                                        <div>{teachercommission}</div>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>

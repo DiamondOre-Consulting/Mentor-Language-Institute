@@ -222,7 +222,7 @@ router.get(
   async (req, res) => {
     try {
       const { id } = req.params;
-      const { attendanceDate } = req.body;
+      const { attendanceDate } = req.query;
 
       const attendances = await Attendance.find({
         classId: id,
