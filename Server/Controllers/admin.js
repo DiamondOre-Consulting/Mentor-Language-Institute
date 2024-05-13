@@ -535,7 +535,7 @@ router.post(
   async (req, res) => {
     try {
       const { id } = req.params;
-      const { commission, paid } = req.body;
+      const { commission, paid, remarks } = req.body;
 
       if (!commission) {
         await Commission.findByIdAndUpdate(
@@ -554,6 +554,7 @@ router.post(
           $set: {
             commission: commission,
             paid: paid,
+            remarks: remarks
           },
         }
       );
