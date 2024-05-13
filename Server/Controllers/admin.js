@@ -487,8 +487,8 @@ router.post(
           "detailAttendance.classDate": classDate,
         },
         {
-          $push: {
-            detailAttendance: { commission: commission },
+          $set: {
+            "detailAttendance.$.commission": commission,
           },
         },
         { new: true }
