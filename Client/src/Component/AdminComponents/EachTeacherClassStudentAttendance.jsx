@@ -19,6 +19,7 @@ const EachTeacherClassStudentAttendance = () => {
     const [numberOfClassesTaken, setNumberOfClassesTaken] = useState(0);
     const [studentDetails, setStudentsDetails] = useState([]);
     const [attendanceDetails, setAttendanceDetails] = useState([]);
+    const [commission , setCommission ] = useState('');
 
 
 
@@ -182,11 +183,11 @@ const EachTeacherClassStudentAttendance = () => {
                 return;
             }
 
-            const response = await axios.put(
-                `http://localhost:7000/api/admin-confi/update-attendance/${selectedClassId}/${selectedstudentId}`,
+            const response = await axios.post(
+                `http://localhost:7000/api/admin-confi/update-commission/${selectedClassId}/${selectedstudentId}`,
                 {
-                    attendanceDate: selectedDate,
-                    numberOfClassesTaken
+                    classDate: selectedDate,
+                    commission
                 },
                 {
                     headers: {
@@ -197,7 +198,7 @@ const EachTeacherClassStudentAttendance = () => {
 
             if (response.status === 200) {
                 console.log(response.data);
-                console.log("attendence marked ")
+                console.log("commission Updated")
                 setShowPopup(false)
                 setAttendanceDetailsMap(prevAttendanceDetailsMap => ({
                     ...prevAttendanceDetailsMap,
@@ -398,13 +399,13 @@ const EachTeacherClassStudentAttendance = () => {
 
                             <input
                                 type="number"
-                                value={numberOfClassesTaken}
-                                onChange={(e) => setNumberOfClassesTaken(e.target.value)}
+                                value={commission}
+                                onChange={(e) => setCommission(e.target.value)}
                                 className="w-full "
-                                placeholder="Enter Number of Classes Taken"
+                                placeholder="Enter Commission Amount"
                             />
 
-                            <button className='bg-green-500 p-2 text-gray-100 ' onClick={updateAttendance}>Update</button>
+                            <button className='bg-green-500 p-2 text-gray-100 ' onClick={updateCommissionPerDay}>Update</button>
                         </div>
                     </div>
                 </div>
