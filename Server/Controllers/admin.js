@@ -486,6 +486,7 @@ router.post(
           studentId: id2,
           "detailAttendance.classDate": classDate,
         },
+        
         {
           $set: {
             "detailAttendance.$.commission": commission,
