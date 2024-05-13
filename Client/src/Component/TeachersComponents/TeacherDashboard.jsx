@@ -11,27 +11,27 @@ import { useNavigate } from 'react-router-dom'
 
 
 const TeacherDashboard = ({ teacherData }) => {
-  // const { decodedToken } = useJwt(localStorage.getItem("token"));
-  // const token = localStorage.getItem("token");
-  // if (!token) {
-  //   navigate("/login"); 
-  //   return;
-  // }
-  // useEffect(() => {
-  //   const token = localStorage.getItem("token");
-  //   if (!token) {
-  //     navigate("/login");
-  //   } else {
-  //     const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
-  //     console.log(tokenExpiration)
+  const { decodedToken } = useJwt(localStorage.getItem("token"));
+  const token = localStorage.getItem("token");
+  if (!token) {
+    navigate("/login"); 
+    return;
+  }
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+    } else {
+      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
+      console.log(tokenExpiration)
 
-  //     if (tokenExpiration && tokenExpiration < Date.now()) {
-  //       // Token expired, remove from local storage and redirect to login page
-  //       localStorage.removeItem("token");
-  //       navigate("/login");
-  //     }
-  //   }
-  // }, [decodedToken])
+      if (tokenExpiration && tokenExpiration < Date.now()) {
+        // Token expired, remove from local storage and redirect to login page
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    }
+  }, [decodedToken])
 
   
   console.log("teacherdata in teacherdashboard", teacherData)

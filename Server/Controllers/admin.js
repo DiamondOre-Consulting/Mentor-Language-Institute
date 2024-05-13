@@ -436,24 +436,25 @@ router.get(
   async (req, res) => {
     try {
       const { id } = req.params;
-      const { attendanceDate } = req.body;
+      const { attendanceDate } = req.query; // Change req.body to req.query
 
       const attendances = await Attendance.find({
         classId: id,
         "detailAttendance.classDate": attendanceDate,
       });
 
-      if(!attendances) {
-        return res.status(403).json({message: "No record found!!!"});
+      if(attendances.length === 0) { // Check if the length is zero
+        return res.status(403).json({ message: "No record found!!!" });
       }
 
       res.status(200).json(attendances);
     } catch (error) {
-      console.log("Something went wrong!!! ");
-      res.status(500).json(error);
+      console.log("Something went wrong!!! ", error); // Log the error for debugging
+      res.status(500).json({ error: "Something went wrong!!!" }); // Return a generic error message
     }
   }
 );
+
 
 // UPDATE TEACHER PER DAY COMMISSION OF EACH STUDENT
 router.post("/update-commission/:id", AdminAuthenticateToken, async (req, res) => {

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
-import { Link , useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Footer, Tabs } from "flowbite-react";
 import { HiAdjustments, HiClipboardList } from "react-icons/hi";
 import { FaBook } from 'react-icons/fa';
@@ -25,7 +25,7 @@ const Coursedet = () => {
     const [classData, setClassData] = useState("");
     const [allEnrollclassData, setAllClassData] = useState([])
     const [feedetails, setFeeDetails] = useState(null);
-    const [myenroll , setEnroll] = useState("");
+    const [myenroll, setEnroll] = useState("");
     const [loading, setLoading] = useState(false);
     useEffect(() => {
 
@@ -59,7 +59,7 @@ const Coursedet = () => {
                     console.log("classes", classes)
 
                     const allEnrClassData = [];
-                    for(const ids of classes){
+                    for (const ids of classes) {
 
                         const AllEnrollResponse = await axios.get(
                             `http://localhost:7000/api/students/all-courses/${ids}`,
@@ -70,46 +70,46 @@ const Coursedet = () => {
                             }
                         );
 
-                        if(AllEnrollResponse.status === 200){
-                            console.log("allenrollids",AllEnrollResponse.data)
+                        if (AllEnrollResponse.status === 200) {
+                            console.log("allenrollids", AllEnrollResponse.data)
                             const enroll = AllEnrollResponse.data
                             allEnrClassData.push(enroll);
                             setEnroll(allEnrClassData); // Update state variable here instead of setEnroll
-                            console.log("allenrolls",myenroll)
+                            console.log("allenrolls", myenroll)
                         }
 
                     }
 
 
                     const allEnrollClassData = [];
-                        const classResponse = await axios.get(
-                            `http://localhost:7000/api/students/all-courses/${id}`,
-                            {
-                                headers: {
-                                    Authorization: `Bearer ${token}`,
-                                },
-                            }
-                        );
-
-                        if (classResponse.status === 200) {
-                            const classData = classResponse.data;
-                            console.log("Enrolled class details:", classData);
-                            setClassData(classData);
-                            allEnrollClassData.push(classData);
-
-                            const teacherId = classResponse.data.teachBy;
-                            const teacherResponse = await axios.get(`http://localhost:7000/api/students/teacher/${teacherId}`, {
-                                headers: {
-                                    Authorization: `Bearer ${token}`,
-                                },
-                            });
-                            if (teacherResponse.status === 200) {
-                                // Add teacher information to class data
-                                classResponse.data.teacher = teacherResponse.data;
-                            }
-
+                    const classResponse = await axios.get(
+                        `http://localhost:7000/api/students/all-courses/${id}`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
                         }
-                    
+                    );
+
+                    if (classResponse.status === 200) {
+                        const classData = classResponse.data;
+                        console.log("Enrolled class details:", classData);
+                        setClassData(classData);
+                        allEnrollClassData.push(classData);
+
+                        const teacherId = classResponse.data.teachBy;
+                        const teacherResponse = await axios.get(`http://localhost:7000/api/students/teacher/${teacherId}`, {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        });
+                        if (teacherResponse.status === 200) {
+                            // Add teacher information to class data
+                            classResponse.data.teacher = teacherResponse.data;
+                        }
+
+                    }
+
                     setAllClassData(allEnrollClassData);
                     console.log("enroll class array", allEnrollclassData);
 
@@ -136,7 +136,7 @@ const Coursedet = () => {
 
     useEffect(() => {
         const fetchAttendanceDetails = async () => {
-            
+
             try {
                 setLoading(true)
                 const token = localStorage.getItem("token");
@@ -230,7 +230,7 @@ const Coursedet = () => {
     }, [id]);
 
 
-    
+
     return (
         <> {loading && (
             <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
@@ -251,7 +251,7 @@ const Coursedet = () => {
                                     </div>
                                 </div>
 
-                
+
 
                             </div>
 
@@ -264,7 +264,7 @@ const Coursedet = () => {
                                             <p className='md:text-2xl text-orange-500 font-bold mb-6'>Course Details</p>
 
 
-                                        <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+                                            <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
                                                 <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
                                                     <tbody>
                                                         <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
@@ -336,14 +336,14 @@ const Coursedet = () => {
 
 
                                             <div class="overflow-auto max-h-96 overflow-x-auto shadow-md sm:rounded-lg">
-                                                <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                                                <table class="w-full text-sm text-center rtl:text-right text-gray-500 dark:text-gray-400">
                                                     <thead class="sticky top-0 text-xs text-gray-100 uppercase bg-orange-400 dark:bg-gray-700 dark:text-gray-400">
                                                         <tr>
                                                             <th scope="col" class="px-6 py-3">
                                                                 Date
                                                             </th>
                                                             <th scope="col" class="px-6 py-3">
-                                                                Status
+                                                                Number of Classes Taken
                                                             </th>
 
                                                         </tr>
@@ -357,8 +357,8 @@ const Coursedet = () => {
                                                                     <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                                                         {attendance.classDate}
                                                                     </th>
-                                                                    <td className={`px-6 py-4 ${attendance.present ? 'text-green-500' : 'text-red-400'}`}>
-                                                                        {attendance.present ? 'Present' : 'Absent'}
+                                                                    <td className={`px-6 py-4 `}>
+                                                                        {attendance.numberOfClassesTaken}
                                                                     </td>
                                                                 </tr>
                                                             ))
@@ -463,7 +463,7 @@ const Coursedet = () => {
                 </div>
 
             </div>
-            
+
         </>
     )
 }

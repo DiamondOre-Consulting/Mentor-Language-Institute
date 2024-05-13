@@ -10,9 +10,9 @@ const Teachermain = () => {
   const [teacherData , setTeacherData] =useState("");
   const { decodedToken } = useJwt(localStorage.getItem("token"));
   const token = localStorage.getItem("token");
-  console.log(token )
+  // console.log(token )
 
-  console.log(token)
+ 
   if (!token) {
     navigate("/login"); // Redirect to login page if not authenticated
     return;

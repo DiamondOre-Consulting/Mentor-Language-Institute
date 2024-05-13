@@ -93,7 +93,7 @@ const Parentlog = () => {
                         <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
                             <div className='flex justify-between items-center'>
                                 <h1 class="text-xl  font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
-                                    Student Registeration Form
+                                    Student Registration Form
                                 </h1>
                                 {/* <img src={logo} alt="" className='w-24' /> */}
 

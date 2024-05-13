@@ -17,37 +17,14 @@ const EachTeacherClassStudentAttendance = () => {
     const [numberOfClasses, setNumberOfClasses] = useState('');
     const [selectedstudentId, setSelectedStudentId] = useState(null);
     const [numberOfClassesTaken, setNumberOfClassesTaken] = useState(0);
+    const [studentDetails, setStudentsDetails] = useState([]);
+    const [attendanceDetails, setAttendanceDetails] = useState([]);
 
-    //  details of sttdent 
 
-    useEffect(() => {
-        const allDetails = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                if (!token) {
-                    navigate('/login');
-                    return;
-                }
 
-                const allStudentsResponse = await axios.get(`http://localhost:7000/api/admin-confi/class/all-students/${selectedClassId}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
 
-                if (allStudentsResponse.status === 200) {
-                    setAllDetails(allStudentsResponse.data);
-                    console.log("alldetaiils", allStudentsResponse.data);
-                }
 
-            } catch (error) {
-                console.log(error);
-            }
-
-        };
-
-        allDetails();
-    }, [selectedClassId, navigate]);
+    //FETCH COURSE DETAILS 
 
     useEffect(() => {
 
@@ -106,42 +83,67 @@ const EachTeacherClassStudentAttendance = () => {
 
 
 
-    // fetch attendence details
+    // fetch attendence details are 
     useEffect(() => {
         const fetchAttendanceDetails = async () => {
             try {
-
                 const token = localStorage.getItem('token');
-
 
                 if (!token) {
                     console.error('Token not found');
                     return;
                 }
-          
 
-                const attendanceResponse = await axios.get(`http://localhost:7000/api/admin-confi/attendance/${selectedClassId}`,
-
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
+                const attendanceResponse = await axios.get(`http://localhost:7000/api/admin-confi/attendance/${selectedClassId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
                     },
-                    {
-                        attendanceDate: selectedDate,
+                    params: {
+                        attendanceDate: selectedDate, // Pass attendanceDate as a query parameter
                     },
+                });
 
-                )
                 if (attendanceResponse.status === 200) {
-                    console.log("attendance details", attendanceResponse.data)
+                    console.log("a det", attendanceResponse.data)
+
+                    const mapping = attendanceResponse.data
+                        .filter(item => item.detailAttendance)
+                        .map(item => item.detailAttendance);
+
+                    const numberOfClassesTakenValues = mapping.map(detailAttendance =>
+                        detailAttendance.map(detail => detail.numberOfClassesTaken)
+                    );
+                    setAttendanceDetails(attendanceResponse.data);
+
+                    console.log("mapping", mapping)
+                    console.log("mapping", numberOfClassesTakenValues)
+
+                    const studentIds = attendanceResponse.data.map(item => item.studentId);
+                    console.log("student ids", studentIds)
+                    const studentData = [];
+                    for (const studentid of studentIds) {
+
+                        const studentResponse = await axios.get(`http://localhost:7000/api/admin-confi/all-students/${studentid}`, {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        });
+                        if (studentResponse.status === 200) {
+                            const data = studentResponse.data
+                            studentData.push(data)
+
+                            console.log("allstudents details", studentDetails)
+                        }
+
+
+                    } setStudentsDetails(studentData);
                 }
-
             } catch (error) {
-                console.log("error in fetching attendance", error);
+                console.log("Error in fetching attendance:", error);
             }
-
         };
 
+        // Call fetchAttendanceDetails when selectedDate or selectedClassId changes
         fetchAttendanceDetails();
     }, [selectedDate, selectedClassId]);
 
@@ -278,8 +280,14 @@ const EachTeacherClassStudentAttendance = () => {
                         </thead>
                         <tbody>
                             {
-                                myenrolledStudentDetails.map((student, index) => {
+                                studentDetails.map((student, index) => {
                                     console.log(`Object at index ${index}:`, student);
+
+                                    // Find the attendance details for the current student
+                                    const studentAttendanceDetails = attendanceDetails.find(attendance => attendance.studentId === student._id);
+                                    const studentTotalClassesTaken = studentAttendanceDetails ? studentAttendanceDetails.detailAttendance
+                                        .filter(detail => detail.classDate === selectedDate) // Filter by selected date
+                                        .reduce((total, detail) => total + parseInt(detail.numberOfClassesTaken), 0) : 0;
 
                                     return (
                                         <tr key={student._id} class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 ">
@@ -290,8 +298,8 @@ const EachTeacherClassStudentAttendance = () => {
                                                     <div class="font-normal text-gray-500">{student.phone}</div>
                                                 </div>
                                             </th>
-                                            <td class="px-6 py-4 text-center cursor-pointer hover:bg-gray-50">
-                                                2.4
+                                            <td class=" text-center cursor-pointer hover:bg-gray-50">
+                                                {studentTotalClassesTaken}
                                             </td>
                                             <td class="px-6 py-4 text-center">
                                                 <div className='flex items-center justify-center' onClick={() => handleFetchStudentDetails(student._id, student.name)}>
@@ -303,9 +311,8 @@ const EachTeacherClassStudentAttendance = () => {
                                     );
                                 })
                             }
-
-
                         </tbody>
+
 
                     </table>
 
@@ -359,7 +366,7 @@ const EachTeacherClassStudentAttendance = () => {
 
                                 <td className='px-6 py-4 text-center'>
                                     <svg class="h-8 w-8 text-green-600" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <path d="M7 12l5 5l10 -10" />  <path d="M2 12l5 5m5 -5l5 -5" /></svg>
-                                </td>
+                                </td>x
                                 <td className='px-6 py-4 text-center'>
                                     Yes
                                 </td>
