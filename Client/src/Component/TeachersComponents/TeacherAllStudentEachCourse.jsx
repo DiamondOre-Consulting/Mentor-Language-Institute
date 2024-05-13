@@ -20,6 +20,7 @@ const TeacherAllStudentEachCourse = () => {
     const [studentDetails, setStudentsDetails] = useState([]);
     const [myenrolledStudentDetails, setMyEnrolledStudentsDetails] = useState([]);
     const [attendanceDetails, setAttendanceDetails] = useState([]);
+    const [monthCommissionDetails , setMonthlyCommissionDetails] = useState([]);
 
     //  details of sttdent 
     // useEffect(() => {
@@ -195,7 +196,6 @@ const TeacherAllStudentEachCourse = () => {
 
 
     // update atendence 
-    console.log(selectedstudentId)
 
     const updateAttendance = async () => {
         try {
@@ -242,6 +242,36 @@ const TeacherAllStudentEachCourse = () => {
 
 
 
+
+    //  get monthly commission 
+    useEffect(() => {
+        const getMonthlyCommission = async () => {
+
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    navigate('/login');
+                    return;
+                }
+
+                const monthlyCommissionReport = await axios.get(`http://localhost:7000/api/teachers/my-commission`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                if (monthlyCommissionReport.status === 200) {
+                    setMonthlyCommissionDetails(monthlyCommissionReport.data);
+                    console.log("monthlycommission", monthlyCommissionReport.data);
+                }
+
+            }
+            catch (error) {
+                console.log(error)
+            }
+        }
+        getMonthlyCommission();
+    } , [selectedClassId])
 
 
     return (
@@ -315,9 +345,13 @@ const TeacherAllStudentEachCourse = () => {
                                     const studentAttendanceDetails = attendanceDetails.find(attendance => attendance.studentId === student._id);
                                     const studentTotalClassesTaken = studentAttendanceDetails ? studentAttendanceDetails.detailAttendance
                                         .filter(detail => detail.classDate === selectedDate) // Filter by selected date
-                                        .reduce((total, detail) => total + parseInt(detail.numberOfClassesTaken), 0) : 0;
+                                        .reduce((total, detail) => total + (+detail.numberOfClassesTaken || 0), 0) : 0;
                                     const showEditIcon = studentTotalClassesTaken === 0;
 
+
+                                    const teachercommission = studentAttendanceDetails ? studentAttendanceDetails.detailAttendance
+                                        .filter(details => details.classDate === selectedDate)
+                                        .reduce((totalCommission, detail) => totalCommission + detail.commission, 0) : 0;
 
                                     return (
                                         <tr key={student._id} class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 ">
@@ -341,7 +375,7 @@ const TeacherAllStudentEachCourse = () => {
 
                                             </td>
                                             <td class="px-6 py-4 text-center">
-                                                {/* {studentTotalClassesTaken}  */}
+                                                {teachercommission}
                                             </td>
                                         </tr>
                                     );

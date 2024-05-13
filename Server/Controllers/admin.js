@@ -480,7 +480,7 @@ router.post(
       const { commission, classDate } = req.body;
       const { id1, id2 } = req.params;
 
-      const updateCommission = await Attendance.findByIdAndUpdate(
+      const updateCommission = await Attendance.findOneAndUpdate(
         {
           classId: id1,
           studentId: id2,
