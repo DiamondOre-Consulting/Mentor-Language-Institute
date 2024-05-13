@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Select } from 'flowbite-react';
+import { decodeToken } from 'react-jwt';
+import { useJwt } from 'react-jwt'
 
 const TeacherAllStudentEachCourse = () => {
 
@@ -20,9 +22,16 @@ const TeacherAllStudentEachCourse = () => {
     const [studentDetails, setStudentsDetails] = useState([]);
     const [myenrolledStudentDetails, setMyEnrolledStudentsDetails] = useState([]);
     const [attendanceDetails, setAttendanceDetails] = useState([]);
-    const [monthCommissionDetails , setMonthlyCommissionDetails] = useState([]);
+    const [monthCommissionDetails, setMonthlyCommissionDetails] = useState([]);
+    const [selectedMonth, setSelectedMonth] = useState('');
+    const [selectedYear, setSelectedYear] = useState('');
+    const [monthlyClassTaken, setMonthlyClassTaken] = useState('');
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const years = ["2024", "2025", "2026"];
 
-    //  details of sttdent 
+
+
+
     // useEffect(() => {
     //     const allDetails = async () => {
     //         try {
@@ -246,13 +255,14 @@ const TeacherAllStudentEachCourse = () => {
     //  get monthly commission 
     useEffect(() => {
         const getMonthlyCommission = async () => {
-
             try {
                 const token = localStorage.getItem('token');
                 if (!token) {
                     navigate('/login');
                     return;
                 }
+
+                // const commission = [];
 
                 const monthlyCommissionReport = await axios.get(`http://localhost:7000/api/teachers/my-commission`, {
                     headers: {
@@ -265,13 +275,66 @@ const TeacherAllStudentEachCourse = () => {
                     console.log("monthlycommission", monthlyCommissionReport.data);
                 }
 
-            }
-            catch (error) {
-                console.log(error)
+
+            } catch (error) {
+                console.log(error);
             }
         }
+
         getMonthlyCommission();
-    } , [selectedClassId])
+    }, [selectedClassId]);
+
+    console.log(monthCommissionDetails)
+    // update monthly commission 
+    const updateMonthlyCommission = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                console.log("no Token Found")
+                navigate('/login');
+            }
+            if (!selectedMonth || !selectedYear || !monthlyClassTaken) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            const response = await axios.post(
+                `http://localhost:7000/api/teachers/add-monthly-classes`,
+                {
+                    monthName: selectedMonth,
+                    year: selectedYear,
+                    classesTaken: monthlyClassTaken
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (response.status === 200) {
+                console.log(response.data);
+                console.log("Teacher update monthly commission")
+                window.location.reload();
+               
+    
+                // Clear the input fields
+                setSelectedMonth('');
+                setSelectedYear('');
+                setMonthlyClassTaken('');
+
+             
+
+
+
+            }
+
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+    }
 
 
     return (
@@ -397,6 +460,9 @@ const TeacherAllStudentEachCourse = () => {
                                     Month
                                 </th>
                                 <th scope="col" class="px-6 py-3">
+                                    Year
+                                </th>
+                                <th scope="col" class="px-6 py-3">
                                     Classes Taken
                                 </th>
                                 <th scope="col" class="px-6 py-3">
@@ -411,37 +477,68 @@ const TeacherAllStudentEachCourse = () => {
                                 <th scope="col" class="px-6 py-3">
                                     Remarks(if any)
                                 </th>
+                                <th scope="col" class="px-6 py-3">
+                                    submit
+                                </th>
 
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="bg-white border-b  ">
+                            {monthCommissionDetails && monthCommissionDetails.map((commission, index) => (
+                                <tr key={index} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                                    <td className="px-6 py-4 text-center">{commission.monthName}</td>
+                                    <td className="px-6 py-4 text-center">{commission.year}</td>
+                                    <td className="px-6 py-4 text-center">{commission.classesTaken}</td>
+                                    <td className="px-6 py-4 text-center">{commission.commission}</td>
+                                    <td className="px-6 py-4 text-center">{commission.paid ? "paid" : "Due"}</td>
+                                    <td className="px-6 py-4 text-center">Remarks</td>
+                                </tr>
+                            ))}
 
-                                <th scope="row" class="px-6 py-4e text-bold bg-orange-50">
-                                    January
-                                </th>
-                                <td class="px-6 py-4 text-center">
-                                    <div className='flex items-center justify-center'>
-                                        <div> 12.5 </div>
-                                        <div className='ml-2'><svg class="h-6 w-6 text-red-600" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4" />  <line x1="13.5" y1="6.5" x2="17.5" y2="10.5" /></svg></div>
-                                    </div>
+                            <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                                <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                    <select className="" onChange={(e) => setSelectedMonth(e.target.value)}>
+                                        <option>Select Month</option>
+                                        {months.map((month, index) => (
+                                            <option key={index} value={month}>{month}</option>
+                                        ))}
+                                    </select>
+                                </td>
+
+                                <td className="px-2 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                    <select className="" onChange={(e) => setSelectedYear(e.target.value)}>
+                                        <option>Select Year</option>
+                                        {years.map((year, index) => (
+                                            <option key={index} value={year}>{year}</option>
+                                        ))}
+                                    </select>
+
+                                </td>
+
+                                <td className="px-2 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                    <input type="text" className="" placeholder="Monthly Classes" value={monthlyClassTaken} onChange={(e) => setMonthlyClassTaken(e.target.value)}></input>
+                                    {/* <button className="bg-green-600 text-gray-200 py-2 px-4 ml-2 rounded-md" >Update Fee</button> */}
+                                </td>
+
+
+                                <td className='px-6 py-4 text-center'>
+                                    2000
                                 </td>
 
                                 <td className='px-6 py-4 text-center'>
-                                    ₹ 7000
+                                    yes
                                 </td>
-
-
                                 <td className='px-6 py-4 text-center'>
-                                    Yes
+                                    Remarks
                                 </td>
-
-                                <td className='px-6 py-4 text-center'>
-
+                                <td className='px-2 py-4 text-center'>
+                                    <button className="bg-green-600 text-gray-200 py-1 px-2 ml-2 rounded-md" onClick={updateMonthlyCommission} >Update</button>
                                 </td>
-
 
                             </tr>
+
+
+
 
 
                         </tbody>

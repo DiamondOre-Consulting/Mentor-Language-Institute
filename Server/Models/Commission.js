@@ -14,8 +14,8 @@ const commissionSchema = new mongoose.Schema({
         required: true
     },
     classesTaken: {
-        type: mongoose.Types.Decimal128,
-        default: 0
+        type: String,
+        default: "0"
     },
     commission: {
         type: Number,
