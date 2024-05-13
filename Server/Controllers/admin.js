@@ -486,7 +486,7 @@ router.post(
           studentId: id2,
           "detailAttendance.classDate": classDate,
         },
-        
+
         {
           $set: {
             "detailAttendance.$.commission": commission,
@@ -529,7 +529,7 @@ router.get(
 );
 
 // UPDATE TEACHER'S MONTHLY COMMISSION
-router.put(
+router.post(
   "/update-monthly-commission/:id",
   AdminAuthenticateToken,
   async (req, res) => {

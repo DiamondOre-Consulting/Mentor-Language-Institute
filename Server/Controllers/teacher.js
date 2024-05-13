@@ -337,24 +337,25 @@ router.get("/my-commission", TeacherAuthenticateToken, async (req, res) => {
   }
 });
 
-// UPDATE MONTHLY COMMISSION
-router.post("/update-monthly-classes/:id", TeacherAuthenticateToken, async (req, res) => {
+// ADD MONTHLY COMMISSION
+router.post("/add-monthly-classes/:id", TeacherAuthenticateToken, async (req, res) => {
   try {
     const {id} = req.params;
-    const {classesTaken} = req.body;
+    const {monthName, year, classesTaken} = req.body;
 
-    const updateClassesTaken = await Commission.findOneAndUpdate(
-      {_id: id},
-      {
-        $set: {classesTaken: classesTaken}
-      }
-    )
+    const addClassesTaken = new Commission({
+      monthName,
+      year,
+      classesTaken
+    })
 
-    if(!updateClassesTaken) {
-      return res.status(403).json({message: "No record found!!!"});
+    await addClassesTaken.save();
+
+    if(!addClassesTaken) {
+      return res.status(403).json({message: "Error in adding classes"});
     }
 
-    res.status(200).json({message: "Monthly classes taken updated successfully!!!"})
+    res.status(200).json({message: "Monthly classes taken added successfully!!!"})
   } catch(error) {
     console.log("Something went wrong!!! ");
     res.status(500).json(error);
