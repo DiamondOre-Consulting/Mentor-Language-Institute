@@ -554,7 +554,7 @@ router.post(
           $set: {
             commission: commission,
             paid: paid,
-            remarks: remarks
+            remarks: remarks,
           },
         }
       );
@@ -566,6 +566,34 @@ router.post(
       res
         .status(200)
         .json({ message: "Monthly commission updated successfully" });
+    } catch (error) {
+      console.log("Something went wrong!!! ");
+      res.status(500).json(error);
+    }
+  }
+);
+
+// DEACTIVATE STUDENT ID
+router.put(
+  "/deactivate-account/:id",
+  AdminAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      await Students.findByIdAndUpdate(
+        {
+          _id: id,
+        },
+        {
+          $set: { deactivated: status },
+        }
+      );
+
+      res
+        .status(201)
+        .json({ message: "Deactivation status got updated successfully!!!" });
     } catch (error) {
       console.log("Something went wrong!!! ");
       res.status(500).json(error);
