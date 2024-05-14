@@ -59,25 +59,27 @@ router.post("/login", async (req, res) => {
     }
 
     if(user.deactivated) {
-      const passwordMatch = await bcrypt.compare(password, user.password);
-      if (!passwordMatch) {
-        return res.status(402).json({ message: "Invalid password" });
-      }
-  
-      const token = jwt.sign(
-        {
-          userId: user._id,
-          name: user.name,
-          phone: user.phone,
-        },
-        secretKey,
-        {
-          expiresIn: "1h",
-        }
-      );
-  
-      return res.status(200).json({ token });
+      return res.status(402).json({message: "Your account has been deactivated!!!"});
     }
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(402).json({ message: "Invalid password" });
+    }
+
+    const token = jwt.sign(
+      {
+        userId: user._id,
+        name: user.name,
+        phone: user.phone,
+      },
+      secretKey,
+      {
+        expiresIn: "1h",
+      }
+    );
+
+    return res.status(200).json({ token });
   } catch (error) {
     console.log("Something went wrong!!! ");
     res.status(500).json(error);
