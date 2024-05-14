@@ -1,6 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import { ClipLoader } from "react-spinners";
+import { css } from "@emotion/react";
+
+const override = css`
+  display: block;
+  margin: 0 auto;
+  border-color: red;
+`;
+
+
 
 const EachTeacherClassStudentAttendance = () => {
 
@@ -27,6 +37,7 @@ const EachTeacherClassStudentAttendance = () => {
     const [selectedMonthName, setSelectedMonthName] = useState(null);
     const [remarks, setRemarks] = useState('');
     const [paid, setPaid] = useState('');
+    const [loading, setLoading] = useState(false);
 
 
 
@@ -37,7 +48,7 @@ const EachTeacherClassStudentAttendance = () => {
 
         const fetchCourseDetails = async () => {
             try {
-
+                setLoading(false)
                 const token = localStorage.getItem('token');
 
                 if (!token) {
@@ -82,6 +93,9 @@ const EachTeacherClassStudentAttendance = () => {
                 }
             } catch (error) {
                 console.log(error);
+            }
+            finally {
+                setLoading(false);
             }
 
         };
@@ -275,7 +289,7 @@ const EachTeacherClassStudentAttendance = () => {
                 console.log("no Token Found")
                 navigate('/login');
             }
-           
+
 
             const response = await axios.post(
                 `http://localhost:7000/api/admin-confi/update-monthly-commission/${commissionId}`,
@@ -296,14 +310,14 @@ const EachTeacherClassStudentAttendance = () => {
                 console.log("admin update monthly commission")
                 setShowPopupMonthly(false)
                 window.location.reload();
-               
-    
-                // Clear the input fields
-              setCommission("");
-              setPaid("");
-              setRemarks("")
 
-             
+
+                // Clear the input fields
+                setCommission("");
+                setPaid("");
+                setRemarks("")
+
+
 
 
 
@@ -321,6 +335,11 @@ const EachTeacherClassStudentAttendance = () => {
 
     return (
         <>
+            {loading && (
+                <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+                    <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
+                </div>
+            )}
             <h1 className="text-4xl mb-1 font-semibold text-start text-gray-700">{courseDetails.classTitle}   |  Total Hours:  {courseDetails.totalHours}</h1>
 
             <div class="relative overflow-x-auto  mt-8">
@@ -465,7 +484,7 @@ const EachTeacherClassStudentAttendance = () => {
                                     <td className="px-6 py-4 text-center">{commission.commission}</td>
                                     <td className={`px-6 py-4 text-center ${commission.paid ? 'text-green-500 font-bold' : 'text-red-400'}`}>{commission.paid ? "paid" : "Unpaid"}</td>
 
-                                    <td className="px-6 py-4 text-center">{commission.remark}</td>
+                                    <td className="px-6 py-4 text-center">{commission.remarks}</td>
                                 </tr>
                             ))}
 

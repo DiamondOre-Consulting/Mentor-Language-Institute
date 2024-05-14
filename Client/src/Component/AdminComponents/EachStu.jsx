@@ -416,14 +416,14 @@ console.log(classes)
 
 
                       <div class="relative overflow-x-auto mt-8">
-                        <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                        <table class="w-full text-sm text-center rtl:text-center text-gray-500 dark:text-gray-400">
                           <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                             <tr>
                               <th scope="col" class="px-6 py-3">
                                 Date
                               </th>
                               <th scope="col" class="px-6 py-3">
-                                Status
+                                Number Of Classes Taken
                               </th>
 
                             </tr>

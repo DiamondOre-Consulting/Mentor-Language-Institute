@@ -20,9 +20,13 @@ const Allstudents = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [popupMessage, setPopupMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [selectedCourseId, setSelectedCourseId] = useState('');
+  const [showPopup, setShowPopup] = useState(false)
+  const [status, setStatus] = useState(null)
   const [searchQuery, setSearchQuery] = useState('');
+  const [setuId, setStuId] = useState(null)
+  const [stuname , setStuName] = useState('');
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const [formData, setFormData] = useState({
     totalFee: '',
@@ -132,6 +136,13 @@ const Allstudents = () => {
 
   };
 
+  const openPopup = (studentId , studentName) => {
+    setStuId(studentId);
+    setStuName(studentName)
+    setShowPopup(true)
+
+  }
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -215,6 +226,43 @@ const Allstudents = () => {
     setIsFormOpen(false);
   };
 
+  //  DETATIVE STUDENT ACCOUNT BY ADMIN
+  console.log(setuId)
+  console.log(status)
+  const detailsctiveaccount = async (e) => {
+    e.preventDefault();
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("No token found");
+        navigate("/login");
+        return;
+      }
+
+
+      const deactiveResponse = await axios.put(
+        `http://localhost:7000/api/admin-confi/deactivate-account/${setuId}`,
+        { status },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (deactiveResponse.status === 201) {
+        console.log("Account has been deactivated");
+        window.location.reload();
+        setShowPopup(false)
+      }
+    } catch (error) {
+      console.error("Error deactivating account:", error);
+    }
+  };
+
+
+
+
 
   return (
     <>
@@ -245,12 +293,13 @@ const Allstudents = () => {
 
             <div
 
-              className='block max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 cursor-pointer'
+              className={`block max-w-sm p-4 ${student.deactivated ? 'bg-red-300 text-red-300 hover:text-red-400 hover:bg-red-400' : 'bg-white hover:bg-gray-100'}border border-gray-200 rounded-lg shadow  dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 cursor-pointer`}
 
             >
               <div className='flex justify-between items-cetner'> <h5 className='text-xl font-bold tracking-tight text-gray-900 dark:text-white'>
                 {student.name}
-              </h5>  <span className='text-sm   text-xs text-gray-100 rounded-md'><svg class="h-6 w-6 text-red-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <line x1="4" y1="7" x2="20" y2="7" />  <line x1="10" y1="11" x2="10" y2="17" />  <line x1="14" y1="11" x2="14" y2="17" />  <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />  <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg></span></div>
+              </h5>  <span className='text-sm   text-xs text-gray-100 rounded-md'>
+                  <svg onClick={() => openPopup(student._id , student.name)} class="h-6 w-6 text-red-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <line x1="4" y1="7" x2="20" y2="7" />  <line x1="10" y1="11" x2="10" y2="17" />  <line x1="14" y1="11" x2="14" y2="17" />  <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />  <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg></span></div>
 
               <p className='font-normal text-sm text-gray-700 dark:text-gray-400'>
                 phone :- <span>{student.phone}</span>
@@ -321,6 +370,33 @@ const Allstudents = () => {
               </div>
               <div className="flex justify-end">
                 <button type="button" onClick={closeForm} className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 mr-2">Close</button>
+                <button type="submit" className="px-4 py-2 bg-orange-400 text-white rounded-md hover:bg-orange-500">Submit</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+
+      {showPopup && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-white shadow-md rounded-md p-6 w-3/4 max-w-md">
+            <h2 className="text-lg font-semibold mb-4">{stuname}</h2>
+            <form onSubmit={detailsctiveaccount}>
+
+
+              <div className="mb-4">
+
+                <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full">
+                  <option>Select Status</option>
+                  <option value="false">Activate Account</option>
+                  <option value="true">Deactivate Account</option>
+                </select>
+
+              </div>
+
+              <div className="flex justify-end">
+                <button type="button" onClick={() => setShowPopup(false)} className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 mr-2">Close</button>
                 <button type="submit" className="px-4 py-2 bg-orange-400 text-white rounded-md hover:bg-orange-500">Submit</button>
               </div>
             </form>

@@ -45,7 +45,7 @@ const TeacherDashboard = ({ teacherData }) => {
           <div className="flex-grow p-4">
             <Routes>
               <Route path="/" element={<TeacherHome teacherData={teacherData} />} />
-              <Route path='/message' element={<TeacherMessage />} />
+              <Route path='/message' element={<TeacherMessage teacherData={teacherData}/>} />
               <Route path='/myaccount' element={<TeacherProfile teacherData={teacherData} />} />
               <Route path='/allstudents/:selectedClassId' element={<TeacherAllStudentEachCourse />} />
 

@@ -54,8 +54,11 @@ const StudentLogin = () => {
                     setError("Invalid Phone NO");
                 }
                 else if (status === 402) {
-                    console.log("invalid passward")
-                    setError("Invalid Password ");
+                    console.log("Your account has been deactivated!!")
+                    setError("Your account has been deactivated!!");
+                }
+                else if (status === 403){
+                    setError("invalid Password")
                 }
                 else {
                     console.error("Error adding Student:", status);

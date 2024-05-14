@@ -4,6 +4,15 @@ import axios from 'axios';
 import { Select } from 'flowbite-react';
 import { decodeToken } from 'react-jwt';
 import { useJwt } from 'react-jwt'
+import { ClipLoader } from "react-spinners";
+import { css } from "@emotion/react";
+
+const override = css`
+  display: block;
+  margin: 0 auto;
+  border-color: red;
+`;
+
 
 const TeacherAllStudentEachCourse = () => {
 
@@ -25,6 +34,7 @@ const TeacherAllStudentEachCourse = () => {
     const [monthCommissionDetails, setMonthlyCommissionDetails] = useState([]);
     const [selectedMonth, setSelectedMonth] = useState('');
     const [selectedYear, setSelectedYear] = useState('');
+    const [loading, setLoading] = useState(false);
     const [monthlyClassTaken, setMonthlyClassTaken] = useState('');
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const years = ["2024", "2025", "2026"];
@@ -65,7 +75,7 @@ const TeacherAllStudentEachCourse = () => {
 
         const fetchCourseDetails = async () => {
             try {
-
+                setLoading(true);
                 const token = localStorage.getItem('token');
 
                 if (!token) {
@@ -110,6 +120,8 @@ const TeacherAllStudentEachCourse = () => {
                 }
             } catch (error) {
                 console.log(error);
+            }finally {
+                setLoading(false);
             }
 
         };
@@ -123,7 +135,7 @@ const TeacherAllStudentEachCourse = () => {
         const fetchAttendanceDetails = async () => {
             try {
                 const token = localStorage.getItem('token');
-
+                setLoading(true);
                 if (!token) {
                     console.error('Token not found');
                     return;
@@ -177,6 +189,8 @@ const TeacherAllStudentEachCourse = () => {
                 }
             } catch (error) {
                 console.log("Error in fetching attendance:", error);
+            }finally {
+                setLoading(false);
             }
         };
 
@@ -208,6 +222,7 @@ const TeacherAllStudentEachCourse = () => {
 
     const updateAttendance = async () => {
         try {
+            setLoading(true)
             const token = localStorage.getItem("token");
             if (!token) {
                 console.log("no Token Found")
@@ -245,6 +260,8 @@ const TeacherAllStudentEachCourse = () => {
         }
         catch (error) {
             console.log(error);
+        }finally {
+            setLoading(false);
         }
 
     }
@@ -256,6 +273,7 @@ const TeacherAllStudentEachCourse = () => {
     useEffect(() => {
         const getMonthlyCommission = async () => {
             try {
+                setLoading(true)
                 const token = localStorage.getItem('token');
                 if (!token) {
                     navigate('/login');
@@ -278,6 +296,8 @@ const TeacherAllStudentEachCourse = () => {
 
             } catch (error) {
                 console.log(error);
+            }finally {
+                setLoading(false);
             }
         }
 
@@ -288,6 +308,7 @@ const TeacherAllStudentEachCourse = () => {
     // update monthly commission 
     const updateMonthlyCommission = async () => {
         try {
+            setLoading(true)
             const token = localStorage.getItem("token");
             if (!token) {
                 console.log("no Token Found")
@@ -333,12 +354,19 @@ const TeacherAllStudentEachCourse = () => {
         catch (error) {
             console.log(error);
         }
-
+        finally {
+            setLoading(false);
+        }
     }
 
 
     return (
-        <>
+        <>  
+        {loading && (
+            <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+                <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
+            </div>
+        )}
             <h1 className="text-4xl mb-1 font-semibold text-start text-gray-700">{courseDetails.classTitle}   |  Total Hours:  {courseDetails.totalHours}</h1>
 
             <div class="relative overflow-x-auto  mt-8">
