@@ -21,13 +21,13 @@ const SpecialCourses = () => {
                             </div>
 
                             <div className='grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-2 gap-y-4 mt-10 mb-0'>
-                                <div className='border border-1 h-60 rounded-md' style={{ backgroundImage: `url(${ielts})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
+                                <div className='border border-1 h-60 rounded-md ' style={{ backgroundImage: `url(${ielts})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
                                 <div className='border border-1 h-60 rounded-md' style={{ backgroundImage: `url(${sat})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
                                 <div className='border border-1 h-60 rounded-md' style={{ backgroundImage: `url(${toefl})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
                                 <div className='border border-1 h-60 rounded-md' style={{ backgroundImage: `url(${ap})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
                                 <div className='border border-1 h-60 rounded-md' style={{ backgroundImage: `url(${cuet})`, backgroundSize: "contain", backgroundPosition: "center" ,backgroundRepeat:"no-repeat"}}></div>
-                                <div className='border border-1 h-60 rounded-md' style={{ backgroundImage: `url(${english})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
-                                <div className='border border-1 h-60 rounded-md md:col-span-3' style={{ backgroundImage: `url(${personality})`, backgroundSize: "contain", backgroundPosition: "center" }}></div>
+                                <div className='border border-1 h-60 rounded-md bg-top md:bg-center' style={{ backgroundImage: `url(${english})`, backgroundSize: "cover"}}></div>
+                                <div className='border border-1 h-60 rounded-md md:col-span-3 bg-no-repeat' style={{ backgroundImage: `url(${personality})`, backgroundSize: "contain", backgroundPosition: "center" }}></div>
                             </div>
                         </div>
                     </div>
