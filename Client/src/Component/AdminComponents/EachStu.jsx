@@ -294,11 +294,11 @@ console.log(classes)
                       <div>No classes are there</div>
                     ) : (
                       classes.map((course) => (
-                        <a  class="block max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
-                          <h5 class="mb-2 text-md md:text-xl font-bold tracking-tight text-gray-900 dark:text-white">{course?.classTitle}</h5>
-                          {/* <p class="font-normal text-sm text-gray-700 dark:text-gray-400">classSchedule:- <span>{course?.classSchedule}</span></p> */}
-                          <p class="font-normal text-sm text-gray-700 dark:text-gray-400">Duration :- <span>{course?.totalHours}</span></p>
-                          <p class="font-normal text-sm text-gray-700 dark:text-gray-400">Teach By :- <span>{course?.teacher ? course.teacher.name : 'Unknown'}</span></p>
+                        <a  class="block max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100   ">
+                          <h5 class="mb-2 text-md md:text-xl font-bold tracking-tight text-gray-900 ">{course?.classTitle}</h5>
+                          {/* <p class="font-normal text-sm text-gray-700 ">classSchedule:- <span>{course?.classSchedule}</span></p> */}
+                          <p class="font-normal text-sm text-gray-700 ">Duration :- <span>{course?.totalHours}</span></p>
+                          <p class="font-normal text-sm text-gray-700 ">Teach By :- <span>{course?.teacher ? course.teacher.name : 'Unknown'}</span></p>
                         </a>
                       ))
                     )}
@@ -323,8 +323,8 @@ console.log(classes)
 
                       <div class="relative overflow-x-auto mt-8">
                         <span className=" mb-1 float-right rounded-md  mr-3">Total Fee:- {totafee}</span>
-                        <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                          <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <table class="w-full text-sm text-left rtl:text-right text-gray-500 ">
+                          <thead class="text-xs text-gray-700 uppercase bg-gray-50  ">
                             <tr>
                               <th scope="col" class="px-6 py-3">
                                 Month
@@ -341,12 +341,12 @@ console.log(classes)
                           <tbody>
 
                             {feedetails && feedetails.detailFee.map((fee) => (
-                              <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                              <tr class="bg-white border-b  ">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                                   {fee.feeMonth}
                                 </th>
 
-                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                                   {fee.amountPaid}
                                 </th>
 
@@ -358,8 +358,8 @@ console.log(classes)
 
                             ))}
 
-                            <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                            <tr className="bg-white border-b  ">
+                              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                                 <select className="" onChange={(e) => setSelectedMonth(e.target.value)}>
                                   <option>Select Month</option>
                                   {months.map((month, index) => (
@@ -368,11 +368,11 @@ console.log(classes)
                                 </select>
                               </td>
 
-                              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                                 <input type="text" className="" placeholder="Enter Amount" value={amount} onChange={(e) => setAmount(e.target.value)}></input>
                               </td>
 
-                              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                                 <select value={paidStatus} onChange={(e) => setPaidStatus(e.target.value)}>
                                   <option>Select Status</option>
                                   <option value="true">True</option>
@@ -416,8 +416,8 @@ console.log(classes)
 
 
                       <div class="relative overflow-x-auto mt-8">
-                        <table class="w-full text-sm text-center rtl:text-center text-gray-500 dark:text-gray-400">
-                          <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <table class="w-full text-sm text-center rtl:text-center text-gray-500 ">
+                          <thead class="text-xs text-gray-700 uppercase bg-gray-50  ">
                             <tr>
                               <th scope="col" class="px-6 py-3">
                                 Date
@@ -430,8 +430,8 @@ console.log(classes)
                           </thead>
                           <tbody>
                             {attendenceDetails && attendenceDetails.detailAttendance.map((attendance) => (
-                              <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                              <tr class="bg-white border-b  ">
+                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                                   {attendance.classDate}
                                 </th>
                                 <td className={`px-6 py-4`}>

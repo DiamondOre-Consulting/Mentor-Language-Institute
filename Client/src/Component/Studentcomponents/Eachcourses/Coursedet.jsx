@@ -265,10 +265,10 @@ const Coursedet = () => {
 
 
                                             <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
-                                                <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                                                <table class="w-full text-sm text-left rtl:text-right text-gray-500 ">
                                                     <tbody>
-                                                        <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
-                                                            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                                        <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                                                            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                                                                 Student Name
                                                             </th>
                                                             <td class="px-6 py-4">
@@ -276,8 +276,8 @@ const Coursedet = () => {
                                                             </td>
 
                                                         </tr>
-                                                        <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
-                                                            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                                        <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                                                            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                                                                 Course Tilte
                                                             </th>
                                                             <td class="px-6 py-4">
@@ -285,16 +285,16 @@ const Coursedet = () => {
                                                             </td>
 
                                                         </tr>
-                                                        <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
-                                                            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                                        <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                                                            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                                                                 Teacher Name
                                                             </th>
                                                             <td class="px-6 py-4">
                                                                 {classData.teacher?.name}
                                                             </td>
                                                         </tr>
-                                                        <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
-                                                            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                                        <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                                                            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                                                                 Total Hours
                                                             </th>
                                                             <td class="px-6 py-4">
@@ -302,8 +302,8 @@ const Coursedet = () => {
                                                             </td>
 
                                                         </tr>
-                                                        <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
-                                                            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                                        <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                                                            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                                                                 Course Price
                                                             </th>
                                                             <td class="px-6 py-4">
@@ -311,8 +311,8 @@ const Coursedet = () => {
                                                             </td>
 
                                                         </tr>
-                                                        {/* <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
-                                                            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                                        {/* <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                                                            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                                                                 Schedule
                                                             </th>
                                                             <td class="px-6 py-4">
@@ -336,8 +336,8 @@ const Coursedet = () => {
 
 
                                             <div class="overflow-auto max-h-96 overflow-x-auto shadow-md sm:rounded-lg">
-                                                <table class="w-full text-sm text-center rtl:text-right text-gray-500 dark:text-gray-400">
-                                                    <thead class="sticky top-0 text-xs text-gray-100 uppercase bg-orange-400 dark:bg-gray-700 dark:text-gray-400">
+                                                <table class="w-full text-sm text-center rtl:text-right text-gray-500 ">
+                                                    <thead class="sticky top-0 text-xs text-gray-100 uppercase bg-orange-400  ">
                                                         <tr>
                                                             <th scope="col" class="px-6 py-3">
                                                                 Date
@@ -353,8 +353,8 @@ const Coursedet = () => {
                                                             <p>No Attendance details available</p>
                                                         ) : (
                                                             attendenceDetails && attendenceDetails.detailAttendance.map((attendance) => (
-                                                                <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                                                                    <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                                                <tr class="bg-white border-b  ">
+                                                                    <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                                                                         {attendance.classDate}
                                                                     </th>
                                                                     <td className={`px-6 py-4 `}>
@@ -384,8 +384,8 @@ const Coursedet = () => {
 
 
                                             <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
-                                                <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                                                    <thead class="text-xs text-gray-100 uppercase bg-orange-400 dark:bg-gray-700 dark:text-gray-400">
+                                                <table class="w-full text-sm text-left rtl:text-right text-gray-500 ">
+                                                    <thead class="text-xs text-gray-100 uppercase bg-orange-400  ">
                                                         <tr>
                                                             <th scope="col" class="px-6 py-3">
                                                                 Month
@@ -401,12 +401,12 @@ const Coursedet = () => {
                                                     </thead>
                                                     <tbody>
                                                         {feedetails && feedetails.detailFee.map((fee) => (
-                                                            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                                                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                                            <tr class="bg-white border-b  ">
+                                                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                                                                     {fee.feeMonth}
                                                                 </th>
 
-                                                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                                                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                                                                     {fee.amountPaid}
                                                                 </th>
 

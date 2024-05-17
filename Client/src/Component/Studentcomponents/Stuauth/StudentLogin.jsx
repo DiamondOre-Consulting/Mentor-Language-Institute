@@ -79,8 +79,8 @@ const StudentLogin = () => {
                 </div>
             )}
             <div class="mt-20 md:mt-12 flex items-center justify-center">
-                <div class="bg-white dark:bg-gray-900 shadow-xl rounded-lg px-8 py-6 w-3/4 md:max-w-md">
-                    <h1 class="text-3xl font-bold text-center mb-1 dark:text-gray-200">LOGIN</h1>
+                <div class="bg-white  shadow-xl rounded-lg px-8 py-6 w-3/4 md:max-w-md">
+                    <h1 class="text-3xl font-bold text-center mb-1 ">LOGIN</h1>
                     <div className='md:w-96 h-0.5 rounded bg-orange-500 mb-4'></div>
                     <form onSubmit={handleStudentLogin} className=''>
                         <div class="mb-4">
@@ -88,7 +88,7 @@ const StudentLogin = () => {
                             <input type="text" name="phone" value={phone} onChange={(e) => setPhone(e.target.value)} class="shadow-sm rounded-md w-full px-3 py-2 border border-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Your Phone No" required />
                         </div>
                         <div class="mb-4">
-                            <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password</label>
+                            <label for="password" class="block text-sm font-medium text-gray-700  mb-2">Password</label>
                             <div className="relative">
                                 <input
                                     className="w-full rounded-lg border-1 p-4 pe-12 text-sm shadow-sm"
@@ -110,10 +110,10 @@ const StudentLogin = () => {
                                         value={showPassword}
                                         onChange={() =>
                                             setShowPassword((prev) => !prev)
-                                        } class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-gray-900 dark:ring-offset-gray-800" required="" />
+                                        } class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300    " required="" />
                                 </div>
                                 <div class="ml-3 text-sm">
-                                    <label for="remember" class="text-gray-500 dark:text-gray-300">Show password</label>
+                                    <label for="remember" class="text-gray-500 ">Show password</label>
                                 </div>
                             </div>
 

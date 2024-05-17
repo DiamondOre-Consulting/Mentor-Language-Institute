@@ -68,16 +68,16 @@ const Studenthero = () => {
             <div className="items-center px-5 md:px-4 py-8 mx-auto lg:grid lg:grid-cols-12 items-cetner">
               <div className="lg:col-span-7 md:col-span-7 md:mx-4 items-center ">
                 {userName && (
-                  <h1 className="mb-2 md:mb-4 text-3xl font-extrabold tracking-tight leading-none md:text-5xl xl:text-6xl dark:text-white">
+                  <h1 className="mb-2 md:mb-4 text-3xl font-extrabold tracking-tight leading-none md:text-5xl xl:text-6xl ">
                     <TextTransition springConfig={presets.wobbly}>
                       {userName}
                     </TextTransition>
                   </h1>
                 )}
-                <p className="mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-md dark:text-gray-400">
+                <p className="mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-md ">
                   Mentor Institute: Your Pathway to Proficiency. Unlock fluency and broaden horizons with our expert guidance. Join us and embark on a journey of linguistic excellence
                 </p>
-                <a href="#courses" className="px-5 py-3 text-base font-medium text-center text-gray-900 bg-orange-500 text-white rounded-lg hover:bg-orange-500 focus:ring-4 hover:text-white focus:ring-gray-100 dark:text-white dark:border-gray-700 dark:hover:bg-gray-700 dark:focus:ring-gray-800">
+                <a href="#courses" className="px-5 py-3 text-base font-medium text-center text-gray-900 bg-orange-500 text-white rounded-lg hover:bg-orange-500 focus:ring-4 hover:text-white focus:ring-gray-100    ">
                   Explore Courses
                 </a>
               </div>

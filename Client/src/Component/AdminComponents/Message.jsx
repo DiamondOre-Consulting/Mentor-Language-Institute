@@ -198,13 +198,13 @@ const Message = () => {
         {stuDetails.map((student, index) => (
           <div className="flex items-start gap-2.5" key={index}>
             <div className="flex flex-col gap-1 w-full max-w-[320px]">
-              <div className="leading-1.5 p-4 border-gray-200 bg-orange-500 shadow-md backdrop-filter backdrop-blur-md bg-opacity-20 rounded-e-xl rounded-es-xl dark:bg-gray-700">
+              <div className="leading-1.5 p-4 border-gray-200 bg-orange-500 shadow-md backdrop-filter backdrop-blur-md bg-opacity-20 rounded-e-xl rounded-es-xl ">
                 <div>
                   <div className='flex items-center'>
                     <img className="w-8 h-8 rounded-full" src="https://static.vecteezy.com/system/resources/thumbnails/001/993/889/small/beautiful-latin-woman-avatar-character-icon-free-vector.jpg" alt="Jese image" />
                     <div className='flex flex-col ml-2'>
                       <span className="text-sm font-bold text-black ">{student.name}</span>
-                      <span className="text-sm font-semibold text-gray-800 dark:text-white">{student.phone}</span>
+                      <span className="text-sm font-semibold text-gray-800 ">{student.phone}</span>
                     </div>
                   </div>
                   <div className='mt-4 h-20 overflow-y-auto'>

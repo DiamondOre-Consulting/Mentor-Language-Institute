@@ -204,10 +204,10 @@ const TeacherAllStudents = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 {alldetails.map((student) => (
                     <div key={student.id}>
-                        <div className="block max-w-sm bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
+                        <div className="block max-w-sm bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100   ">
                             <div className="px-4 pt-2">
-                                <h5 className="mb-1 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{student.name}</h5>
-                                <p className="font-normal text-sm text-gray-700 dark:text-gray-400">Phone: <span>{student.phone}</span></p>
+                                <h5 className="mb-1 text-2xl font-bold tracking-tight text-gray-900 ">{student.name}</h5>
+                                <p className="font-normal text-sm text-gray-700 ">Phone: <span>{student.phone}</span></p>
                             </div>
                             <div>
                                 <p className="font-bold bg-orange-500 text-gray-100 mt-1 px-4 py-1 w-full">Attendance</p>

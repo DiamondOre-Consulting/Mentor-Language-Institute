@@ -92,7 +92,7 @@ const Parentlog = () => {
                     <div class="md:w-full sm:w-1/2 bg-white rounded-lg shadow border-t-4 border-orange-400 md:mt-0 sm:max-w-md xl:p-0">
                         <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
                             <div className='flex justify-between items-center'>
-                                <h1 class="text-xl  font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
+                                <h1 class="text-xl  font-bold leading-tight tracking-tight text-gray-900 md:text-2xl ">
                                     Student Registration Form
                                 </h1>
                                 {/* <img src={logo} alt="" className='w-24' /> */}
@@ -102,27 +102,27 @@ const Parentlog = () => {
                             <form class="space-y-4 md:space-y-6" onSubmit={handleStudentRegister}>
 
                                 <div>
-                                    <input type="text" name="name" id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter Your Name" class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
+                                    <input type="text" name="name" id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter Your Name" class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      " required="" />
                                 </div>
 
 
                                 <div>
-                                    <input type="phone" name="phone" id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Enter Your Phone Number" class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
+                                    <input type="phone" name="phone" id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Enter Your Phone Number" class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      " required="" />
                                 </div>
                                 <div>
-                                    <input type={showPassword ? "text" : "password"} name="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" class="bg-gray-50 border border-gray-900 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-600 focus:border-gray-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
+                                    <input type={showPassword ? "text" : "password"} name="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" class="bg-gray-50 border border-gray-900 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-600 focus:border-gray-600 block w-full p-2.5      " required="" />
                                 </div>
 
 
                                 <div class="flex items-center mt-2">
                                     <input type="checkbox" class="mr-2" onChange={() => setShowPassword(!showPassword)} />
-                                    <label class="text-sm font-medium text-gray-900 dark:text-white cursor-pointer" onClick={() => setShowPassword(!showPassword)}>Show Password</label>
+                                    <label class="text-sm font-medium text-gray-900  cursor-pointer" onClick={() => setShowPassword(!showPassword)}>Show Password</label>
                                 </div>
                                 <div className='w-full'>
                                     <button className='bg-orange-400 text-white w-full p-2 rounded-md'>Register</button>
                                 </div>
 
-                                <a class="text-center flex items-center justify-center text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">Already Have Account? <Link to={'/student-login'} className='underline ml-1'>  Sign in</Link></a>
+                                <a class="text-center flex items-center justify-center text-sm font-medium text-primary-600 hover:underline ">Already Have Account? <Link to={'/student-login'} className='underline ml-1'>  Sign in</Link></a>
 
                             </form>
                             {popupMessage && (

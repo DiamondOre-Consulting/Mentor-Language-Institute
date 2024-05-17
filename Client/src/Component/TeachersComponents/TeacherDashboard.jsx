@@ -41,7 +41,7 @@ const TeacherDashboard = ({ teacherData }) => {
   return (
     <>
       <div className="p-0 md:p-4 sm:ml-64">
-        <div className="p-4 md:border-2 border-orange-100 border-dashed rounded-lg dark:border-gray-700">
+        <div className="p-4 md:border-2 border-orange-100 border-dashed rounded-lg ">
           <div className="flex-grow p-4">
             <Routes>
               <Route path="/" element={<TeacherHome teacherData={teacherData} />} />

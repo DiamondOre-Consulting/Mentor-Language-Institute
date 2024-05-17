@@ -352,28 +352,28 @@ const Register = () => {
                     {activeTab === 0 && (
                         <section class="w-full">
                             <div class="flex flex-col items-center justify-center px-6 py-8 w-full">
-                                <div class="w-full max-w-screen-xl bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+                                <div class="w-full max-w-screen-xl bg-white rounded-lg shadow  md:mt-0 sm:max-w-md xl:p-0  ">
                                     <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-                                        <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white md:mx-20">
+                                        <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl  md:mx-20">
                                             Register Student
                                         </h1>
                                         <div className=' md:w-22 h-0.5 bg-orange-500 border-rounded'></div>
                                         <form class="space-y-4 md:space-y-6" onSubmit={handleStudentRegister}>
                                             <div>
-                                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white w-full">Name</label>
-                                                <input type="text" name="name" value={name} onChange={(e) => setName(e.target.value)} class=" bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter Student Name" required="" />
+                                                <label class="block mb-2 text-sm font-medium text-gray-900  w-full">Name</label>
+                                                <input type="text" name="name" value={name} onChange={(e) => setName(e.target.value)} class=" bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      " placeholder="Enter Student Name" required="" />
                                             </div>
                                             <div>
-                                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Phone</label>
-                                                <input type="phone" name="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Enter Phone No" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
+                                                <label class="block mb-2 text-sm font-medium text-gray-900 ">Phone</label>
+                                                <input type="phone" name="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Enter Phone No" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      " required="" />
                                             </div>
                                             <div>
-                                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password</label>
-                                                <input type={showPassword ? "text" : "password"} name="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
+                                                <label class="block mb-2 text-sm font-medium text-gray-900 ">Password</label>
+                                                <input type={showPassword ? "text" : "password"} name="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      " required="" />
                                             </div>
                                             <div class="flex items-center mt-2">
                                                 <input type="checkbox" class="mr-2" onChange={() => setShowPassword(!showPassword)} />
-                                                <label class="text-sm font-medium text-gray-900 dark:text-white cursor-pointer" onClick={() => setShowPassword(!showPassword)}>Show Password</label>
+                                                <label class="text-sm font-medium text-gray-900  cursor-pointer" onClick={() => setShowPassword(!showPassword)}>Show Password</label>
                                             </div>
 
                                             <button className='bg-orange-400 py-2 w-full rounded-md text-white'>Submit</button>
@@ -387,28 +387,28 @@ const Register = () => {
                     {activeTab === 1 && (
                         <section class="w-full">
                             <div class="flex flex-col items-center justify-center px-6 py-8 w-full">
-                                <div class="w-full max-w-screen-xl bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+                                <div class="w-full max-w-screen-xl bg-white rounded-lg shadow  md:mt-0 sm:max-w-md xl:p-0  ">
                                     <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-                                        <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white md:mx-20">
+                                        <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl  md:mx-20">
                                             Register Teacher
                                         </h1>
                                         <div className='w-22 h-0.5 bg-orange-500 border-rounded'></div>
                                         <form class="space-y-4 md:space-y-6" action="#" onSubmit={handleteacherRegister}>
                                             <div>
-                                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white w-full">Name</label>
-                                                <input type="text" name="name" value={name} onChange={(e) => setName(e.target.value)} class=" bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter Teacher Name" required="" />
+                                                <label class="block mb-2 text-sm font-medium text-gray-900  w-full">Name</label>
+                                                <input type="text" name="name" value={name} onChange={(e) => setName(e.target.value)} class=" bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      " placeholder="Enter Teacher Name" required="" />
                                             </div>
                                             <div>
-                                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Phone</label>
-                                                <input type="phone" name="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Enter Phone No" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
+                                                <label class="block mb-2 text-sm font-medium text-gray-900 ">Phone</label>
+                                                <input type="phone" name="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Enter Phone No" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      " required="" />
                                             </div>
                                             <div>
-                                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password</label>
-                                                <input type={showPassword ? "text" : "password"} name="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
+                                                <label class="block mb-2 text-sm font-medium text-gray-900 ">Password</label>
+                                                <input type={showPassword ? "text" : "password"} name="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      " required="" />
                                             </div>
                                             <div class="flex items-center mt-2">
                                                 <input type="checkbox" class="mr-2" onChange={() => setShowPassword(!showPassword)} />
-                                                <label class="text-sm font-medium text-gray-900 dark:text-white cursor-pointer" onClick={() => setShowPassword(!showPassword)}>Show Password</label>
+                                                <label class="text-sm font-medium text-gray-900  cursor-pointer" onClick={() => setShowPassword(!showPassword)}>Show Password</label>
                                             </div>
 
                                             <button className='bg-orange-400 py-2 w-full rounded-md text-white'>Submit</button>
@@ -422,23 +422,23 @@ const Register = () => {
                     {activeTab === 2 && (
                         <section class="w-full">
                             <div class="flex flex-col items-center justify-center px-6 py-8 w-full">
-                                <div class="w-full max-w-screen-xl bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+                                <div class="w-full max-w-screen-xl bg-white rounded-lg shadow  md:mt-0 sm:max-w-md xl:p-0  ">
                                     <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-                                        <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white md:mx-20">
+                                        <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl  md:mx-20">
                                             Add New Course
                                         </h1>
                                         <div className='w-22 h-0.5 bg-orange-500 border-rounded'></div>
                                         <form class="space-y-4 md:space-y-6" action="#" onSubmit={handleAddCourse}>
                                             <div>
-                                                <label for="classTitle" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white w-full">Class Title</label>
-                                                <input type="text" name="classTitle" onChange={handleInputChange} value={formValues.classTitle} class=" bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter Course Title" required="" />
+                                                <label for="classTitle" class="block mb-2 text-sm font-medium text-gray-900  w-full">Class Title</label>
+                                                <input type="text" name="classTitle" onChange={handleInputChange} value={formValues.classTitle} class=" bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full p-2.5      " placeholder="Enter Course Title" required="" />
                                             </div>
                                             <div>
-                                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Total Hours</label>
-                                                <input type="text" name="totalHours" onChange={handleInputChange} value={formValues.totalHours} placeholder="Enter Total Hours" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
+                                                <label class="block mb-2 text-sm font-medium text-gray-900 ">Total Hours</label>
+                                                <input type="text" name="totalHours" onChange={handleInputChange} value={formValues.totalHours} placeholder="Enter Total Hours" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full p-2.5      " required="" />
                                             </div>
                                             <div>
-                                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teach By</label>
+                                                <label class="block mb-2 text-sm font-medium text-gray-900 ">Teach By</label>
                                                 <select
                                                     id="teachBy"
                                                     name="teachBy"
@@ -455,13 +455,13 @@ const Register = () => {
                                                 </select>
                                             </div>
                                             {/* <div>
-                                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Schedule</label>
-                                                <ul className="flex flex-wrap items-center w-full text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg sm:flex sm:dark:bg-gray-700 sm:dark:border-gray-600 sm:dark:text-white">
+                                                <label class="block mb-2 text-sm font-medium text-gray-900 ">Schedule</label>
+                                                <ul className="flex flex-wrap items-center w-full text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg sm:flex sm: sm: sm:">
 
                                                     {Object.entries(selectedDays).map(([day, isChecked]) => (
                                                         <li
                                                             key={day}
-                                                            class="w-full border-b border-gray-200 sm:border-b-0 sm:border-r dark:border-gray-600"
+                                                            class="w-full border-b border-gray-200 sm:border-b-0 sm:border-r "
                                                         >
                                                             <div class="flex items-center ps-3">
                                                                 <input
@@ -470,11 +470,11 @@ const Register = () => {
                                                                     name={day}
                                                                     checked={isChecked}
                                                                     onChange={handleCheckboxChange}
-                                                                    class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
+                                                                    class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500    focus:ring-2  -gray-500"
                                                                 />
                                                                 <label
                                                                     for={`${day}-checkbox-list`}
-                                                                    class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                                                                    class="w-full py-3 ms-2 text-sm font-medium text-gray-900 "
                                                                 >
                                                                     {day}
                                                                 </label>

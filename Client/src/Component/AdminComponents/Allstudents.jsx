@@ -293,15 +293,15 @@ const Allstudents = () => {
 
             <div
 
-              className={`block max-w-sm p-4 ${student.deactivated ? 'bg-red-300 text-red-300 hover:text-red-400 hover:bg-red-400' : 'bg-white hover:bg-gray-100'}border border-gray-200 rounded-lg shadow  dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 cursor-pointer`}
+              className={`block max-w-sm p-4 ${student.deactivated ? 'bg-red-300 text-red-300 hover:text-red-400 hover:bg-red-400' : 'bg-white hover:bg-gray-100'}border border-gray-200 rounded-lg shadow     cursor-pointer`}
 
             >
-              <div className='flex justify-between items-cetner'> <h5 className='text-xl font-bold tracking-tight text-gray-900 dark:text-white'>
+              <div className='flex justify-between items-cetner'> <h5 className='text-xl font-bold tracking-tight text-gray-900 '>
                 {student.name}
               </h5>  <span className='text-sm   text-xs text-gray-100 rounded-md'>
                   <svg onClick={() => openPopup(student._id , student.name)} class="h-6 w-6 text-red-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <line x1="4" y1="7" x2="20" y2="7" />  <line x1="10" y1="11" x2="10" y2="17" />  <line x1="14" y1="11" x2="14" y2="17" />  <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />  <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg></span></div>
 
-              <p className='font-normal text-sm text-gray-700 dark:text-gray-400'>
+              <p className='font-normal text-sm text-gray-700 '>
                 phone :- <span>{student.phone}</span>
               </p>
               <div className='flex justify-between mt-4'>

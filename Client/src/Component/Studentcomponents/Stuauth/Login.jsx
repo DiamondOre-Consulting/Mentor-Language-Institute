@@ -159,7 +159,7 @@ const Login = () => {
                                                 </div>
                                                 <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
                                                     <div className='flex justify-between items-center'>
-                                                        <h1 class="text-xl  font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
+                                                        <h1 class="text-xl  font-bold leading-tight tracking-tight text-gray-900 md:text-2xl ">
                                                             Admin
                                                         </h1>
 
@@ -169,7 +169,7 @@ const Login = () => {
                                                     <form class="space-y-4 md:space-y-6" action="#" onSubmit={handleAdminLogin}>
 
                                                         <div>
-                                                            <input type="text" name="username" value={username} onChange={(e) => adminSetusername(e.target.value)} placeholder="Enter Username" class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
+                                                            <input type="text" name="username" value={username} onChange={(e) => adminSetusername(e.target.value)} placeholder="Enter Username" class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      " required="" />
                                                         </div>
                                                         <div>
                                                             <label htmlFor="password" className="sr-only">
@@ -197,19 +197,19 @@ const Login = () => {
                                                                         value={showPassword}
                                                                         onChange={() =>
                                                                             setShowPassword((prev) => !prev)
-                                                                        } class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-gray-900 dark:ring-offset-gray-800" required="" />
+                                                                        } class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300    " required="" />
                                                                 </div>
                                                                 <div class="ml-3 text-sm">
-                                                                    <label for="remember" class="text-gray-500 dark:text-gray-300">Show password</label>
+                                                                    <label for="remember" class="text-gray-500 ">Show password</label>
                                                                 </div>
                                                             </div>
-                                                            {/* <a href="#" class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">Forgot password?</a> */}
+                                                            {/* <a href="#" class="text-sm font-medium text-primary-600 hover:underline ">Forgot password?</a> */}
                                                         </div>
                                                         <div className='w-full'>
                                                             <button className='md:w-96 bg-orange-400 text-white w-full p-2 rounded-md'>Login</button>
                                                         </div>
 
-                                                        <a href="#" class="text-center flex items-center justify-center text-sm font-medium text-primary-600 hover:underline dark:text-primary-500"><Link to={'/'} className='underline'></Link></a>
+                                                        <a href="#" class="text-center flex items-center justify-center text-sm font-medium text-primary-600 hover:underline "><Link to={'/'} className='underline'></Link></a>
 
                                                     </form>
 
@@ -240,7 +240,7 @@ const Login = () => {
                                                 </div>
                                                 <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
                                                     <div className='flex justify-between items-center'>
-                                                        <h1 class="text-xl  font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
+                                                        <h1 class="text-xl  font-bold leading-tight tracking-tight text-gray-900 md:text-2xl ">
                                                             Teacher
                                                         </h1>
 
@@ -250,7 +250,7 @@ const Login = () => {
                                                     <form class="space-y-4 md:space-y-6" action="#" onSubmit={handleTeacherLogin}>
 
                                                         <div>
-                                                            <input type="text" name="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Enter Phone" class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required="" />
+                                                            <input type="text" name="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Enter Phone" class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      " required="" />
                                                         </div>
                                                         <div>
                                                             <label htmlFor="password" className="sr-only">
@@ -278,19 +278,19 @@ const Login = () => {
                                                                         value={showPassword}
                                                                         onChange={() =>
                                                                             setShowPassword((prev) => !prev)
-                                                                        } class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-gray-900 dark:ring-offset-gray-800" required="" />
+                                                                        } class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300    " required="" />
                                                                 </div>
                                                                 <div class="ml-3 text-sm">
-                                                                    <label for="remember" class="text-gray-500 dark:text-gray-300">Show password</label>
+                                                                    <label for="remember" class="text-gray-500 ">Show password</label>
                                                                 </div>
                                                             </div>
-                                                            {/* <a href="#" class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">Forgot password?</a> */}
+                                                            {/* <a href="#" class="text-sm font-medium text-primary-600 hover:underline ">Forgot password?</a> */}
                                                         </div>
                                                         <div className='w-full'>
                                                             <button className='md:w-96 bg-orange-400 text-white w-full p-2 rounded-md'>Login</button>
                                                         </div>
 
-                                                        <a href="#" class="text-center flex items-center justify-center text-sm font-medium text-primary-600 hover:underline dark:text-primary-500"><Link to={'/'} className='underline'></Link></a>
+                                                        <a href="#" class="text-center flex items-center justify-center text-sm font-medium text-primary-600 hover:underline "><Link to={'/'} className='underline'></Link></a>
 
                                                     </form>
 
