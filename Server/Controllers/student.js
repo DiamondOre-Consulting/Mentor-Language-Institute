@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
@@ -319,6 +320,56 @@ router.get("/my-fee-details/:id", StudentAuthenticateToken, async (req, res) => 
     }
 })
 
+router.get('/chat-all-teachers', StudentAuthenticateToken, async (req, res) => {
+  try {
+    const {userId} = req.user;
+    let allTeachersIds = []
+    let allTeachers = [];
 
+    const currentUser = await Students.findById(
+      {_id: userId}
+    );
+
+    // if(currentUser.messages.length == 0) {
+      const myClasses = currentUser.classes;
+
+      await Promise.all(myClasses.map(async (eachClass) => {
+        const currentClass = await Classes.findById({_id: eachClass});
+        let teacherId = currentClass.teachBy;
+        if (typeof teacherId !== 'string') { // Ensure it's a string
+          teacherId = String(teacherId);
+        }
+        teacherId = teacherId.trim().toLowerCase(); // Normalize ID
+        allTeachersIds.push(teacherId);
+      }));
+      allTeachersIds = [...new Set(allTeachersIds)];
+      // Convert strings to ObjectIds
+    const objectIds = allTeachersIds.map(id => new mongoose.Types.ObjectId(id));
+      console.log(objectIds);
+
+      await Promise.all(objectIds.map(async (eachId) => {
+        const eachTeacher = await Teachers.findById({_id: eachId});
+        allTeachers.push(eachTeacher);
+      }))
+
+      res.status(201).json(allTeachers);
+
+    // }
+  } catch(error) {
+    console.log("Something went wrong!!! ", error);
+    res.status(500).json(error);
+  }
+})
+
+// router.get('/my-chats', StudentAuthenticateToken, async (req, res) => {
+//   try {
+//     const {userId} = req.user;
+
+//     const chats = await Messa
+//   } catch(error) {
+//     console.log("Something went wrong!!! ", error);
+//     res.status(500).json(error);
+//   }
+// })
 
 export default router;

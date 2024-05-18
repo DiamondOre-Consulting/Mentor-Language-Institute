@@ -30,7 +30,7 @@ const StudentNav = () => {
                 </a>
                 <ul className="items-center  font-sm flex p-4 md:p-0 border border-0 md:border-gray-100 rounded-lg md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0">
                     <li className='relative group flex items-center'>
-                        <Link to={'/student-chat'} className="block py-1 px-2 text-gray-100 bg-orange-500  opacity-1 rounded md:px-4 md:py-1 rounded-full" aria-current="page" >Chat</Link>
+                        <Link to={'/student/chat'} className="block py-1 px-2 text-gray-100 bg-orange-500  opacity-1 rounded md:px-4 md:py-1 rounded-full" aria-current="page" >Chat</Link>
                     </li>
                     <select className='w-24 md:w-28 h-10  rounded-full focus:border-gray-200  md:border-1 md:border-gray-600 border-0 cursor-pointer'>
                         <option className=''>Help?</option>

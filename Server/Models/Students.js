@@ -42,10 +42,10 @@ const studentSchema = new mongoose.Schema({
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Fee",
-      },
+      }, 
     ],
   },
-  chats: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Chat' }], // Reference to chat documents
+  chats: [mongoose.Schema.Types.ObjectId], // Reference to chat documents
   messages: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Message' }],
   deactivated: {
     type: Boolean,

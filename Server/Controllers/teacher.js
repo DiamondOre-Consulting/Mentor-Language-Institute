@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
@@ -359,6 +360,49 @@ router.post("/add-monthly-classes", TeacherAuthenticateToken, async (req, res) =
     res.status(200).json({message: "Monthly classes taken added successfully!!!", addClassesTaken})
   } catch(error) {
     console.log("Something went wrong!!! ",error);
+    res.status(500).json(error);
+  }
+})
+
+router.get('/chat-all-students', TeacherAuthenticateToken, async (req, res) => {
+  try {
+    const {userId} = req.user;
+    let allStudentIds = []
+    let allStudents = [];
+
+    const currentUser = await Teachers.findById(
+      {_id: userId}
+    );
+
+    // if(currentUser.messages.length == 0) {
+      const myClasses = currentUser.myClasses;
+
+      await Promise.all(myClasses.map(async (eachClass) => {
+        const currentClass = await Classes.findById({_id: eachClass});
+        let studentsIds = currentClass.enrolledStudents;
+        studentsIds.forEach(studentId => {
+          const stringId = String(studentId).trim().toLowerCase(); // Normalize ID
+          if (!allStudentIds.includes(stringId)) {
+            allStudentIds.push(stringId);
+          }
+        });
+      }));
+      // allStudentIds = [...new Set(allStudentIds)];
+
+      // Convert strings to ObjectIds
+      const objectIds = allStudentIds.map(id => new mongoose.Types.ObjectId(id));
+      console.log(objectIds);
+
+      await Promise.all(objectIds.map(async (eachId) => {
+        const eachStudent = await Students.findById({_id: eachId});
+        allStudents.push(eachStudent);
+      }))
+
+      res.status(201).json(allStudents);
+
+    // }
+  } catch(error) {
+    console.log("Something went wrong!!! ", error);
     res.status(500).json(error);
   }
 })

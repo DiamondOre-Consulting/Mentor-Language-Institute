@@ -1,6 +1,3 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 import Parentsignup from './Component/Studentcomponents/Stuauth/Parentsignup'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
@@ -14,8 +11,10 @@ import { Sidebar } from 'flowbite-react'
 import Teachermain from './Pages/Teacherpages/Teachermain'
 import StudentLogin from './Component/Studentcomponents/Stuauth/StudentLogin'
 import Error from './Component/Studentcomponents/Stuauth/Error'
-import Chat from './Pages/Chat'
+// import Chat from './Pages/Chat'
 import StudentChat from './Pages/Studentpages/StudentChat'
+import ChatStudent from './Pages/Studentpages/ChatStudent'
+import ChatTeacher from './Pages/Teacherpages/ChatTeacher'
 
 
 
@@ -35,7 +34,8 @@ function App() {
           <Route path='/student-each-course/:id' element={<StudentEachcourses/>} />
           <Route path='/admin-dashboard/*' element={<Admin/>}/>
           <Route path='/teacher-dashboard/*' element={<Teachermain/>}/>
-          <Route path='/chat/*' element={<Chat/>}/>
+          <Route path='/student/chat/*' element={<ChatStudent/>}/>
+          <Route path='/teacher/chat/*' element={<ChatTeacher/>}/>
           <Route path='/*' element={<Error/>}/>
          
         </Routes>
