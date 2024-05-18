@@ -8,6 +8,7 @@ import TeacherAllStudents from './TeacherAllStudents'
 import TeacherAllStudentEachCourse from './TeacherAllStudentEachCourse'
 import { useJwt } from 'react-jwt'
 import { useNavigate } from 'react-router-dom'
+import ChatTeacher from '../../Pages/Teacherpages/ChatTeacher'
 
 
 const TeacherDashboard = ({ teacherData }) => {
@@ -46,8 +47,10 @@ const TeacherDashboard = ({ teacherData }) => {
             <Routes>
               <Route path="/" element={<TeacherHome teacherData={teacherData} />} />
               <Route path='/message' element={<TeacherMessage teacherData={teacherData}/>} />
+              <Route path='/teacher/chat/*' element={<ChatTeacher/>}/>
               <Route path='/myaccount' element={<TeacherProfile teacherData={teacherData} />} />
               <Route path='/allstudents/:selectedClassId' element={<TeacherAllStudentEachCourse />} />
+
 
               {/* <Route path='/allstudents/:selectedClassId' element={<TeacherAllStudents/>}/> */}
               {/* <Route path='/attendance' element={<UpdateAttendence/>}/> */}

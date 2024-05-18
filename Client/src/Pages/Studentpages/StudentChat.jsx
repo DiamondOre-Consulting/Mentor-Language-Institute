@@ -173,9 +173,6 @@ const StudentChat = () => {
         <>
       
             <div>
-
-
-
                 <div class=" h-screen">
                     <div class="md:flex border border-grey rounded shadow-lg h-full">
 
@@ -211,13 +208,9 @@ const StudentChat = () => {
                                                     <p class="text-grey-darkest">
                                                         {teacher.name}
                                                     </p>
-                                                    <p class="text-xs text-grey-darkest">
-                                                        12:45 pm
-                                                    </p>
+                                                 
                                                 </div>
-                                                <p class="text-grey-dark mt-1 text-sm">
-                                                    Show me the money!
-                                                </p>
+                                             
                                             </div>
                                         </div>
                                     ))}
@@ -252,16 +245,10 @@ const StudentChat = () => {
                             </div>
 
 
-                            <div class="flex-1 overflow-auto bg-gray-200" >
+                            <div class="flex-1 overflow-auto bg-gray-200 h-2/3" >
                                 <div class="py-2 px-3">
 
-                                    <div class="flex justify-center mb-2">
-                                        <div class="rounded py-2 px-4 bg-blue-100" >
-                                            <p class="text-sm uppercase">
-                                                February 20, 2018
-                                            </p>
-                                        </div>
-                                    </div>
+                                  
 
                                     <div class="flex justify-center mb-4">
                                         <div class="rounded py-2 px-4 bg-yellow-200" >
