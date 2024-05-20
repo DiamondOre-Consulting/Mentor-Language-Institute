@@ -13,7 +13,8 @@ import Eachcourse from './Eachcourse'
 import { useJwt } from 'react-jwt'
 import { useNavigate } from 'react-router-dom'
 import EachTeacherClassStudentAttendance from './EachTeacherClassStudentAttendance'
-import Chat from './Chat'
+
+import ChatAdmin from '../../Pages/Adminpages/ChatAdmin'
 
 
 
@@ -64,7 +65,8 @@ const Admindash = () => {
                             <Route path='/allcourses' element={<Allcourses />} />
                             <Route path='/allcourses/:id' element={<Eachcourse/>}/>
                             <Route path='/register' element={<Register />} />
-                            <Route path='/Chat' element={<Chat/>}/>
+                            <Route path= '/admin/chat/*' element={<ChatAdmin/>}/>
+                            {/* <Route path='/Chat' element={<Chat/>}/> */}
                             {/* Add more routes for additional components */}
                         </Routes>
                     </div>

@@ -67,6 +67,28 @@ const ChatStudent = () => {
   }
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+
+      navigate("/student-login");
+    } else {
+      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0;
+
+      if (tokenExpiration && tokenExpiration < Date.now()) {
+
+        localStorage.removeItem("token");
+        navigate("/student-login");
+      }
+    }
+  }, [decodedToken])
+
+  if (!token) {
+    navigate("/student-login");
+    return;
+  }
+
+  useEffect(() => {
     // Fetch teachers when the component mounts
     const fetchTeachers = async () => {
       try {
@@ -97,17 +119,17 @@ const ChatStudent = () => {
   // };
 
 
-    const handleTeacherClick = (teacher) => {
-      setSelectedTeacher(teacher); // Set selected teacher when clicked
+  const handleTeacherClick = (teacher) => {
+    setSelectedTeacher(teacher); // Set selected teacher when clicked
 
-      // Check if it's a small screen and the left bar is open
-      if (isSmallScreen && !isOpen) {
-          setIsTeacherSectionVisible(false);
-          setIsOpen(true); // Open the right portion
-      } else if (isSmallScreen && isOpen) {
-          setIsOpen(false);
-          setIsTeacherSectionVisible(true); // Close the right portion
-      }
+    // Check if it's a small screen and the left bar is open
+    if (isSmallScreen && !isOpen) {
+      setIsTeacherSectionVisible(false);
+      setIsOpen(true); // Open the right portion
+    } else if (isSmallScreen && isOpen) {
+      setIsOpen(false);
+      setIsTeacherSectionVisible(true); // Close the right portion
+    }
 
   };
 
@@ -134,7 +156,7 @@ const ChatStudent = () => {
                 {/* Left portion */}
 
 
-                <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center">
+                <div class="py-4 px-3 bg-grey-lighter flex flex-row justify-between items-center ">
                   <div className='flex items-center'>
                     <img class="w-10 h-10 rounded-full" src="https://static.thenounproject.com/png/363640-200.png" />
                     <span className='ml-1'>{userName}</span>
@@ -145,8 +167,7 @@ const ChatStudent = () => {
                   </div>
                 </div>
 
-                <div class="py-2 px-2 bg-grey-lightest">
-                  <input type="text" class="w-full px-2 py-2 text-sm" placeholder="Search or start new chat" />
+                <div class="bg-grey-lightest w-full h-0.5 bg-gray-600 rounded-md my-2">
                 </div>
 
                 <div class="bg-grey-lighter flex-1 overflow-auto">
@@ -161,7 +182,7 @@ const ChatStudent = () => {
                           <p class="text-grey-darkest">
                             {teacher.name}
                           </p>
-                       
+
                         </div>
                         <p class="text-grey-dark mt-1 text-sm">
                           teacher
@@ -174,13 +195,13 @@ const ChatStudent = () => {
 
               </div>
             )}
-              <h4>{error}</h4>
+            <h4>{error}</h4>
 
 
             {selectedTeacher && (
-              <ChatBox teacher={selectedTeacher}  isOpen={isOpen}  isSmallScreen={isSmallScreen} setIsOpen={setIsOpen} setIsTeacherSectionVisible={setIsTeacherSectionVisible}/> // Render the chatbox if a teacher is selected
+              <ChatBox teacher={selectedTeacher} isOpen={isOpen} isSmallScreen={isSmallScreen} setIsOpen={setIsOpen} setIsTeacherSectionVisible={setIsTeacherSectionVisible} /> // Render the chatbox if a teacher is selected
             )}
-            
+
 
           </div>
 

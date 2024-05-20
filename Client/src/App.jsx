@@ -12,7 +12,7 @@ import Teachermain from './Pages/Teacherpages/Teachermain'
 import StudentLogin from './Component/Studentcomponents/Stuauth/StudentLogin'
 import Error from './Component/Studentcomponents/Stuauth/Error'
 // import Chat from './Pages/Chat'
-import StudentChat from './Pages/Studentpages/StudentChat'
+
 import ChatStudent from './Pages/Studentpages/ChatStudent'
 import ChatTeacher from './Pages/Teacherpages/ChatTeacher'
 
@@ -29,7 +29,7 @@ function App() {
           <Route path='/' element={<Parentsignup />} />
           <Route path='/login' element={<Login />} />
           <Route path='/student-login' element={<StudentLogin/>}/>
-          <Route path='/student-chat' element={<StudentChat/>}/>
+          {/* <Route path='/student-chat' element={<StudentChat/>}/> */}
           <Route path='/main-dashboard' element={<Maindash />} />
           <Route path='/student-each-course/:id' element={<StudentEachcourses/>} />
           <Route path='/admin-dashboard/*' element={<Admin/>}/>

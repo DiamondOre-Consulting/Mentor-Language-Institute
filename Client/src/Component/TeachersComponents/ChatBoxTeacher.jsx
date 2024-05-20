@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo ,  useRef } from "react";
 import axios from "axios";
 import io from "socket.io-client";
 import { useJwt } from "react-jwt";
@@ -13,6 +13,8 @@ const ChatBoxTeacher = ({ student , isOpen , setIsOpen , isSmallScreen , setIsTe
   const socket = useMemo(() => io("http://localhost:7000"), []);
   const [chatHistory, setChatHistory] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  const chatContainerRef = useRef(null);
+  const [isUserAtBottom, setIsUserAtBottom] = useState(true);
 
   const token = localStorage.getItem("token");
 
@@ -43,6 +45,30 @@ const ChatBoxTeacher = ({ student , isOpen , setIsOpen , isSmallScreen , setIsTe
       socket.off("receive-message");
     };
   }, [student, chatHistory]);
+
+
+
+  useEffect(() => {
+    if (isUserAtBottom && chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [chatHistory, isUserAtBottom]);
+
+  
+  const handleKeyPress = (event) => {
+    if (event.key === "Enter") {
+      handleSendMessage();
+    }
+  };
+
+  const handleScroll = () => {
+    if (chatContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+      setIsUserAtBottom(scrollTop + clientHeight >= scrollHeight - 10);
+    }
+  };
+
+
 
   const fetchChatHistory = async (studentId) => {
     try {
@@ -120,18 +146,8 @@ const ChatBoxTeacher = ({ student , isOpen , setIsOpen , isSmallScreen , setIsTe
         </div>
 
 
-        <div class="flex-1 overflow-auto bg-gray-200 h-2/3" >
-          <div class="py-2 px-3">
-
-          
-
-            <div class="flex justify-center mb-4">
-              <div class="rounded py-2 px-4 bg-yellow-200" >
-                <p class="text-xs">
-                  Messages to this chat and calls are now secured with end-to-end encryption. Tap for more info.
-                </p>
-              </div>
-            </div>
+        <div class="flex-1 overflow-auto bg-gray-200 " ref={chatContainerRef} onScroll={handleScroll}  >
+          <div class="py-2 px-3 mb-16 md:mb-0">
 
 
             {chatHistory.map((message) => (
@@ -142,12 +158,12 @@ const ChatBoxTeacher = ({ student , isOpen , setIsOpen , isSmallScreen , setIsTe
               >
                 <div className={`rounded py-2 px-3 ${message.senderId === userId ? "bg-green-100" : "bg-gray-100"}`}>
 
-                  <p class="text-sm mt-1">
+                <p class="text-md mt-1">
                     {message.message}
                   </p>
-                  <p class="text-right text-xs text-grey-dark mt-1">
-                    {new Date(message.createdAt).toLocaleDateString()}
-                    {/* {new Date(message.createdAt).toLocaleTimeString()} */}
+                  <p class="text-right  text-grey-dark mt-1">
+                  <span className="text-xs">{new Date(message.createdAt).toLocaleDateString()} </span>  
+                   <span className="text-xs ml-2"> {new Date(message.createdAt).toLocaleTimeString()}</span>  
                   </p>
                 </div>
               </div>
@@ -157,18 +173,18 @@ const ChatBoxTeacher = ({ student , isOpen , setIsOpen , isSmallScreen , setIsTe
         </div>
 
 
-        <div class="bg-grey-lighter px-4 py-4 flex items-center">
-          <div>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path opacity=".45" fill="#263238" d="M9.153 11.603c.795 0 1.439-.879 1.439-1.962s-.644-1.962-1.439-1.962-1.439.879-1.439 1.962.644 1.962 1.439 1.962zm-3.204 1.362c-.026-.307-.131 5.218 6.063 5.551 6.066-.25 6.066-5.551 6.066-5.551-6.078 1.416-12.129 0-12.129 0zm11.363 1.108s-.669 1.959-5.051 1.959c-3.505 0-5.388-1.164-5.607-1.959 0 0 5.912 1.055 10.658 0zM11.804 1.011C5.609 1.011.978 6.033.978 12.228s4.826 10.761 11.021 10.761S23.02 18.423 23.02 12.228c.001-6.195-5.021-11.217-11.216-11.217zM12 21.354c-5.273 0-9.381-3.886-9.381-9.159s3.942-9.548 9.215-9.548 9.548 4.275 9.548 9.548c-.001 5.272-4.109 9.159-9.382 9.159zm3.108-9.751c.795 0 1.439-.879 1.439-1.962s-.644-1.962-1.439-1.962-1.439.879-1.439 1.962.644 1.962 1.439 1.962z"></path></svg>
-          </div>
+        <div class="bg-grey-lighter px-4 py-4 flex fixed bottom-0 bg-white w-full md:relative md:bg-transparent md:w-auto items-center ">
+       
           <div class="flex-1 mx-4">
-            <input class="w-full border rounded px-2 py-2"    type="text"
+            <input class="w-full border rounded px-2 py-2"   type="text"
             value={newMessage}
+            onKeyPress={handleKeyPress}
             onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type your message..."/>
+            placeholder="Type your message..." />
+            
           </div>
           <div>
-          <button className="bg-green-400 p-2" onClick={handleSendMessage}>Send</button>
+          <button className="bg-green-300 rounded-md px-6 py-2" onClick={handleSendMessage}>Send</button>
           </div>
         </div>
       </div>

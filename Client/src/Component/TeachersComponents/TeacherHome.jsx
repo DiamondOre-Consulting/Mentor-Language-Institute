@@ -309,7 +309,7 @@ const TeacherHome = ({ teacherData }) => {
     return (
         <>
 
-            <div>
+            <div className='p-6'>
                 <div className='grid md:grid-cols-10 gap-8'>
                     <div className='col-span-7'>
                         <div>
