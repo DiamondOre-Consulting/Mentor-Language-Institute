@@ -7,25 +7,6 @@ import Messages from "../Models/Messages.js";
 
 const router = express.Router();
 
-router.post('/send-message', (TeacherAuthenticateToken || StudentAuthenticateToken || AdminAuthenticateToken), async (req, res) => {
-    try {
-        const { senderId, receiverId, message } = req.body;
-        
-        const newMessage = new Messages({
-            senderId,
-            receiverId,
-            message
-        });
-
-        await newMessage.save();
-        
-        res.status(201).json({ message: 'Message sent successfully', data: newMessage });
-    } catch(error) {
-        console.log("Something went wrong!!! ", error);
-        res.status(500).json(error);
-    }
-})
-
 router.get('/get-messages-student/:id', StudentAuthenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
@@ -56,6 +37,25 @@ router.get('/get-messages-teacher/:id', TeacherAuthenticateToken, async (req, re
         $or: [
           { senderId: userId, receiverId: id },
           { senderId: id, receiverId: userId },
+        ]
+      }).sort({ createdAt: 1 });
+  
+      res.status(200).json({ messages });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+})
+
+router.get('/get-messages-admin/:id1/:id2', AdminAuthenticateToken, async (req, res) => {
+  try {
+      const { id1, id2 } = req.params;
+      
+      // Filter messages based on senderId and receiverId
+      const messages = await Messages.find({ 
+        $or: [
+          { senderId: id1, receiverId: id2 },
+          { senderId: id2, receiverId: id1 },
         ]
       }).sort({ createdAt: 1 });
   

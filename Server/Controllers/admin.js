@@ -21,7 +21,7 @@ const router = express.Router();
 // SIGNUP AS ADMIN
 router.post("/signup-admin", async (req, res) => {
   try {
-    const { name, phone, password } = req.body;
+    const { name, phone, password, branch } = req.body;
 
     const adminuser = Admin.exists({ phone });
 
@@ -36,6 +36,7 @@ router.post("/signup-admin", async (req, res) => {
       name,
       username: name + "-" + phone,
       phone,
+      branch,
       password: hashedPassword,
     });
 
@@ -71,6 +72,7 @@ router.post("/login-admin", async (req, res) => {
         username: user.username,
         phone: user.phone,
         role: user.role,
+        branch: user.branch
       },
       secretKey,
       {
@@ -96,8 +98,9 @@ router.get("/my-profile", AdminAuthenticateToken, async (req, res) => {
       return res.status(404).json({ message: "Admin not find" });
     }
 
-    const { role, name, username, parents, teachers, classes } = admin;
+    const {branch, role, name, username, parents, teachers, classes } = admin;
     res.status(200).json({
+      branch,
       role,
       name,
       username,
@@ -115,7 +118,7 @@ router.get("/my-profile", AdminAuthenticateToken, async (req, res) => {
 // ADD CLASS BY ADMIN
 router.post("/add-new-class", AdminAuthenticateToken, async (req, res) => {
   try {
-    const { phone } = req.user;
+    const { phone, branch } = req.user;
     const { classTitle, classSchedule, teachBy, totalHours } = req.body;
 
     const admin = await Admin.findOne({ phone: phone });
@@ -125,6 +128,7 @@ router.post("/add-new-class", AdminAuthenticateToken, async (req, res) => {
     }
 
     const newClass = new Classes({
+      branch: branch,
       classTitle,
       classSchedule,
       teachBy,
@@ -153,7 +157,12 @@ router.post("/add-new-class", AdminAuthenticateToken, async (req, res) => {
 // GET ALL CLASSES
 router.get("/all-classes", AdminAuthenticateToken, async (req, res) => {
   try {
-    const allClasses = await Classes.find({});
+    const {branch} = req.user;
+    if(!branch) {
+      const allClasses = await Classes.find({});
+      return res.status(200).json(allClasses);
+    }
+    const allClasses = await Classes.find({branch: branch});
 
     return res.status(200).json(allClasses);
   } catch (error) {
@@ -179,6 +188,7 @@ router.get("/all-classes/:id", AdminAuthenticateToken, async (req, res) => {
 // ADD TEACHER
 router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
   try {
+    const {branch} = req.user;
     const { name, phone, password } = req.body;
 
     const teacher = await Teachers.exists({ phone });
@@ -194,6 +204,7 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
     const newTeacher = {};
     if (name && phone && password) {
       const newTeacher = new Teachers({
+        branch: branch,
         role: "Teacher",
         name,
         phone,
@@ -214,7 +225,13 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
 // GET ALL TEACHERS
 router.get("/all-teachers", AdminAuthenticateToken, async (req, res) => {
   try {
-    const allTeachers = await Teachers.find({}, { password: 0 });
+    const {branch} = req.user;
+    if(!branch) {
+      const allTeachers = await Teachers.find({}, { password: 0 });
+
+      return res.status(200).json(allTeachers);
+    }
+    const allTeachers = await Teachers.find({branch}, { password: 0 });
 
     return res.status(200).json(allTeachers);
   } catch (error) {
@@ -243,6 +260,7 @@ router.get("/all-teachers/:id", AdminAuthenticateToken, async (req, res) => {
 // ADD STUDENT
 router.post("/add-student", AdminAuthenticateToken, async (req, res) => {
   try {
+    const {branch} = req.user;
     const { name, phone, password } = req.body;
 
     const studentUser = await Students.findOne({ phone });
@@ -256,6 +274,7 @@ router.post("/add-student", AdminAuthenticateToken, async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newStudent = new Students({
+      branch: branch,
       name,
       phone,
       password: hashedPassword,
@@ -275,7 +294,14 @@ router.post("/add-student", AdminAuthenticateToken, async (req, res) => {
 // GET ALL STUDENTS
 router.get("/all-students", AdminAuthenticateToken, async (req, res) => {
   try {
-    const allStudents = await Students.find({});
+    const {branch} = req.user;
+
+    if(!branch) {
+      const allStudents = await Students.find({}, {password: 0});
+
+      return res.status(200).json(allStudents);
+    }
+    const allStudents = await Students.find({branch}, {password: 0});
 
     return res.status(200).json(allStudents);
   } catch (error) {

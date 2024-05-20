@@ -36,6 +36,7 @@ router.post("/login-teacher", async (req, res) => {
         role: user.role,
         name: user.name,
         phone: user.phone,
+        branch: user.branch
       },
       secretKey,
       {
@@ -78,9 +79,9 @@ router.get("/my-profile", TeacherAuthenticateToken, async (req, res) => {
 
 router.get("/my-classes", TeacherAuthenticateToken, async (req, res) => {
   try {
-    const { userId } = req.user;
+    const { userId, branch } = req.user;
 
-    const allMyClasses = await Classes.find({ teachBy: userId });
+    const allMyClasses = await Classes.find({ teachBy: userId, branch: branch });
 
     if (!allMyClasses) {
       return res
@@ -190,6 +191,7 @@ router.post(
   }
 );
 
+// UPDATE TOTAL HOURS OF A CLASS
 router.put(
   "/update-class-hours/:id",
   TeacherAuthenticateToken,
@@ -364,6 +366,7 @@ router.post("/add-monthly-classes", TeacherAuthenticateToken, async (req, res) =
   }
 })
 
+// CHATTING LIST OF STUDENTS
 router.get('/chat-all-students', TeacherAuthenticateToken, async (req, res) => {
   try {
     const {userId} = req.user;

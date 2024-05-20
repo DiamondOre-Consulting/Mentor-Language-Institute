@@ -21,7 +21,7 @@ const router = express.Router();
 router.post("/signup", async (req, res) => {
     try {
         
-        const {name, phone, password} = req.body;
+        const {name, phone, password, branch} = req.body;
 
         const studentUser = await Students.findOne({ phone });
 
@@ -34,6 +34,7 @@ router.post("/signup", async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
     
         const newStudent = new Students({
+          branch,
           name,
           phone,
           password: hashedPassword,
@@ -73,6 +74,7 @@ router.post("/login", async (req, res) => {
         userId: user._id,
         name: user.name,
         phone: user.phone,
+        branch: user.branch
       },
       secretKey,
       {
@@ -97,9 +99,10 @@ router.get("/my-profile", StudentAuthenticateToken, async (req, res) => {
       return res.status(404).json({ message: "Student not find" });
     }
 
-    const { name, appliedClasses, classes, attendanceDetail, feeDetail } =
+    const { branch, name, appliedClasses, classes, attendanceDetail, feeDetail } =
       student;
     res.status(200).json({
+      branch,
       name,
       phone,
       appliedClasses,
@@ -115,7 +118,8 @@ router.get("/my-profile", StudentAuthenticateToken, async (req, res) => {
 
 router.get("/all-courses", StudentAuthenticateToken, async (req, res) => {
   try {
-    const allCourses = await Classes.find({});
+    const {branch} = req.user;
+    const allCourses = await Classes.find({branch});
 
     res.status(200).json(allCourses);
   } catch (error) {
@@ -320,6 +324,7 @@ router.get("/my-fee-details/:id", StudentAuthenticateToken, async (req, res) => 
     }
 })
 
+// CHATTING LIST OF TEACHERS
 router.get('/chat-all-teachers', StudentAuthenticateToken, async (req, res) => {
   try {
     const {userId} = req.user;

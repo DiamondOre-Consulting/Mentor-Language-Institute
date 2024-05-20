@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
 
 const classSchema = new mongoose.Schema({
+  branch: {
+    type: String,
+    required: true
+  },
   classTitle: {
     type: String,
     required: true,
