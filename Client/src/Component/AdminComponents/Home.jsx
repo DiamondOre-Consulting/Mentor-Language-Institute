@@ -9,7 +9,7 @@ const Home = () => {
   const [allCourses, setAllCourses] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [popupMessage, setPopupMessage] = useState('');
-  const [userName, setUserName] = useState('')
+  const [userName, setUserName] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     branch: '',
@@ -120,24 +120,27 @@ const Home = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-     
-
-     
       const response = await axios.post(
         "http://localhost:7000/api/admin-confi/signup-admin",
-        formData,
-      
+        formData
       );
-      if (response.status === 201) {
-        console.log("Admin added successfully:", response.data);
-        // setUserName(response.data.username)
-        setIsFormOpen(false);
-        setFormData({ name: '', branch: '', phone: '', password: '' });
-        setPopupMessage('New Admin Has Been Created Successfully!');
 
+      if (response.status === 201) {
+        console.log("Admin added successfully:", response.data.newAdmin);
+        setUserName(response.data.newAdmin.username); // Assuming the username is returned in response.data.username
+        setIsFormOpen(false);
+        setPopupMessage('New Admin Has Been Created Successfully!');
+        setFormData({ name: '', branch: '', phone: '', password: '' });
       }
     } catch (error) {
+      if(error.response){
+        const status = error.respnse.status;
+        if(status === 409){
+          setPopupMessage('Admin Already Exists');
+        }
+      }
       console.error("Error adding admin:", error);
+      setPopupMessage('Error adding admin. Please try again.');
     }
   };
 
@@ -232,6 +235,7 @@ const Home = () => {
               <div className="mb-4">
                 <label htmlFor="branch" className="block text-sm font-medium text-gray-700">Branch</label>
                 <select id="branch" name="branch" value={formData.branch} onChange={handleChange} className="w-full p-2 border border-gray-500 rounded-md">
+                  <option>Select Branch</option>
                   <option value="B1">Branch 1</option>
                   <option value="B2">Branch 2</option>
                 </select>
@@ -254,10 +258,14 @@ const Home = () => {
       {popupMessage && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-800 bg-opacity-75">
           <div className="bg-white shadow-md rounded-md p-6">
-            <p className="text-lg font-semibold">{popupMessage} </p>
-            <p>Your UserName is {userName}</p>
-            <span className='text-red-800'> please write is down this username someware!!</span>
-            <button onClick={() => setPopupMessage('')} className="px-4 py-2 bg-orange-400 text-white rounded-md hover:bg-orange-500 mt-4">Close</button>
+            <p className="text-lg font-semibold">{popupMessage}</p>
+            {userName && (
+              <>
+                <p className='mt-2'>Your UserName is <span className="font-bold text-xl"> {userName}</span></p>
+                <span className='text-red-800 '>Please write down this username somewhere!!</span><br></br>
+              </>
+            )}
+            <button onClick={() => setPopupMessage('')} className="px-4 py-2 bg-orange-400 text-white rounded-md hover:bg-orange-500 mt-2 float-right">Close</button>
           </div>
         </div>
       )}

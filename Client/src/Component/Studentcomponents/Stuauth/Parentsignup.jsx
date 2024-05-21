@@ -18,6 +18,7 @@ const Parentlog = () => {
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
+    const [branch, setBranch] = useState('')
     const [popupMessage, setPopupMessage] = useState(null);
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -40,6 +41,7 @@ const Parentlog = () => {
                     name,
                     phone,
                     password,
+                    branch,
                 },
 
             );
@@ -109,6 +111,12 @@ const Parentlog = () => {
                                 <div>
                                     <input type="phone" name="phone" id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Enter Your Phone Number" class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      " required="" />
                                 </div>
+
+                                <select id="branch" name="branch" value={branch} onChange={(e) => setBranch(e.target.value)} className="w-full p-2 border border-gray-500 rounded-md">
+                                    <option>Select Branch</option>
+                                    <option value="B1">Branch 1</option>
+                                    <option value="B2">Branch 2</option>
+                                </select>
                                 <div>
                                     <input type={showPassword ? "text" : "password"} name="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" class="bg-gray-50 border border-gray-900 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-600 focus:border-gray-600 block w-full p-2.5      " required="" />
                                 </div>

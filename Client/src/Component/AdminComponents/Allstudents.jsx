@@ -58,7 +58,7 @@ const Allstudents = () => {
           }
         );
         if (response.status == 200) {
-          console.log(response.data);
+          console.log("all students",response.data);
           const allstudents = response.data;
           console.log(allstudents);
           setAllStudents(allstudents);

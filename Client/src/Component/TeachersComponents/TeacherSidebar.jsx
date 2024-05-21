@@ -177,11 +177,11 @@ const TeacherSidebar = () => {
 
 
                     <div class="flex justify-between items-center mb-4 md:mb-0 mt-4 px-4">
-                        <a href='https://www.instagram.com/mentorlanguage/?hl=en' target='_blank'><img src={insta} alt="Instagram" class="w-6 cursor-pointer" /></a>
+                        <a href='https://www.instagram.com/mentorlanguage/' target='_blank'><img src={insta} alt="Instagram" class="w-6 cursor-pointer" /></a>
                         <a href='https://www.facebook.com/mentorlanguage/' target='_blank'><img src={facebook} alt="Facebook" class="w-6 " /></a>
                         <img src={whatsapp} alt="WhatsApp" class="w-6 " onClick={handleWhatsAppChat} />
-                        <a href='https://in.linkedin.com/company/mentor-language-institute?original_referer=https%3A%2F%2Fwww.google.com%2F' target='_blank'><img src={linkedin} alt="WhatsApp" class="w-6 " /></a>
-                        <a href='https://www.youtube.com/channel/UCZfXax1jZoi5BgqsoXc49Aw?app=desktop' target='_blank'><img src={youtube} alt="Facebook" class="w-6 " /></a>
+                        <a href='https://www.linkedin.com/company/mentor-the-language-institute/?viewAsMember=true' target='_blank'><img src={linkedin} alt="WhatsApp" class="w-6 " /></a>
+                        <a href='https://youtube.com/@mentorlanguageinstitute8431?si=cztyFsLYOEKvWPO7' target='_blank'><img src={youtube} alt="Facebook" class="w-6 " /></a>
                     </div>
 
 
