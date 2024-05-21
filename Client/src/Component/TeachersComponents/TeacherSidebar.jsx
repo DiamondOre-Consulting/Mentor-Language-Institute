@@ -186,7 +186,7 @@ const TeacherSidebar = () => {
 
 
                     <div class="text-center mt-2">
-                        <span class="block text-xs text-gray-500">Designed & Developed by <a class="hover:underline text-orange-500 cursor-pointer">DOC-LABZ</a>.</span>
+                        <span class="block text-xs text-gray-500">Designed & Developed by <a href='https://www.doclabz.com/'  class="hover:underline text-orange-500 cursor-pointer">DOC-LABZ</a>.</span>
                         <span class="block text-xs text-gray-500 ">© 2024 <a href="" class="hover:underline">Mentor Institute</a>. All Rights Reserved.</span>
                     </div>
                 </div>

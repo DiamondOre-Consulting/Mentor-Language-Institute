@@ -59,7 +59,7 @@ const Footer = () => {
                     <div></div>
                     <div class="flex flex-col-reverse md:flex-row justify-center items-center md:ml-0">
                         <div class="text-center flex flex-col items-center md:mr-64 md:text-left ">
-                            <span class="block text-sm text-gray-500">Designed & Developed by <a class="hover:underline text-orange-500 cursor-pointer">DOC-LABZ</a>.</span>
+                            <span class="block text-sm text-gray-500">Designed & Developed by <a href='https://www.doclabz.com/'  class="hover:underline text-orange-500 cursor-pointer">DOC-LABZ</a>.</span>
                             <span class="block text-sm text-gray-500 ">© 2024 <a href="" class="hover:underline">Mentor Institute</a>. All Rights Reserved.</span>
                         </div>
                         <div class="flex justify-end items-center mb-4 md:mb-0 md:ml-4">
