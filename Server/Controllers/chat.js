@@ -1,5 +1,4 @@
 import express from "express";
-import dotenv from "dotenv";
 import StudentAuthenticateToken from "../Middlewares/StudentAuthenticateToken.js";
 import TeacherAuthenticateToken from "../Middlewares/TeacherAuthenticateToken.js";
 import AdminAuthenticateToken from "../Middlewares/AdminAuthenticateToken.js"
