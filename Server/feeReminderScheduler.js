@@ -10,7 +10,7 @@ const authToken = "5f266d8cfdab46c27bc43ce71256f1ff";
 const client = twilio(accountSid, authToken);
 
 const feeReminderScheduler = () => {
-  cron.schedule("30 11 3 * *", async () => {
+  cron.schedule("00 10 08 * *", async () => {
     // 10 am IST is 4 am UTC
     try {
       console.log("Scheduled task started.");
@@ -48,7 +48,7 @@ const feeReminderScheduler = () => {
                 })
                 .then((message) => console.log(message.sid))
                 .catch((error) => console.error("Error sending SMS:", error));
-              console.log("Will start sms service!!!");
+              console.log("Will start sms service!!!"); 
               // break; // Stop checking other fees for this student
             }
           } else {
