@@ -24,7 +24,7 @@ const Admindash = () => {
 
     const { decodedToken } = useJwt(localStorage.getItem("token"));
     const token = localStorage.getItem("token");
-    console.log("this is admin dashboar token",token)
+    // console.log("this is admin dashboar token",token)
     if (!token) {
       navigate("/login"); // Redirect to login page if not authenticated
       return;
@@ -32,7 +32,7 @@ const Admindash = () => {
   
     useEffect(() => {
       const token = localStorage.getItem("token");
-      console.log(token)
+      // console.log(token)
       if (!token) {
         // No token found, redirect to login page
         navigate("/login");
@@ -54,7 +54,6 @@ const Admindash = () => {
                 <div className="py-4 md:px-4 md:py-4 md:border-2 border-gray-200 border-dashed rounded-lg ">
                     <div className="flex-grow md:px-4 md:py-4 px-2">
                         <Routes>
-                            <Route path="/" element={<Home />} />
                             <Route path="/" element={<Home />} />
                             <Route path='/allstudents' element={<Allstudents />} />
                             <Route path='/allteachers' element={<AllTeachers />} />

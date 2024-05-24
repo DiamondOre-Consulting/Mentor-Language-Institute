@@ -19,9 +19,25 @@ const ChatTeacher = () => {
   const token = localStorage.getItem("token");
 
   if (!token) {
-    navigate("/login");
+    navigate("/login"); // Redirect to login page if not authenticated
     return;
   }
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+    } else {
+      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
+      // console.log(tokenExpiration)
+
+      if (tokenExpiration && tokenExpiration < Date.now()) {
+        // Token expired, remove from local storage and redirect to login page
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    }
+  }, [decodedToken])
 
   useEffect(() => {
     // Fetch students when the component mounts
@@ -85,11 +101,11 @@ const ChatTeacher = () => {
                     <span className='ml-1'>{userName}</span>
                   </div>
 
-                
+
                 </div>
 
                 <div class="bg-grey-lightest w-full h-0.5 bg-gray-600 rounded-md my-4">
-                  
+
                 </div>
 
                 <div class="bg-grey-lighter flex-1 overflow-auto">
@@ -135,7 +151,7 @@ const ChatTeacher = () => {
             )}
 
             {selectedStudent && (
-              <ChatBoxTeacher student={selectedStudent}  isOpen={isOpen} setIsOpen={setIsOpen} isSmallScreen={isSmallScreen} setIsTeacherSectionVisible={setIsTeacherSectionVisible}/> // Render the chatbox if a student is selected
+              <ChatBoxTeacher student={selectedStudent} isOpen={isOpen} setIsOpen={setIsOpen} isSmallScreen={isSmallScreen} setIsTeacherSectionVisible={setIsTeacherSectionVisible} /> // Render the chatbox if a student is selected
             )}
 
           </div>

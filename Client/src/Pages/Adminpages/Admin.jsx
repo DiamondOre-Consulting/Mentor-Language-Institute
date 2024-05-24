@@ -12,7 +12,7 @@ const Admin = () => {
   // const [adminData , setAdminData] =useState([])
   const { decodedToken } = useJwt(localStorage.getItem("token"));
   const token = localStorage.getItem("token");
-  console.log(token)
+  // console.log(token)
   if (!token) {
     navigate("/login"); // Redirect to login page if not authenticated
     return;
@@ -57,7 +57,7 @@ const Admin = () => {
           }
         );
         if (response.status == 200) {
-          console.log(response.data);
+          // console.log(response.data);
           // setUserData(response.data);
         } else {
           console.log(response.data);

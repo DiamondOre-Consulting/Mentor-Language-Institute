@@ -4,7 +4,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import Admin from './Pages/Adminpages/Admin'
 
 import Home from './Component/AdminComponents/Home'
-import Login from './Component/Studentcomponents/Stuauth/Login'
+import Login from './Component/TeacherAdminAuthentication/Login'
 import Maindash from './Pages/Studentpages/Maindash'
 import StudentEachcourses from './Pages/Studentpages/StudentEachcourses'
 import { Sidebar } from 'flowbite-react'
@@ -26,7 +26,8 @@ function App() {
     <>
       <BrowserRouter>
         <Routes>
-          <Route path='/' element={<Parentsignup />} />
+          <Route path= '/'>
+          <Route index element={<Parentsignup />} />
           <Route path='/login' element={<Login />} />
           <Route path='/student-login' element={<StudentLogin/>}/>
           {/* <Route path='/student-chat' element={<StudentChat/>}/> */}
@@ -37,6 +38,7 @@ function App() {
           <Route path='/student/chat/*' element={<ChatStudent/>}/>
           {/* <Route path='/teacher/chat/*' element={<ChatTeacher/>}/> */}
           <Route path='/*' element={<Error/>}/>
+          </Route>
          
         </Routes>
       </BrowserRouter>

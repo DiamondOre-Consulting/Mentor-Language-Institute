@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
-import Navbar from './Navbar';
-import Footer from './Footer';
+import Navbar from '../Studentcomponents/Stuauth/Navbar';
+import Footer from '../Studentcomponents/Stuauth/Footer';
 import axios from "axios";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
@@ -35,15 +35,15 @@ const Login = () => {
                 username,
                 password
             });
-            console.log("inside")
+            // console.log("inside")
     
             if (response.status === 200) {
-                console.log(response.data)
+                // console.log(response.data)
                 const token = response.data.token;
                 // Store the token in local storage
-                console.log(token);
+              
                 localStorage.setItem("token", token);
-                console.log("Logged in successfully as Admin");
+                // console.log("Logged in successfully as Admin");
                 navigate("/admin-dashboard");
             } else {
                 console.log("Login failed");
@@ -83,9 +83,9 @@ const Login = () => {
                     if (response.status === 200) {
                         const token = response.data.token;
 
-                        console.log(token)
+                        // console.log(token)
                         localStorage.setItem("token", token);
-                        console.log("Logged in successfully as Teacher");
+                        // console.log("Logged in successfully as Teacher");
                         navigate("/teacher-dashboard");
 
                     } else {

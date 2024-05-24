@@ -29,9 +29,9 @@ const AllTeachers = () => {
           }
         );
         if (response.status == 200) {
-          console.log(response.data);
+          // console.log(response.data);
           const allteachers = response.data;
-          console.log(allteachers);
+          // console.log(allteachers);
           setAllTeachers(allteachers);
         }
       } catch (error) {

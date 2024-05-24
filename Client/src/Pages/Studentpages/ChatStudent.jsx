@@ -101,7 +101,7 @@ const ChatStudent = () => {
           }
         ); // Adjust the API endpoint
         if (response.status === 201) {
-          console.log(response.data);
+          // console.log(response.data);
           setTeachers(response.data); // Assuming the API returns an array of teacher objects
         } else {
           setError(response.status, response.data);
@@ -138,7 +138,7 @@ const ChatStudent = () => {
       setIsOpen(false);
       setIsTeacherSectionVisible(true);
     } else {
-      console.log("navigating.............");
+      // console.log("navigating.............");
       navigate(-1);
     }
   };

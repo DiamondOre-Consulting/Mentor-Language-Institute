@@ -53,7 +53,7 @@ const Studenthero = () => {
         setUserName(translatedWelcome + ' ' + translatedName);
 
       } else {
-        console.log(response.data);
+        // console.log(response.data);
       }
     } catch (error) {
       console.error("Error fetching student data:", error);

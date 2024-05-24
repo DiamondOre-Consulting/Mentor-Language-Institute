@@ -67,7 +67,7 @@ const EachTeacherClassStudentAttendance = () => {
                     const courseData = response.data;
                     setCourseDetails(response.data);
                     setStudentId(courseData.enrolledStudents);
-                    console.log("course details", response.data)
+                    // console.log("course details", response.data)
                     const enrolledStudents = courseData.enrolledStudents;
                     const enrolledStudentsDetails = [];
 
@@ -83,7 +83,7 @@ const EachTeacherClassStudentAttendance = () => {
 
                         if (studentResponse.status === 200) {
                             const studentData = studentResponse.data;
-                            console.log("Enrolled student details:", studentData);
+                            // console.log("Enrolled student details:", studentData);
                             enrolledStudentsDetails.push(studentData);
                             setMyEnrolledStudentsDetails(enrolledStudentsDetails);
                         }
@@ -125,7 +125,7 @@ const EachTeacherClassStudentAttendance = () => {
                 });
 
                 if (attendanceResponse.status === 200) {
-                    console.log("a det", attendanceResponse.data)
+                    // console.log("a det", attendanceResponse.data)
 
                     const mapping = attendanceResponse.data
                         .filter(item => item.detailAttendance)
@@ -136,11 +136,11 @@ const EachTeacherClassStudentAttendance = () => {
                     );
                     setAttendanceDetails(attendanceResponse.data);
 
-                    console.log("mapping", mapping)
-                    console.log("mapping", numberOfClassesTakenValues)
+                    // console.log("mapping", mapping)
+                    // console.log("mapping", numberOfClassesTakenValues)
 
                     const studentIds = attendanceResponse.data.map(item => item.studentId);
-                    console.log("student ids", studentIds)
+                    // console.log("student ids", studentIds)
                     const studentData = [];
                     for (const studentid of studentIds) {
 
@@ -153,7 +153,7 @@ const EachTeacherClassStudentAttendance = () => {
                             const data = studentResponse.data
                             studentData.push(data)
 
-                            console.log("allstudents details", studentDetails)
+                            // console.log("allstudents details", studentDetails)
                         }
 
 
@@ -169,8 +169,8 @@ const EachTeacherClassStudentAttendance = () => {
     }, [selectedDate, selectedClassId]);
 
     const handleFetchStudentDetails = (studentId, studentName) => {
-        console.log('Student ID:', studentId);
-        console.log('Student Name:', studentName);
+        // console.log('Student ID:', studentId);
+        // console.log('Student Name:', studentName);
         setSelectedStudentName(studentName);
         setSelectedStudentId(studentId)
 
@@ -216,8 +216,8 @@ const EachTeacherClassStudentAttendance = () => {
             );
 
             if (response.status === 200) {
-                console.log(response.data);
-                console.log("commission Updated")
+                // console.log(response.data);
+                // console.log("commission Updated")
                 setShowPopup(false)
                 // setAttendanceDetailsMap(prevAttendanceDetailsMap => ({
                 //     ...prevAttendanceDetailsMap,
@@ -256,7 +256,7 @@ const EachTeacherClassStudentAttendance = () => {
 
                 if (monthlyCommissionReport.status === 200) {
                     setMonthlyCommissionDetails(monthlyCommissionReport.data);
-                    console.log("monthlycommission", monthlyCommissionReport.data);
+                    // console.log("monthlycommission", monthlyCommissionReport.data);
                 }
 
 
@@ -273,7 +273,7 @@ const EachTeacherClassStudentAttendance = () => {
     // handleFetchMonthlyCommisssionDetails
 
     const handleFetchMonthlyCommisssionDetails = (commissionIdIs, selectedMonth) => {
-        console.log(commissionIdIs)
+        // console.log(commissionIdIs)
         setCommissionId(commissionIdIs);
         setSelectedMonthName(selectedMonth)
         setShowPopupMonthly(true);
@@ -306,8 +306,8 @@ const EachTeacherClassStudentAttendance = () => {
             );
 
             if (response.status === 200) {
-                console.log(response.data);
-                console.log("admin update monthly commission")
+                // console.log(response.data);
+                // console.log("admin update monthly commission")
                 setShowPopupMonthly(false)
                 window.location.reload();
 

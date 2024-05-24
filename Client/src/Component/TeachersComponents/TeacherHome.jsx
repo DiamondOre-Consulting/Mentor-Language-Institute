@@ -41,7 +41,7 @@ const TeacherHome = ({ teacherData }) => {
         const year = selectedDate.getFullYear();
         const formattedDate = `${day}-${month}-${year}`;
         setDate(formattedDate);
-        console.log(date)
+        // console.log(date)
     };
 
 
@@ -77,8 +77,6 @@ const TeacherHome = ({ teacherData }) => {
 
 
 
-
-
     const fetchAllTeachersCourses = async () => {
         try {
             const token = localStorage.getItem("token");
@@ -89,6 +87,9 @@ const TeacherHome = ({ teacherData }) => {
             }
 
             const classIds = teacherData.myClasses;
+
+           
+            // console.log("classId",classIds)
             const classesData = [];
             for (const classId of classIds) {
                 const classResponse = await axios.get(`http://localhost:7000/api/teachers/my-classes/${classId}`, {
@@ -156,7 +157,7 @@ const TeacherHome = ({ teacherData }) => {
 
             }
         } catch (error) {
-            console.log('Failed to schedule the class. Please try again later.', error);
+            // console.log('Failed to schedule the class. Please try again later.', error);
             setShowLoader(false);
         }
     };
@@ -183,23 +184,23 @@ const TeacherHome = ({ teacherData }) => {
                 if (classresponse.status === 200) {
                     const oneclass = classresponse.data;
                     setOneClassDetails(oneclass)
-                    console.log("selected class details", oneClassDetails)
+                    // console.log("selected class details", oneClassDetails)
 
 
                 }
 
-                const allsturesponse = await axios.get(`http://localhost:7000/api/teachers/class/all-students/${selectedClassId}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
+                // const allsturesponse = await axios.get(`http://localhost:7000/api/teachers/class/all-students/${selectedClassId}`, {
+                //     headers: {
+                //         Authorization: `Bearer ${token}`,
+                //     },
+                // });
 
 
-                if (allsturesponse.status === 200) {
-                    // console.log("allsturesponsedata", allsturesponse.data)
-                    setAllDetails(allsturesponse.data);
-                    // console.log(alldetails)
-                }
+                // if (allsturesponse.status === 200) {
+                //     // console.log("allsturesponsedata", allsturesponse.data)
+                //     setAllDetails(allsturesponse.data);
+                //     // console.log(alldetails)
+                // }
 
 
             }
@@ -246,14 +247,14 @@ const TeacherHome = ({ teacherData }) => {
                 if (response.status == 200) {
                     // console.log(response.data);
                     const allcourses = response.data;
-                    console.log(allcourses);
+                    // console.log(allcourses);
                     setAllCourses(allcourses);
                 }
             } catch (error) {
                 if (error.response) {
                     const status = error.response.status;
                     if (status === 405) {
-                        console.log("no class has been assigned to you");
+                        // console.log("no class has been assigned to you");
                         alert("no class has been assigned to you")
 
                     } else {
@@ -310,14 +311,13 @@ const TeacherHome = ({ teacherData }) => {
         <>
 
             <div className='p-6'>
-                <div className='grid md:grid-cols-10 gap-8'>
-                    <div className='col-span-7'>
+                <div className=''>
                         <div>
-                            <h1 className='text-3xl font-semibold mb-10 text-gray-600'><span className='text-4xl'>Welcome !! </span><br></br><span className='text-orange-500 font-bold'>{teacherData?.name}</span></h1>
+                            <h1 className='text-3xl font-semibold mb-10 text-gray-600'><span className='text-5xl'>Welcome !! </span><br></br><span className='text-orange-500 text-5xl font-bold'>{teacherData?.name}</span></h1>
                             <h1 className='text-2xl font-bold'>My Courses</h1>
                             <div className='w-24 h-1 border-rounded bg-orange-500 mb-4'></div>
 
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4 py-4'>
+                            <div className='grid grid-cols--1 md:grid-cols-3 gap-4 '>
                                 {loading ? (
                                     <div style={override}>
                                         <ClipLoader color={"#FFA500"} loading={loading} size={30} />
@@ -357,93 +357,9 @@ const TeacherHome = ({ teacherData }) => {
                         </div>
 
 
-                    </div>
+                   
 
-                    <div className='col-span-3 '>
-
-                        <div className='grid grid-rows-8 grid-flow-col gap-4 '>
-                            <div className='row-span-5 hidden md:block '>
-                                <h1 className='font-bold text-lg'>Recent Messages</h1>
-                                <div className='w-16 h-0.5 bg-orange-500 mb-6'></div>
-                                <div class="flex items-start gap-2.5">
-                                    <img class="w-8 h-8 rounded-full" src="https://static.vecteezy.com/system/resources/thumbnails/001/993/889/small/beautiful-latin-woman-avatar-character-icon-free-vector.jpg" alt="Jese image" />
-                                    <div class="flex flex-col gap-1 w-full max-w-[320px]">
-                                        <div class="flex flex-col leading-1.5 p-4 border-gray-200 bg-orange-500 shadow-md backdrop-filter backdrop-blur-md bg-opacity-20 rounded-e-xl rounded-es-xl ">
-                                            <div class="flex items-center space-x-2 rtl:space-x-reverse">
-                                                <span class="text-sm font-semibold text-gray-900 ">Bonnie Green</span>
-                                                <span class="text-sm font-normal text-gray-500 ">11:46</span>
-                                            </div>
-                                        </div>
-
-                                    </div>
-                                    <button id="dropdownMenuIconButton" onClick={toggleDropdown} data-dropdown-toggle="dropdownDots" data-dropdown-placement="bottom-start" class="inline-flex self-center items-center p-2 text-sm font-medium text-center text-gray-900 bg-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none  focus:ring-gray-50  " type="button">
-                                        <svg class="w-4 h-4 text-gray-500 " aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 4 15">
-                                            <path d="M3.5 1.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 6.041a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 5.959a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" />
-                                        </svg>
-                                    </button>
-                                    {isOpen && (
-                                        <div className="z-10 absolute right-10 mt-16 bg-white divide-y divide-gray-100 rounded-lg shadow w-20  ">
-                                            <ul className="py-2 text-sm text-gray-700 " aria-labelledby="dropdownMenuIconButton">
-                                                <li>
-                                                    <a href="#" className="block px-4 py-2 hover:bg-gray-100  ">Reply</a>
-                                                </li>
-
-
-                                            </ul>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div class="flex items-start mt-4 gap-2.5">
-                                    <img class="w-8 h-8 rounded-full" src="https://static.vecteezy.com/system/resources/thumbnails/001/993/889/small/beautiful-latin-woman-avatar-character-icon-free-vector.jpg" alt="Jese image" />
-                                    <div class="flex flex-col gap-1 w-full max-w-[320px]">
-                                        <div class="flex flex-col leading-1.5 p-4 border-gray-200 bg-orange-500 shadow-md backdrop-filter backdrop-blur-md bg-opacity-20 rounded-e-xl rounded-es-xl ">
-                                            <div class="flex items-center space-x-2 rtl:space-x-reverse">
-                                                <span class="text-sm font-semibold text-gray-900 ">jennie</span>
-                                                <span class="text-sm font-normal text-gray-500 ">11:46</span>
-                                            </div>
-                                        </div>
-
-                                    </div>
-                                    <button id="dropdownMenuIconButton" onClick={toggleDropdown} data-dropdown-toggle="dropdownDots" data-dropdown-placement="bottom-start" class="inline-flex self-center items-center p-2 text-sm font-medium text-center text-gray-900 bg-white rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none  focus:ring-gray-50  " type="button">
-                                        <svg class="w-4 h-4 text-gray-500 " aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 4 15">
-                                            <path d="M3.5 1.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 6.041a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 5.959a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" />
-                                        </svg>
-                                    </button>
-                                    {isOpen && (
-                                        <div className="z-10 absolute right-10 mt-16 bg-white divide-y divide-gray-100 rounded-lg shadow w-20  ">
-                                            <ul className="py-2 text-sm text-gray-700 " aria-labelledby="dropdownMenuIconButton">
-                                                <li>
-                                                    <a href="#" className="block px-4 py-2 hover:bg-gray-100  ">Reply</a>
-                                                </li>
-
-
-                                            </ul>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-
-
-                            <div className='hidden md:block row-span-2'>
-                                <h1 className='font-bold text-lg'>Today's Classes (Optional)</h1>
-                                <div className='w-16 h-0.5 bg-orange-500 mb-6'></div>
-                                <div className='border border-1 border-orange-500 flex p-2 justify-between rounded-md items-center'>
-                                    <div className='text-sm'>
-                                        <p className='font-bold'>Monday / <span className='text-sm text-gray-600 '>12/03/2004 </span></p>
-                                        <p>12:30pm</p>
-                                    </div>
-
-                                    <div>
-                                        <svg class="h-8 w-8 text-green-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z" />  <circle cx="12" cy="12" r="9" />  <path d="M9 12l2 2l4 -4" /></svg>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-
-                    </div>
+                 
 
                 </div>
 

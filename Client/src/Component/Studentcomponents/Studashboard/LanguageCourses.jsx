@@ -26,7 +26,7 @@ const LanguageCourses = () => {
 
 
     const handleEnrollClick = (courseId) => {
-        console.log("Clicked on Enroll Now for course ID:", courseId);
+        // console.log("Clicked on Enroll Now for course ID:", courseId);
         setSelectedCourseId(courseId);
         setShowPopup(true);
         setPopupMessage(null);
@@ -80,12 +80,12 @@ const LanguageCourses = () => {
         ]
     };
 
-    console.log("selected id ", selectedCourseId);
+    // console.log("selected id ", selectedCourseId);
 
     // each course
     const [Eachcourse, setEachCourse] = useState(null);
     useEffect(() => {
-        console.log("Selected Course ID:", selectedCourseId);
+        // console.log("Selected Course ID:", selectedCourseId);
         const fetchEachCourse = async () => {
             try {
                 // Check if selectedCourseId is not null
@@ -105,9 +105,9 @@ const LanguageCourses = () => {
                         }
                     );
                     if (response.status === 200) {
-                        console.log(response.data);
+                        // console.log(response.data);
                         const eachcourses = response.data;
-                        console.log(eachcourses);
+                        // console.log(eachcourses);
                         setEachCourse(eachcourses);
                     }
                 }
@@ -144,9 +144,9 @@ const LanguageCourses = () => {
                     }
                 );
                 if (response.status == 200) {
-                    console.log(response.data);
+                    // console.log(response.data);
                     const allcourses = response.data;
-                    console.log(allcourses);
+                    // console.log(allcourses);
                     setAllCourses(allcourses);
                 }
             } catch (error) {
@@ -159,7 +159,7 @@ const LanguageCourses = () => {
     }, []);
 
     // apply course 
-    console.log("courseid", selectedCourseId)
+    // console.log("courseid", selectedCourseId)
 
     const handleApplyCourse = async (selectedCourseId) => {
 
@@ -172,7 +172,7 @@ const LanguageCourses = () => {
                 console.error('No token found');
                 return;
             }
-            console.log("after try block applied course ", selectedCourseId)
+            // console.log("after try block applied course ", selectedCourseId)
 
             const response = await axios.post(
                 `http://localhost:7000/api/students/apply-course/${selectedCourseId}`,
@@ -185,7 +185,7 @@ const LanguageCourses = () => {
             );
 
             if (response.status === 200) {
-                console.log('Successfully applied for course');
+                // console.log('Successfully applied for course');
                 setShowPopup(false);
                 setShowPopupEnroll(true);
                 setSelectedCourseId(null);
@@ -199,12 +199,12 @@ const LanguageCourses = () => {
             if (error.response) {
                 const status = error.response.status;
                 if (status === 409) {
-                    console.log("Student has already applied in this course!!!")
+                    // console.log("Student has already applied in this course!!!")
                     setPopupMessage("You Have Already Applied For This Course!!!")
                     setShowPopup(false)
                 }
                 else if (status === 408) {
-                    console.log('Student is already enrolled in this course!!!');
+                    // console.log('Student is already enrolled in this course!!!');
                     setPopupMessage("You Are Already Enrolled In This Course!!!");
                     setShowPopup(false)
 

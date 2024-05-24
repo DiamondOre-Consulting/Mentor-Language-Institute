@@ -37,7 +37,7 @@ const TeacherAllStudentEachCourse = () => {
     const [loading, setLoading] = useState(false);
     const [monthlyClassTaken, setMonthlyClassTaken] = useState('');
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const years = ["2024", "2025", "2026"];
+    const years = ["2024", "2025", "2026", "2027", "2028", "2029", "2030", "2031", "2032"];
 
 
 
@@ -121,7 +121,7 @@ const TeacherAllStudentEachCourse = () => {
                 }
             } catch (error) {
                 console.log(error);
-            }finally {
+            } finally {
                 setLoading(false);
             }
 
@@ -136,7 +136,7 @@ const TeacherAllStudentEachCourse = () => {
         const fetchAttendanceDetails = async () => {
             try {
                 const token = localStorage.getItem('token');
-                setLoading(true);
+                // setLoading(true);
                 if (!token) {
                     console.error('Token not found');
                     return;
@@ -190,9 +190,7 @@ const TeacherAllStudentEachCourse = () => {
                 }
             } catch (error) {
                 console.log("Error in fetching attendance:", error);
-            }finally {
-                setLoading(false);
-            }
+            } 
         };
 
         // Call fetchAttendanceDetails when selectedDate or selectedClassId changes
@@ -261,7 +259,7 @@ const TeacherAllStudentEachCourse = () => {
         }
         catch (error) {
             console.log(error);
-        }finally {
+        } finally {
             setLoading(false);
         }
 
@@ -297,7 +295,7 @@ const TeacherAllStudentEachCourse = () => {
 
             } catch (error) {
                 console.log(error);
-            }finally {
+            } finally {
                 setLoading(false);
             }
         }
@@ -338,14 +336,14 @@ const TeacherAllStudentEachCourse = () => {
                 console.log(response.data);
                 console.log("Teacher update monthly commission")
                 window.location.reload();
-               
-    
+
+
                 // Clear the input fields
                 setSelectedMonth('');
                 setSelectedYear('');
                 setMonthlyClassTaken('');
 
-             
+
 
 
 
@@ -362,12 +360,13 @@ const TeacherAllStudentEachCourse = () => {
 
 
     return (
-        <>  
-        {loading && (
-            <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
-                <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
-            </div>
-        )}
+        <div className='p-4'>
+
+            {loading && (
+                <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+                    <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
+                </div>
+            )}
             <h1 className="text-4xl mb-1 font-semibold text-start text-gray-700">{courseDetails.classTitle}   |  Total Hours:  {courseDetails.totalHours}</h1>
 
             <div class="relative overflow-x-auto  mt-8">
@@ -422,9 +421,7 @@ const TeacherAllStudentEachCourse = () => {
                                 <th scope="col" class="px-6 py-3">
                                     Commission
                                 </th>
-                                <th scope="col" class="px-6 py-3">
-                                    Total Classes Taken
-                                </th>
+
 
                             </tr>
                         </thead>
@@ -551,14 +548,14 @@ const TeacherAllStudentEachCourse = () => {
 
 
                                 <td className='px-6 py-4 text-center'>
-                                   0
+                                    0
                                 </td>
 
                                 <td className='px-6 py-4 text-center'>
-                                  Unpaid
+                                    Unpaid
                                 </td>
                                 <td className='px-6 py-4 text-center'>
-                                   
+
                                 </td>
                                 <td className='px-2 py-4 text-center'>
                                     <button className="bg-green-600 text-gray-200 py-1 px-2 ml-2 rounded-md" onClick={updateMonthlyCommission} >Update</button>
@@ -597,7 +594,7 @@ const TeacherAllStudentEachCourse = () => {
                 </div>
             )}
 
-        </>
+        </div>
     )
 }
 

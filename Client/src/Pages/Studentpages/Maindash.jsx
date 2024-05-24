@@ -32,7 +32,6 @@ const Maindash = () => {
       const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
 
       if (tokenExpiration && tokenExpiration < Date.now()) {
-        // Token expired, remove from local storage and redirect to login page
         localStorage.removeItem("token");
         navigate("/student-login");
       }
@@ -63,11 +62,11 @@ const Maindash = () => {
         if (response.status == 200) {
           // console.log(response.data.name);
           const stu = response.data;
-          console.log("students details", stu)
+          // console.log("students details", stu)
           setStudentData(stu);
 
         } else {
-          console.log(response.data);
+          // console.log(response.data);
 
         }
       } catch (error) {

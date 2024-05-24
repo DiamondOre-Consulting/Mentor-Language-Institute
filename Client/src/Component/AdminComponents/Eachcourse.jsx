@@ -26,7 +26,7 @@ const Eachcourse = () => {
     };
 
     const { id } = useParams();
-    console.log(id);
+    // console.log(id);
     
     const token = localStorage.getItem("token");
   
@@ -64,7 +64,7 @@ const Eachcourse = () => {
 
                 if (response.status === 200) {
                     const courseData = response.data;
-                    console.log("Course details:", courseData);
+                    // console.log("Course details:", courseData);
 
                     // Fetch teacher details
                     const teacherId = courseData.teachBy;
@@ -79,7 +79,7 @@ const Eachcourse = () => {
 
                     if (teacherResponse.status === 200) {
                         const teacherData = teacherResponse.data;
-                        console.log("Teacher details:", teacherData);
+                        // console.log("Teacher details:", teacherData);
                         courseData.teacher = teacherData;
                     }
 
@@ -99,7 +99,7 @@ const Eachcourse = () => {
 
                         if (studentResponse.status === 200) {
                             const studentData = studentResponse.data;
-                            console.log("Enrolled student details:", studentData);
+                            // console.log("Enrolled student details:", studentData);
                             enrolledStudentsDetails.push(studentData);
                         }
                     }
@@ -120,7 +120,7 @@ const Eachcourse = () => {
 
                         if (studentResponse.status === 200) {
                             const studentData = studentResponse.data;
-                            console.log("Applied student details:", studentData);
+                            // console.log("Applied student details:", studentData);
                             appliedStudentsDetails.push(studentData);
                         }
                     }
@@ -144,7 +144,7 @@ const Eachcourse = () => {
         fetchCourseDetails();
     }, []);
 
-    console.log("coursedetails", courseDetails)
+    // console.log("coursedetails", courseDetails)
     return (
         <>
             <div>

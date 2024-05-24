@@ -18,7 +18,7 @@ const StudentNav = () => {
     const handleLogout = () => {
         localStorage.removeItem("token");
         window.location.href = "/student-login";
-        console.log("Logging out");
+        // console.log("Logging out");
     };
 
 

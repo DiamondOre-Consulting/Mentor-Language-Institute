@@ -9,6 +9,7 @@ const Home = () => {
   const [allCourses, setAllCourses] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [popupMessage, setPopupMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [userName, setUserName] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -38,7 +39,7 @@ const Home = () => {
           }
         );
         if (response.status === 200) {
-          console.log(response.data);
+          // console.log(response.data);
           setAllStudents(response.data);
         }
       } catch (error) {
@@ -70,7 +71,7 @@ const Home = () => {
           }
         );
         if (response.status === 200) {
-          console.log(response.data);
+          // console.log(response.data);
           setAllCourses(response.data);
         }
       } catch (error) {
@@ -102,7 +103,7 @@ const Home = () => {
           }
         );
         if (response.status === 200) {
-          console.log(response.data);
+          // console.log(response.data);
           setAllTeachers(response.data);
         }
       } catch (error) {
@@ -126,20 +127,20 @@ const Home = () => {
       );
 
       if (response.status === 201) {
-        console.log("Admin added successfully:", response.data.newAdmin);
+        // console.log("Admin added successfully:", response.data.newAdmin);
         setUserName(response.data.newAdmin.username); // Assuming the username is returned in response.data.username
         setIsFormOpen(false);
         setPopupMessage('New Admin Has Been Created Successfully!');
         setFormData({ name: '', branch: '', phone: '', password: '' });
       }
     } catch (error) {
-      if(error.response){
+      if (error.response) {
         const status = error.respnse.status;
-        if(status === 409){
+        if (status === 409) {
           setPopupMessage('Admin Already Exists');
         }
       }
-      console.error("Error adding admin:", error);
+      // console.error("Error adding admin:", error);
       setPopupMessage('Error adding admin. Please try again.');
     }
   };
@@ -243,7 +244,12 @@ const Home = () => {
 
               <div className="mb-4">
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
-                <input type="password" id="password" name="password" value={formData.password} onChange={handleChange} className="mt-1 p-2 border border-gray-500 rounded-md w-full" required />
+                <input type={showPassword ? "text" : "password"} id="password" name="password" value={formData.password} onChange={handleChange} className="mt-1 p-2 border border-gray-500 rounded-md w-full" required />
+              </div>
+
+              <div class="flex items-center mt-2">
+                <input type="checkbox" class="mr-2" onChange={() => setShowPassword(!showPassword)} />
+                <label class="text-sm font-medium text-gray-900  cursor-pointer" onClick={() => setShowPassword(!showPassword)}>Show Password</label>
               </div>
 
               <div className="flex justify-end">

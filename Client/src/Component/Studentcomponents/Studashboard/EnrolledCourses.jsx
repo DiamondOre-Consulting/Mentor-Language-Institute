@@ -15,7 +15,7 @@ const EnrolledCourses = () => {
                 if (!token) {
                     // Token not found in local storage, handle the error or redirect to the login page
                     console.error("No token found");
-                    navigate("/login");
+                    navigate("/student-login");
                     return;
                 }
 
@@ -29,7 +29,7 @@ const EnrolledCourses = () => {
                     }
                 );
                 if (response.status == 200) {
-                    console.log(response.data.classes);
+                    // console.log(response.data.classes);
 
                     const classes = response.data.classes;
                     const allClassData = [];
@@ -47,14 +47,14 @@ const EnrolledCourses = () => {
 
                         if (classResponse.status === 200) {
                             const classData = classResponse.data;
-                            console.log("Enrolled class details:", classData);
+                            // console.log("Enrolled class details:", classData);
                             allClassData.push(classData);
                         }
                     }
                     setClassData(allClassData);
 
                 } else {
-                    console.log(response.data);
+                    // console.log(response.data);
 
                 }
             } catch (error) {

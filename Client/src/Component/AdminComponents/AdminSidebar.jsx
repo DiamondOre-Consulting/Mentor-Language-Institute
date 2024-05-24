@@ -31,7 +31,7 @@ const AdminSidebar = () => {
 
     useEffect(() => {
         const token = localStorage.getItem("token");
-        console.log(token)
+        // console.log(token)
         if (!token) {
             // No token found, redirect to login page
             navigate("/login");
@@ -50,7 +50,7 @@ const AdminSidebar = () => {
     const handleLogout = () => {
         localStorage.removeItem("token");
         window.location.href = "/login";
-        console.log("Logging out");
+        // console.log("Logging out");
     };
 
     const handleToggleMenu = (e) => {
@@ -207,7 +207,7 @@ const AdminSidebar = () => {
 
 
                     <div class="text-center mt-2">
-                        <span class="block text-xs text-gray-500">Designed & Developed by <a href='https://www.doclabz.com/'  class="hover:underline text-orange-500 cursor-pointer">DOC-LABZ</a>.</span>
+                        <span class="block text-xs text-gray-500">Designed & Developed by <a href='https://www.doclabz.com/'  target= "_blank"  class="hover:underline text-orange-500 cursor-pointer">DOC-LABZ</a>.</span>
                         <span class="block text-xs text-gray-500 ">© 2024 <a href="" class="hover:underline">Mentor Institute</a>. All Rights Reserved.</span>
                     </div>
 

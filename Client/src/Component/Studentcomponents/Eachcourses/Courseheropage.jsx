@@ -17,7 +17,7 @@ const Courseheropage = () => {
                 if (!token) {
                     // Token not found in local storage, handle the error or redirect to the login page
                     console.error("No token found");
-                    navigate("/login");
+                    navigate("/student-login");
                     return;
                 }
 
@@ -31,12 +31,12 @@ const Courseheropage = () => {
                     }
                 );
                 if (response.status == 200) {
-                    console.log("studetails", response.data);
+                    // console.log("studetails", response.data);
                     const studentdetails = response.data;
                     setStudentData(studentdetails);
 
                     const classes = response.data.classes;
-                    console.log("classes", classes)
+                    // console.log("classes", classes)
 
 
 
@@ -51,14 +51,14 @@ const Courseheropage = () => {
 
                     if (classResponse.status === 200) {
                         const classData = classResponse.data;
-                        console.log("Enrolled class details:", classData);
+                        // console.log("Enrolled class details:", classData);
                         setClassData(classData);
 
                     }
 
 
                 } else {
-                    console.log(response.data);
+                    // console.log(response.data);
 
                 }
             } catch (error) {
@@ -73,7 +73,7 @@ const Courseheropage = () => {
     const handleLogout = () => {
         localStorage.removeItem("token");
         window.location.href = "/student-login";
-        console.log("Logging out");
+        // console.log("Logging out");
     };
 
 
@@ -89,7 +89,7 @@ const Courseheropage = () => {
 
                 <div className='flex justify-end items-center'>
                     <li className='relative group z-50 flex items-center float-right mr-1 p-4 cursor-pointer'>
-                        <Link to={'/student-chat'} className="block py-2 px-3 text-gray-200  rounded md:px-2 md:py-1 rounded-full bg-orange-400 " aria-current="page" >Chat Now</Link>
+                        <Link to={'/student/chat'} className="block py-2 px-3 text-gray-200  rounded md:px-2 md:py-1 rounded-full bg-orange-400 " aria-current="page" >Chat Now</Link>
                     </li>
                     <select className='z-90 bg-transparent w-24  rounded-full focus:border-gray-200  border-1 border-gray-400  relative group z-50 flex items-center float-right mr-1 cursor-pointer'>
                         <option className='text-gray-900 '>Help?</option>

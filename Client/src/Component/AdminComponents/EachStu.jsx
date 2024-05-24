@@ -77,7 +77,7 @@ const EachStu = () => {
           setAllClasses(classesData);
         }
       } catch (error) {
-        console.log(error);
+        // console.log(error);
       }
       finally {
         setLoading(false);
@@ -110,7 +110,7 @@ const EachStu = () => {
             },
           });
           if (attendanceResponse.status === 200) {
-            console.log("Attendance details:", attendanceResponse.data);
+            // console.log("Attendance details:", attendanceResponse.data);
             setAttendenceDetails(attendanceResponse.data);
           }
         }
@@ -154,7 +154,7 @@ const EachStu = () => {
             },
           });
           if (FeeResponse.status === 200) {
-            console.log("Fee details:", FeeResponse.data);
+            // console.log("Fee details:", FeeResponse.data);
             setTotalFee(FeeResponse.data.totalFee)
             const feeDetailsWithMonthNames = {
               ...FeeResponse.data,
@@ -211,7 +211,7 @@ const EachStu = () => {
         },
       });
       if (response.status === 200) {
-        console.log("Fee updated successfully");
+        // console.log("Fee updated successfully");
         const updatedFeeDetails = [...feedetails.detailFee];
         updatedFeeDetails.push({
           feeMonth: selectedMonth,
@@ -227,7 +227,7 @@ const EachStu = () => {
   };
 
 
-console.log(classes)
+// console.log(classes)
 
 
   return (

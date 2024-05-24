@@ -7,18 +7,18 @@ import StuFooter from '../../Component/Studentcomponents/Studashboard/StuFooter'
 
 
 const StudentEachcourses = () => {
-  
+
   const navigate = useNavigate();
   const { decodedToken } = useJwt(localStorage.getItem("token"));
   const token = localStorage.getItem("token");
   if (!token) {
-    navigate("/student-login"); // Redirect to login page if not authenticated
+    navigate("/student-login");
     return;
   }
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    // console.log(token)
+
     if (!token) {
       // No token found, redirect to login page
       navigate("/student-login");
@@ -32,14 +32,14 @@ const StudentEachcourses = () => {
       }
     }
   }, [decodedToken])
- 
+
 
   return (
     <>
-        <Courseheropage/>
-        <Coursedet/>
-       <StuFooter/>
-    
+      <Courseheropage />
+      <Coursedet />
+      <StuFooter />
+
     </>
   )
 }

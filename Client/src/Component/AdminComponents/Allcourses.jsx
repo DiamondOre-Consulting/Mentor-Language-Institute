@@ -24,7 +24,7 @@ const Allcourses = () => {
         const token = localStorage.getItem("token");
 
         if (!token) {
-          console.error("No token found");
+          // console.error("No token found");
           navigate("/login");
           return;
         }
@@ -39,13 +39,13 @@ const Allcourses = () => {
           }
         );
         if (response.status == 200) {
-          console.log(response.data);
+          // console.log(response.data);
           const allcourses = response.data;
-          console.log(allcourses);
+          // console.log(allcourses);
           setAllCourses(allcourses);
         }
       } catch (error) {
-        console.error("Error fetching courses:", error);
+        // console.error("Error fetching courses:", error);
 
       }
       finally {

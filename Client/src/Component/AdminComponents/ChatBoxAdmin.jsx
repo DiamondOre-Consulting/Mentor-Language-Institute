@@ -30,7 +30,7 @@ const ChatBoxAdmin = ({ selectedTeacherId, selectedStudentId, isOpen , setIsOpen
                         },
                     }
                 );
-                console.log(response.data);
+                // console.log(response.data);
                 if (response.status === 200) {
                     setChatHistory(response.data.messages);
                 }
@@ -73,7 +73,7 @@ const ChatBoxAdmin = ({ selectedTeacherId, selectedStudentId, isOpen , setIsOpen
                 if (response.status == 200) {
                     const oneteacher = response.data;
                     setTeacher(oneteacher)
-                    console.log("oneTeacher", teacher);
+                    // console.log("oneTeacher", teacher);
 
                 }
             } catch (error) {
@@ -117,7 +117,7 @@ const ChatBoxAdmin = ({ selectedTeacherId, selectedStudentId, isOpen , setIsOpen
           setIsOpen(false);
           setIsTeacherSectionVisible(true);
         } else {
-          console.log("navigating.............");
+        //   console.log("navigating.............");
           navigate(-1);
         }
       };

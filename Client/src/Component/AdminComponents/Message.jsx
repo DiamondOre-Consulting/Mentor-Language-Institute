@@ -86,8 +86,8 @@ const Message = () => {
   }, []);
 
   const openForm = (studentId, classId) => {
-    console.log("Clicked Accept for student ID:", studentId);
-    console.log("Clicked Accept for course ID:", classId); // Console log the course ID
+    // console.log("Clicked Accept for student ID:", studentId);
+    // console.log("Clicked Accept for course ID:", classId); // Console log the course ID
     setSelectedStudentId(studentId);
     setSelectedClassId(classId);
     setIsFormOpen(true);
@@ -154,11 +154,11 @@ const Message = () => {
       );
 
       if (response.status === 200) {
-        console.log(response.data.message);
+        // console.log(response.data.message);
         setPopupMessage('Successfully Enrolled!');
         setIsFormOpen(false);
       } else if (response.status === 409) {
-        console.log("Student already registered!");
+        // console.log("Student already registered!");
         setPopupMessage('Student already Enrolled!');
         setIsFormOpen(false);;
       }
@@ -166,12 +166,12 @@ const Message = () => {
       if (error.response) {
         const status = error.response.status;
         if (status === 409) {
-            console.log("Student already registered!");
+            // console.log("Student already registered!");
             setPopupMessage('Student already Enrolled!');
             setIsFormOpen(false);;
         }
         else {
-            console.error("Error login teacher:", status);
+            // console.error("Error login teacher:", status);
             setError("Login Details Are Wrong!!");
       }
     }

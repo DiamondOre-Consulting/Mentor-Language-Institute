@@ -27,7 +27,7 @@ const Register = () => {
     };
     const { decodedToken } = useJwt(localStorage.getItem("token"));
     const token = localStorage.getItem("token");
-    console.log(token)
+    // console.log(token)
     // admin
     const [formValues, setFormValues] = useState({
         classTitle: "",
@@ -93,7 +93,7 @@ const Register = () => {
             );
 
             if (response.status === 200) {
-                console.log("New course has been added");
+                // console.log("New course has been added");
                 setPopupMessage("New Course Has Been Added");
                 setFormValues({
                     classTitle: "",
@@ -110,10 +110,10 @@ const Register = () => {
                 //     Sun: false,
                 // });
             } else if (response.status === 404) {
-                console.log("Admin not found");
+                // console.log("Admin not found");
                 setPopupMessage("Admin not found");
             } else {
-                console.log("Error adding course:", response.status);
+                // console.log("Error adding course:", response.status);
                 setPopupMessage("Error adding course");
             }
         } catch (error) {
@@ -161,9 +161,9 @@ const Register = () => {
                     }
                 );
                 if (response.status == 200) {
-                    console.log(response.data);
+                    // console.log(response.data);
                     const allteachers = response.data;
-                    console.log(allteachers);
+                    // console.log(allteachers);
                     setAllTeachers(allteachers);
                 }
             } catch (error) {
@@ -197,7 +197,7 @@ const Register = () => {
                 navigate("/login");
                 return;
             }
-            console.log(token)
+            // console.log(token)
 
             const response = await axios.post(
                 "http://localhost:7000/api/admin-confi/add-teacher",

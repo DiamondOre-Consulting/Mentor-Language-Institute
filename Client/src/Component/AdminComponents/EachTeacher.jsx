@@ -24,7 +24,7 @@ const EachTeacher = () => {
 
 
     const { id } = useParams();
-    console.log(id);
+    // console.log(id);
 
 
     const token = localStorage.getItem("token");
@@ -58,10 +58,10 @@ const EachTeacher = () => {
                 );
                 if (response.status == 200) {
                     const oneteacher = response.data;
-                    console.log(oneteacher);
+                    // console.log(oneteacher);
                     const allclassIds = response.data.myClasses
 
-                    console.log(classIds);
+                    // console.log(classIds);
 
                     setTeacherDetails(response.data);
                     setClassIds(allclassIds);
@@ -96,7 +96,7 @@ const EachTeacher = () => {
                         },
                     });
                     if (classResponse.status === 200) {
-                        console.log("classdata", classResponse.data);
+                        // console.log("classdata", classResponse.data);
                         classesData.push(classResponse.data);
                     }
                 }
@@ -189,7 +189,7 @@ const EachTeacher = () => {
                         <h1 className="text-3xl text-gray-700 font-bold ">All Courses </h1>
                         <div className="bg-orange-500 w-20 h-1"></div>
                     </div>
-                    <div className="grid gap-4 grid-cols-3 bg-gray-100">
+                    <div className="grid gap-4 grid-cols-1 md:grid-cols-3 ">
                         {
 
                             classesData.map((course) => (

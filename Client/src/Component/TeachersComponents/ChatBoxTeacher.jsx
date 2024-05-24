@@ -36,7 +36,7 @@ const ChatBoxTeacher = ({ student , isOpen , setIsOpen , isSmallScreen , setIsTe
     // Listen for incoming messages
     socket.on("receive-message", (message) => {
       // Add the new message to the chat history
-      console.log("This is msg: ", message);
+      // console.log("This is msg: ", message);
       setChatHistory((chatHistory) => [...chatHistory, message]);
     });
 
@@ -80,7 +80,7 @@ const ChatBoxTeacher = ({ student , isOpen , setIsOpen , isSmallScreen , setIsTe
           },
         }
       );
-      console.log(response.data);
+      // console.log(response.data);
       if (response.status === 200) {
         setChatHistory(response.data.messages);
       }
@@ -92,7 +92,7 @@ const ChatBoxTeacher = ({ student , isOpen , setIsOpen , isSmallScreen , setIsTe
   const handleSendMessage = () => {
     if (newMessage.trim()) {
       // Emit the new message to the server
-      console.log(newMessage);
+      // console.log(newMessage);
       socket.emit("send-message", {
         senderId: userId,
         receiverId: student._id,
@@ -109,7 +109,7 @@ const ChatBoxTeacher = ({ student , isOpen , setIsOpen , isSmallScreen , setIsTe
       setIsOpen(false);
       setIsTeacherSectionVisible(true);
     } else {
-      console.log("navigating.............");
+      // console.log("navigating.............");
       navigate(-1);
     }
   };

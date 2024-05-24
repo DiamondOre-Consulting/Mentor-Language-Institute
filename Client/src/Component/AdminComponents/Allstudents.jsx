@@ -58,9 +58,9 @@ const Allstudents = () => {
           }
         );
         if (response.status == 200) {
-          console.log("all students",response.data);
+          // console.log("all students",response.data);
           const allstudents = response.data;
-          console.log(allstudents);
+          // console.log(allstudents);
           setAllStudents(allstudents);
         }
       } catch (error) {
@@ -100,9 +100,9 @@ const Allstudents = () => {
           }
         );
         if (response.status == 200) {
-          console.log(response.data);
+          // console.log(response.data);
           const allcourses = response.data;
-          console.log(allcourses);
+          // console.log(allcourses);
           setAllCourses(allcourses);
         }
       } catch (error) {
@@ -130,7 +130,7 @@ const Allstudents = () => {
 
 
   const openForm = (studentId) => {
-    console.log("Clicked Accept for student ID:", studentId);
+    // console.log("Clicked Accept for student ID:", studentId);
     setSelectedStudentId(studentId);
     setIsFormOpen(true);
 
@@ -168,7 +168,7 @@ const Allstudents = () => {
       setLoading(true)
       const token = localStorage.getItem("token");
       if (!token) {
-        console.error("No token found");
+        // console.error("No token found");
         return;
       }
 
@@ -193,11 +193,11 @@ const Allstudents = () => {
       );
 
       if (response.status === 200) {
-        console.log(response.data.message);
+        // console.log(response.data.message);
         setPopupMessage('Successfully Enrolled!');
         setIsFormOpen(false);
       } else if (response.status === 409) {
-        console.log("Student already registered!");
+        // console.log("Student already registered!");
         setPopupMessage('Student already Enrolled!');
         setIsFormOpen(false);;
       }
@@ -205,7 +205,7 @@ const Allstudents = () => {
       if (error.response) {
         const status = error.response.status;
         if (status === 409) {
-          console.log("Student already registered!");
+          // console.log("Student already registered!");
           setPopupMessage('Student already Enrolled!');
           setIsFormOpen(false);;
         }
@@ -227,15 +227,15 @@ const Allstudents = () => {
   };
 
   //  DETATIVE STUDENT ACCOUNT BY ADMIN
-  console.log(setuId)
-  console.log(status)
+  // console.log(setuId)
+  // console.log(status)
   const detailsctiveaccount = async (e) => {
     e.preventDefault();
 
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        console.error("No token found");
+        // console.error("No token found");
         navigate("/login");
         return;
       }
@@ -251,7 +251,7 @@ const Allstudents = () => {
         }
       );
       if (deactiveResponse.status === 201) {
-        console.log("Account has been deactivated");
+        // console.log("Account has been deactivated");
         window.location.reload();
         setShowPopup(false)
       }
