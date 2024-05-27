@@ -113,7 +113,7 @@ const Courseheropage = () => {
                             {isDropdownOpen && (
                                 <div
                                     id="dropdownNavbar"
-                                    className="absolute right-0 mt-2 bg-white text-base z-10 list-none divide-y divide-gray-100 rounded shadow w-54"
+                                    className="absolute -right-8 mt-2 bg-white z-50 text-base z-10 list-none divide-y divide-gray-100 rounded shadow w-54"
                                 >
                                     <ul className="py-1" aria-labelledby="dropdownLargeButton">
                                         <li>
