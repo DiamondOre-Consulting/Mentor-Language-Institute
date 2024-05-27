@@ -89,7 +89,7 @@ const Classes = () => {
             {popup && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
 
-                    <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6"
+                    <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle mx-6 md:mx-0 md:w-1/3 sm:p-6"
                         role="dialog" aria-modal="true" aria-labelledby="modal-headline">
                         <div class="hidden sm:block absolute top-0 right-0 pt-4 pr-4">
                             <button type="button" onClick={()=> setPopUp(false)} data-behavior="cancel" class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
@@ -109,7 +109,7 @@ const Classes = () => {
                                 </svg>
                             </div>
                             <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-headline">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900 pr-2" id="modal-headline">
                                    Please Contact To The Institute Directly !!
                                 </h3>
                                 <div class="mt-2">

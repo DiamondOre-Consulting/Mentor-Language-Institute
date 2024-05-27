@@ -255,11 +255,11 @@ const LanguageCourses = () => {
 
                                 <img src="https://t4.ftcdn.net/jpg/06/23/40/73/360_F_623407391_wtq6RVJUq2RGb2e3D0ykn5zJOqfJhOSc.jpg" className='h-full' alt="" />
 
-                                <div className="p-6 text-left">
+                                <div className="p-4 md:p-6 text-left">
 
-                                    <h2 className="text-xl font-bold text-teal-green-900 mb-4">{Eachcourse?.classTitle}</h2>
+                                    <h2 className="text-xl font-bold text-teal-green-900 mb-1 md:mb-4">{Eachcourse?.classTitle}</h2>
                                     {/* <p className="text-sm text-gray-600 ">Schedule :-  <span>{Eachcourse?.classSchedule}</span></p> */}
-                                    <p className="text-sm text-gray-600 mb-6">Total Hours :- <span>{Eachcourse?.totalHours}</span></p>
+                                    <p className="text-sm text-gray-600 mb-1 md:mb-6">Total Hours :- <span>{Eachcourse?.totalHours}</span></p>
                                     <button
                                         className="block w-full z-10 px-4 py-2 bg-orange-500 text-sm font-semibold text-white rounded-lg shadow-md  focus:outline-none "
                                         onClick={() => handleApplyCourse(selectedCourseId)}
