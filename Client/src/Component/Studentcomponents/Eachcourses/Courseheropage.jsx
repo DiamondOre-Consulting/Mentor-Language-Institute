@@ -6,7 +6,14 @@ const Courseheropage = () => {
     const { id } = useParams();
     const [studentData, setStudentData] = useState(null);
     const [classData, setClassData] = useState(null);
-    
+
+
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+    const toggleDropdown = () => {
+        setIsDropdownOpen(!isDropdownOpen);
+    };
+
 
     useEffect(() => {
 
@@ -91,11 +98,36 @@ const Courseheropage = () => {
                     <li className='relative group z-50 flex items-center float-right mr-1 p-4 cursor-pointer'>
                         <Link to={'/student/chat'} className="block py-2 px-3 text-gray-200  rounded md:px-2 md:py-1 rounded-full bg-orange-400 " aria-current="page" >Chat Now</Link>
                     </li>
-                    <select className='z-90 bg-transparent w-24  rounded-full focus:border-gray-200  border-1 border-gray-400  relative group z-50 flex items-center float-right mr-1 cursor-pointer'>
-                        <option className='text-gray-900 '>Help?</option>
-                        <option className='text-gray-900'>+91-9999466159</option>
-                        <option className='text-wrap text-gray-900'>mentor.languageclasses@gmail.com</option>
-                    </select>
+                    <ul className='relative'>
+                        <li>
+                            <button
+                                id="dropdownNavbarLink"
+                                onClick={toggleDropdown}
+                                className="text-gray-100  border-b border-gray-100 md:hover:bg-transparent md:border-0 pl-3 pr-4 py-2 md:hover:text-orange-400 md:p-0 font-medium flex items-center justify-between w-full md:w-auto"
+                            >
+                                Help ?
+                                <svg className="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
+                                </svg>
+                            </button>
+                            {isDropdownOpen && (
+                                <div
+                                    id="dropdownNavbar"
+                                    className="absolute right-0 mt-2 bg-white text-base z-10 list-none divide-y divide-gray-100 rounded shadow w-54"
+                                >
+                                    <ul className="py-1" aria-labelledby="dropdownLargeButton">
+                                        <li>
+                                            <a href="#" className="text-sm hover:bg-gray-100 text-gray-700 block px-4 py-2">+91-9999466159</a>
+                                        </li>
+
+                                    </ul>
+                                    <div className="py-1">
+                                        <a href="#" className="text-sm hover:bg-gray-100 text-gray-700 text-wrap block px-4 py-2">mentor.languageclasses@gmail.com</a>
+                                    </div>
+                                </div>
+                            )}
+                        </li>
+                    </ul>
                     <li className='relative group z-50 flex items-center float-right mr-1 p-4 cursor-pointer'>
                         <Link className="block py-2 px-3 text-gray-200  rounded md:p-0" aria-current="page" onClick={handleLogout}>Logout</Link>
                         <svg class="h-6 w-6 text-gray-200 mx-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />  <polyline points="16 17 21 12 16 7" />  <line x1="21" y1="12" x2="9" y2="12" /></svg>
