@@ -37,7 +37,7 @@ function App() {
           <Route path='/teacher-dashboard/*' element={<Teachermain/>}/>
           <Route path='/student/chat/*' element={<ChatStudent/>}/>
           {/* <Route path='/teacher/chat/*' element={<ChatTeacher/>}/> */}
-          <Route path='/*' element={<Error/>}/>
+          <Route path='*' element={<Error/>}/>
           </Route>
          
         </Routes>
