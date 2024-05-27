@@ -12,7 +12,7 @@ const ChatStudent = () => {
   //   e.preventDefault();
   //   socket.emit('message', {room, message});
   //   try {
-  //     const response = await axios.post("http://localhost:7000/api/chats/send-message",
+  //     const response = await axios.post("https://mentor-language-institute-backend.onrender.com/api/chats/send-message",
   //       {
   //         senderId: userId,
   //         receiverId: '66321e9acf8d31d7e3316ec1',
@@ -93,7 +93,7 @@ const ChatStudent = () => {
     const fetchTeachers = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:7000/api/students/chat-all-teachers",
+          "https://mentor-language-institute-backend.onrender.com/api/students/chat-all-teachers",
           {
             headers: {
               Authorization: `Bearer ${token}`,

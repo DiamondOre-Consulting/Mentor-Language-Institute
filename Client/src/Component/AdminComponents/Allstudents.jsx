@@ -50,7 +50,7 @@ const Allstudents = () => {
 
 
         const response = await axios.get(
-          "http://localhost:7000/api/admin-confi/all-students",
+          "https://mentor-language-institute-backend.onrender.com/api/admin-confi/all-students",
           {
             headers: {
               Authorization: `Bearer ${token}`
@@ -92,7 +92,7 @@ const Allstudents = () => {
 
 
         const response = await axios.get(
-          "http://localhost:7000/api/admin-confi/all-classes",
+          "https://mentor-language-institute-backend.onrender.com/api/admin-confi/all-classes",
           {
             headers: {
               Authorization: `Bearer ${token}`
@@ -178,7 +178,7 @@ const Allstudents = () => {
 
 
       const response = await axios.put(
-        `http://localhost:7000/api/admin-confi/enroll-student/${selectedCourseId}/${selectedStudentId}`,
+        `https://mentor-language-institute-backend.onrender.com/api/admin-confi/enroll-student/${selectedCourseId}/${selectedStudentId}`,
         {
           totalFee,
           feeMonth: monthNumber,
@@ -242,7 +242,7 @@ const Allstudents = () => {
 
 
       const deactiveResponse = await axios.put(
-        `http://localhost:7000/api/admin-confi/deactivate-account/${setuId}`,
+        `https://mentor-language-institute-backend.onrender.com/api/admin-confi/deactivate-account/${setuId}`,
         { status },
         {
           headers: {

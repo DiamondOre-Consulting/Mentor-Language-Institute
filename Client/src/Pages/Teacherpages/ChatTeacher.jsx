@@ -44,7 +44,7 @@ const ChatTeacher = () => {
     const fetchStudents = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:7000/api/teachers/chat-all-students",
+          "https://mentor-language-institute-backend.onrender.com/api/teachers/chat-all-students",
           {
             headers: {
               Authorization: `Bearer ${token}`,

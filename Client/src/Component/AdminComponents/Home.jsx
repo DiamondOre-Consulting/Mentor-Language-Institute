@@ -31,7 +31,7 @@ const Home = () => {
         }
 
         const response = await axios.get(
-          "http://localhost:7000/api/admin-confi/all-students",
+          "https://mentor-language-institute-backend.onrender.com/api/admin-confi/all-students",
           {
             headers: {
               Authorization: `Bearer ${token}`
@@ -63,7 +63,7 @@ const Home = () => {
         }
 
         const response = await axios.get(
-          "http://localhost:7000/api/admin-confi/all-classes",
+          "https://mentor-language-institute-backend.onrender.com/api/admin-confi/all-classes",
           {
             headers: {
               Authorization: `Bearer ${token}`
@@ -95,7 +95,7 @@ const Home = () => {
         }
 
         const response = await axios.get(
-          "http://localhost:7000/api/admin-confi/all-teachers",
+          "https://mentor-language-institute-backend.onrender.com/api/admin-confi/all-teachers",
           {
             headers: {
               Authorization: `Bearer ${token}`
@@ -122,7 +122,7 @@ const Home = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "http://localhost:7000/api/admin-confi/signup-admin",
+        "https://mentor-language-institute-backend.onrender.com/api/admin-confi/signup-admin",
         formData
       );
 
