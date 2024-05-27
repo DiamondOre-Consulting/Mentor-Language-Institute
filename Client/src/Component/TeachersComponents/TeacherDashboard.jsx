@@ -6,13 +6,13 @@ import TeacherAllStudentEachCourse from './TeacherAllStudentEachCourse'
 import { useJwt } from 'react-jwt'
 import { useNavigate } from 'react-router-dom'
 import ChatTeacher from '../../Pages/Teacherpages/ChatTeacher'
-
+import Error from '..//Studentcomponents/Stuauth/Error'
 
 const TeacherDashboard = ({ teacherData }) => {
   const { decodedToken } = useJwt(localStorage.getItem("token"));
   const token = localStorage.getItem("token");
   if (!token) {
-    navigate("/login"); 
+    navigate("/login");
     return;
   }
   useEffect(() => {
@@ -31,7 +31,7 @@ const TeacherDashboard = ({ teacherData }) => {
     }
   }, [decodedToken])
 
-  
+
   // console.log("teacherdata in teacherdashboard", teacherData)
 
 
@@ -39,19 +39,22 @@ const TeacherDashboard = ({ teacherData }) => {
   return (
     <>
       <div className="p-0 sm:ml-64">
-        
-          <div className="flex-grow ">
-            <Routes>
-              <Route path="/" element={<TeacherHome teacherData={teacherData} />} />
-              <Route path='/teacher/chat/*' element={<ChatTeacher/>}/>
+
+        <div className="flex-grow ">
+          <Routes>
+            <Route path='/'>
+              <Route index element={<TeacherHome teacherData={teacherData} />} />
+              <Route path='/teacher/chat/*' element={<ChatTeacher />} />
               <Route path='/myaccount' element={<TeacherProfile teacherData={teacherData} />} />
               <Route path='/allstudents/:selectedClassId' element={<TeacherAllStudentEachCourse />} />
               {/* <Route path='/allstudents/:selectedClassId' element={<TeacherAllStudents/>}/> */}
               {/* <Route path='/attendance' element={<UpdateAttendence/>}/> */}
               {/* Add more routes for additional components */}
-            </Routes>
-          </div>
-      
+              <Route path ='*' element ={<Error/>}/>
+            </Route>
+          </Routes>
+        </div>
+
       </div>
     </>
   )
