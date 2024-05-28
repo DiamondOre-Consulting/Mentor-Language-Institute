@@ -14,7 +14,7 @@ const ChatBox = ({ teacher, isOpen, isSmallScreen, setIsOpen, setIsTeacherSectio
   const { decodedToken, isExpired } = useJwt(localStorage.getItem("token"));
   const userId = decodedToken ? decodedToken.userId : null;
   console.log(userId);
-  const socket = useMemo(() => io("https://mentor-language-institute-backend.onrender.com"), []);
+  const socket = useMemo(() => io("https://api.mentorlanguageinstitute.com"), []);
   const [chatHistory, setChatHistory] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const chatContainerRef = useRef(null);
@@ -64,7 +64,7 @@ const ChatBox = ({ teacher, isOpen, isSmallScreen, setIsOpen, setIsTeacherSectio
   const fetchChatHistory = async (teacherId) => {
     try {
       const response = await axios.get(
-        `https://mentor-language-institute-backend.onrender.com/api/chats/get-messages-student/${teacherId}`,
+        `https://api.mentorlanguageinstitute.com/api/chats/get-messages-student/${teacherId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

@@ -31,7 +31,7 @@ const Login = () => {
         setError(null);
         // Perform login logic here
         try {
-            const response = await axios.post("https://mentor-language-institute-backend.onrender.com/api/admin-confi/login-admin", {
+            const response = await axios.post("https://api.mentorlanguageinstitute.com/api/admin-confi/login-admin", {
                 username,
                 password
             });
@@ -74,7 +74,7 @@ const Login = () => {
                 setLoading(true);
 
                 try {
-                    const response = await axios.post("https://mentor-language-institute-backend.onrender.com/api/teachers/login-teacher",
+                    const response = await axios.post("https://api.mentorlanguageinstitute.com/api/teachers/login-teacher",
                         {
                             phone,
                             password

@@ -39,7 +39,7 @@ const EachStu = () => {
       try {
         setLoading(true);
         // Fetch student details
-        const studentResponse = await axios.get(`https://mentor-language-institute-backend.onrender.com/api/admin-confi/all-students/${id}`, {
+        const studentResponse = await axios.get(`https://api.mentorlanguageinstitute.com/api/admin-confi/all-students/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -52,7 +52,7 @@ const EachStu = () => {
           const classIds = studentResponse.data.classes;
           const classesData = [];
           for (const classId of classIds) {
-            const classResponse = await axios.get(`https://mentor-language-institute-backend.onrender.com/api/admin-confi/all-classes/${classId}`, {
+            const classResponse = await axios.get(`https://api.mentorlanguageinstitute.com/api/admin-confi/all-classes/${classId}`, {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
@@ -62,7 +62,7 @@ const EachStu = () => {
               
               // Fetch teacher associated with this class
               const teacherId = classResponse.data.teachBy;
-              const teacherResponse = await axios.get(`https://mentor-language-institute-backend.onrender.com/api/admin-confi/all-teachers/${teacherId}`, {
+              const teacherResponse = await axios.get(`https://api.mentorlanguageinstitute.com/api/admin-confi/all-teachers/${teacherId}`, {
                 headers: {
                   Authorization: `Bearer ${token}`,
                 },
@@ -104,7 +104,7 @@ const EachStu = () => {
       setLoading(true)
       try {
         if (selectedCourseId) {
-          const attendanceResponse = await axios.get(`https://mentor-language-institute-backend.onrender.com/api/admin-confi/attendance/${selectedCourseId}/${id}`, {
+          const attendanceResponse = await axios.get(`https://api.mentorlanguageinstitute.com/api/admin-confi/attendance/${selectedCourseId}/${id}`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -148,7 +148,7 @@ const EachStu = () => {
     const fetchFeeDetails = async () => {
       try {
         if (selectedCourseId) {
-          const FeeResponse = await axios.get(`https://mentor-language-institute-backend.onrender.com/api/admin-confi/fee/${selectedCourseId}/${id}`, {
+          const FeeResponse = await axios.get(`https://api.mentorlanguageinstitute.com/api/admin-confi/fee/${selectedCourseId}/${id}`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -201,7 +201,7 @@ const EachStu = () => {
         return;
       }
 
-      const response = await axios.put(`https://mentor-language-institute-backend.onrender.com/api/admin-confi/update-fee/${selectedCourseId}/${id}`, {
+      const response = await axios.put(`https://api.mentorlanguageinstitute.com/api/admin-confi/update-fee/${selectedCourseId}/${id}`, {
         feeMonth: monthNameToNumber[selectedMonth], 
         paid: paidStatus === "true",
         amountPaid: amount

@@ -38,7 +38,7 @@ const Message = () => {
         }
 
         const response = await axios.get(
-          "https://mentor-language-institute-backend.onrender.com/api/admin-confi/all-students",
+          "https://api.mentorlanguageinstitute.com/api/admin-confi/all-students",
           {
             headers: {
               Authorization: `Bearer ${token}`
@@ -61,7 +61,7 @@ const Message = () => {
           })).flat();
 
           const courseDetails = await Promise.all(appliedCourses.map(async course => {
-            const classDetails = await axios.get(`https://mentor-language-institute-backend.onrender.com/api/admin-confi/all-classes/${course.classId}`, {
+            const classDetails = await axios.get(`https://api.mentorlanguageinstitute.com/api/admin-confi/all-classes/${course.classId}`, {
               headers: {
                 Authorization: `Bearer ${token}`
               }
@@ -139,7 +139,7 @@ const Message = () => {
 
 
       const response = await axios.put(
-        `https://mentor-language-institute-backend.onrender.com/api/admin-confi/enroll-student/${selectedClassId}/${selectedStudentId}`,
+        `https://api.mentorlanguageinstitute.com/api/admin-confi/enroll-student/${selectedClassId}/${selectedStudentId}`,
         {
           totalFee,
           feeMonth: monthNumber,

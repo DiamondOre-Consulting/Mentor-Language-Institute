@@ -21,7 +21,7 @@ const AllTeachers = () => {
 
 
         const response = await axios.get(
-          "https://mentor-language-institute-backend.onrender.com/api/admin-confi/all-teachers",
+          "https://api.mentorlanguageinstitute.com/api/admin-confi/all-teachers",
           {
             headers: {
               Authorization: `Bearer ${token}`
