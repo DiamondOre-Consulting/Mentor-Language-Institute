@@ -83,7 +83,7 @@ const Register = () => {
             };
 
             const response = await axios.post(
-                "https://mentor-language-institute-backend.onrender.com/api/admin-confi/add-new-class",
+                "https://api.mentorlanguageinstitute.com/api/admin-confi/add-new-class",
                 formData,
                 {
                     headers: {
@@ -153,7 +153,7 @@ const Register = () => {
 
 
                 const response = await axios.get(
-                    "https://mentor-language-institute-backend.onrender.com/api/admin-confi/all-teachers",
+                    "https://api.mentorlanguageinstitute.com/api/admin-confi/all-teachers",
                     {
                         headers: {
                             Authorization: `Bearer ${token}`
@@ -200,7 +200,7 @@ const Register = () => {
             // console.log(token)
 
             const response = await axios.post(
-                "https://mentor-language-institute-backend.onrender.com/api/admin-confi/add-teacher",
+                "https://api.mentorlanguageinstitute.com/api/admin-confi/add-teacher",
                 {
                     name,
                     phone,
@@ -272,7 +272,7 @@ const Register = () => {
             console.log(token)
 
             const response = await axios.post(
-                "https://mentor-language-institute-backend.onrender.com/api/admin-confi/add-student",
+                "https://api.mentorlanguageinstitute.com/api/admin-confi/add-student",
                 {
                     name,
                     phone,
