@@ -310,8 +310,8 @@ const TeacherHome = ({ teacherData }) => {
     return (
         <>
 
-            <div className='p-6'>
-                <div className=''>
+            <div className='md:mt-0 p-6'>
+                <div className='mt-10 md:mt:0'>
                         <div>
                             <h1 className='text-3xl font-semibold mb-10 text-gray-600'><span className='text-5xl'>Welcome !! </span><br></br><span className='text-orange-500 text-5xl font-bold'>{teacherData?.name}</span></h1>
                             <h1 className='text-2xl font-bold'>My Courses</h1>

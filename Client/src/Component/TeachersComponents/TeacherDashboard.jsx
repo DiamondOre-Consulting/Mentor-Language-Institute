@@ -38,7 +38,7 @@ const TeacherDashboard = ({ teacherData }) => {
 
   return (
     <>
-      <div className="p-0 sm:ml-64">
+      <div className="p-0  sm:ml-64">
 
         <div className="flex-grow ">
           <Routes>

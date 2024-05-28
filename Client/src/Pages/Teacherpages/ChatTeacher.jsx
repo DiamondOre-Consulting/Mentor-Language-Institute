@@ -88,10 +88,10 @@ const ChatTeacher = () => {
 
 
         <div class=" h-screen p-0">
-          <div class="md:flex border border-grey rounded shadow-lg h-full">
+          <div class="md:flex border border-grey rounded shadow-lg h-full ">
 
             {isTeacherSectionVisible && (
-              <div className={`md:w-1/3 border flex flex-col ${isSmallScreen && !isOpen ? 'w-full' : 'p-2'}`}>
+              <div className={`md:w-1/3 border flex flex-col  ${isSmallScreen && !isOpen ? 'w-full mt-14' : 'p-2'}`}>
                 {/* Left portion */}
 
 
