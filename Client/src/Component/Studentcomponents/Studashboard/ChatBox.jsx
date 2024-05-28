@@ -130,7 +130,7 @@ const ChatBox = ({ teacher, isOpen, isSmallScreen, setIsOpen, setIsTeacherSectio
     <>
       <div className={`md:w-2/3 border md:flex flex-col ${isOpen ? 'w-full h-full' : 'hidden'}`}>
 
-        <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center w-full fixed bg-white">
+        <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center w-full fixed bg-white ">
           <div class="flex items-center">
             <div>
               <img class="w-10 h-10 rounded-full" src="https://static.thenounproject.com/png/363640-200.png" />
@@ -153,7 +153,7 @@ const ChatBox = ({ teacher, isOpen, isSmallScreen, setIsOpen, setIsTeacherSectio
         </div>
 
 
-        <div class="flex-1 overflow-auto bg-gray-200 " ref={chatContainerRef} onScroll={handleScroll} >
+        <div class="flex-1 overflow-auto bg-gray-200 " ref={chatContainerRef} onScroll={handleScroll} style={{marginTop:"80px"}}>
           <div class="py-2 px-3 mb-16 md:mb-0">
 
             {chatHistory.map((message) => (
