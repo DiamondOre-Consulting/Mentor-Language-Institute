@@ -128,7 +128,7 @@ const ChatBoxAdmin = ({ selectedTeacherId, selectedStudentId, isOpen , setIsOpen
 
             <div className={`md:w-2/3 border md:flex flex-col ${isOpen ? 'w-full h-full' : 'hidden'}`}>
 
-                <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center w-full fixed bg-white md:static">
+                <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center w-full fixed bg-white md:static absolue top-0">
                     <div class="flex items-center">
                         <div>
                             <img class="w-10 h-10 rounded-full" src="https://static.thenounproject.com/png/5034901-200.png" />
@@ -156,7 +156,7 @@ const ChatBoxAdmin = ({ selectedTeacherId, selectedStudentId, isOpen , setIsOpen
                         </div>
 
                         {isSmallScreen && isOpen && (
-                            <div className="bg-grey-lighter px-4 py-4 flex items-center">
+                            <div className="bg-grey-lighter px-4 py-4 flex ml-10 items-center">
                                 <button onClick={handleClick} className='bg-orange-400 p-1 rounded-md text-gray-100 text-sm'>
                                     Go Back
                                 </button>
