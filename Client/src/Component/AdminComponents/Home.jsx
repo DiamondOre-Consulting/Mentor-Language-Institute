@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from "axios";
+import adminhome1 from '..//../assets/adminhome1.jpg'
+import adminhome2 from '..//../assets/adminhome2.jpg'
+import adminhome3 from '..//../assets/adminhome3.jpg'
 
 const Home = () => {
   const navigate = useNavigate();
@@ -162,7 +165,7 @@ const Home = () => {
           <div>
             <div className="max-w-sm bg-white border border-gray-200 rounded-lg shadow">
               <a href="#">
-                <img className="rounded-t-lg" src="https://t3.ftcdn.net/jpg/03/88/97/92/360_F_388979227_lKgqMJPO5ExItAuN4tuwyPeiknwrR7t2.jpg" alt="" />
+                <img className="rounded-t-lg" src={adminhome1} alt="" />
               </a>
               <div className="p-5">
                 <a href="#">
@@ -181,7 +184,7 @@ const Home = () => {
           <div>
             <div className="max-w-sm bg-white border border-gray-200 rounded-lg shadow">
               <a href="#">
-                <img className="rounded-t-lg" src="https://www.teacheracademy.eu/wp-content/uploads/2021/10/successful-teacher-1-608x405.jpg" alt="" />
+                <img className="rounded-t-lg" src={adminhome2} alt="" />
               </a>
               <div className="p-5">
                 <a href="#">
@@ -200,7 +203,7 @@ const Home = () => {
           <div>
             <div className="max-w-sm bg-white border border-gray-200 rounded-lg shadow">
               <a href="#">
-                <img className="rounded-t-lg" src="https://www.investopedia.com/thmb/N-OFg2MCyywPGORRfb3LNAnspHM=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/OnlineCourses_Jacek-Kita-e2c9d834d3524d76ac28da76aec203ca.jpg" alt="" />
+                <img className="rounded-t-lg" src={adminhome3} alt="" />
               </a>
               <div className="p-5">
                 <a href="#">
