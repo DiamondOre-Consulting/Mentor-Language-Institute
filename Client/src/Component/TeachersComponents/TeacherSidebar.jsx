@@ -60,7 +60,7 @@ const TeacherSidebar = () => {
     return (
         <>
 
-            <div className="sm:hidden fixed bg-white w-full py-2">
+            <div className="sm:hidden fixed bg-white w-full  py-2">
                 <button
                     onClick={handleToggleMenu}
                     className="block text-gray-800 hover:text-gray-500 focus:text-gray-500 focus:outline-none mt-4 px-4">

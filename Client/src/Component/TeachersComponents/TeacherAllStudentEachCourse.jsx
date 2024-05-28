@@ -367,7 +367,7 @@ const TeacherAllStudentEachCourse = () => {
                     <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
                 </div>
             )}
-            <h1 className="text-4xl mb-1 font-semibold text-start text-gray-700">{courseDetails.classTitle}   |  Total Hours:  {courseDetails.totalHours}</h1>
+            <h1 className="text-4xl mb-1 font-semibold text-start text-gray-700 mt-10 md:mt-0">{courseDetails.classTitle}   |  Total Hours:  {courseDetails.totalHours}</h1>
 
             <div class="relative overflow-x-auto  mt-8">
                 {/* <div class="flex items-center justify-between flex-column flex-wrap md:flex-row space-y-4 md:space-y-0 pb-4 bg-white ">
