@@ -222,31 +222,41 @@ const LanguageCourses = () => {
 
                 <div className='slider-container PY-10'>
                     {
-                        <Slider {...settings} >
-                            {allCourses.map((course) => (
-
-                                <div key={course._id} className='relative bg-white border border-gray-200 rounded-lg overflow-hidden shadow-md transform hover:scale-105 h-56  transition duration-'>
-                                    {/* Notebook Lines */}
-                                    {/* <div className='absolute inset-0 bg-gradient-to-b from-orange-200 to-gray-100 opacity-50'></div> */}
-
-                                    {/* Content */}
-                                    <div className="px-4 py-8 grid grid-cols-1 h-56 gap-4 content-between">
-                                        <div>
-                                            <h1 className="text-xl font-bold mb-2">{course.classTitle}</h1>
-                                            <p className="text-gray-600  uppercase">Mentor Institute</p></div>
-
-
-                                        <button className="block w-full px-4 py-2 cursor-pointer hover:bg-orange-500 bg-orange-400 text-sm font-semibold text-white rounded-lg shadow-md focus:outline-none hover:bg-orange-600 transition duration-300" onClick={() => handleEnrollClick(course._id)}>
-                                            Apply
-                                        </button>
-
+                        allCourses.length > 3 ? (
+                            <Slider {...settings}>
+                                {allCourses.map((course) => (
+                                    <div key={course._id} className='relative bg-white border border-gray-200 rounded-lg overflow-hidden shadow-md transform hover:scale-105 h-56 transition duration-'>
+                                        <div className="px-4 py-8 grid grid-cols-1 h-56 gap-4 content-between">
+                                            <div>
+                                                <h1 className="text-xl font-bold mb-2">{course.classTitle}</h1>
+                                                <p className="text-gray-600 uppercase">Mentor Institute</p>
+                                            </div>
+                                            <button className="block w-full px-4 py-2 cursor-pointer hover:bg-orange-500 bg-orange-400 text-sm font-semibold text-white rounded-lg shadow-md focus:outline-none hover:bg-orange-600 transition duration-300" onClick={() => handleEnrollClick(course._id)}>
+                                                Apply
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-
-
-                            ))}
-                        </Slider>
+                                ))}
+                            </Slider>
+                        ) : (
+                            <div className={`grid gap-4 ${allCourses.length <= 3  ? 'grid-cols-1 md:grid-cols-4' : ''}`}>
+                                {allCourses.map((course) => (
+                                    <div key={course._id} className='relative bg-white border border-gray-200 rounded-lg overflow-hidden shadow-md transform hover:scale-105 h-auto transition duration-'>
+                                        <div className="px-4 py-8 grid grid-cols-1 gap-4 content-between">
+                                            <div>
+                                                <h1 className="text-xl font-bold mb-2">{course.classTitle}</h1>
+                                                <p className="text-gray-600 uppercase">Mentor Institute</p>
+                                            </div>
+                                            <button className="block w-full px-4 py-2 cursor-pointer hover:bg-orange-500 bg-orange-400 text-sm font-semibold text-white rounded-lg shadow-md focus:outline-none hover:bg-orange-600 transition duration-300" onClick={() => handleEnrollClick(course._id)}>
+                                                Apply
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )
                     }
+
 
                     {showPopup && (
                         <div className="fixed inset-0 flex items-center justify-center">
