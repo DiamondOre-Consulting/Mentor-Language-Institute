@@ -121,6 +121,7 @@ router.post(
     try {
       const { id } = req.params;
       const { date, numberOfClasses } = req.body;
+      const {branch} = req.user;
 
       const addNewClass = await Classes.findByIdAndUpdate(
         { _id: id },
@@ -131,7 +132,7 @@ router.post(
       );
 
       // Get all student ids
-      const allStudents = await Students.find({}, { _id: 1 });
+      const allStudents = await Students.find({branch: branch}, { _id: 1 });
 
       const studentIds = allStudents.map((student) => student._id);
 
