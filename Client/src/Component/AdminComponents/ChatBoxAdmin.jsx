@@ -127,10 +127,10 @@ const ChatBoxAdmin = ({ selectedTeacherId, selectedStudentId, isOpen , setIsOpen
     return (
         <>
 
-            <div className={`md:w-2/3 border md:flex flex-col ${isOpen ? 'w-full h-full' : 'hidden'}`}>
+            <div className={`md:w-2/3 border md:flex bg-gray-200 flex-col ${isOpen ? 'w-full h-full' : 'hidden'}`}>
 
                 <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center w-full fixed bg-white md:static absolue top-0">
-                    <div class="flex items-center">
+                    <div class="flex items-center bg-white">
                         <div>
                             <img class="w-10 h-10 rounded-full" src="https://static.thenounproject.com/png/5034901-200.png" />
                         </div>
