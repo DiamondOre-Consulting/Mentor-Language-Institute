@@ -121,10 +121,10 @@ const ChatBoxTeacher = ({ student , isOpen , setIsOpen , isSmallScreen , setIsTe
     <>
 
 
-      <div className={`md:w-2/3 border md:flex flex-col ${isOpen ? 'w-full h-full' : 'hidden'}`}>
+      <div className={`md:w-2/3 border md:flex bg-gray-200 flex-col ${isOpen ? 'w-full h-full' : 'hidden'}`}>
 
         <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center w-full fixed bg-white md:static">
-          <div class="flex items-center">
+          <div class="flex items-center bg-white">
             <div>
               <img class="w-10 h-10 rounded-full" src="https://static.thenounproject.com/png/5034901-200.png" />
             </div>
@@ -146,7 +146,7 @@ const ChatBoxTeacher = ({ student , isOpen , setIsOpen , isSmallScreen , setIsTe
         </div>
 
 
-        <div class="flex-1 overflow-auto bg-gray-200 " ref={chatContainerRef} onScroll={handleScroll} style={{marginTop:"80px"}} >
+        <div class="flex-1 overflow-auto bg-gray-200 " ref={chatContainerRef} onScroll={handleScroll} style={{paddingTop:"80px"}} >
           <div class="py-2 px-3 mb-16 md:mb-0">
 
 
@@ -173,7 +173,7 @@ const ChatBoxTeacher = ({ student , isOpen , setIsOpen , isSmallScreen , setIsTe
         </div>
 
 
-        <div class="bg-grey-lighter px-4 py-4 flex fixed bottom-0 bg-white w-full md:relative md:bg-transparent md:w-auto items-center ">
+        <div class="bg-white px-4 py-4 flex fixed bottom-0 bg-white w-full md:relative  md:w-auto items-center ">
        
           <div class="flex-1 mx-4">
             <input class="w-full border rounded px-2 py-2"   type="text"
