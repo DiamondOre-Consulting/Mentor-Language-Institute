@@ -5,6 +5,10 @@ const commissionSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         required: true
     },
+    classId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true
+    },
     monthName: {
         type: String,
         required: true

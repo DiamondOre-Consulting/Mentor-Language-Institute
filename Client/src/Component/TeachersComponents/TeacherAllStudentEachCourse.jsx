@@ -319,7 +319,7 @@ const TeacherAllStudentEachCourse = () => {
             }
 
             const response = await axios.post(
-                `https://api.mentorlanguageinstitute.com/api/teachers/add-monthly-classes`,
+                `https://api.mentorlanguageinstitute.com/api/teachers/add-monthly-classes/${selectedClassId}`,
                 {
                     monthName: selectedMonth,
                     year: selectedYear,

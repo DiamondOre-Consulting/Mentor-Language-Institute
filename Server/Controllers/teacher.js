@@ -342,13 +342,15 @@ router.get("/my-commission", TeacherAuthenticateToken, async (req, res) => {
 });
 
 // ADD MONTHLY COMMISSION
-router.post("/add-monthly-classes", TeacherAuthenticateToken, async (req, res) => {
+router.post("/add-monthly-classes/:id", TeacherAuthenticateToken, async (req, res) => {
   try {
+    const {id} = req.params;
     const {userId} = req.user;
     const {monthName, year, classesTaken} = req.body;
 
     const addClassesTaken = new Commission({
       teacherId: userId,
+      classId: id,
       monthName,
       year,
       classesTaken
