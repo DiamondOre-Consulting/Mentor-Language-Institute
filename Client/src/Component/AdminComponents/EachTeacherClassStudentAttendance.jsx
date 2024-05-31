@@ -256,7 +256,7 @@ const EachTeacherClassStudentAttendance = () => {
 
                 if (monthlyCommissionReport.status === 200) {
                     setMonthlyCommissionDetails(monthlyCommissionReport.data);
-                    // console.log("monthlycommission", monthlyCommissionReport.data);
+                    console.log("monthlycommission", monthlyCommissionReport.data);
                 }
 
 

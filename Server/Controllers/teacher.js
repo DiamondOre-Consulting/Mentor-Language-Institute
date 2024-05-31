@@ -324,11 +324,12 @@ router.get("/student/:id", TeacherAuthenticateToken, async (req, res) => {
 });
 
 // GET MONTHLY COMMISSION REPORT
-router.get("/my-commission", TeacherAuthenticateToken, async (req, res) => {
+router.get("/my-commission/:id", TeacherAuthenticateToken, async (req, res) => {
   try {
     const { userId } = req.user;
+    const { id } = req.params;
 
-    const myCommission = await Commission.find({ teacherId: userId });
+    const myCommission = await Commission.find({ teacherId: userId, classId: id });
 
     if (!myCommission) {
       return res.status(403).json({ message: "No record found!!!" });

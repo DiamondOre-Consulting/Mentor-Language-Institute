@@ -541,7 +541,7 @@ router.get(
     try {
       const { id1, id2 } = req.params;
 
-      const commissionById = await Commission.find({ teacherId: id1 });
+      const commissionById = await Commission.find({ teacherId: id1, classId: id2 });
       if (!commissionById) {
         return res.status(403).json({ message: "No record found!!!" });
       }

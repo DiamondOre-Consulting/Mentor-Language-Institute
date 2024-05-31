@@ -246,7 +246,7 @@ const TeacherAllStudentEachCourse = () => {
             );
 
             if (response.status === 200) {
-                console.log(response.data);
+                console.log("update uttendence response",response.data);
                 console.log("attendence marked ")
                 setShowPopup(false)
                 setAttendanceDetailsMap(prevAttendanceDetailsMap => ({
@@ -281,7 +281,7 @@ const TeacherAllStudentEachCourse = () => {
 
                 // const commission = [];
 
-                const monthlyCommissionReport = await axios.get(`https://api.mentorlanguageinstitute.com/api/teachers/my-commission`, {
+                const monthlyCommissionReport = await axios.get(`https://api.mentorlanguageinstitute.com/api/teachers/my-commission/${selectedClassId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -303,7 +303,7 @@ const TeacherAllStudentEachCourse = () => {
         getMonthlyCommission();
     }, [selectedClassId]);
 
-    console.log(monthCommissionDetails)
+    console.log("monthly commission",monthCommissionDetails)
     // update monthly commission 
     const updateMonthlyCommission = async () => {
         try {
