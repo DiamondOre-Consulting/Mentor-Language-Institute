@@ -128,10 +128,10 @@ const ChatBox = ({ teacher, isOpen, isSmallScreen, setIsOpen, setIsTeacherSectio
   return (
 
     <>
-      <div className={`md:w-2/3 border md:flex flex-col ${isOpen ? 'w-full h-full' : 'hidden'}`}>
+      <div className={`md:w-2/3 border  bg-gray-200 md:flex flex-col ${isOpen ? 'w-full h-full' : 'hidden'}`}>
 
         <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center w-full fixed bg-white ">
-          <div class="flex items-center">
+          <div class="flex items-center bg-white">
             <div>
               <img class="w-10 h-10 rounded-full" src="https://static.thenounproject.com/png/363640-200.png" />
             </div>
@@ -179,7 +179,7 @@ const ChatBox = ({ teacher, isOpen, isSmallScreen, setIsOpen, setIsTeacherSectio
         </div>
 
 
-        <div class="bg-grey-lighter px-4 py-4 flex  fixed bottom-0 bg-white w-full md:relative md:bg-transparent md:w-auto items-center ">
+        <div class="bg-white px-4 py-4 flex  fixed bottom-0 bg-white w-full md:relative  md:w-auto items-center ">
 
           <div class="flex-1 mx-4">
             <input class="w-full border rounded px-2 py-2" type="text"
