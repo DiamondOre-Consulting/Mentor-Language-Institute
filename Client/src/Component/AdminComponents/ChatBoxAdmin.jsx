@@ -180,7 +180,7 @@ const ChatBoxAdmin = ({ selectedTeacherId, selectedStudentId, isOpen , setIsOpen
                                     receiverId === teacher._id ? "justify-end" : "justify-start"} mb-2`}
                             >
                                 <div className={`rounded py-2 px-3 ${message.receiverId === teacher._id ? "bg-green-100" : "bg-gray-100"}`}>
-                                    <span className="text-xs bg-orange-200 text-gray-900 rounded-full px-2 py-1">{message.senderId === teacher._id ? teacher.name : student.name}</span>
+                                    <span className="text-xs bg-orange-200 text-gray-900 rounded-full px-2 py-1">{message.senderId === teacher._id ? student.name : teacher.name}</span>
                                     <p class="text-md mt-1">
                                         {message.message}
                                     </p>
