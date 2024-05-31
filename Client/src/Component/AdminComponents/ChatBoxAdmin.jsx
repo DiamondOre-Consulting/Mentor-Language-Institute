@@ -33,6 +33,7 @@ const ChatBoxAdmin = ({ selectedTeacherId, selectedStudentId, isOpen , setIsOpen
                 // console.log(response.data);
                 if (response.status === 200) {
                     setChatHistory(response.data.messages);
+                     console.log(response.data.messages);
                 }
             } catch (error) {
                 console.error("Error fetching chat history:", error.message);
@@ -177,10 +178,10 @@ const ChatBoxAdmin = ({ selectedTeacherId, selectedStudentId, isOpen , setIsOpen
                             <div
                                 key={message._id}
                                 className={`flex ${message.
-                                    receiverId === teacher._id ? "justify-end" : "justify-start"} mb-2`}
+                                    senderId === teacher._id ? "justify-start" : "justify-end"} mb-2`}
                             >
-                                <div className={`rounded py-2 px-3 ${message.receiverId === teacher._id ? "bg-green-100" : "bg-gray-100"}`}>
-                                    <span className="text-xs bg-orange-200 text-gray-900 rounded-full px-2 py-1">{message.senderId === teacher._id ? student.name : teacher.name}</span>
+                                <div className={`rounded py-2 px-3 ${message.senderId === teacher._id ? "bg-gray-100" : "bg-green-100"}`}>
+                                    <span className="text-xs bg-orange-200 text-gray-900 rounded-full px-2 py-1">{message.senderId === teacher._id  ? "Teacher" : "Student"}</span>
                                     <p class="text-md mt-1">
                                         {message.message}
                                     </p>
