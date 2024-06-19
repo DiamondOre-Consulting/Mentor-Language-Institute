@@ -3,6 +3,7 @@ import axios from "axios";
 import io from "socket.io-client";
 import { useJwt } from "react-jwt";
 import { useNavigate } from "react-router-dom";
+import userimg2 from '..//..//..//assets/userimg2.png'
 
 
 
@@ -133,7 +134,7 @@ const ChatBox = ({ teacher, isOpen, isSmallScreen, setIsOpen, setIsTeacherSectio
         <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center w-full fixed bg-white ">
           <div class="flex items-center bg-white">
             <div>
-              <img class="w-10 h-10 rounded-full" src="https://static.thenounproject.com/png/363640-200.png" />
+              <img class="w-10 h-10 rounded-full" src={userimg2} />
             </div>
             <div class="ml-4">
               <p class="text-grey-darkest">

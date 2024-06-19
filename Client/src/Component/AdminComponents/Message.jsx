@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from "axios";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
+import userimg2 from '..//..//assets/userimg2.png'
 
 const override = css`
   display: block;
@@ -201,7 +202,7 @@ const Message = () => {
               <div className="leading-1.5 p-4 border-gray-200 bg-orange-500 shadow-md backdrop-filter backdrop-blur-md bg-opacity-20 rounded-e-xl rounded-es-xl ">
                 <div>
                   <div className='flex items-center'>
-                    <img className="w-8 h-8 rounded-full" src="https://static.vecteezy.com/system/resources/thumbnails/001/993/889/small/beautiful-latin-woman-avatar-character-icon-free-vector.jpg" alt="Jese image" />
+                    <img className="w-8 h-8 rounded-full" src={userimg2} alt="Jese image" />
                     <div className='flex flex-col ml-2'>
                       <span className="text-sm font-bold text-black ">{student.name}</span>
                       <span className="text-sm font-semibold text-gray-800 ">{student.phone}</span>

@@ -4,6 +4,7 @@ import ChatBoxTeacher from "../../Component/TeachersComponents/ChatBoxTeacher";
 import { Link, useNavigate } from 'react-router-dom'
 import { useMediaQuery } from '@react-hook/media-query';
 import { useJwt } from 'react-jwt'
+import userimg2 from '..//..//assets/userimg2.png'
 
 const ChatTeacher = () => {
   const navigate = useNavigate();
@@ -97,7 +98,7 @@ const ChatTeacher = () => {
 
                 <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center">
                   <div className='flex items-center'>
-                    <img class="w-10 h-10 rounded-full" src="https://static.thenounproject.com/png/363640-200.png" />
+                    <img class="w-10 h-10 rounded-full" src={userimg2} />
                     <span className='ml-1'>{userName}</span>
                   </div>
 
@@ -113,7 +114,7 @@ const ChatTeacher = () => {
                     <div class="bg-white px-3 flex items-center hover:bg-grey-lighter cursor-pointer sm:pointer" onClick={() => handleStudentClick(student)}>
                       <div>
                         <img class="h-12 w-12 rounded-full"
-                          src="https://static.thenounproject.com/png/363640-200.png" />
+                          src={userimg2} />
                       </div>
                       <div class="ml-4 flex-1 border-b border-grey-lighter py-4">
                         <div class="flex items-bottom justify-between">

@@ -5,6 +5,7 @@ import axios from "axios";
 import { useJwt } from "react-jwt";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
+import userimage from '..//..//assets/userimg.jpg'
 
 
 const override = css`
@@ -134,7 +135,7 @@ const EachTeacher = () => {
                 <img src="https://t4.ftcdn.net/jpg/03/16/92/61/360_F_316926143_cVdnI6bJPbhlo1yZVTJk0R0sjBx4vVnO.jpg" class="w-full h-full rounded-tl-lg rounded-tr-lg" />
             </div>
             <div class="flex flex-col items-center -mt-20">
-                <img src="https://media.istockphoto.com/id/1300845620/vector/user-icon-flat-isolated-on-white-background-user-symbol-vector-illustration.jpg?s=612x612&w=0&k=20&c=yBeyba0hUkh14_jgv1OKqIH0CCSWU_4ckRkAoy2p73o=" class="w-40 border-4 border-white rounded-full" />
+                <img src={userimage} class="w-40 border-4 border-white rounded-full" />
                 <div class="flex items-center space-x-2 mt-2">
                     <p class="text-2xl">{teacherDetails?.name}</p>
                     <span class="bg-blue-500 rounded-full p-1" title="Verified">

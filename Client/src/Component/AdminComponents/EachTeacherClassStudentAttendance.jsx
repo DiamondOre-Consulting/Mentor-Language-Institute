@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
+import userimg2 from '..//..//assets/userimg2.png'
 
 const override = css`
   display: block;
@@ -394,9 +395,7 @@ const EachTeacherClassStudentAttendance = () => {
                                 <th scope="col" class="px-6 py-3">
                                     Commission
                                 </th>
-                                <th scope="col" class="px-6 py-3">
-                                    Total Classes Taken
-                                </th>
+                             
                             </tr>
                         </thead>
                         <tbody>
@@ -419,7 +418,7 @@ const EachTeacherClassStudentAttendance = () => {
                                     return (
                                         <tr key={student._id} class="bg-white border-b   ">
                                             <th scope="row" class="  flex items-center pl-6 pr-14  md:pl-6 md:pr-6 py-4 text-gray-900 whitespace-nowrap bg-orange-50">
-                                                <img class="w-6 h-6 md:w-10 md:h-10 rounded-full" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTc3hMXsYcyINCaXkRBhVyEjHMQszmNStck2ELBWXKUYw&s" alt="Jese image" />
+                                                <img class="w-6 h-6 md:w-10 md:h-10 rounded-full" src={userimg2} alt="Jese image" />
                                                 <div class="ps-3">
                                                     <div class="text-base font-semibold">{student.name}</div>
                                                     <div class="font-normal text-gray-500">{student.phone}</div>

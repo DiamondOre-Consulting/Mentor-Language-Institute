@@ -6,6 +6,7 @@ import { useMediaQuery } from '@react-hook/media-query';
 import { useJwt } from 'react-jwt'
 import { Select } from "flowbite-react";
 import ChatBoxAdmin from "../../Component/AdminComponents/ChatBoxAdmin";
+import userimg2 from '..//..//assets/userimg2.png'
 
 const ChatAdmin = () => {
     const navigate = useNavigate();
@@ -178,7 +179,7 @@ const ChatAdmin = () => {
 
                                 <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center">
                                     <div className='flex items-center'>
-                                        <img class="w-10 h-10 rounded-full" src="https://static.thenounproject.com/png/363640-200.png" />
+                                        <img class="w-10 h-10 rounded-full" src={userimg2} />
                                         <span className='ml-1'>{userName}</span>
                                     </div>
 

@@ -4,6 +4,7 @@ import io from "socket.io-client";
 import { useJwt } from "react-jwt";
 import { useNavigate } from "react-router-dom";
 // import { socket } from './socket';
+import userimg2 from '..//..//assets/userimg2.png'
 
 const ChatBoxTeacher = ({ student , isOpen , setIsOpen , isSmallScreen , setIsTeacherSectionVisible}) => {
   const navigate = useNavigate();
@@ -126,7 +127,7 @@ const ChatBoxTeacher = ({ student , isOpen , setIsOpen , isSmallScreen , setIsTe
         <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center w-full fixed bg-white md:static">
           <div class="flex items-center bg-white">
             <div>
-              <img class="w-10 h-10 rounded-full" src="https://static.thenounproject.com/png/5034901-200.png" />
+              <img class="w-10 h-10 rounded-full" src={userimg2}/>
             </div>
             <div class="ml-4">
               <p class="text-grey-darkest">
