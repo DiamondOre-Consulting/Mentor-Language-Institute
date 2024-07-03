@@ -272,7 +272,7 @@ const Register = () => {
             console.log(token)
 
             const response = await axios.post(
-                "https://api.mentorlanguageinstitute.com/api/admin-confi/add-student",
+                "http://localhost:7000/api/admin-confi/add-student",
                 {
                     name,
                     phone,

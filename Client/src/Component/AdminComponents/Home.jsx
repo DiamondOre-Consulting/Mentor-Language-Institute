@@ -233,21 +233,22 @@ const Home = () => {
 
               <div className="mb-4">
                 <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Phone</label>
-                <input type="text" id="phone" name="phone" value={formData.phone} onChange={handleChange} className="mt-1 p-2 border border-gray-500 rounded-md w-full" required />
+                <input type="text" id="phone" name="phone" value={formData.phone} onChange={handleChange} className="mt-1 p-2 border border-gray-500 rounded-md w-full" required autoComplete='off' />
               </div>
 
               <div className="mb-4">
                 <label htmlFor="branch" className="block text-sm font-medium text-gray-700">Branch</label>
                 <select id="branch" name="branch" value={formData.branch} onChange={handleChange} className="w-full p-2 border border-gray-500 rounded-md">
                   <option>Select Branch</option>
-                  <option value="B1">Branch 1</option>
-                  <option value="B2">Branch 2</option>
+                  <option value="Noida-107">Noida-107</option>
+                  <option value="Noida-51">Noida-51</option>
+                  <option value="East Delhi">East Delhi</option>
                 </select>
               </div>
 
               <div className="mb-4">
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
-                <input type={showPassword ? "text" : "password"} id="password" name="password" value={formData.password} onChange={handleChange} className="mt-1 p-2 border border-gray-500 rounded-md w-full" required />
+                <input type={showPassword ? "text" : "password"} id="password" name="password" value={formData.password} onChange={handleChange} className="mt-1 p-2 border border-gray-500 rounded-md w-full" required autoComplete='off'/>
               </div>
 
               <div class="flex items-center mt-2">

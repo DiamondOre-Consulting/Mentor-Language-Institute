@@ -114,8 +114,9 @@ const Parentlog = () => {
 
                                 <select id="branch" name="branch" value={branch} onChange={(e) => setBranch(e.target.value)} className="w-full p-2 border border-gray-500 rounded-md">
                                     <option>Select Branch</option>
-                                    <option value="B1">Branch 1</option>
-                                    <option value="B2">Branch 2</option>
+                                    <option value="Noida-107">Noida-107</option>
+                                    <option value="Noida-51">Noida-51</option>
+                                    <option value="East Delhi">East Delhi</option>
                                 </select>
                                 <div>
                                     <input type={showPassword ? "text" : "password"} name="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" class="bg-gray-50 border border-gray-900 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-600 focus:border-gray-600 block w-full p-2.5      " required="" />
