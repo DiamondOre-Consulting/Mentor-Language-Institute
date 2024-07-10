@@ -266,7 +266,7 @@ const LanguageCourses = () => {
                                 <img src="https://t4.ftcdn.net/jpg/06/23/40/73/360_F_623407391_wtq6RVJUq2RGb2e3D0ykn5zJOqfJhOSc.jpg" className='h-full' alt="" />
 
                                 <div className="p-4 md:p-6 text-left">
-
+                                <svg class="h-6 w-6 text-gray-400 float-right -mt-4 -mr-4 cursor-pointer" onClick={()=> setShowPopup(false)} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z"/>  <line x1="18" y1="6" x2="6" y2="18" />  <line x1="6" y1="6" x2="18" y2="18" /></svg>
                                     <h2 className="text-xl font-bold text-teal-green-900 mb-1 md:mb-4">{Eachcourse?.classTitle}</h2>
                                     {/* <p className="text-sm text-gray-600 ">Schedule :-  <span>{Eachcourse?.classSchedule}</span></p> */}
                                     <p className="text-sm text-gray-600 mb-1 md:mb-6">Total Hours :- <span>{Eachcourse?.totalHours}</span></p>
