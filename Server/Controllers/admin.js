@@ -261,6 +261,7 @@ router.get("/all-teachers/:id", AdminAuthenticateToken, async (req, res) => {
 router.post("/add-student", AdminAuthenticateToken, async (req, res) => {
   try {
     const {branch} = req.user;
+    console.log(branch);
     const { name, phone, password } = req.body;
 
     const studentUser = await Students.findOne({ phone });
@@ -286,7 +287,7 @@ router.post("/add-student", AdminAuthenticateToken, async (req, res) => {
       .status(200)
       .json({ message: `New student has been registered successfully!!!` });
   } catch (error) {
-    console.log("Something went wrong!!! ");
+    console.log("Something went wrong!!! ", error.message);
     res.status(500).json(error);
   }
 });
@@ -626,5 +627,48 @@ router.put(
     }
   }
 );
+
+// DELETE COURSE 
+router.delete("/delete-course/:id", AdminAuthenticateToken, async (req, res) => {
+  try {
+    const {id} = req.params;
+
+    const findCourse = await Classes.findById({_id: id});
+    if(!findCourse) {
+      return res.status(402).json({message: "No course found!!!"});
+    }
+
+        // Remove the class ID from students' classes
+        await Students.updateMany(
+          { classes: id },
+          { $pull: { classes: id } }
+        );
+
+            // Remove the class ID from teachers' classes
+    await Teachers.updateMany(
+      { classes: id },
+      { $pull: { classes: id } }
+    );
+
+    // Delete the class
+    await Classes.findByIdAndDelete(id);
+
+    res.status(200).json({ message: "Course deleted successfully!" });
+
+  } catch(error) {
+    console.log("Something went wrong!!!", error);
+    res.status(500).json(error.message);
+  }
+})
+
+// DELETE TEACHER
+router.delete("/delete-teacher/:id", AdminAuthenticateToken, async (req, res) => {
+  try {
+    
+  } catch(error) {
+    console.log("Something went wrong!!! ", error);
+    res.status(500).json(error.message);
+  }
+})
 
 export default router;
