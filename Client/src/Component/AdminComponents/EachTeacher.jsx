@@ -194,21 +194,21 @@ const EachTeacher = () => {
                         {
 
                             classesData.map((course) => (
-                                <div className=' border  rounded-md border-0 shadow-xl hover:shadow-none cursor-pointer' key={course._id}>
+                                <div className=' border  rounded-md border-0 shadow-xl hover:shadow-none cursor-pointer' key={course?._id}>
                                     <div className='px-2 py-3 col-span-1 bg-orange-500 rounded-md'>
                                         <span className='text-sm text-white'>Course</span>
-                                        <p className='text-xl font-bold text-white'>{course.classTitle}</p>
+                                        <p className='text-xl font-bold text-white'>{course?.classTitle}</p>
                                         <div className='w-20 h-0.5 bg-orange-100 mb-2'></div>
                                         {/* <p className='text-sm text-gray-100'>{course.classSchedule}</p> */}
 
 
                                         <span className='text-sm text-gray-50  -mt-3' >
-                                            Total hours <span className='bg-gray-50 text-bold text-black px-1 rounded-full'>{course.totalHours}</span>
+                                            Total hours <span className='bg-gray-50 text-bold text-black px-1 rounded-full'>{course?.totalHours}</span>
                                         </span>
 
 
 
-                                        <a className='text-gray-100 flex items-center text-sm mt-1 justify-end' onClick={() => handleViewClass(course._id)}>
+                                        <a className='text-gray-100 flex items-center text-sm mt-1 justify-end' onClick={() => handleViewClass(course?._id)}>
                                              View
                                            
                                             <svg className="h-4 w-4 text-gray-100" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
