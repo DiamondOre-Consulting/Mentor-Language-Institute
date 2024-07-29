@@ -600,7 +600,7 @@ router.post(
   }
 );
 
-// DEACTIVATE STUDENT ID
+// DEACTIVATE STUDENT ID  
 router.put(
   "/deactivate-account/:id",
   AdminAuthenticateToken,
@@ -664,7 +664,15 @@ router.delete("/delete-course/:id", AdminAuthenticateToken, async (req, res) => 
 // DELETE TEACHER
 router.delete("/delete-teacher/:id", AdminAuthenticateToken, async (req, res) => {
   try {
+    const {id} = req.params;
+
+    const findTeacher = await Teachers.findByIdAndDelete({_id: id});
+    if(!findTeacher) {
+      return res.status(402).json({message: "No teacher found!!!"});
+    }
     
+    res.status(200).json({message: "Teacher deleted successfully!!!"})
+
   } catch(error) {
     console.log("Something went wrong!!! ", error);
     res.status(500).json(error.message);

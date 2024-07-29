@@ -16,6 +16,7 @@ const classSchema = new mongoose.Schema({
   teachBy: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
+    default: null
   },
   totalHours: {
     type: Number,
