@@ -92,7 +92,7 @@ const TeacherHome = ({ teacherData }) => {
             // console.log("classId",classIds)
             const classesData = [];
             for (const classId of classIds) {
-                const classResponse = await axios.get(`https://api.mentorlanguageinstitute.com/api/teachers/my-classes/${classId}`, {
+                const classResponse = await axios.get(`https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-classes/${classId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -135,7 +135,7 @@ const TeacherHome = ({ teacherData }) => {
             }
             // console.log("selected schedule", selectedClassId)
             const response = await axios.post(
-                `https://api.mentorlanguageinstitute.com/api/teachers/schedule-class/${selectedClassId}`,
+                `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/schedule-class/${selectedClassId}`,
                 { date, numberOfClasses },
                 {
                     headers: {
@@ -175,7 +175,7 @@ const TeacherHome = ({ teacherData }) => {
                     return;
                 }
 
-                const classresponse = await axios.get(`https://api.mentorlanguageinstitute.com/api/teachers/my-classes/${selectedClassId}`, {
+                const classresponse = await axios.get(`https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-classes/${selectedClassId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -189,7 +189,7 @@ const TeacherHome = ({ teacherData }) => {
 
                 }
 
-                // const allsturesponse = await axios.get(`https://api.mentorlanguageinstitute.com/api/teachers/class/all-students/${selectedClassId}`, {
+                // const allsturesponse = await axios.get(`https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/class/all-students/${selectedClassId}`, {
                 //     headers: {
                 //         Authorization: `Bearer ${token}`,
                 //     },
@@ -237,7 +237,7 @@ const TeacherHome = ({ teacherData }) => {
 
 
                 const response = await axios.get(
-                    "https://api.mentorlanguageinstitute.com/api/teachers/my-classes",
+                    "https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-classes",
                     {
                         headers: {
                             Authorization: `Bearer ${token}`
@@ -283,7 +283,7 @@ const TeacherHome = ({ teacherData }) => {
             }
 
             const response = await axios.put(
-                `https://api.mentorlanguageinstitute.com/api/teachers/update-class-hours/${selectedClassId}`,
+                `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/update-class-hours/${selectedClassId}`,
                 { updatedHours: updateHoursInput },
                 {
                     headers: {

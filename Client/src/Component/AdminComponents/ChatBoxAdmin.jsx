@@ -12,7 +12,7 @@ const ChatBoxAdmin = ({ selectedTeacherId, selectedStudentId, isOpen , setIsOpen
     const { decodedToken, isExpired } = useJwt(localStorage.getItem("token"));
     const userId = decodedToken ? decodedToken.userId : null;
     console.log(userId);
-    const socket = useMemo(() => io("https://api.mentorlanguageinstitute.com"), []);
+    const socket = useMemo(() => io("https://mentor-language-institute-backend-hbyk.onrender.com"), []);
     const [chatHistory, setChatHistory] = useState([]);
     const [teacher, setTeacher] = useState('');
     const [student, setStudent] = useState('');
@@ -24,7 +24,7 @@ const ChatBoxAdmin = ({ selectedTeacherId, selectedStudentId, isOpen , setIsOpen
         const fetchChatHistory = async (selectedTeacherId, selectedStudentId) => {
             try {
                 const response = await axios.get(
-                    `https://api.mentorlanguageinstitute.com/api/chats/get-messages-admin/${selectedTeacherId}/${selectedStudentId}`,
+                    `https://mentor-language-institute-backend-hbyk.onrender.com/api/chats/get-messages-admin/${selectedTeacherId}/${selectedStudentId}`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -65,7 +65,7 @@ const ChatBoxAdmin = ({ selectedTeacherId, selectedStudentId, isOpen , setIsOpen
 
                 // Fetch associates data from the backend
                 const response = await axios.get(
-                    `https://api.mentorlanguageinstitute.com/api/admin-confi/all-teachers/${selectedTeacherId}`,
+                    `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-teachers/${selectedTeacherId}`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -94,7 +94,7 @@ const ChatBoxAdmin = ({ selectedTeacherId, selectedStudentId, isOpen , setIsOpen
             try {
 
                 // Fetch student details
-                const studentResponse = await axios.get(`https://api.mentorlanguageinstitute.com/api/admin-confi/all-students/${selectedStudentId}`, {
+                const studentResponse = await axios.get(`https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students/${selectedStudentId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },

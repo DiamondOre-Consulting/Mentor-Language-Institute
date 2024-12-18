@@ -34,7 +34,7 @@ const Studenthero = () => {
       }
 
       const response = await axios.get(
-        "https://api.mentorlanguageinstitute.com/api/students/my-profile",
+        "https://mentor-language-institute-backend-hbyk.onrender.com/api/students/my-profile",
         {
           headers: {
             Authorization: `Bearer ${token}`,

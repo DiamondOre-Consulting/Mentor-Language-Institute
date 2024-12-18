@@ -30,7 +30,7 @@ const Courseheropage = () => {
 
                 // Fetch associates data from the backend
                 const response = await axios.get(
-                    "https://api.mentorlanguageinstitute.com/api/students/my-profile",
+                    "https://mentor-language-institute-backend-hbyk.onrender.com/api/students/my-profile",
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -48,7 +48,7 @@ const Courseheropage = () => {
 
 
                     const classResponse = await axios.get(
-                        `https://api.mentorlanguageinstitute.com/api/students/all-courses/${id}`,
+                        `https://mentor-language-institute-backend-hbyk.onrender.com/api/students/all-courses/${id}`,
                         {
                             headers: {
                                 Authorization: `Bearer ${token}`,

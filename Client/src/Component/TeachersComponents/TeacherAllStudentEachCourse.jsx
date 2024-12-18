@@ -52,7 +52,7 @@ const TeacherAllStudentEachCourse = () => {
     //                 return;
     //             }
 
-    //             const allStudentsResponse = await axios.get(`https://api.mentorlanguageinstitute.com/api/teachers/class/all-students/${selectedClassId}`, {
+    //             const allStudentsResponse = await axios.get(`https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/class/all-students/${selectedClassId}`, {
     //                 headers: {
     //                     Authorization: `Bearer ${token}`,
     //                 },
@@ -85,7 +85,7 @@ const TeacherAllStudentEachCourse = () => {
                     return;
                 }
 
-                const response = await axios.get(`https://api.mentorlanguageinstitute.com/api/teachers/my-classes/${selectedClassId}`, {
+                const response = await axios.get(`https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-classes/${selectedClassId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -101,7 +101,7 @@ const TeacherAllStudentEachCourse = () => {
 
                     for (const studentIds of enrolledStudents) {
                         const studentResponse = await axios.get(
-                            `https://api.mentorlanguageinstitute.com/api/teachers/student/${studentIds}`,
+                            `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/student/${studentIds}`,
                             {
                                 headers: {
                                     Authorization: `Bearer ${token}`,
@@ -143,7 +143,7 @@ const TeacherAllStudentEachCourse = () => {
                     return;
                 }
 
-                const attendanceResponse = await axios.get(`https://api.mentorlanguageinstitute.com/api/teachers/attendance/${selectedClassId}`, {
+                const attendanceResponse = await axios.get(`https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/attendance/${selectedClassId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -172,7 +172,7 @@ const TeacherAllStudentEachCourse = () => {
                     const studentData = [];
                     for (const studentid of studentIds) {
 
-                        const studentResponse = await axios.get(`https://api.mentorlanguageinstitute.com/api/teachers/student/${studentid}`, {
+                        const studentResponse = await axios.get(`https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/student/${studentid}`, {
                             headers: {
                                 Authorization: `Bearer ${token}`,
                             },
@@ -234,7 +234,7 @@ const TeacherAllStudentEachCourse = () => {
             }
 
             const response = await axios.put(
-                `https://api.mentorlanguageinstitute.com/api/teachers/update-attendance/${selectedClassId}/${selectedstudentId}`,
+                `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/update-attendance/${selectedClassId}/${selectedstudentId}`,
                 {
                     attendanceDate: selectedDate,
                     numberOfClassesTaken
@@ -282,7 +282,7 @@ const TeacherAllStudentEachCourse = () => {
 
                 // const commission = [];
 
-                const monthlyCommissionReport = await axios.get(`https://api.mentorlanguageinstitute.com/api/teachers/my-commission/${selectedClassId}`, {
+                const monthlyCommissionReport = await axios.get(`https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-commission/${selectedClassId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -320,7 +320,7 @@ const TeacherAllStudentEachCourse = () => {
             }
 
             const response = await axios.post(
-                `https://api.mentorlanguageinstitute.com/api/teachers/add-monthly-classes/${selectedClassId}`,
+                `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/add-monthly-classes/${selectedClassId}`,
                 {
                     monthName: selectedMonth,
                     year: selectedYear,

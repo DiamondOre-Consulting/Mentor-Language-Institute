@@ -27,7 +27,7 @@ const StudentLogin = () => {
         setLoading(true);
 
         try {
-            const response = await axios.post("https://api.mentorlanguageinstitute.com/api/students/login",
+            const response = await axios.post("https://mentor-language-institute-backend-hbyk.onrender.com/api/students/login",
                 {
                     phone,
                     password
