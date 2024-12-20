@@ -3,15 +3,23 @@ import mongoose from "mongoose";
 const studentSchema = new mongoose.Schema({
   branch: {
     type: String,
-    required: true
+    required: true,
   },
   name: {
     type: String,
     required: true,
   },
+  dob: {
+    type: Date,
+  },
   phone: {
     type: String,
     required: true,
+  },
+  userName: {
+    type: String,
+    required: true,
+    unique: true,
   },
   password: {
     type: String,
@@ -46,14 +54,14 @@ const studentSchema = new mongoose.Schema({
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Fee",
-      }, 
+      },
     ],
   },
   chats: [mongoose.Schema.Types.ObjectId], // Reference to chat documents
-  messages: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Message' }],
+  messages: [{ type: mongoose.Schema.Types.ObjectId, ref: "Message" }],
   deactivated: {
     type: Boolean,
-    default: false
+    default: false,
   },
   createdAt: {
     type: Date,

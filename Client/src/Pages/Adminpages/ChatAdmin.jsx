@@ -1,218 +1,209 @@
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Link, useNavigate } from 'react-router-dom'
-import { useMediaQuery } from '@react-hook/media-query';
-import { useJwt } from 'react-jwt'
+import { Link, useNavigate } from "react-router-dom";
+import { useMediaQuery } from "@react-hook/media-query";
+import { useJwt } from "react-jwt";
 import { Select } from "flowbite-react";
 import ChatBoxAdmin from "../../Component/AdminComponents/ChatBoxAdmin";
-import userimg2 from '..//..//assets/userimg2.png'
+import userimg2 from "..//..//assets/userimg2.png";
 
 const ChatAdmin = () => {
-    const navigate = useNavigate();
-    const { decodedToken } = useJwt(localStorage.getItem("token"));
-    const userName = decodedToken ? decodedToken.name : "No Name Found";
-    const [allTeachers, setAllTeachers] = useState([]);
-    const [allStudents, setAllStudents] = useState([]);
+  const navigate = useNavigate();
+  const { decodedToken } = useJwt(localStorage.getItem("token"));
+  const userName = decodedToken ? decodedToken.name : "No Name Found";
+  const [allTeachers, setAllTeachers] = useState([]);
+  const [allStudents, setAllStudents] = useState([]);
+  const token = localStorage.getItem("token");
+  const [isTeacherSectionVisible, setIsTeacherSectionVisible] = useState(true);
+  const isSmallScreen = useMediaQuery("(max-width: 640px)");
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedTeacherId, setSelectedTeacherId] = useState("");
+  const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [isSearchClicked, setIsSearchClicked] = useState(false);
+
+  if (!token) {
+    navigate("/login");
+    return;
+  }
+
+  useEffect(() => {
     const token = localStorage.getItem("token");
-    const [isTeacherSectionVisible, setIsTeacherSectionVisible] = useState(true);
-    const isSmallScreen = useMediaQuery('(max-width: 640px)')
-    const [isOpen, setIsOpen] = useState(false);
-    const [selectedTeacherId, setSelectedTeacherId] = useState('');
-    const [selectedStudentId, setSelectedStudentId] = useState('');
-    const [isSearchClicked, setIsSearchClicked] = useState(false);
-
     if (!token) {
+      navigate("/login");
+    } else {
+      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
+      // console.log(tokenExpiration)
+
+      if (tokenExpiration && tokenExpiration < Date.now()) {
+        // Token expired, remove from local storage and redirect to login page
+        localStorage.removeItem("token");
         navigate("/login");
-        return;
+      }
     }
+  }, [decodedToken]);
 
-    
-    useEffect(() => {
+  // all Teachers
+
+  useEffect(() => {
+    const fetchAllTeachers = async () => {
+      try {
         const token = localStorage.getItem("token");
+
         if (!token) {
-          navigate("/login");
-        } else {
-          const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
-          // console.log(tokenExpiration)
-    
-          if (tokenExpiration && tokenExpiration < Date.now()) {
-            // Token expired, remove from local storage and redirect to login page
-            localStorage.removeItem("token");
-            navigate("/login");
+          console.error("No token found");
+          navigate("/admin-login");
+          return;
+        }
+
+        const response = await axios.get(
+          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-teachers",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           }
+        );
+        if (response.status == 200) {
+          console.log(response.data);
+          const allteachers = response.data;
+          console.log(allteachers);
+          setAllTeachers(allteachers);
         }
-      }, [decodedToken])
-
-    // all Teachers
-
-    useEffect(() => {
-        const fetchAllTeachers = async () => {
-            try {
-                const token = localStorage.getItem("token");
-
-                if (!token) {
-                    console.error("No token found");
-                    navigate("/admin-login");
-                    return;
-                }
-
-
-                const response = await axios.get(
-                    "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-teachers",
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`
-                        }
-                    }
-                );
-                if (response.status == 200) {
-                    console.log(response.data);
-                    const allteachers = response.data;
-                    console.log(allteachers);
-                    setAllTeachers(allteachers);
-                }
-            } catch (error) {
-                console.error("Error fetching courses:", error);
-
-            }
-        };
-
-        fetchAllTeachers();
-    }, []);
-
-    //    all students
-    useEffect(() => {
-        const fetchAllStudents = async () => {
-            // setLoading(true);
-            try {
-                const token = localStorage.getItem("token");
-
-                if (!token) {
-                    console.error("No token found");
-                    navigate("/admin-login");
-                    return;
-                }
-
-
-                const response = await axios.get(
-                    "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students",
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`
-                        }
-                    }
-                );
-                if (response.status == 200) {
-                    console.log(response.data);
-                    const allstudents = response.data;
-                    console.log(allstudents);
-                    setAllStudents(allstudents);
-                }
-            } catch (error) {
-                console.error("Error fetching associates:", error);
-
-            }
-
-        };
-
-
-        fetchAllStudents();
-    }, []);
-
-
-
-    const handleTeacherChange = (e) => {
-        setSelectedTeacherId(e.target.value);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      }
     };
 
-    const handleStudentChange = (e) => {
-        setSelectedStudentId(e.target.value);
-    };
+    fetchAllTeachers();
+  }, []);
 
-    const handleSearch = () => {
-        setIsSearchClicked(true);
-        console.log("Selected Teacher ID:", selectedTeacherId);
-        console.log("Selected Student ID:", selectedStudentId);
+  //    all students
+  useEffect(() => {
+    const fetchAllStudents = async () => {
+      // setLoading(true);
+      try {
+        const token = localStorage.getItem("token");
 
-        if (isSmallScreen && !isOpen) {
-            setIsTeacherSectionVisible(false);
-            setIsOpen(true); // Open the right portion
-        } else if (isSmallScreen && isOpen) {
-            setIsOpen(false);
-            setIsTeacherSectionVisible(true); // Close the right portion
+        if (!token) {
+          console.error("No token found");
+          navigate("/admin-login");
+          return;
         }
-        // Implement search functionality here
+
+        const response = await axios.get(
+          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (response.status == 200) {
+          console.log(response.data);
+          const allstudents = response.data;
+          console.log(allstudents);
+          setAllStudents(allstudents);
+        }
+      } catch (error) {
+        console.error("Error fetching associates:", error);
+      }
     };
 
+    fetchAllStudents();
+  }, []);
 
+  const handleTeacherChange = (e) => {
+    setSelectedTeacherId(e.target.value);
+  };
 
+  const handleStudentChange = (e) => {
+    setSelectedStudentId(e.target.value);
+  };
 
+  const handleSearch = () => {
+    setIsSearchClicked(true);
+    console.log("Selected Teacher ID:", selectedTeacherId);
+    console.log("Selected Student ID:", selectedStudentId);
 
-    // const handleStudentClick = (student) => {
-    //     // setSelectedStudent(student);
+    if (isSmallScreen && !isOpen) {
+      setIsTeacherSectionVisible(false);
+      setIsOpen(true); // Open the right portion
+    } else if (isSmallScreen && isOpen) {
+      setIsOpen(false);
+      setIsTeacherSectionVisible(true); // Close the right portion
+    }
+    // Implement search functionality here
+  };
 
-    //     if (isSmallScreen && !isOpen) {
-    //         setIsTeacherSectionVisible(false);
-    //         setIsOpen(true); // Open the right portion
-    //     } else if (isSmallScreen && isOpen) {
-    //         setIsOpen(false);
-    //         setIsTeacherSectionVisible(true); // Close the right portion
-    //     }
-    // };
+  // const handleStudentClick = (student) => {
+  //     // setSelectedStudent(student);
 
+  //     if (isSmallScreen && !isOpen) {
+  //         setIsTeacherSectionVisible(false);
+  //         setIsOpen(true); // Open the right portion
+  //     } else if (isSmallScreen && isOpen) {
+  //         setIsOpen(false);
+  //         setIsTeacherSectionVisible(true); // Close the right portion
+  //     }
+  // };
 
-    return (
-        <>
+  return (
+    <>
+      <div>
+        <div class=" h-screen p-0">
+          <div class="md:flex border border-grey rounded shadow-lg h-full">
+            {isTeacherSectionVisible && (
+              <div
+                className={`md:w-1/3 border flex flex-col ${
+                  isSmallScreen && !isOpen ? "w-full" : "p-2"
+                }`}
+              >
+                {/* Left portion */}
 
-            <div>
+                <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center">
+                  <div className="flex items-center">
+                    <img class="w-10 h-10 rounded-full" src={userimg2} />
+                    <span className="ml-1">{userName}</span>
+                  </div>
+                </div>
 
+                <div class="bg-grey-lighter flex-1 overflow-auto px-4">
+                  <select
+                    className="w-full mt-10"
+                    onChange={handleTeacherChange}
+                  >
+                    <option>Select Teacher</option>
+                    {allTeachers.map((teacher) => {
+                      return (
+                        <option key={teacher._id} value={teacher._id}>
+                          {teacher.name}
+                        </option>
+                      );
+                    })}
+                  </select>
 
+                  <select
+                    className="w-full mt-4"
+                    onChange={handleStudentChange}
+                  >
+                    <option>Select Student</option>
+                    {allStudents.map((student) => {
+                      return (
+                        <option key={student._id} value={student._id}>
+                          {student.name}
+                        </option>
+                      );
+                    })}
+                  </select>
 
-                <div class=" h-screen p-0">
-                    <div class="md:flex border border-grey rounded shadow-lg h-full">
+                  <button
+                    className="mt-4 bg-orange-400 w-full p-2 text-center rounded-md"
+                    onClick={handleSearch}
+                  >
+                    Search
+                  </button>
 
-                        {isTeacherSectionVisible && (
-                            <div className={`md:w-1/3 border flex flex-col ${isSmallScreen && !isOpen ? 'w-full' : 'p-2'}`}>
-                                {/* Left portion */}
-
-
-                                <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center">
-                                    <div className='flex items-center'>
-                                        <img class="w-10 h-10 rounded-full" src={userimg2} />
-                                        <span className='ml-1'>{userName}</span>
-                                    </div>
-
-
-                                </div>
-
-
-                                <div class="bg-grey-lighter flex-1 overflow-auto px-4">
-                                    <select className="w-full mt-10" onChange={handleTeacherChange}>
-                                        <option>Select Teacher</option>
-                                        {
-                                            allTeachers.map((teacher) => {
-                                                return (
-                                                    <option key={teacher._id} value={teacher._id}>{teacher.name}</option>
-                                                )
-                                            })
-                                        }
-                                    </select>
-
-                                    <select className="w-full mt-4" onChange={handleStudentChange}>
-                                        <option>Select Student</option>
-                                        {
-                                            allStudents.map((student) => {
-                                                return (
-                                                    <option key={student._id} value={student._id}>{student.name}</option>
-                                                )
-                                            })
-                                        }
-                                    </select>
-
-                                    <button className="mt-4 bg-orange-400 w-full p-2 text-center rounded-md" onClick={handleSearch}>Search</button>
-
-                                    {/* {allTeachers.map((teacher, index) => (
+                  {/* {allTeachers.map((teacher, index) => (
                                         <div class="bg-white px-3 flex items-center hover:bg-grey-lighter cursor-pointer sm:pointer" onClick={() => handleTeacherClick(teacher)}>
                                             <div>
                                                 <img class="h-12 w-12 rounded-full"
@@ -247,18 +238,22 @@ const ChatAdmin = () => {
                                             </div>
                                         </div>
                                     ))} */}
+                </div>
+              </div>
+            )}
 
-                                </div>
+            {isSearchClicked && selectedTeacherId && selectedStudentId && (
+              <ChatBoxAdmin
+                selectedTeacherId={selectedTeacherId}
+                selectedStudentId={selectedStudentId}
+                isOpen={isOpen}
+                isSmallScreen={isSmallScreen}
+                setIsOpen={setIsOpen}
+                setIsTeacherSectionVisible={setIsTeacherSectionVisible}
+              /> // Render the chatbox if a teacher is selected
+            )}
 
-                            </div>
-                        )}
-
-
-                        {isSearchClicked && selectedTeacherId && selectedStudentId && (
-                            <ChatBoxAdmin selectedTeacherId={selectedTeacherId} selectedStudentId={selectedStudentId} isOpen={isOpen} isSmallScreen={isSmallScreen} setIsOpen={setIsOpen} setIsTeacherSectionVisible={setIsTeacherSectionVisible} /> // Render the chatbox if a teacher is selected
-                        )}
-
-                        {/* <div className={`md:w-2/3 border md:flex flex-col ${isOpen ? 'w-full h-full' : 'hidden'}`}>
+            {/* <div className={`md:w-2/3 border md:flex flex-col ${isOpen ? 'w-full h-full' : 'hidden'}`}>
 
                             <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center">
                                 <div class="flex items-center">
@@ -428,13 +423,11 @@ const ChatAdmin = () => {
                                 </div>
                             </div>
                         </div> */}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
 
-                    </div>
-
-                </div>
-            </div>
-        </>
-    )
-}
-
-export default ChatAdmin
+export default ChatAdmin;

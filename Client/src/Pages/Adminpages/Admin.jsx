@@ -1,11 +1,9 @@
-import React, { useEffect } from 'react'
-import Admindash from '../../Component/AdminComponents/Admindash'
-import AdminSidebar from '../../Component/AdminComponents/AdminSidebar'
+import React, { useEffect } from "react";
+import Admindash from "../../Component/AdminComponents/Admindash";
+import AdminSidebar from "../../Component/AdminComponents/AdminSidebar";
 import axios from "axios";
-import { useJwt } from 'react-jwt'
-import { useNavigate } from 'react-router-dom'
-
-
+import { useJwt } from "react-jwt";
+import { useNavigate } from "react-router-dom";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -25,7 +23,7 @@ const Admin = () => {
       navigate("/login");
     } else {
       const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
-      console.log(tokenExpiration)
+      console.log(tokenExpiration);
 
       if (tokenExpiration && tokenExpiration < Date.now()) {
         // Token expired, remove from local storage and redirect to login page
@@ -33,7 +31,7 @@ const Admin = () => {
         navigate("/admin-login");
       }
     }
-  }, [decodedToken])
+  }, [decodedToken]);
 
   useEffect(() => {
     const fetchAdminData = async () => {
@@ -41,7 +39,6 @@ const Admin = () => {
         const token = localStorage.getItem("token");
 
         if (!token) {
-
           console.error("No token found");
           navigate("/login");
           return;
@@ -70,26 +67,16 @@ const Admin = () => {
     };
 
     fetchAdminData();
-  }, [navigate , decodedToken])
-
-
-
- 
-
-
-
+  }, [navigate, decodedToken]);
 
   return (
     <>
-
-
       <AdminSidebar />
       <div className="admin-content">
         <Admindash />
       </div>
-
     </>
-  )
-}
+  );
+};
 
-export default Admin
+export default Admin;

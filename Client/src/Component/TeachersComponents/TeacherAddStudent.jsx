@@ -1,0 +1,239 @@
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
+import axios from "axios";
+import { ClipLoader } from "react-spinners";
+import { css } from "@emotion/react";
+
+const override = css`
+  display: block;
+  margin: 0 auto;
+  border-color: red;
+`;
+
+const TeacherAddStudent = () => {
+  const token = localStorage.getItem("token");
+  const navigate = useNavigate();
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [dob, setdob] = useState();
+  const [userName, setUserName] = useState("");
+  const [popupMessage, setPopupMessage] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [branch, setBranch] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleShowPassword = () => {
+    return setShowPass(!showPass);
+  };
+
+  const handleStudentRegister = async (e) => {
+    setLoading(true);
+    e.preventDefault();
+    setPopupMessage(null);
+
+    try {
+      const response = await axios.post(
+        "https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/add-student",
+        {
+          name,
+          phone,
+          password,
+          userName,
+          dob,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        setPopupMessage("Student Added Successfully");
+        setName("");
+        setPhone("");
+        setPassword("");
+      } else if (response.status === 400) {
+        setPopupMessage("Please Enter a Unique UserName");
+      } else {
+        setPopupMessage("Error in Adding Student");
+      }
+    } catch (error) {
+      if (error.response) {
+        const status = error.response.status;
+        if (status === 400) {
+          setPopupMessage("Please Enter a Unique UserName");
+        } else {
+          setPopupMessage("Error in Adding  Student");
+        }
+      } else {
+        console.error("Error adding student:", error.message);
+        setPopupMessage("Error in Adding Student");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="w-full h-full">
+        <div className="">
+          <section class="relative mt-10 md:-mt-12">
+            {loading && (
+              <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+                <ClipLoader
+                  color={"#FFA500"}
+                  loading={loading}
+                  css={override}
+                  size={70}
+                />
+              </div>
+            )}
+            <div class="flex flex-col items-center justify-center mt-16 lg:py-0 ">
+              <div class="md:w-full sm:w-1/2 bg-white rounded-lg shadow border-t-4 border-orange-400 md:mt-0 sm:max-w-md xl:p-0">
+                <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
+                  <div className="flex justify-between items-center">
+                    <h1 class="text-xl  font-bold leading-tight tracking-tight text-gray-900 md:text-2xl ">
+                      Student Registration Form
+                    </h1>
+                    {/* <img src={logo} alt="" className='w-24' /> */}
+                  </div>
+
+                  <form
+                    class="space-y-4 md:space-y-6"
+                    onSubmit={handleStudentRegister}
+                  >
+                    {" "}
+                    <div>
+                      <label class="block mb-2 text-sm font-medium text-gray-900  w-full">
+                        Username
+                      </label>
+                      <input
+                        type="text"
+                        name="userName"
+                        id="userName"
+                        value={userName}
+                        onChange={(e) => setUserName(e.target.value)}
+                        placeholder="Please Enter a unique userName"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 "
+                        required=""
+                      />
+                    </div>
+                    <div>
+                      <label class="block mb-2 text-sm font-medium text-gray-900  w-full">
+                        Name
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        class=" bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                        placeholder="Enter Student Name"
+                        required=""
+                      />
+                    </div>
+                    <div>
+                      <label class="block mb-2 text-sm font-medium text-gray-900 ">
+                        Phone
+                      </label>
+                      <input
+                        type="phone"
+                        name="phone"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="Enter Phone No"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      "
+                        required=""
+                      />
+                    </div>
+                    <div className="">
+                      <label
+                        className="block mb-2 text-sm font-medium text-gray-900 "
+                        htmlFor="dob"
+                      >
+                        Date of Birth:
+                      </label>
+                      <input
+                        type="date"
+                        id="dob"
+                        value={dob}
+                        className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 rounded-lg outline-none  focus:ring-0"
+                        onChange={(e) => setdob(e.target.value)} // Capture the date input
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label class="block mb-2 text-sm font-medium text-gray-900 ">
+                        Password
+                      </label>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      "
+                        required=""
+                      />
+                    </div>
+                    <div class="flex items-center mt-2">
+                      <input
+                        type="checkbox"
+                        class="mr-2"
+                        onChange={() => setShowPassword(!showPassword)}
+                      />
+                      <label
+                        class="text-sm font-medium text-gray-900  cursor-pointer"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        Show Password
+                      </label>
+                    </div>
+                    <div className="w-full">
+                      <button className="bg-orange-400 text-white w-full p-2 rounded-md">
+                        Add Student
+                      </button>
+                    </div>
+                  </form>
+                  {popupMessage && (
+                    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                      <div className="bg-white p-4 rounded-lg shadow-md">
+                        <svg
+                          class="h-6 w-6 text-red-500 float-right -mt-2 cursor-pointer"
+                          onClick={() => setPopupMessage(null)}
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          stroke-width="2"
+                          stroke="currentColor"
+                          fill="none"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          {" "}
+                          <path stroke="none" d="M0 0h24v24H0z" />{" "}
+                          <line x1="18" y1="6" x2="6" y2="18" />{" "}
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                        <p className="text-lg font-bold mt-4 text-green-700">
+                          {popupMessage}
+                        </p>
+                        {/* <button className="bg-orange-500 text-white py-2 px-4 rounded-md" onClick={() => setPopupMessage(null)}>Close</button> */}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default TeacherAddStudent;

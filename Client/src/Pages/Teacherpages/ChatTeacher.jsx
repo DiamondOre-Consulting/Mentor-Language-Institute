@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ChatBoxTeacher from "../../Component/TeachersComponents/ChatBoxTeacher";
-import { Link, useNavigate } from 'react-router-dom'
-import { useMediaQuery } from '@react-hook/media-query';
-import { useJwt } from 'react-jwt'
-import userimg2 from '..//..//assets/userimg2.png'
+import { Link, useNavigate } from "react-router-dom";
+import { useMediaQuery } from "@react-hook/media-query";
+import { useJwt } from "react-jwt";
+import userimg2 from "..//..//assets/userimg2.png";
 
 const ChatTeacher = () => {
   const navigate = useNavigate();
@@ -15,7 +15,7 @@ const ChatTeacher = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isTeacherSectionVisible, setIsTeacherSectionVisible] = useState(true);
-  const isSmallScreen = useMediaQuery('(max-width: 640px)')
+  const isSmallScreen = useMediaQuery("(max-width: 640px)");
 
   const token = localStorage.getItem("token");
 
@@ -38,7 +38,7 @@ const ChatTeacher = () => {
         navigate("/login");
       }
     }
-  }, [decodedToken])
+  }, [decodedToken]);
 
   useEffect(() => {
     // Fetch students when the component mounts
@@ -78,50 +78,40 @@ const ChatTeacher = () => {
     }
   };
 
-
-
-
-
   return (
     <>
       <div>
-
-
-
         <div class=" h-screen p-0">
           <div class="md:flex border border-grey rounded shadow-lg h-full ">
-
             {isTeacherSectionVisible && (
-              <div className={`md:w-1/3 border flex flex-col  ${isSmallScreen && !isOpen ? 'w-full mt-14' : 'p-2'}`}>
+              <div
+                className={`md:w-1/3 border flex flex-col  ${
+                  isSmallScreen && !isOpen ? "w-full mt-14" : "p-2"
+                }`}
+              >
                 {/* Left portion */}
 
-
                 <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center">
-                  <div className='flex items-center'>
+                  <div className="flex items-center">
                     <img class="w-10 h-10 rounded-full" src={userimg2} />
-                    <span className='ml-1'>{userName}</span>
+                    <span className="ml-1">{userName}</span>
                   </div>
-
-
                 </div>
 
-                <div class="bg-grey-lightest w-full h-0.5 bg-gray-600 rounded-md my-4">
-
-                </div>
+                <div class="bg-grey-lightest w-full h-0.5 bg-gray-600 rounded-md my-4"></div>
 
                 <div class="bg-grey-lighter flex-1 overflow-auto">
                   {students.map((student, index) => (
-                    <div class="bg-white px-3 flex items-center hover:bg-grey-lighter cursor-pointer sm:pointer" onClick={() => handleStudentClick(student)}>
+                    <div
+                      class="bg-white px-3 flex items-center hover:bg-grey-lighter cursor-pointer sm:pointer"
+                      onClick={() => handleStudentClick(student)}
+                    >
                       <div>
-                        <img class="h-12 w-12 rounded-full"
-                          src={userimg2} />
+                        <img class="h-12 w-12 rounded-full" src={userimg2} />
                       </div>
                       <div class="ml-4 flex-1 border-b border-grey-lighter py-4">
                         <div class="flex items-bottom justify-between">
-                          <p class="text-grey-darkest">
-                            {student.name}
-                          </p>
-
+                          <p class="text-grey-darkest">{student.name}</p>
                         </div>
                         <p class="text-grey-dark mt-1 text-sm">
                           {/* {classData.map((classItem, index) => {
@@ -145,24 +135,22 @@ const ChatTeacher = () => {
                       </div>
                     </div>
                   ))}
-
                 </div>
-
               </div>
             )}
 
             {selectedStudent && (
-              <ChatBoxTeacher student={selectedStudent} isOpen={isOpen} setIsOpen={setIsOpen} isSmallScreen={isSmallScreen} setIsTeacherSectionVisible={setIsTeacherSectionVisible} /> // Render the chatbox if a student is selected
+              <ChatBoxTeacher
+                student={selectedStudent}
+                isOpen={isOpen}
+                setIsOpen={setIsOpen}
+                isSmallScreen={isSmallScreen}
+                setIsTeacherSectionVisible={setIsTeacherSectionVisible}
+              /> // Render the chatbox if a student is selected
             )}
-
           </div>
-
         </div>
       </div>
-
-
-
-
 
       {/* <div className="mt-16">
         <h1>Teacher Dashboard</h1>
@@ -180,7 +168,6 @@ const ChatTeacher = () => {
           <ChatBoxTeacher student={selectedStudent} /> // Render the chatbox if a student is selected
         )}
       </div> */}
-
     </>
   );
 };

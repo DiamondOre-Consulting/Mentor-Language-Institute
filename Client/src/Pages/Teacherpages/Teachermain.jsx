@@ -1,18 +1,17 @@
-import React, { useEffect, useState } from 'react'
-import TeacherSidebar from '../../Component/TeachersComponents/TeacherSidebar'
-import TeacherDashboard from '../../Component/TeachersComponents/TeacherDashboard'
+import React, { useEffect, useState } from "react";
+import TeacherSidebar from "../../Component/TeachersComponents/TeacherSidebar";
+import TeacherDashboard from "../../Component/TeachersComponents/TeacherDashboard";
 import axios from "axios";
-import { useJwt } from 'react-jwt'
-import { useNavigate } from 'react-router-dom';
+import { useJwt } from "react-jwt";
+import { useNavigate } from "react-router-dom";
 
 const Teachermain = () => {
   const navigate = useNavigate();
-  const [teacherData , setTeacherData] =useState("");
+  const [teacherData, setTeacherData] = useState();
   const { decodedToken } = useJwt(localStorage.getItem("token"));
   const token = localStorage.getItem("token");
   // console.log(token )
 
- 
   if (!token) {
     navigate("/login"); // Redirect to login page if not authenticated
     return;
@@ -32,11 +31,9 @@ const Teachermain = () => {
         navigate("/login");
       }
     }
-  }, [decodedToken])
+  }, [decodedToken]);
 
-
-
-  useEffect(()=>{
+  useEffect(() => {
     const fetchTeacherData = async () => {
       try {
         const token = localStorage.getItem("token");
@@ -57,37 +54,29 @@ const Teachermain = () => {
             },
           }
         );
-        if (response.status == 200) {
-          // console.log("teacherdata",response.data);
-          const all = response.data;
-          setTeacherData(response.data);
-          console.log("teachermain data",teacherData)
-     
+        console.log(response);
+        console.log("teachermain data", response?.data);
+        if (response?.status == 200) {
+          setTeacherData(response?.data);
         } else {
           console.log(response.data);
-          
         }
       } catch (error) {
         console.error("Error fetching teacher data:", error);
-        
       }
     };
 
     fetchTeacherData();
-  },[decodedToken])
-
-
-
-
+  }, []);
 
   return (
     <>
-       <TeacherSidebar/>
+      <TeacherSidebar />
       <div className="admin-content">
-        <TeacherDashboard teacherData={teacherData}/>
+        <TeacherDashboard teacherData={teacherData} />
       </div>
     </>
-  )
-}
+  );
+};
 
-export default Teachermain
+export default Teachermain;

@@ -3,19 +3,25 @@ import axios from "axios";
 import io from "socket.io-client";
 import { useJwt } from "react-jwt";
 import { useNavigate } from "react-router-dom";
-import userimg2 from '..//..//..//assets/userimg2.png'
-
-
-
+import userimg2 from "..//..//..//assets/userimg2.png";
 
 // import { socket } from './socket';
 
-const ChatBox = ({ teacher, isOpen, isSmallScreen, setIsOpen, setIsTeacherSectionVisible }) => {
+const ChatBox = ({
+  teacher,
+  isOpen,
+  isSmallScreen,
+  setIsOpen,
+  setIsTeacherSectionVisible,
+}) => {
   const navigate = useNavigate();
   const { decodedToken, isExpired } = useJwt(localStorage.getItem("token"));
   const userId = decodedToken ? decodedToken.userId : null;
   console.log(userId);
-  const socket = useMemo(() => io("https://mentor-language-institute-backend-hbyk.onrender.com"), []);
+  const socket = useMemo(
+    () => io("https://mentor-language-institute-backend-hbyk.onrender.com"),
+    []
+  );
   const [chatHistory, setChatHistory] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const chatContainerRef = useRef(null);
@@ -34,8 +40,6 @@ const ChatBox = ({ teacher, isOpen, isSmallScreen, setIsOpen, setIsTeacherSectio
     return;
   }
 
-
-
   useEffect(() => {
     // Fetch chat history for the selected teacher
     fetchChatHistory(teacher._id);
@@ -53,14 +57,12 @@ const ChatBox = ({ teacher, isOpen, isSmallScreen, setIsOpen, setIsTeacherSectio
     };
   }, [teacher, chatHistory]);
 
-
-
   useEffect(() => {
     if (isUserAtBottom && chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
     }
   }, [chatHistory, isUserAtBottom]);
-
 
   const fetchChatHistory = async (teacherId) => {
     try {
@@ -93,8 +95,6 @@ const ChatBox = ({ teacher, isOpen, isSmallScreen, setIsOpen, setIsTeacherSectio
       });
       // Clear the input field
       setNewMessage("");
-
-
     }
   };
 
@@ -103,7 +103,6 @@ const ChatBox = ({ teacher, isOpen, isSmallScreen, setIsOpen, setIsTeacherSectio
       handleSendMessage();
     }
   };
-
 
   const handleClick = () => {
     if (isSmallScreen && isOpen) {
@@ -117,7 +116,8 @@ const ChatBox = ({ teacher, isOpen, isSmallScreen, setIsOpen, setIsTeacherSectio
 
   const handleScroll = () => {
     if (chatContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+      const { scrollTop, scrollHeight, clientHeight } =
+        chatContainerRef.current;
       if (isSmallScreen && isOpen) {
         setIsUserAtBottom(scrollTop + clientHeight >= scrollHeight - 40);
       } else {
@@ -127,10 +127,12 @@ const ChatBox = ({ teacher, isOpen, isSmallScreen, setIsOpen, setIsTeacherSectio
   };
 
   return (
-
     <>
-      <div className={`md:w-2/3 border  bg-gray-200 md:flex flex-col ${isOpen ? 'w-full h-full' : 'hidden'}`}>
-
+      <div
+        className={`md:w-2/3 border  bg-gray-200 md:flex flex-col ${
+          isOpen ? "w-full h-full" : "hidden"
+        }`}
+      >
         <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center w-full fixed bg-white ">
           <div class="flex items-center bg-white">
             <div>
@@ -140,66 +142,77 @@ const ChatBox = ({ teacher, isOpen, isSmallScreen, setIsOpen, setIsTeacherSectio
               <p class="text-grey-darkest">
                 <h1>{teacher.name}</h1>
               </p>
-
             </div>
           </div>
 
           {isSmallScreen && isOpen && (
             <div className="bg-grey-lighter px-4 py-4 flex items-center">
-              <button onClick={handleClick} className='bg-orange-400 p-1 rounded-md text-gray-100 text-sm'>
+              <button
+                onClick={handleClick}
+                className="bg-orange-400 p-1 rounded-md text-gray-100 text-sm"
+              >
                 Go Back
               </button>
             </div>
           )}
         </div>
 
-
-        <div class="flex-1 overflow-auto bg-gray-200 " ref={chatContainerRef} onScroll={handleScroll} style={{marginTop:"80px"}}>
+        <div
+          class="flex-1 overflow-auto bg-gray-200 "
+          ref={chatContainerRef}
+          onScroll={handleScroll}
+          style={{ marginTop: "80px" }}
+        >
           <div class="py-2 px-3 mb-16 md:mb-0">
-
             {chatHistory.map((message) => (
-
               <div
                 key={message._id}
-                className={`flex ${message.senderId === userId ? "justify-end" : "justify-start"} mb-2`}
+                className={`flex ${
+                  message.senderId === userId ? "justify-end" : "justify-start"
+                } mb-2`}
               >
-                <div className={`rounded py-2 px-3 ${message.senderId === userId ? "bg-green-100" : "bg-gray-100"}`}>
-
-                  <p class="text-md mt-1">
-                    {message.message}
-                  </p>
+                <div
+                  className={`rounded py-2 px-3 ${
+                    message.senderId === userId ? "bg-green-100" : "bg-gray-100"
+                  }`}
+                >
+                  <p class="text-md mt-1">{message.message}</p>
                   <p class="text-right  text-grey-dark mt-1">
-                    <span className="text-xs">{new Date(message.createdAt).toLocaleDateString()} </span>
-                    <span className="text-xs ml-2"> {new Date(message.createdAt).toLocaleTimeString()}</span>
+                    <span className="text-xs">
+                      {new Date(message.createdAt).toLocaleDateString()}{" "}
+                    </span>
+                    <span className="text-xs ml-2">
+                      {" "}
+                      {new Date(message.createdAt).toLocaleTimeString()}
+                    </span>
                   </p>
                 </div>
               </div>
             ))}
-
           </div>
         </div>
 
-
         <div class="bg-white px-4 py-4 flex  fixed bottom-0 bg-white w-full md:relative  md:w-auto items-center ">
-
           <div class="flex-1 mx-4">
-            <input class="w-full border rounded px-2 py-2" type="text"
+            <input
+              class="w-full border rounded px-2 py-2"
+              type="text"
               value={newMessage}
               onKeyPress={handleKeyPress}
               onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type your message..." />
-
+              placeholder="Type your message..."
+            />
           </div>
           <div>
-            <button className="bg-green-300 rounded-md px-6 py-2" onClick={handleSendMessage}>Send</button>
+            <button
+              className="bg-green-300 rounded-md px-6 py-2"
+              onClick={handleSendMessage}
+            >
+              Send
+            </button>
           </div>
         </div>
       </div>
-
-
-
-
-
 
       {/* <div>
         <h2>Chat with {teacher.name}</h2>
@@ -218,7 +231,6 @@ const ChatBox = ({ teacher, isOpen, isSmallScreen, setIsOpen, setIsTeacherSectio
           <button onClick={handleSendMessage}>Send</button>
         </div>
       </div> */}
-
     </>
   );
 };

@@ -36,7 +36,7 @@ router.post("/login-teacher", async (req, res) => {
         role: user.role,
         name: user.name,
         phone: user.phone,
-        branch: user.branch
+        branch: user.branch,
       },
       secretKey,
       {
@@ -76,12 +76,49 @@ router.get("/my-profile", TeacherAuthenticateToken, async (req, res) => {
     res.status(500).json(error);
   }
 });
+router.post("/add-student", TeacherAuthenticateToken, async (req, res) => {
+  try {
+    const { branch } = req.user;
+    const { name, phone, password, userName, dob } = req.body;
+
+    const studentUser = await Students.findOne({ userName });
+
+    if (studentUser) {
+      return res
+        .status(400)
+        .json({ message: "Student with this username already exist!!!" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newStudent = new Students({
+      branch: branch,
+      userName,
+      dob,
+      name,
+      phone,
+      password: hashedPassword,
+    });
+
+    await newStudent.save();
+
+    return res
+      .status(200)
+      .json({ message: `New student has been registered successfully!!!` });
+  } catch (error) {
+    console.log("Something went wrong!!! ", error.message);
+    res.status(500).json(error);
+  }
+});
 
 router.get("/my-classes", TeacherAuthenticateToken, async (req, res) => {
   try {
     const { userId, branch } = req.user;
 
-    const allMyClasses = await Classes.find({ teachBy: userId, branch: branch });
+    const allMyClasses = await Classes.find({
+      teachBy: userId,
+      branch: branch,
+    });
 
     if (!allMyClasses) {
       return res
@@ -121,18 +158,20 @@ router.post(
     try {
       const { id } = req.params;
       const { date, numberOfClasses } = req.body;
-      const {branch} = req.user;
+      const { branch } = req.user;
 
       const addNewClass = await Classes.findByIdAndUpdate(
         { _id: id },
         {
-          $push: { dailyClasses: {classDate: date, numberOfClasses: numberOfClasses} },
+          $push: {
+            dailyClasses: { classDate: date, numberOfClasses: numberOfClasses },
+          },
         },
         { new: true }
       );
 
       // Get all student ids
-      const allStudents = await Students.find({branch: branch}, { _id: 1 });
+      const allStudents = await Students.find({ branch: branch }, { _id: 1 });
 
       const studentIds = allStudents.map((student) => student._id);
 
@@ -207,12 +246,9 @@ router.put(
         { new: true }
       );
 
-      res
-        .status(200)
-        .json({
-          message:
-            "Total hours of the class has been increased successfully!!!",
-        });
+      res.status(200).json({
+        message: "Total hours of the class has been increased successfully!!!",
+      });
     } catch (error) {
       console.log("Something went wrong!!! ", error);
       res.status(500).json(error);
@@ -220,30 +256,26 @@ router.put(
   }
 );
 
-router.get(
-  "/attendance/:id",
-  TeacherAuthenticateToken,
-  async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { attendanceDate } = req.query;
+router.get("/attendance/:id", TeacherAuthenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { attendanceDate } = req.query;
 
-      const attendances = await Attendance.find({
-        classId: id,
-        "detailAttendance.classDate": attendanceDate,
-      });
+    const attendances = await Attendance.find({
+      classId: id,
+      "detailAttendance.classDate": attendanceDate,
+    });
 
-      if(!attendances) {
-        return res.status(403).json({message: "No record found!!!"});
-      }
-
-      res.status(200).json(attendances);
-    } catch (error) {
-      console.log("Something went wrong!!! ");
-      res.status(500).json(error);
+    if (!attendances) {
+      return res.status(403).json({ message: "No record found!!!" });
     }
+
+    res.status(200).json(attendances);
+  } catch (error) {
+    console.log("Something went wrong!!! ");
+    res.status(500).json(error);
   }
-);
+});
 
 router.put(
   "/update-attendance/:id1/:id2",
@@ -329,7 +361,10 @@ router.get("/my-commission/:id", TeacherAuthenticateToken, async (req, res) => {
     const { userId } = req.user;
     const { id } = req.params;
 
-    const myCommission = await Commission.find({ teacherId: userId, classId: id });
+    const myCommission = await Commission.find({
+      teacherId: userId,
+      classId: id,
+    });
 
     if (!myCommission) {
       return res.status(403).json({ message: "No record found!!!" });
@@ -343,75 +378,86 @@ router.get("/my-commission/:id", TeacherAuthenticateToken, async (req, res) => {
 });
 
 // ADD MONTHLY COMMISSION
-router.post("/add-monthly-classes/:id", TeacherAuthenticateToken, async (req, res) => {
-  try {
-    const {id} = req.params;
-    const {userId} = req.user;
-    const {monthName, year, classesTaken} = req.body;
+router.post(
+  "/add-monthly-classes/:id",
+  TeacherAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { userId } = req.user;
+      const { monthName, year, classesTaken } = req.body;
 
-    const addClassesTaken = new Commission({
-      teacherId: userId,
-      classId: id,
-      monthName,
-      year,
-      classesTaken
-    })
+      const addClassesTaken = new Commission({
+        teacherId: userId,
+        classId: id,
+        monthName,
+        year,
+        classesTaken,
+      });
 
-    await addClassesTaken.save();
+      await addClassesTaken.save();
 
-    if(!addClassesTaken) {
-      return res.status(403).json({message: "Error in adding classes"});
+      if (!addClassesTaken) {
+        return res.status(403).json({ message: "Error in adding classes" });
+      }
+
+      res.status(200).json({
+        message: "Monthly classes taken added successfully!!!",
+        addClassesTaken,
+      });
+    } catch (error) {
+      console.log("Something went wrong!!! ", error);
+      res.status(500).json(error);
     }
-
-    res.status(200).json({message: "Monthly classes taken added successfully!!!", addClassesTaken})
-  } catch(error) {
-    console.log("Something went wrong!!! ",error);
-    res.status(500).json(error);
   }
-})
+);
 
 // CHATTING LIST OF STUDENTS
-router.get('/chat-all-students', TeacherAuthenticateToken, async (req, res) => {
+router.get("/chat-all-students", TeacherAuthenticateToken, async (req, res) => {
   try {
-    const {userId} = req.user;
-    let allStudentIds = []
+    const { userId } = req.user;
+    let allStudentIds = [];
     let allStudents = [];
 
-    const currentUser = await Teachers.findById(
-      {_id: userId}
-    );
+    const currentUser = await Teachers.findById({ _id: userId });
 
     // if(currentUser.messages.length == 0) {
-      const myClasses = currentUser.myClasses;
+    const myClasses = currentUser.myClasses;
 
-      await Promise.all(myClasses.map(async (eachClass) => {
-        const currentClass = await Classes.findById({_id: eachClass});
+    await Promise.all(
+      myClasses.map(async (eachClass) => {
+        const currentClass = await Classes.findById({ _id: eachClass });
         let studentsIds = currentClass.enrolledStudents;
-        studentsIds.forEach(studentId => {
+        studentsIds.forEach((studentId) => {
           const stringId = String(studentId).trim().toLowerCase(); // Normalize ID
           if (!allStudentIds.includes(stringId)) {
             allStudentIds.push(stringId);
           }
         });
-      }));
-      // allStudentIds = [...new Set(allStudentIds)];
+      })
+    );
+    // allStudentIds = [...new Set(allStudentIds)];
 
-      // Convert strings to ObjectIds
-      const objectIds = allStudentIds.map(id => new mongoose.Types.ObjectId(id));
-      console.log(objectIds);
+    // Convert strings to ObjectIds
+    const objectIds = allStudentIds.map(
+      (id) => new mongoose.Types.ObjectId(id)
+    );
+    console.log(objectIds);
 
-      await Promise.all(objectIds.map(async (eachId) => {
-        const eachStudent = await Students.findById({_id: eachId});
+    await Promise.all(
+      objectIds.map(async (eachId) => {
+        const eachStudent = await Students.findById({ _id: eachId });
         allStudents.push(eachStudent);
-      }))
+      })
+    );
 
-      res.status(201).json(allStudents);
+    res.status(201).json(allStudents);
 
     // }
-  } catch(error) {
+  } catch (error) {
     console.log("Something went wrong!!! ", error);
     res.status(500).json(error);
   }
-})
+});
 
 export default router;
