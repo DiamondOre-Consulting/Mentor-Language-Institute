@@ -2,11 +2,13 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import morgan from "morgan";
 import { createServer } from "http";
 // import socket from 'socket.io';
 import { Server } from "socket.io";
 import feeReminderScheduler from "./feeReminderScheduler.js";
 import Messages from "./Models/Messages.js";
+import Student from "./Models/Students.js";
 
 const app = express();
 const server = createServer(app);
@@ -24,6 +26,7 @@ app.use(express.json());
 app.use(cors());
 
 const PORT = 7000;
+app.use(morgan("dev"));
 
 // Socket.IO logic
 // io.on('connection', (socket) => {
@@ -70,7 +73,7 @@ io.on("connection", (socket) => {
         senderId,
         message,
       });
-      io.to(`student-${receiverId}`).emit('receive-message', {
+      io.to(`student-${receiverId}`).emit("receive-message", {
         senderId,
         message,
       });

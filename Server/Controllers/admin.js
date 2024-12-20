@@ -72,7 +72,7 @@ router.post("/login-admin", async (req, res) => {
         username: user.username,
         phone: user.phone,
         role: user.role,
-        branch: user.branch
+        branch: user.branch,
       },
       secretKey,
       {
@@ -98,7 +98,7 @@ router.get("/my-profile", AdminAuthenticateToken, async (req, res) => {
       return res.status(404).json({ message: "Admin not find" });
     }
 
-    const {branch, role, name, username, parents, teachers, classes } = admin;
+    const { branch, role, name, username, parents, teachers, classes } = admin;
     res.status(200).json({
       branch,
       role,
@@ -157,12 +157,12 @@ router.post("/add-new-class", AdminAuthenticateToken, async (req, res) => {
 // GET ALL CLASSES
 router.get("/all-classes", AdminAuthenticateToken, async (req, res) => {
   try {
-    const {branch} = req.user;
-    if(!branch) {
+    const { branch } = req.user;
+    if (!branch) {
       const allClasses = await Classes.find({});
       return res.status(200).json(allClasses);
     }
-    const allClasses = await Classes.find({branch: branch});
+    const allClasses = await Classes.find({ branch: branch });
 
     return res.status(200).json(allClasses);
   } catch (error) {
@@ -188,8 +188,8 @@ router.get("/all-classes/:id", AdminAuthenticateToken, async (req, res) => {
 // ADD TEACHER
 router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
   try {
-    const {branch} = req.user;
-    const { name, phone, password } = req.body;
+    const { branch } = req.user;
+    const { name, phone, password, dob } = req.body;
 
     const teacher = await Teachers.exists({ phone });
 
@@ -208,8 +208,10 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
         role: "Teacher",
         name,
         phone,
+        dob,
         password: hashedPassword,
       });
+      console.log(newTeacher);
 
       await newTeacher.save();
     }
@@ -225,13 +227,13 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
 // GET ALL TEACHERS
 router.get("/all-teachers", AdminAuthenticateToken, async (req, res) => {
   try {
-    const {branch} = req.user;
-    if(!branch) {
+    const { branch } = req.user;
+    if (!branch) {
       const allTeachers = await Teachers.find({}, { password: 0 });
 
       return res.status(200).json(allTeachers);
     }
-    const allTeachers = await Teachers.find({branch}, { password: 0 });
+    const allTeachers = await Teachers.find({ branch }, { password: 0 });
 
     return res.status(200).json(allTeachers);
   } catch (error) {
@@ -260,22 +262,23 @@ router.get("/all-teachers/:id", AdminAuthenticateToken, async (req, res) => {
 // ADD STUDENT
 router.post("/add-student", AdminAuthenticateToken, async (req, res) => {
   try {
-    const {branch} = req.user;
-    console.log(branch);
-    const { name, phone, password } = req.body;
+    const { branch } = req.user;
+    const { name, phone, password, userName, dob } = req.body;
 
-    const studentUser = await Students.findOne({ phone });
+    const studentUser = await Students.findOne({ userName });
 
     if (studentUser) {
       return res
         .status(409)
-        .json({ message: "Student with this phone number already exist!!!" });
+        .json({ message: "Student with this username already exist!!!" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newStudent = new Students({
       branch: branch,
+      userName,
+      dob,
       name,
       phone,
       password: hashedPassword,
@@ -295,14 +298,14 @@ router.post("/add-student", AdminAuthenticateToken, async (req, res) => {
 // GET ALL STUDENTS
 router.get("/all-students", AdminAuthenticateToken, async (req, res) => {
   try {
-    const {branch} = req.user;
+    const { branch } = req.user;
 
-    if(!branch) {
-      const allStudents = await Students.find({}, {password: 0});
+    if (!branch) {
+      const allStudents = await Students.find({}, { password: 0 });
 
       return res.status(200).json(allStudents);
     }
-    const allStudents = await Students.find({branch}, {password: 0});
+    const allStudents = await Students.find({ branch }, { password: 0 });
 
     return res.status(200).json(allStudents);
   } catch (error) {
@@ -542,7 +545,10 @@ router.get(
     try {
       const { id1, id2 } = req.params;
 
-      const commissionById = await Commission.find({ teacherId: id1, classId: id2 });
+      const commissionById = await Commission.find({
+        teacherId: id1,
+        classId: id2,
+      });
       if (!commissionById) {
         return res.status(403).json({ message: "No record found!!!" });
       }
@@ -600,7 +606,7 @@ router.post(
   }
 );
 
-// DEACTIVATE STUDENT ID  
+// DEACTIVATE STUDENT ID
 router.put(
   "/deactivate-account/:id",
   AdminAuthenticateToken,
@@ -628,55 +634,86 @@ router.put(
   }
 );
 
-// DELETE COURSE 
-router.delete("/delete-course/:id", AdminAuthenticateToken, async (req, res) => {
-  try {
-    const {id} = req.params;
+// DELETE COURSE
+router.delete(
+  "/delete-course/:id",
+  AdminAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
 
-    const findCourse = await Classes.findById({_id: id});
-    if(!findCourse) {
-      return res.status(402).json({message: "No course found!!!"});
+      const findCourse = await Classes.findById({ _id: id });
+      if (!findCourse) {
+        return res.status(402).json({ message: "No course found!!!" });
+      }
+
+      // Remove the class ID from students' classes
+      await Students.updateMany({ classes: id }, { $pull: { classes: id } });
+
+      // Remove the class ID from teachers' classes
+      await Teachers.updateMany({ classes: id }, { $pull: { classes: id } });
+
+      // Delete the class
+      await Classes.findByIdAndDelete(id);
+
+      res.status(200).json({ message: "Course deleted successfully!" });
+    } catch (error) {
+      console.log("Something went wrong!!!", error);
+      res.status(500).json(error.message);
     }
-
-        // Remove the class ID from students' classes
-        await Students.updateMany(
-          { classes: id },
-          { $pull: { classes: id } }
-        );
-
-            // Remove the class ID from teachers' classes
-    await Teachers.updateMany(
-      { classes: id },
-      { $pull: { classes: id } }
-    );
-
-    // Delete the class
-    await Classes.findByIdAndDelete(id);
-
-    res.status(200).json({ message: "Course deleted successfully!" });
-
-  } catch(error) {
-    console.log("Something went wrong!!!", error);
-    res.status(500).json(error.message);
   }
-})
+);
 
 // DELETE TEACHER
-router.delete("/delete-teacher/:id", AdminAuthenticateToken, async (req, res) => {
-  try {
-    const {id} = req.params;
+router.delete(
+  "/delete-teacher/:id",
+  AdminAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
 
-    const findTeacher = await Teachers.findByIdAndDelete({_id: id});
-    if(!findTeacher) {
-      return res.status(402).json({message: "No teacher found!!!"});
+      const findTeacher = await Teachers.findByIdAndDelete({ _id: id });
+      if (!findTeacher) {
+        return res.status(402).json({ message: "No teacher found!!!" });
+      }
+
+      res.status(200).json({ message: "Teacher deleted successfully!!!" });
+    } catch (error) {
+      console.log("Something went wrong!!! ", error);
+      res.status(500).json(error.message);
     }
-    
-    res.status(200).json({message: "Teacher deleted successfully!!!"})
-
-  } catch(error) {
-    console.log("Something went wrong!!! ", error);
-    res.status(500).json(error.message);
   }
-})
+);
+
+router.get(
+  "/get-studentsListBySub/:id",
+  AdminAuthenticateToken,
+  async (req, res) => {
+    const { id } = req.params;
+    console.log("id", id);
+
+    try {
+      // Fetch the class and populate the enrolledStudents field with user details
+      const classDetails = await Classes.findById(id).populate({
+        path: "enrolledStudents",
+        select: "name phone", // Specify fields to include (e.g., 'name', 'email')
+      });
+
+      if (!classDetails) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      // console.log("classDetails", classDetails.enrolledStudents);
+
+      // Send the populated list of enrolled students
+      res.status(200).json({
+        success: true,
+        enrolledStudents: classDetails.enrolledStudents,
+      });
+    } catch (error) {
+      console.error("Error fetching enrolled students:", error);
+      res.status(500).json({ success: false, message: "Server error" });
+    }
+  }
+);
 
 export default router;

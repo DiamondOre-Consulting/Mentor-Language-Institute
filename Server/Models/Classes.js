@@ -3,20 +3,17 @@ import mongoose from "mongoose";
 const classSchema = new mongoose.Schema({
   branch: {
     type: String,
-    required: true
+    required: true,
   },
   classTitle: {
     type: String,
     required: true,
   },
-  // classSchedule: {
-  //   type: String,
-  //   required: true,
-  // },
+
   teachBy: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    default: null
+    default: null,
   },
   totalHours: {
     type: Number,
@@ -33,6 +30,7 @@ const classSchema = new mongoose.Schema({
     type: [
       {
         type: mongoose.Schema.Types.ObjectId,
+        ref: "Student",
       },
     ],
     default: [],
@@ -41,11 +39,11 @@ const classSchema = new mongoose.Schema({
     type: [
       {
         classDate: {
-          type: String
+          type: String,
         },
         numberOfClasses: {
-          type: String
-        }
+          type: String,
+        },
       },
     ],
     default: [],

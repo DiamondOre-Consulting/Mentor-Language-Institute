@@ -19,49 +19,49 @@ const secretKey = process.env.STUDENT_JWT_SECRET;
 const router = express.Router();
 
 router.post("/signup", async (req, res) => {
-    try {
-        
-        const {name, phone, password, branch} = req.body;
+  try {
+    const { name, phone, password, branch, userName, dob } = req.body;
 
-        const studentUser = await Students.findOne({ phone });
+    const studentUser = await Students.findOne({ userName });
 
-        if (studentUser) {
-          return res
-            .status(409)
-            .json({ message: "Student with this phone number already exist!!!" });
-        }
-    
-        const hashedPassword = await bcrypt.hash(password, 10);
-    
-        const newStudent = new Students({
-          branch,
-          name,
-          phone,
-          password: hashedPassword,
-        });
-    
-        await newStudent.save();
-    
-        return res
-          .status(200)
-          .json({ message: `New student has been registered successfully!!!` });
-    } catch(error) {
-        console.log("Something went wrong!!! ");
-        res.status(500).json(error);
+    if (studentUser) {
+      return res
+        .status(400)
+        .json({ message: "Student with this username already exist!!!" });
     }
-})
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newStudent = new Students({
+      branch,
+      name,
+      phone,
+      userName,
+      dob,
+      password: hashedPassword,
+    });
+
+    await newStudent.save();
+
+    return res
+      .status(200)
+      .json({ message: `New student has been registered successfully!!!` });
+  } catch (error) {
+    console.log("Something went wrong!!! ");
+    res.status(500).json(error);
+  }
+});
 
 router.post("/login", async (req, res) => {
   try {
-    const { phone, password } = req.body;
+    const { userName, password } = req.body;
 
-    const user = await Students.findOne({ phone });
-    if (!user) {
-      return res.status(401).json({ message: "Invalid phone number" });
-    }
+    const user = await Students.findOne({ userName });
 
-    if(user.deactivated) {
-      return res.status(402).json({message: "Your account has been deactivated!!!"});
+    if (user.deactivated) {
+      return res
+        .status(402)
+        .json({ message: "Your account has been deactivated!!!" });
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
@@ -74,7 +74,8 @@ router.post("/login", async (req, res) => {
         userId: user._id,
         name: user.name,
         phone: user.phone,
-        branch: user.branch
+        branch: user.branch,
+        userName: user.userName,
       },
       secretKey,
       {
@@ -91,25 +92,16 @@ router.post("/login", async (req, res) => {
 
 router.get("/my-profile", StudentAuthenticateToken, async (req, res) => {
   try {
-    const { phone } = req.user;
+    const { userName } = req.user;
 
-    const student = await Students.findOne({ phone: phone });
+    const student = await Students.findOne({ userName });
+    console.log(student);
 
     if (!student) {
       return res.status(404).json({ message: "Student not find" });
     }
 
-    const { branch, name, appliedClasses, classes, attendanceDetail, feeDetail } =
-      student;
-    res.status(200).json({
-      branch,
-      name,
-      phone,
-      appliedClasses,
-      classes,
-      attendanceDetail,
-      feeDetail,
-    });
+    res.status(200).json(student);
   } catch (error) {
     console.log("Something went wrong!!! ");
     res.status(500).json(error);
@@ -118,8 +110,8 @@ router.get("/my-profile", StudentAuthenticateToken, async (req, res) => {
 
 router.get("/all-courses", StudentAuthenticateToken, async (req, res) => {
   try {
-    const {branch} = req.user;
-    const allCourses = await Classes.find({branch});
+    const { branch } = req.user;
+    const allCourses = await Classes.find({ branch });
 
     res.status(200).json(allCourses);
   } catch (error) {
@@ -142,35 +134,41 @@ router.get("/all-courses/:id", StudentAuthenticateToken, async (req, res) => {
 });
 
 router.get("/teacher/:id", StudentAuthenticateToken, async (req, res) => {
-    try {
-        const {id} = req.params;
+  try {
+    const { id } = req.params;
 
-        const myTeacher = await Teachers.findById({_id: id});
+    const myTeacher = await Teachers.findById({ _id: id });
 
-        if(!myTeacher) {
-            return res.status(409).json({message: "Teacher not found"});
-        }
-
-        res.status(200).json(myTeacher);
-    } catch(error) {
-        console.log("Something went wrong!!! ");
-        res.status(500).json(error);
+    if (!myTeacher) {
+      return res.status(409).json({ message: "Teacher not found" });
     }
-})
+
+    res.status(200).json(myTeacher);
+  } catch (error) {
+    console.log("Something went wrong!!! ");
+    res.status(500).json(error);
+  }
+});
 
 router.post("/apply-course/:id", StudentAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { userId } = req.user;
 
-    const userApplied = await Classes.findOne({_id: id, appliedStudents: userId });
+    const userApplied = await Classes.findOne({
+      _id: id,
+      appliedStudents: userId,
+    });
     if (userApplied) {
       return res
         .status(409)
         .json({ message: "Student has already applied in this course!!!" });
     }
 
-    const userRegistered = await Classes.findOne({_id: id,  enrolledStudents: userId });
+    const userRegistered = await Classes.findOne({
+      _id: id,
+      enrolledStudents: userId,
+    });
     if (userRegistered) {
       return res
         .status(408)
@@ -291,90 +289,94 @@ router.post(
 );
 
 router.get("/my-attendance/:id", StudentAuthenticateToken, async (req, res) => {
-    try {
-        const {id} = req.params;
-        const {userId} = req.user;
+  try {
+    const { id } = req.params;
+    const { userId } = req.user;
 
-        const attendanceDetails = await Attendance.findOne({classId: id, studentId: userId});
-        if(!attendanceDetails) {
-            return res.status(403).json({message: "No records found!!!"});
-        }
-
-        res.status(200).json(attendanceDetails);
-    } catch(error) {
-        console.log("Something went wrong!!! ");
-        res.status(500).json(error);
+    const attendanceDetails = await Attendance.findOne({
+      classId: id,
+      studentId: userId,
+    });
+    if (!attendanceDetails) {
+      return res.status(403).json({ message: "No records found!!!" });
     }
-})
 
-router.get("/my-fee-details/:id", StudentAuthenticateToken, async (req, res) => {
+    res.status(200).json(attendanceDetails);
+  } catch (error) {
+    console.log("Something went wrong!!! ");
+    res.status(500).json(error);
+  }
+});
+
+router.get(
+  "/my-fee-details/:id",
+  StudentAuthenticateToken,
+  async (req, res) => {
     try {
-        const {id} = req.params;
-        const {userId} = req.user;
+      const { id } = req.params;
+      const { userId } = req.user;
 
-        const myFeeDetails = await Fee.findOne({classId: id, studentId: userId});
-        if(!myFeeDetails) {
-            return res.status(403).json({message: "No records found!!!"});
-        }
+      const myFeeDetails = await Fee.findOne({
+        classId: id,
+        studentId: userId,
+      });
+      if (!myFeeDetails) {
+        return res.status(403).json({ message: "No records found!!!" });
+      }
 
-        res.status(200).json(myFeeDetails);
-    } catch(error) {
-        console.log("Something went wrong!!! ");
-        res.status(500).json(error);
+      res.status(200).json(myFeeDetails);
+    } catch (error) {
+      console.log("Something went wrong!!! ");
+      res.status(500).json(error);
     }
-})
+  }
+);
 
 // CHATTING LIST OF TEACHERS
-router.get('/chat-all-teachers', StudentAuthenticateToken, async (req, res) => {
+router.get("/chat-all-teachers", StudentAuthenticateToken, async (req, res) => {
   try {
-    const {userId} = req.user;
-    let allTeachersIds = []
+    const { userId } = req.user;
+    let allTeachersIds = [];
     let allTeachers = [];
 
-    const currentUser = await Students.findById(
-      {_id: userId}
-    );
+    const currentUser = await Students.findById({ _id: userId });
 
     // if(currentUser.messages.length == 0) {
-      const myClasses = currentUser.classes;
+    const myClasses = currentUser.classes;
 
-      await Promise.all(myClasses.map(async (eachClass) => {
-        const currentClass = await Classes.findById({_id: eachClass});
+    await Promise.all(
+      myClasses.map(async (eachClass) => {
+        const currentClass = await Classes.findById({ _id: eachClass });
         let teacherId = currentClass.teachBy;
-        if (typeof teacherId !== 'string') { // Ensure it's a string
+        if (typeof teacherId !== "string") {
+          // Ensure it's a string
           teacherId = String(teacherId);
         }
         teacherId = teacherId.trim().toLowerCase(); // Normalize ID
         allTeachersIds.push(teacherId);
-      }));
-      allTeachersIds = [...new Set(allTeachersIds)];
-      // Convert strings to ObjectIds
-    const objectIds = allTeachersIds.map(id => new mongoose.Types.ObjectId(id));
-      console.log(objectIds);
+      })
+    );
+    allTeachersIds = [...new Set(allTeachersIds)];
+    // Convert strings to ObjectIds
+    const objectIds = allTeachersIds.map(
+      (id) => new mongoose.Types.ObjectId(id)
+    );
+    console.log(objectIds);
 
-      await Promise.all(objectIds.map(async (eachId) => {
-        const eachTeacher = await Teachers.findById({_id: eachId});
+    await Promise.all(
+      objectIds.map(async (eachId) => {
+        const eachTeacher = await Teachers.findById({ _id: eachId });
         allTeachers.push(eachTeacher);
-      }))
+      })
+    );
 
-      res.status(201).json(allTeachers);
+    res.status(201).json(allTeachers);
 
     // }
-  } catch(error) {
+  } catch (error) {
     console.log("Something went wrong!!! ", error);
     res.status(500).json(error);
   }
-})
-
-// router.get('/my-chats', StudentAuthenticateToken, async (req, res) => {
-//   try {
-//     const {userId} = req.user;
-
-//     const chats = await Messa
-//   } catch(error) {
-//     console.log("Something went wrong!!! ", error);
-//     res.status(500).json(error);
-//   }
-// })
+});
 
 export default router;

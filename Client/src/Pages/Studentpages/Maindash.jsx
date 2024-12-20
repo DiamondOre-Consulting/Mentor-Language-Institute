@@ -1,17 +1,16 @@
-import React, { useEffect, useState } from 'react'
-import StudentNav from '../../Component/Studentcomponents/Studashboard/StudentNav'
-import Studenthero from '../../Component/Studentcomponents/Studashboard/Studenthero'
-import EnrolledCourses from '../../Component/Studentcomponents/Studashboard/EnrolledCourses'
-import LanguageCourses from '../../Component/Studentcomponents/Studashboard/LanguageCourses'
-import Classes from '../../Component/Studentcomponents/Studashboard/Classes'
-import StuFooter from '../../Component/Studentcomponents/Studashboard/StuFooter'
+import React, { useEffect, useState } from "react";
+import StudentNav from "../../Component/Studentcomponents/Studashboard/StudentNav";
+import Studenthero from "../../Component/Studentcomponents/Studashboard/Studenthero";
+import EnrolledCourses from "../../Component/Studentcomponents/Studashboard/EnrolledCourses";
+import LanguageCourses from "../../Component/Studentcomponents/Studashboard/LanguageCourses";
+import Classes from "../../Component/Studentcomponents/Studashboard/Classes";
+import StuFooter from "../../Component/Studentcomponents/Studashboard/StuFooter";
 import axios from "axios";
-import SpecialCourses from '../../Component/Studentcomponents/Studashboard/SpecialCourses'
-import { useJwt } from 'react-jwt'
-import { useNavigate } from 'react-router-dom'
+import SpecialCourses from "../../Component/Studentcomponents/Studashboard/SpecialCourses";
+import { useJwt } from "react-jwt";
+import { useNavigate } from "react-router-dom";
 
 const Maindash = () => {
-
   const [studentData, setStudentData] = useState(null);
   const navigate = useNavigate();
   const { decodedToken } = useJwt(localStorage.getItem("token"));
@@ -26,7 +25,6 @@ const Maindash = () => {
     const token = localStorage.getItem("token");
 
     if (!token) {
-
       navigate("/student-login");
     } else {
       const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
@@ -36,7 +34,7 @@ const Maindash = () => {
         navigate("/student-login");
       }
     }
-  }, [decodedToken])
+  }, [decodedToken]);
 
   useEffect(() => {
     const fetchStudentData = async () => {
@@ -64,23 +62,16 @@ const Maindash = () => {
           const stu = response.data;
           // console.log("students details", stu)
           setStudentData(stu);
-
         } else {
           // console.log(response.data);
-
         }
       } catch (error) {
         console.error("Error fetching student data:", error);
-
       }
     };
 
     fetchStudentData();
-  }, [decodedToken])
-
-
-
-
+  }, [decodedToken]);
 
   return (
     <>
@@ -91,10 +82,8 @@ const Maindash = () => {
       <SpecialCourses />
       <Classes />
       <StuFooter />
-
-
     </>
-  )
-}
+  );
+};
 
-export default Maindash
+export default Maindash;
