@@ -76,31 +76,44 @@ router.get("/my-profile", TeacherAuthenticateToken, async (req, res) => {
     res.status(500).json(error);
   }
 });
+
 router.post("/add-student", TeacherAuthenticateToken, async (req, res) => {
   try {
-    const { branch } = req.user;
-    const { name, phone, password, userName, dob } = req.body;
+    const { userId, branch } = req.user; // Teacher details from token
+    const { name, phone, password, userName, dob, courseId } = req.body;
 
-    const studentUser = await Students.findOne({ userName });
-
-    if (studentUser) {
-      return res
-        .status(400)
-        .json({ message: "Student with this username already exist!!!" });
+    // Check if the class exists and is assigned to the teacher
+    const classData = await Classes.findOne({ _id: courseId, teachBy: userId });
+    if (!classData) {
+      return res.status(404).json({ message: "Class not found or unauthorized" });
     }
 
+    // Check if a student with the given username already exists
+    const studentUser = await Students.findOne({ userName });
+    if (studentUser) {
+      return res.status(400).json({ message: "Student with this username already exists!!!" });
+    }
+
+    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Create a new student
     const newStudent = new Students({
       branch: branch,
+      teachBy: userId,
       userName,
       dob,
       name,
       phone,
       password: hashedPassword,
+      classes: courseId,
     });
 
     await newStudent.save();
+
+    // Add the student to the enrolled students array in the class
+    classData.enrolledStudents.push(newStudent._id);
+    await classData.save();
 
     return res
       .status(200)
@@ -110,6 +123,7 @@ router.post("/add-student", TeacherAuthenticateToken, async (req, res) => {
     res.status(500).json(error);
   }
 });
+
 
 router.get("/my-classes", TeacherAuthenticateToken, async (req, res) => {
   try {
@@ -459,5 +473,6 @@ router.get("/chat-all-students", TeacherAuthenticateToken, async (req, res) => {
     res.status(500).json(error);
   }
 });
+
 
 export default router;

@@ -368,6 +368,28 @@ const TeacherAllStudentEachCourse = () => {
     }
   };
 
+  const [studentList, setStudentList] = useState([]);
+  console.log(selectedClassId);
+  useEffect(() => {
+    console.log(1);
+    const fetchStudentData = async () => {
+      try {
+        const studentList = await axios.get(
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/get-studentsListBySub/${selectedClassId}`
+        );
+        console.log("student", studentList);
+
+        if (studentList?.data?.success) {
+          setStudentList(studentList?.data?.enrolledStudents);
+          console.log("list of student", response.data);
+        }
+      } catch (error) {
+        console.log("sin error", error);
+      }
+    };
+    fetchStudentData();
+  }, []);
+
   return (
     <div className="p-4">
       {loading && (
@@ -684,6 +706,45 @@ const TeacherAllStudentEachCourse = () => {
           </div>
         </div>
       )}
+      <div>
+        <div className="text-3xl mt-8">Student List</div>
+        <table className="w-full text-sm text-center rtl:text-right text-gray-500 shadow-xl">
+          <thead className="text-xs text-gray-100 uppercase bg-orange-500">
+            <tr>
+              <th scope="col" className="px-6 py-3">
+                Name
+              </th>
+              <th scope="col" className="px-6 py-3">
+                Phone
+              </th>
+              <th scope="col" className="px-6 py-3">
+                DOB
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {studentList.length > 0 ? (
+              studentList.map((student, index) => (
+                <tr key={index} className="bg-white border-b">
+                  <td className="px-6 py-4">{student.name || "N/A"}</td>
+                  <td className="px-6 py-4">{student.phone || "N/A"}</td>
+                  <td className="px-6 py-4">
+                    {student?.dob
+                      ? new Date(student?.dob).toLocaleDateString()
+                      : "N/A"}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="2" className="px-6 py-4 text-center">
+                  No students found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

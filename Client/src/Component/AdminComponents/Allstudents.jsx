@@ -252,6 +252,37 @@ const Allstudents = () => {
     }
   };
 
+
+  const deleteSudentId = (studentId) => {
+    setStuId(studentId);  
+    console.log(studentId)
+    deleteStudent();
+
+  };
+
+
+  const deleteStudent = async (e )=>{
+    // e.preventDefault();
+    try{
+      const token = localStorage.getItem("token")
+        const response = await axios.delete(`https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/delete-student/${setuId}`,
+       
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        if(response.status === 200){
+          console.log("Student Deleted Successfully");
+          alert("Student Deleted Successfully")
+          window.location.reload();
+        }
+    }
+    catch(error){
+      console.log("Error in deleting Students", error)
+    }
+  }
   return (
     <>
       <h1 className="text-4xl mb-1 font-semibold text-center">All Students</h1>
@@ -325,6 +356,10 @@ const Allstudents = () => {
                   onClick={() => openForm(student._id)}
                 >
                   Enroll{" "}
+                </span>
+
+                <span className="bg-red-500 p-2 text-[12px] text-gray-100 rounded-md" onClick={()=>{ deleteSudentId(student._id)}}>
+                  Delete Student
                 </span>
                 <Link
                   key={student._id}
