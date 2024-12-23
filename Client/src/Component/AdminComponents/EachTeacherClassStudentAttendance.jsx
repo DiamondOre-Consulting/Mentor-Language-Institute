@@ -675,6 +675,9 @@ const EachTeacherClassStudentAttendance = () => {
               <th scope="col" className="px-6 py-3">
                 Phone
               </th>
+              <th scope="col" className="px-6 py-3">
+                Dob
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -683,6 +686,7 @@ const EachTeacherClassStudentAttendance = () => {
                 <tr key={index} className="bg-white border-b">
                   <td className="px-6 py-4">{student.name || "N/A"}</td>
                   <td className="px-6 py-4">{student.phone || "N/A"}</td>
+                  <td className="px-6 py-4">{student?.dob || "N/A"}</td>
                 </tr>
               ))
             ) : (

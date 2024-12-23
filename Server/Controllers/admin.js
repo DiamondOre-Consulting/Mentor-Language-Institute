@@ -687,7 +687,7 @@ router.delete(
 
 router.get(
   "/get-studentsListBySub/:id",
-  AdminAuthenticateToken,
+
   async (req, res) => {
     const { id } = req.params;
     console.log("id", id);
@@ -712,6 +712,27 @@ router.get(
     } catch (error) {
       console.error("Error fetching enrolled students:", error);
       res.status(500).json({ success: false, message: "Server error" });
+    }
+  }
+);
+
+
+router.delete(
+  "/delete-student/:id",
+  AdminAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const deleteStudent = await Students.findByIdAndDelete({ _id: id });
+      if (!deleteStudent) {
+        return res.status(403).json({ message: "No student Found with this id" });
+      }
+
+      res.status(200).json({ message: "Student deleted successfully!!!" });
+    } catch (error) {
+      console.log(error.message);
+      res.status(500).json({ message: "Something went wrong!!!", error });
     }
   }
 );
