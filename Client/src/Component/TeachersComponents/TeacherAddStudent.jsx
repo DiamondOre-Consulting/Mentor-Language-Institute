@@ -37,7 +37,7 @@ const TeacherAddStudent = () => {
         if (!token) {
           console.error("No token found");
           navigate("/login");
-          return;
+          return
         }
 
         const response = await axios.get(
