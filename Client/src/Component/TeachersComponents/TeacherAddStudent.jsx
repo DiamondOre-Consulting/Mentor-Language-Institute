@@ -30,6 +30,8 @@ const TeacherAddStudent = () => {
     setShowPassword(!showPassword);
   };
 
+console.log("hello")
+
   useEffect(() => {
     const fetchAllCourses = async () => {
       setLoading(true);
