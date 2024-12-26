@@ -15,6 +15,7 @@ const Admin = () => {
     navigate("/login"); // Redirect to login page if not authenticated
     return;
   }
+  
 
   useEffect(() => {
     const token = localStorage.getItem("token");
