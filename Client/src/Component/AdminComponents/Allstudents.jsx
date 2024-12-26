@@ -23,6 +23,7 @@ const Allstudents = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [setuId, setStuId] = useState(null);
   const [stuname, setStuName] = useState("");
+  const [isEditableFormOpen, setIsEditableFormOpen] = useState(false);
   const months = [
     "January",
     "February",
@@ -252,37 +253,34 @@ const Allstudents = () => {
     }
   };
 
-
   const deleteSudentId = (studentId) => {
-    setStuId(studentId);  
-    console.log(studentId)
+    setStuId(studentId);
+    console.log(studentId);
     deleteStudent();
-
   };
 
-
-  const deleteStudent = async (e )=>{
+  const deleteStudent = async (e) => {
     // e.preventDefault();
-    try{
-      const token = localStorage.getItem("token")
-        const response = await axios.delete(`https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/delete-student/${setuId}`,
-       
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        )
-        if(response.status === 200){
-          console.log("Student Deleted Successfully");
-          alert("Student Deleted Successfully")
-          window.location.reload();
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.delete(
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/delete-student/${setuId}`,
+
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
+      );
+      if (response.status === 200) {
+        console.log("Student Deleted Successfully");
+        alert("Student Deleted Successfully");
+        window.location.reload();
+      }
+    } catch (error) {
+      console.log("Error in deleting Students", error);
     }
-    catch(error){
-      console.log("Error in deleting Students", error)
-    }
-  }
+  };
   return (
     <>
       <h1 className="text-4xl mb-1 font-semibold text-center">All Students</h1>
@@ -308,7 +306,7 @@ const Allstudents = () => {
           onChange={handleSearchInputChange}
         />
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 shadow-3xl">
         {filteredStudents.map((student) => (
           <>
             <div
@@ -358,9 +356,23 @@ const Allstudents = () => {
                   Enroll{" "}
                 </span>
 
-                <span className="bg-red-500 p-2 text-[12px] text-gray-100 rounded-md" onClick={()=>{ deleteSudentId(student._id)}}>
+                <span
+                  className="bg-red-500 p-2 text-[12px] text-gray-100 rounded-md"
+                  onClick={() => {
+                    deleteSudentId(student._id);
+                  }}
+                >
                   Delete Student
                 </span>
+                <Link
+                  key={student._id}
+                  to={`/admin-dashboard/student/${student?._id}`}
+                  className="text-sm underline py-1 px-2 text-blue-500 text-sm rounded-md "
+                >
+                  <button className="bg-blue-500 p-2 text-[12px] text-gray-100 rounded-md">
+                    Edit Student
+                  </button>
+                </Link>
                 <Link
                   key={student._id}
                   to={`/admin-dashboard/allstudents/${student?._id}`}

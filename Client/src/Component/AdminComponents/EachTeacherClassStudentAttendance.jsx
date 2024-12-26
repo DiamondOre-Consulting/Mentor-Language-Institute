@@ -686,7 +686,15 @@ const EachTeacherClassStudentAttendance = () => {
                 <tr key={index} className="bg-white border-b">
                   <td className="px-6 py-4">{student.name || "N/A"}</td>
                   <td className="px-6 py-4">{student.phone || "N/A"}</td>
-                  <td className="px-6 py-4">{student?.dob || "N/A"}</td>
+                  <td className="px-6 py-4">
+                    {student?.dob
+                      ? new Date(student.dob).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })
+                      : "N/A"}
+                  </td>
                 </tr>
               ))
             ) : (

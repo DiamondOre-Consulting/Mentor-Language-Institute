@@ -114,6 +114,55 @@ router.get("/my-profile", AdminAuthenticateToken, async (req, res) => {
     res.status(500).json(error);
   }
 });
+router.put("/student-edit/:id", AdminAuthenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { name, phone, password, branch, userName, dob } = req.body;
+  console.log(name, phone, password, branch, userName, dob);
+
+  try {
+    // Validate input fields (optional, depending on your requirements)
+    if (!name || !phone || !userName || !dob) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    // Find the student by ID
+    const student = await Students.findById(id);
+    if (!student) {
+      return res.status(404).json({ message: "Student not found." });
+    }
+
+    // Check if username already exists (excluding the current student)
+    const existingUserName = await Students.findOne({ userName });
+    console.log(existingUserName);
+    if (existingUserName && existingUserName._id.toString() !== id) {
+      return res.status(400).json({
+        message: "Username already taken. Please enter a unique username",
+      });
+    }
+
+    // Update student details
+    student.name = name || student.name;
+    student.phone = phone || student.phone;
+    student.branch = branch || student.branch;
+    student.userName = userName || student.userName;
+    student.dob = dob || student.dob;
+
+    // If password is provided, hash it and update the password
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      student.password = await bcrypt.hash(password, salt);
+    }
+
+    // Save the updated student details
+    await student.save();
+
+    // Send a success response
+    res.status(200).json({ message: "Student details updated successfully." });
+  } catch (error) {
+    console.error("Error updating student details:", error);
+    res.status(500).json({ message: "Server error." });
+  }
+});
 
 // ADD CLASS BY ADMIN
 router.post("/add-new-class", AdminAuthenticateToken, async (req, res) => {
@@ -685,10 +734,6 @@ router.delete(
   }
 );
 
-
-
-
-
 router.get(
   "/get-studentsListBySub/:id",
 
@@ -700,8 +745,9 @@ router.get(
       // Fetch the class and populate the enrolledStudents field with user details
       const classDetails = await Classes.findById(id).populate({
         path: "enrolledStudents",
-        select: "name phone", // Specify fields to include (e.g., 'name', 'email')
+        select: "name phone dob", // Specify fields to include (e.g., 'name', 'email')
       });
+      console.log(classDetails);
 
       if (!classDetails) {
         return res.status(404).json({ message: "Class not found" });
@@ -720,8 +766,6 @@ router.get(
   }
 );
 
-
-
 router.delete(
   "/delete-student/:id",
   AdminAuthenticateToken,
@@ -731,7 +775,9 @@ router.delete(
 
       const deleteStudent = await Students.findByIdAndDelete({ _id: id });
       if (!deleteStudent) {
-        return res.status(403).json({ message: "No student Found with this id" });
+        return res
+          .status(403)
+          .json({ message: "No student Found with this id" });
       }
 
       res.status(200).json({ message: "Student deleted successfully!!!" });

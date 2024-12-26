@@ -377,7 +377,7 @@ const TeacherAllStudentEachCourse = () => {
         const studentList = await axios.get(
           `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/get-studentsListBySub/${selectedClassId}`
         );
-        console.log("student", studentList);
+        console.log("studentlsut", studentList);
 
         if (studentList?.data?.success) {
           setStudentList(studentList?.data?.enrolledStudents);
