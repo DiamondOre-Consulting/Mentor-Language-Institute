@@ -18,6 +18,7 @@ const EditStudent = () => {
   const [phone, setPhone] = useState(studentDetails?.phone || "");
   const [password, setPassword] = useState("");
   const [dob, setdob] = useState();
+  const [dateOfBirth, setDateOfBirth] = useState();
   const [userName, setUserName] = useState("");
   const [popupMessage, setPopupMessage] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -40,15 +41,27 @@ const EditStudent = () => {
         },
       }
     );
-    if (studentResponse.status === 200) {
+    console.log("DOB", studentResponse?.data?.dob);
+    const dateString = studentResponse?.data?.dob;
+    const date = new Date(dateString);
+
+    const day = String(date.getDate()).padStart(2, "0"); // Pad with 0 if day is single digit
+    const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-indexed (0 = January)
+    const year = date.getFullYear();
+
+    const formattedDate = `${day}-${month}-${year}`;
+    console.log("formattedDate", formattedDate);
+    if (studentResponse?.status === 200) {
       // Set student details
-      setStudentsDetails(studentResponse.data);
-      setName(studentResponse.data.name || "");
-      setPhone(studentResponse.data.phone || "");
-      setdob(studentResponse.data.dob || "");
-      setUserName(studentResponse.data.userName || "");
-      setBranch(studentResponse.data.branch || "");
-      console.log("studentResponse", studentResponse.data);
+      setStudentsDetails(studentResponse?.data);
+      setName(studentResponse?.data?.name || "");
+      setPhone(studentResponse?.data?.phone || "");
+      setdob(studentResponse?.data?.dob || "");
+      setDateOfBirth(formattedDate);
+
+      setUserName(studentResponse?.data?.userName || "");
+      setBranch(studentResponse?.data?.branch || "");
+      console.log("studentResponse", studentResponse?.data);
     }
   };
 
@@ -186,7 +199,7 @@ const EditStudent = () => {
                     className="block mb-2 text-sm font-medium text-gray-900 "
                     htmlFor="dob"
                   >
-                    Date of Birth:
+                    {dateOfBirth}
                   </label>
                   <input
                     type="date"
@@ -194,7 +207,6 @@ const EditStudent = () => {
                     value={dob}
                     className=" rounded-lg outline-none h-8 focus:ring-0"
                     onChange={(e) => setdob(e.target.value)} // Capture the date input
-                    required
                     placeholder="Data of Birth"
                   />
                 </div>

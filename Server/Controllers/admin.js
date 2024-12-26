@@ -121,9 +121,6 @@ router.put("/student-edit/:id", AdminAuthenticateToken, async (req, res) => {
 
   try {
     // Validate input fields (optional, depending on your requirements)
-    if (!name || !phone || !userName || !dob) {
-      return res.status(400).json({ message: "All fields are required." });
-    }
 
     // Find the student by ID
     const student = await Students.findById(id);
@@ -141,11 +138,26 @@ router.put("/student-edit/:id", AdminAuthenticateToken, async (req, res) => {
     }
 
     // Update student details
-    student.name = name || student.name;
-    student.phone = phone || student.phone;
-    student.branch = branch || student.branch;
-    student.userName = userName || student.userName;
-    student.dob = dob || student.dob;
+    // student.name = name || student.name;
+    // student.phone = phone || student.phone;
+    // student.branch = branch || student.branch;
+    // student.userName = userName || student.userName;
+    // student.dob = dob || student.dob;
+    if (name) {
+      student.name = await name;
+    }
+    if (phone) {
+      student.phone = await phone;
+    }
+    if (branch) {
+      student.branch = await branch;
+    }
+    if (userName) {
+      student.userName = await userName;
+    }
+    if (dob) {
+      student.dob = await dob;
+    }
 
     // If password is provided, hash it and update the password
     if (password) {
