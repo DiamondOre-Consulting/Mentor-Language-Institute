@@ -255,7 +255,6 @@ const Allstudents = () => {
 
   const deleteSudentId = (studentId) => {
     setStuId(studentId);
-    console.log(studentId);
     deleteStudent();
   };
 
@@ -273,20 +272,19 @@ const Allstudents = () => {
         }
       );
       if (response.status === 200) {
-        console.log("Student Deleted Successfully");
         alert("Student Deleted Successfully");
         window.location.reload();
       }
     } catch (error) {
-      console.log("Error in deleting Students", error);
+      console.log("");
     }
   };
   return (
     <>
-      <h1 className="text-4xl mb-1 font-semibold text-center">All Students</h1>
-      <div className="w-44 rounded h-1 bg-orange-500 text-center mb-8 mx-auto"></div>
+      <h1 className="mb-1 text-4xl font-semibold text-center">All Students</h1>
+      <div className="h-1 mx-auto mb-8 text-center bg-orange-500 rounded w-44"></div>
       {loading && (
-        <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+        <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-black bg-opacity-50">
           <ClipLoader
             color={"#FFA500"}
             loading={loading}
@@ -301,38 +299,37 @@ const Allstudents = () => {
         <input
           type="text"
           placeholder="Search student..."
-          className="px-2 py-2 border w-full border-gray-400 rounded"
+          className="w-full px-2 py-2 border border-gray-400 rounded"
           value={searchQuery}
           onChange={handleSearchInputChange}
         />
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 shadow-3xl">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 shadow-3xl">
         {filteredStudents.map((student) => (
           <>
             <div
-              className={`block max-w-sm p-4 ${
-                student.deactivated
-                  ? "bg-red-300 text-red-300 hover:text-red-400 hover:bg-red-400"
-                  : "bg-white hover:bg-gray-100"
-              }border border-gray-200 rounded-lg shadow     cursor-pointer`}
+              className={`block max-w-sm p-4 ${student.deactivated
+                ? "bg-red-300 text-red-300 hover:text-red-400 hover:bg-red-400"
+                : "bg-white hover:bg-gray-100"
+                }border border-gray-200 rounded-lg shadow     cursor-pointer`}
             >
               <div className="flex justify-between items-cetner">
                 {" "}
                 <h5 className="text-xl font-bold tracking-tight text-gray-900 ">
                   {student.name}
                 </h5>{" "}
-                <span className="text-sm   text-xs text-gray-100 rounded-md">
+                <span className="text-xs text-sm text-gray-100 rounded-md">
                   <svg
                     onClick={() => openPopup(student._id, student.name)}
-                    class="h-6 w-6 text-red-500"
+                    className="w-6 h-6 text-red-500"
                     width="24"
                     height="24"
                     viewBox="0 0 24 24"
-                    stroke-width="2"
+                    strokeWidth="2"
                     stroke="currentColor"
                     fill="none"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
                     {" "}
                     <path stroke="none" d="M0 0h24v24H0z" />{" "}
@@ -345,12 +342,12 @@ const Allstudents = () => {
                 </span>
               </div>
 
-              <p className="font-normal text-sm text-gray-700 ">
+              <p className="text-sm font-normal text-gray-700 ">
                 phone :- <span>{student.phone}</span>
               </p>
               <div className="flex justify-between mt-4">
                 <span
-                  className="text-sm bg-green-400 py-1 px-2 text-gray-100 rounded-md"
+                  className="px-2 py-1 text-sm text-gray-100 bg-green-400 rounded-md"
                   onClick={() => openForm(student._id)}
                 >
                   Enroll{" "}
@@ -367,7 +364,7 @@ const Allstudents = () => {
                 <Link
                   key={student._id}
                   to={`/admin-dashboard/student/${student?._id}`}
-                  className="text-sm underline py-1 px-2 text-blue-500 text-sm rounded-md "
+                  className="px-2 py-1 text-sm text-blue-500 underline rounded-md "
                 >
                   <button className="bg-blue-500 p-2 text-[12px] text-gray-100 rounded-md">
                     Edit Student
@@ -376,12 +373,12 @@ const Allstudents = () => {
                 <Link
                   key={student._id}
                   to={`/admin-dashboard/allstudents/${student?._id}`}
-                  className="text-sm underline py-1 px-2 text-blue-500 text-sm rounded-md "
+                  className="px-2 py-1 text-sm text-blue-500 underline rounded-md "
                 >
                   View
                 </Link>
               </div>
-              {/* <span className='flex justify-end bg-orange-500 rounded-full px-1 py-1 mb-1 justify-center text-center mt-4 text-gray-100'>
+              {/* <span className='flex justify-center justify-end px-1 py-1 mt-4 mb-1 text-center text-gray-100 bg-orange-500 rounded-full'>
               Deactivate Account
             </span> */}
             </div>
@@ -390,9 +387,9 @@ const Allstudents = () => {
       </div>
 
       {isFormOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="bg-white shadow-md rounded-md p-6 w-3/4 max-w-md">
-            <h2 className="text-lg font-semibold mb-4">Enroll Student</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="w-3/4 max-w-md p-6 bg-white rounded-md shadow-md">
+            <h2 className="mb-4 text-lg font-semibold">Enroll Student</h2>
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
                 <label
@@ -428,7 +425,7 @@ const Allstudents = () => {
                   name="totalFee"
                   value={formData.totalFee}
                   onChange={handleChange}
-                  className="mt-1 p-2 border border-gray-500 rounded-md w-full"
+                  className="w-full p-2 mt-1 border border-gray-500 rounded-md"
                   required
                 />
               </div>
@@ -487,7 +484,7 @@ const Allstudents = () => {
                   name="amountPaid"
                   value={formData.amountPaid}
                   onChange={handleChange}
-                  className="mt-1 p-2 border border-gray-500 rounded-md w-full"
+                  className="w-full p-2 mt-1 border border-gray-500 rounded-md"
                   required
                 />
               </div>
@@ -495,13 +492,13 @@ const Allstudents = () => {
                 <button
                   type="button"
                   onClick={closeForm}
-                  className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 mr-2"
+                  className="px-4 py-2 mr-2 text-white bg-gray-500 rounded-md hover:bg-gray-600"
                 >
                   Close
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-orange-400 text-white rounded-md hover:bg-orange-500"
+                  className="px-4 py-2 text-white bg-orange-400 rounded-md hover:bg-orange-500"
                 >
                   Submit
                 </button>
@@ -512,9 +509,9 @@ const Allstudents = () => {
       )}
 
       {showPopup && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="bg-white shadow-md rounded-md p-6 w-3/4 max-w-md">
-            <h2 className="text-lg font-semibold mb-4">{stuname}</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="w-3/4 max-w-md p-6 bg-white rounded-md shadow-md">
+            <h2 className="mb-4 text-lg font-semibold">{stuname}</h2>
             <form onSubmit={detailsctiveaccount}>
               <div className="mb-4">
                 <select
@@ -532,13 +529,13 @@ const Allstudents = () => {
                 <button
                   type="button"
                   onClick={() => setShowPopup(false)}
-                  className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 mr-2"
+                  className="px-4 py-2 mr-2 text-white bg-gray-500 rounded-md hover:bg-gray-600"
                 >
                   Close
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-orange-400 text-white rounded-md hover:bg-orange-500"
+                  className="px-4 py-2 text-white bg-orange-400 rounded-md hover:bg-orange-500"
                 >
                   Submit
                 </button>
@@ -549,12 +546,12 @@ const Allstudents = () => {
       )}
 
       {popupMessage && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-800 bg-opacity-75">
-          <div className="bg-white shadow-md rounded-md p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-75">
+          <div className="p-6 bg-white rounded-md shadow-md">
             <p className="text-lg font-semibold">{popupMessage}</p>
             <button
               onClick={() => setPopupMessage("")}
-              className="px-4 py-2 bg-orange-400 text-white rounded-md hover:bg-orange-500 mt-4"
+              className="px-4 py-2 mt-4 text-white bg-orange-400 rounded-md hover:bg-orange-500"
             >
               Close
             </button>

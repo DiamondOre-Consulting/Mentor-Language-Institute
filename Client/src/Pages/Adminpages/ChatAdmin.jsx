@@ -32,7 +32,6 @@ const ChatAdmin = () => {
       navigate("/login");
     } else {
       const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
-      // console.log(tokenExpiration)
 
       if (tokenExpiration && tokenExpiration < Date.now()) {
         // Token expired, remove from local storage and redirect to login page
@@ -64,13 +63,11 @@ const ChatAdmin = () => {
           }
         );
         if (response.status == 200) {
-          console.log(response.data);
           const allteachers = response.data;
-          console.log(allteachers);
           setAllTeachers(allteachers);
         }
       } catch (error) {
-        console.error("Error fetching courses:", error);
+        console.error("");
       }
     };
 
@@ -99,9 +96,7 @@ const ChatAdmin = () => {
           }
         );
         if (response.status == 200) {
-          console.log(response.data);
           const allstudents = response.data;
-          console.log(allstudents);
           setAllStudents(allstudents);
         }
       } catch (error) {
@@ -122,8 +117,7 @@ const ChatAdmin = () => {
 
   const handleSearch = () => {
     setIsSearchClicked(true);
-    console.log("Selected Teacher ID:", selectedTeacherId);
-    console.log("Selected Student ID:", selectedStudentId);
+
 
     if (isSmallScreen && !isOpen) {
       setIsTeacherSectionVisible(false);
@@ -150,24 +144,23 @@ const ChatAdmin = () => {
   return (
     <>
       <div>
-        <div class=" h-screen p-0">
-          <div class="md:flex border border-grey rounded shadow-lg h-full">
+        <div className="h-screen p-0 ">
+          <div className="h-full border rounded shadow-lg md:flex border-grey">
             {isTeacherSectionVisible && (
               <div
-                className={`md:w-1/3 border flex flex-col ${
-                  isSmallScreen && !isOpen ? "w-full" : "p-2"
-                }`}
+                className={`md:w-1/3 border flex flex-col ${isSmallScreen && !isOpen ? "w-full" : "p-2"
+                  }`}
               >
                 {/* Left portion */}
 
-                <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center">
+                <div className="flex flex-row items-center justify-between px-3 py-2 bg-grey-lighter">
                   <div className="flex items-center">
-                    <img class="w-10 h-10 rounded-full" src={userimg2} />
+                    <img className="w-10 h-10 rounded-full" src={userimg2} />
                     <span className="ml-1">{userName}</span>
                   </div>
                 </div>
 
-                <div class="bg-grey-lighter flex-1 overflow-auto px-4">
+                <div className="flex-1 px-4 overflow-auto bg-grey-lighter">
                   <select
                     className="w-full mt-10"
                     onChange={handleTeacherChange}
@@ -197,7 +190,7 @@ const ChatAdmin = () => {
                   </select>
 
                   <button
-                    className="mt-4 bg-orange-400 w-full p-2 text-center rounded-md"
+                    className="w-full p-2 mt-4 text-center bg-orange-400 rounded-md"
                     onClick={handleSearch}
                   >
                     Search

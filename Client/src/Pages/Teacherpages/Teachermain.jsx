@@ -54,15 +54,12 @@ const Teachermain = () => {
             },
           }
         );
-        console.log(response);
-        console.log("teachermain data", response?.data);
+
         if (response?.status == 200) {
           setTeacherData(response?.data);
-        } else {
-          console.log(response.data);
         }
       } catch (error) {
-        console.error("Error fetching teacher data:", error);
+        console.error("");
       }
     };
 

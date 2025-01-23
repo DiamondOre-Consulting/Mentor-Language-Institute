@@ -13,7 +13,6 @@ const override = css`
 const EditStudent = () => {
   const navigate = useNavigate();
   const [studentDetails, setStudentsDetails] = useState(null);
-  console.log("studentDetails?.name", studentDetails?.name);
   const [name, setName] = useState(studentDetails?.name || "");
   const [phone, setPhone] = useState(studentDetails?.phone || "");
   const [password, setPassword] = useState("");
@@ -30,7 +29,6 @@ const EditStudent = () => {
   };
   const { id } = useParams();
   const token = localStorage.getItem("token");
-  console.log("token", token);
 
   const StudentDetails = async () => {
     const studentResponse = await axios.get(
@@ -41,7 +39,6 @@ const EditStudent = () => {
         },
       }
     );
-    console.log("DOB", studentResponse?.data?.dob);
     const dateString = studentResponse?.data?.dob;
     const date = new Date(dateString);
 
@@ -50,7 +47,6 @@ const EditStudent = () => {
     const year = date.getFullYear();
 
     const formattedDate = `${day}-${month}-${year}`;
-    console.log("formattedDate", formattedDate);
     if (studentResponse?.status === 200) {
       // Set student details
       setStudentsDetails(studentResponse?.data);
@@ -61,7 +57,6 @@ const EditStudent = () => {
 
       setUserName(studentResponse?.data?.userName || "");
       setBranch(studentResponse?.data?.branch || "");
-      console.log("studentResponse", studentResponse?.data);
     }
   };
 
@@ -122,9 +117,9 @@ const EditStudent = () => {
 
   return (
     <>
-      <section class="relative mt-10 md:-mt-12">
+      <section className="relative mt-10 md:-mt-12">
         {loading && (
-          <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+          <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-black bg-opacity-50">
             <ClipLoader
               color={"#FFA500"}
               loading={loading}
@@ -133,17 +128,17 @@ const EditStudent = () => {
             />
           </div>
         )}
-        <div class="flex flex-col items-center justify-center mt-16 lg:py-0 ">
-          <div class="md:w-full sm:w-1/2 bg-white rounded-lg shadow border-t-4 border-orange-400 md:mt-0 sm:max-w-md xl:p-0">
-            <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-              <div className="flex justify-between items-center">
-                <h1 class="text-xl  font-bold leading-tight tracking-tight text-gray-900 md:text-2xl ">
+        <div className="flex flex-col items-center justify-center mt-16 lg:py-0 ">
+          <div className="bg-white border-t-4 border-orange-400 rounded-lg shadow md:w-full sm:w-1/2 md:mt-0 sm:max-w-md xl:p-0">
+            <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
+              <div className="flex items-center justify-between">
+                <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl ">
                   Edit Form
                 </h1>
                 {/* <img src={logo} alt="" className='w-24' /> */}
               </div>
 
-              <form class="space-y-4 md:space-y-6" onSubmit={handleStudentEdit}>
+              <form className="space-y-4 md:space-y-6" onSubmit={handleStudentEdit}>
                 <div>
                   <input
                     type="text"
@@ -152,7 +147,7 @@ const EditStudent = () => {
                     value={userName}
                     onChange={(e) => setUserName(e.target.value)}
                     placeholder="Please Enter a unique userName"
-                    class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
+                    className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                     required=""
                   />
                 </div>
@@ -164,7 +159,7 @@ const EditStudent = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter Your Name"
-                    class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
+                    className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                     required=""
                   />
                 </div>
@@ -177,7 +172,7 @@ const EditStudent = () => {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="Enter Your Phone Number"
-                    class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
+                    className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                     required=""
                   />
                 </div>
@@ -205,7 +200,7 @@ const EditStudent = () => {
                     type="date"
                     id="dob"
                     value={dob}
-                    className=" rounded-lg outline-none h-8 focus:ring-0"
+                    className="h-8 rounded-lg outline-none focus:ring-0"
                     onChange={(e) => setdob(e.target.value)} // Capture the date input
                     placeholder="Data of Birth"
                   />
@@ -217,19 +212,19 @@ const EditStudent = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    class="bg-gray-50 border border-gray-900 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-600 focus:border-gray-600 block w-full p-2.5      "
+                    className="bg-gray-50 border border-gray-900 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-600 focus:border-gray-600 block w-full p-2.5      "
                     required=""
                   />
                 </div>
 
-                <div class="flex items-center mt-2">
+                <div className="flex items-center mt-2">
                   <input
                     type="checkbox"
-                    class="mr-2"
+                    className="mr-2"
                     onChange={() => setShowPassword(!showPassword)}
                   />
                   <label
-                    class="text-sm font-medium text-gray-900  cursor-pointer"
+                    className="text-sm font-medium text-gray-900 cursor-pointer"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     Show Password
@@ -237,35 +232,35 @@ const EditStudent = () => {
                 </div>
 
                 <div className="w-full">
-                  <button className="bg-orange-400 text-white w-full p-2 rounded-md">
+                  <button className="w-full p-2 text-white bg-orange-400 rounded-md">
                     Edit
                   </button>
                 </div>
               </form>
               {popupMessage && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                  <div className="bg-white p-4 rounded-lg shadow-md">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                  <div className="p-4 bg-white rounded-lg shadow-md">
                     <svg
-                      class="h-6 w-6 text-red-500 float-right -mt-2 cursor-pointer"
+                      className="float-right w-6 h-6 -mt-2 text-red-500 cursor-pointer"
                       onClick={() => setPopupMessage(null)}
                       width="24"
                       height="24"
                       viewBox="0 0 24 24"
-                      stroke-width="2"
+                      strokeWidth="2"
                       stroke="currentColor"
                       fill="none"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     >
                       {" "}
                       <path stroke="none" d="M0 0h24v24H0z" />{" "}
                       <line x1="18" y1="6" x2="6" y2="18" />{" "}
                       <line x1="6" y1="6" x2="18" y2="18" />
                     </svg>
-                    <p className="text-lg font-bold mt-4 text-green-700">
+                    <p className="mt-4 text-lg font-bold text-green-700">
                       {popupMessage}
                     </p>
-                    {/* <button className="bg-orange-500 text-white py-2 px-4 rounded-md" onClick={() => setPopupMessage(null)}>Close</button> */}
+                    {/* <button className="px-4 py-2 text-white bg-orange-500 rounded-md" onClick={() => setPopupMessage(null)}>Close</button> */}
                   </div>
                 </div>
               )}

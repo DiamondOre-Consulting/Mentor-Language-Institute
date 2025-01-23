@@ -17,7 +17,6 @@ const ChatBox = ({
   const navigate = useNavigate();
   const { decodedToken, isExpired } = useJwt(localStorage.getItem("token"));
   const userId = decodedToken ? decodedToken.userId : null;
-  console.log(userId);
   const socket = useMemo(
     () => io("https://mentor-language-institute-backend-hbyk.onrender.com"),
     []
@@ -129,27 +128,26 @@ const ChatBox = ({
   return (
     <>
       <div
-        className={`md:w-2/3 border  bg-gray-200 md:flex flex-col ${
-          isOpen ? "w-full h-full" : "hidden"
-        }`}
+        className={`md:w-2/3 border  bg-gray-200 md:flex flex-col ${isOpen ? "w-full h-full" : "hidden"
+          }`}
       >
-        <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center w-full fixed bg-white ">
-          <div class="flex items-center bg-white">
+        <div className="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center w-full fixed bg-white ">
+          <div className="flex items-center bg-white">
             <div>
-              <img class="w-10 h-10 rounded-full" src={userimg2} />
+              <img className="w-10 h-10 rounded-full" src={userimg2} />
             </div>
-            <div class="ml-4">
-              <p class="text-grey-darkest">
+            <div className="ml-4">
+              <p className="text-grey-darkest">
                 <h1>{teacher.name}</h1>
               </p>
             </div>
           </div>
 
           {isSmallScreen && isOpen && (
-            <div className="bg-grey-lighter px-4 py-4 flex items-center">
+            <div className="flex items-center px-4 py-4 bg-grey-lighter">
               <button
                 onClick={handleClick}
-                className="bg-orange-400 p-1 rounded-md text-gray-100 text-sm"
+                className="p-1 text-sm text-gray-100 bg-orange-400 rounded-md"
               >
                 Go Back
               </button>
@@ -158,30 +156,28 @@ const ChatBox = ({
         </div>
 
         <div
-          class="flex-1 overflow-auto bg-gray-200 "
+          className="flex-1 overflow-auto bg-gray-200 "
           ref={chatContainerRef}
           onScroll={handleScroll}
           style={{ marginTop: "80px" }}
         >
-          <div class="py-2 px-3 mb-16 md:mb-0">
+          <div className="py-2 px-3 mb-16 md:mb-0">
             {chatHistory.map((message) => (
               <div
                 key={message._id}
-                className={`flex ${
-                  message.senderId === userId ? "justify-end" : "justify-start"
-                } mb-2`}
+                className={`flex ${message.senderId === userId ? "justify-end" : "justify-start"
+                  } mb-2`}
               >
                 <div
-                  className={`rounded py-2 px-3 ${
-                    message.senderId === userId ? "bg-green-100" : "bg-gray-100"
-                  }`}
+                  className={`rounded py-2 px-3 ${message.senderId === userId ? "bg-green-100" : "bg-gray-100"
+                    }`}
                 >
-                  <p class="text-md mt-1">{message.message}</p>
-                  <p class="text-right  text-grey-dark mt-1">
+                  <p className="text-md mt-1">{message.message}</p>
+                  <p className="text-right  text-grey-dark mt-1">
                     <span className="text-xs">
                       {new Date(message.createdAt).toLocaleDateString()}{" "}
                     </span>
-                    <span className="text-xs ml-2">
+                    <span className="ml-2 text-xs">
                       {" "}
                       {new Date(message.createdAt).toLocaleTimeString()}
                     </span>
@@ -192,10 +188,10 @@ const ChatBox = ({
           </div>
         </div>
 
-        <div class="bg-white px-4 py-4 flex  fixed bottom-0 bg-white w-full md:relative  md:w-auto items-center ">
-          <div class="flex-1 mx-4">
+        <div className="bg-white px-4 py-4 flex  fixed bottom-0 bg-white w-full md:relative  md:w-auto items-center ">
+          <div className="flex-1 mx-4">
             <input
-              class="w-full border rounded px-2 py-2"
+              className="w-full border rounded px-2 py-2"
               type="text"
               value={newMessage}
               onKeyPress={handleKeyPress}
@@ -205,7 +201,7 @@ const ChatBox = ({
           </div>
           <div>
             <button
-              className="bg-green-300 rounded-md px-6 py-2"
+              className="px-6 py-2 bg-green-300 rounded-md"
               onClick={handleSendMessage}
             >
               Send

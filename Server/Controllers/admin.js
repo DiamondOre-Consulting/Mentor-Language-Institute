@@ -18,7 +18,6 @@ const secretKey = process.env.ADMIN_JWT_SECRET;
 
 const router = express.Router();
 
-// SIGNUP AS ADMIN
 router.post("/signup-admin", async (req, res) => {
   try {
     const { name, phone, password, branch } = req.body;
@@ -49,7 +48,6 @@ router.post("/signup-admin", async (req, res) => {
   }
 });
 
-// LOGIN AS ADMIN
 router.post("/login-admin", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -87,7 +85,6 @@ router.post("/login-admin", async (req, res) => {
   }
 });
 
-// OWN DATA
 router.get("/my-profile", AdminAuthenticateToken, async (req, res) => {
   try {
     const { phone } = req.user;
@@ -114,6 +111,7 @@ router.get("/my-profile", AdminAuthenticateToken, async (req, res) => {
     res.status(500).json(error);
   }
 });
+
 router.put("/student-edit/:id", AdminAuthenticateToken, async (req, res) => {
   const { id } = req.params;
   const { name, phone, password, branch, userName, dob } = req.body;
