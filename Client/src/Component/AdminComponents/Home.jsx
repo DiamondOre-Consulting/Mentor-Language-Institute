@@ -129,22 +129,22 @@ const Home = () => {
         formData
       );
 
-      if (response.status === 201) {
-        // console.log("Admin added successfully:", response.data.newAdmin);
+      if (response.status == 201) {
+       console.log(response)
+       setPopupMessage("New Admin Has Been Created Successfully!");
+        console.log("admin signup",response);
         setUserName(response.data.newAdmin.username); // Assuming the username is returned in response.data.username
         setIsFormOpen(false);
-        setPopupMessage("New Admin Has Been Created Successfully!");
         setFormData({ name: "", branch: "", phone: "", password: "" });
       }
     } catch (error) {
       if (error.response) {
         const status = error.respnse.status;
-        if (status === 409) {
+        if (status == 409) {
           setPopupMessage("Admin Already Exists");
         }
       }
-      // console.error("Error adding admin:", error);
-      setPopupMessage("Error adding admin. Please try again.");
+    
     }
   };
 
