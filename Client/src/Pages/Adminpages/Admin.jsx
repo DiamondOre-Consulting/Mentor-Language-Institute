@@ -16,6 +16,7 @@ const Admin = () => {
     return;
   }
 
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -23,7 +24,6 @@ const Admin = () => {
       navigate("/login");
     } else {
       const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
-      console.log(tokenExpiration);
 
       if (tokenExpiration && tokenExpiration < Date.now()) {
         // Token expired, remove from local storage and redirect to login page

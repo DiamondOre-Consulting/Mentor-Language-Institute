@@ -37,7 +37,6 @@ const StudentLogin = () => {
       if (response.status === 200) {
         const token = response.data.token;
         // Store the token in local storage
-        console.log(token);
         localStorage.setItem("token", token);
         navigate("/main-dashboard");
       } else {
@@ -65,7 +64,7 @@ const StudentLogin = () => {
     <>
       <Navbar />
       {loading && (
-        <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+        <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-black bg-opacity-50">
           <ClipLoader
             color={"#FFA500"}
             loading={loading}
@@ -74,15 +73,15 @@ const StudentLogin = () => {
           />
         </div>
       )}
-      <div class="mt-20 md:mt-12 flex items-center justify-center">
-        <div class="bg-white  shadow-xl rounded-lg px-8 py-6 w-3/4 md:max-w-md">
-          <h1 class="text-3xl font-bold text-center mb-1 ">LOGIN</h1>
+      <div className="mt-20 md:mt-12 flex items-center justify-center">
+        <div className="bg-white  shadow-xl rounded-lg px-8 py-6 w-3/4 md:max-w-md">
+          <h1 className="text-3xl font-bold text-center mb-1 ">LOGIN</h1>
           <div className="md:w-96 h-0.5 rounded bg-orange-500 mb-4"></div>
           <form onSubmit={handleStudentLogin} className="">
-            <div class="mb-4">
+            <div className="mb-4">
               <label
-                for="userName"
-                class="block text-sm font-medium text-gray-700  mb-2"
+                htmlFor="userName"
+                className="block text-sm font-medium text-gray-700  mb-2"
               >
                 username
               </label>
@@ -91,21 +90,21 @@ const StudentLogin = () => {
                 name="userName"
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
-                class="shadow-sm rounded-md w-full px-3 py-2 border border-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="shadow-sm rounded-md w-full px-3 py-2 border border-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Enter UserName"
                 required
               />
             </div>
-            <div class="mb-4">
+            <div className="mb-4">
               <label
-                for="password"
-                class="block text-sm font-medium text-gray-700  mb-2"
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700  mb-2"
               >
                 Password
               </label>
               <div className="relative">
                 <input
-                  className="w-full rounded-lg border-1 p-4 pe-12 text-sm shadow-sm"
+                  className="w-full p-4 text-sm rounded-lg shadow-sm border-1 pe-12"
                   type={showPassword ? "text" : "password"}
                   placeholder="Password"
                   value={password}
@@ -114,27 +113,27 @@ const StudentLogin = () => {
               </div>
             </div>
 
-            <div class="flex items-center justify-between">
-              <div class="flex items-start">
-                <div class="flex items-center h-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-start">
+                <div className="flex items-center h-5">
                   <input
                     aria-describedby="remember"
                     id="check"
                     type="checkbox"
                     value={showPassword}
                     onChange={() => setShowPassword((prev) => !prev)}
-                    class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300    "
+                    className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300    "
                     required=""
                   />
                 </div>
-                <div class="ml-3 text-sm">
-                  <label for="remember" class="text-gray-500 ">
+                <div className="ml-3 text-sm">
+                  <label htmlFor="remember" className="text-gray-500 ">
                     Show password
                   </label>
                 </div>
               </div>
             </div>
-            <div class="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4">
               <Link
                 to="/"
                 class="text-xs mt-2 text-indigo-500 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -143,15 +142,15 @@ const StudentLogin = () => {
               </Link>
             </div>
             <div className="w-full">
-              <button className="bg-orange-400 text-white w-full p-2 rounded-md">
+              <button className="w-full p-2 text-white bg-orange-400 rounded-md">
                 Login
               </button>
             </div>
           </form>
 
           {error && (
-            <div className="flex items-center justify-center bg-red-300 p-4 rounded-md">
-              <p className="text-center text-sm text-red-500">{error}</p>
+            <div className="flex items-center justify-center p-4 bg-red-300 rounded-md">
+              <p className="text-sm text-center text-red-500">{error}</p>
             </div>
           )}
         </div>

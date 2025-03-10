@@ -16,7 +16,6 @@ const ChatBoxAdmin = ({
   const navigate = useNavigate();
   const { decodedToken, isExpired } = useJwt(localStorage.getItem("token"));
   const userId = decodedToken ? decodedToken.userId : null;
-  console.log(userId);
   const socket = useMemo(
     () => io("https://mentor-language-institute-backend-hbyk.onrender.com"),
     []
@@ -41,10 +40,9 @@ const ChatBoxAdmin = ({
         // console.log(response.data);
         if (response.status === 200) {
           setChatHistory(response.data.messages);
-          console.log(response.data.messages);
         }
       } catch (error) {
-        console.error("Error fetching chat history:", error.message);
+        console.error("");
       }
     };
 
@@ -83,7 +81,7 @@ const ChatBoxAdmin = ({
           // console.log("oneTeacher", teacher);
         }
       } catch (error) {
-        console.log(error);
+        console.log("");
       }
     };
 
@@ -107,7 +105,7 @@ const ChatBoxAdmin = ({
           setStudent(studentData);
         }
       } catch (error) {
-        console.log(error);
+        console.log("");
       }
     };
 
@@ -127,25 +125,24 @@ const ChatBoxAdmin = ({
   return (
     <>
       <div
-        className={`md:w-2/3 border md:flex bg-gray-200 flex-col ${
-          isOpen ? "w-full h-full" : "hidden"
-        }`}
+        className={`md:w-2/3 border md:flex bg-gray-200 flex-col ${isOpen ? "w-full h-full" : "hidden"
+          }`}
       >
-        <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center w-full fixed bg-white md:static absolue top-0">
-          <div class="flex items-center bg-white">
+        <div className="fixed top-0 flex flex-row items-center justify-between w-full px-3 py-2 bg-white bg-grey-lighter md:static absolue">
+          <div className="flex items-center bg-white">
             <div>
-              <img class="w-10 h-10 rounded-full" src={userimg2} />
+              <img className="w-10 h-10 rounded-full" src={userimg2} />
             </div>
-            <div class="ml-4">
-              <p class="text-grey-darkest">
+            <div className="ml-4">
+              <p className="text-grey-darkest">
                 <div className="flex">
                   <div className="flex flex-col">
-                    <p className="text-xs -mb-1  ">Teacher</p>
+                    <p className="-mb-1 text-xs ">Teacher</p>
                     <p>{teacher.name} </p>
                   </div>
                   <div className="bg-black w-0.5 ml-4 h-10"></div>
                   <div className="ml-4 ">
-                    <p className="text-xs -mb-1 ">Student</p>
+                    <p className="-mb-1 text-xs ">Student</p>
                     <p>{student.name}</p>
                   </div>
                 </div>
@@ -154,10 +151,10 @@ const ChatBoxAdmin = ({
             </div>
 
             {isSmallScreen && isOpen && (
-              <div className="bg-grey-lighter px-4 py-4 flex ml-10 items-center">
+              <div className="flex items-center px-4 py-4 ml-10 bg-grey-lighter">
                 <button
                   onClick={handleClick}
-                  className="bg-orange-400 p-1 rounded-md text-gray-100 text-sm"
+                  className="p-1 text-sm text-gray-100 bg-orange-400 rounded-md"
                 >
                   Go Back
                 </button>
@@ -166,33 +163,31 @@ const ChatBoxAdmin = ({
           </div>
         </div>
 
-        <div class="flex-1 overflow-auto bg-gray-200">
-          <div class="py-2 px-3">
+        <div className="flex-1 overflow-auto bg-gray-200">
+          <div className="px-3 py-2">
             {chatHistory.map((message) => (
               <div
                 key={message._id}
-                className={`flex ${
-                  message.senderId === teacher._id
-                    ? "justify-start"
-                    : "justify-end"
-                } mb-2`}
+                className={`flex ${message.senderId === teacher._id
+                  ? "justify-start"
+                  : "justify-end"
+                  } mb-2`}
               >
                 <div
-                  className={`rounded py-2 px-3 ${
-                    message.senderId === teacher._id
-                      ? "bg-gray-100"
-                      : "bg-green-100"
-                  }`}
+                  className={`rounded py-2 px-3 ${message.senderId === teacher._id
+                    ? "bg-gray-100"
+                    : "bg-green-100"
+                    }`}
                 >
-                  <span className="text-xs bg-orange-200 text-gray-900 rounded-full px-2 py-1">
+                  <span className="px-2 py-1 text-xs text-gray-900 bg-orange-200 rounded-full">
                     {message.senderId === teacher._id ? "Teacher" : "Student"}
                   </span>
-                  <p class="text-md mt-1">{message.message}</p>
-                  <p class="text-right  text-grey-dark mt-1">
+                  <p className="mt-1 text-md">{message.message}</p>
+                  <p className="mt-1 text-right text-grey-dark">
                     <span className="text-xs">
                       {new Date(message.createdAt).toLocaleDateString()}{" "}
                     </span>
-                    <span className="text-xs ml-2">
+                    <span className="ml-2 text-xs">
                       {" "}
                       {new Date(message.createdAt).toLocaleTimeString()}
                     </span>

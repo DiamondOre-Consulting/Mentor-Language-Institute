@@ -15,6 +15,7 @@ import Error from './Component/Studentcomponents/Stuauth/Error'
 
 import ChatStudent from './Pages/Studentpages/ChatStudent'
 import ChatTeacher from './Pages/Teacherpages/ChatTeacher'
+import UserVerify from './Component/Auth/ProtectedRoute'
 
 
 
@@ -26,20 +27,28 @@ function App() {
     <>
       <BrowserRouter>
         <Routes>
-          <Route path= '/'>
-          <Route index element={<Parentsignup />} />
-          <Route path='/login' element={<Login />} />
-          <Route path='/student-login' element={<StudentLogin/>}/>
-          {/* <Route path='/student-chat' element={<StudentChat/>}/> */}
-          <Route path='/main-dashboard' element={<Maindash />} />
-          <Route path='/student-each-course/:id' element={<StudentEachcourses/>} />
-          <Route path='/admin-dashboard/*' element={<Admin/>}/>
-          <Route path='/teacher-dashboard/*' element={<Teachermain/>}/>
-          <Route path='/student/chat/*' element={<ChatStudent/>}/>
-          {/* <Route path='/teacher/chat/*' element={<ChatTeacher/>}/> */}
-          <Route path='*' element={<Error/>}/>
+          <Route path='/'>
+            <Route index element={<Parentsignup />} />
+            <Route path='/login' element={<Login />} />
+            <Route path='/student-login' element={<StudentLogin />} />
+            {/* <Route path='/student-chat' element={<StudentChat/>}/> */}
+            <Route element={<UserVerify routeName="students" />}>
+              <Route path='/main-dashboard' element={<Maindash />} />
+              <Route path='/student-each-course/:id' element={<StudentEachcourses />} />
+              <Route path='/student/chat/*' element={<ChatStudent />} />
+            </Route>
+            <Route element={<UserVerify routeName="admin-confi" />}>
+              <Route path='/admin-dashboard/*' element={<Admin />} />
+            </Route>
+
+            <Route element={<UserVerify routeName="teachers" />}>
+              <Route path='/teacher-dashboard/*' element={<Teachermain />} />
+            </Route>
+
+            {/* <Route path='/teacher/chat/*' element={<ChatTeacher/>}/> */}
+            <Route path='*' element={<Error />} />
           </Route>
-         
+
         </Routes>
       </BrowserRouter>
 

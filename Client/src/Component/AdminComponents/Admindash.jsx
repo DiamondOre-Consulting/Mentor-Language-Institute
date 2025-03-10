@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import EachTeacherClassStudentAttendance from "./EachTeacherClassStudentAttendance";
 import Error from "..//Studentcomponents/Stuauth/Error";
 import ChatAdmin from "../../Pages/Adminpages/ChatAdmin";
+import EditStudent from "./EditStudent";
 
 const Admindash = () => {
   const navigate = useNavigate();
@@ -60,6 +61,7 @@ const Admindash = () => {
                   element={<EachTeacherClassStudentAttendance />}
                 />
                 <Route path="/allstudents/:id" element={<EachStu />} />
+                <Route path="/student/:id" element={<EditStudent />} />
                 <Route path="/messages" element={<Message />} />
                 <Route path="/allcourses" element={<Allcourses />} />
                 <Route path="/allcourses/:id" element={<Eachcourse />} />

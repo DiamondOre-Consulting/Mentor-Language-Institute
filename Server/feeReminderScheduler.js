@@ -13,7 +13,6 @@ const feeReminderScheduler = () => {
   cron.schedule("00 10 08 * *", async () => {
     // 10 am IST is 4 am UTC
     try {
-      console.log("Scheduled task started.");
       const students = await Students.find({}, { password: 0 });
 
       const currentMonth = new Date().getMonth() + 1; // Get current month (1-12)
@@ -21,7 +20,6 @@ const feeReminderScheduler = () => {
 
       for (const student of students) {
         for (const fee of student.feeDetail) {
-          console.log(fee);
           const oneFeeDetail = await Fee.findById({ _id: fee });
           if (oneFeeDetail.detailFee && Array.isArray(oneFeeDetail.detailFee)) {
             const detailFeeForCurrentMonth = oneFeeDetail.detailFee.find(
@@ -48,7 +46,6 @@ const feeReminderScheduler = () => {
                 })
                 .then((message) => console.log(message.sid))
                 .catch((error) => console.error("Error sending SMS:", error));
-              console.log("Will start sms service!!!"); 
               // break; // Stop checking other fees for this student
             }
           } else {

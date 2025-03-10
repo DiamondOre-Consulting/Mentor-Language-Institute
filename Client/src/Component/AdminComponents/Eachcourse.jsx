@@ -127,7 +127,7 @@ const Eachcourse = () => {
           });
         }
       } catch (error) {
-        console.log(error);
+        console.log("");
       } finally {
         setLoading(false);
       }
@@ -141,7 +141,7 @@ const Eachcourse = () => {
     <>
       <div>
         {loading && (
-          <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+          <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-black bg-opacity-50">
             <ClipLoader
               color={"#FFA500"}
               loading={loading}
@@ -150,24 +150,24 @@ const Eachcourse = () => {
             />
           </div>
         )}
-        <h1 className="text-2xl md:px-0 px-4 font-bold md:mb-1 mb-4">
+        <h1 className="px-4 mb-4 text-2xl font-bold md:px-0 md:mb-1">
           {courseDetails?.classTitle}
         </h1>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 2xl:w-1/3">
-          <div class="flex-1  bg-white rounded-lg shadow-xl p-8">
-            <h4 class="text-xl text-gray-900 font-bold">Course Details</h4>
-            <ul class="mt-2 text-gray-700">
-              <li class="flex border-y py-2">
-                <span class="font-bold w-32">Title:</span>
-                <span class="text-gray-700">{courseDetails?.classTitle}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 2xl:w-1/3">
+          <div className="flex-1  bg-white rounded-lg shadow-xl p-8">
+            <h4 className="text-xl text-gray-900 font-bold">Course Details</h4>
+            <ul className="mt-2 text-gray-700">
+              <li className="flex border-y py-2">
+                <span className="font-bold w-32">Title:</span>
+                <span className="text-gray-700">{courseDetails?.classTitle}</span>
               </li>
-              <li class="flex border-b py-2">
-                <span class="font-bold w-32">Total Hours:</span>
-                <span class="text-gray-700">{courseDetails?.totalHours}</span>
+              <li className="flex border-b py-2">
+                <span className="font-bold w-32">Total Hours:</span>
+                <span className="text-gray-700">{courseDetails?.totalHours}</span>
               </li>
-              <li class="flex border-b py-2">
-                <span class="font-bold w-32">Created At:</span>
-                <span class="text-gray-700">
+              <li className="flex border-b py-2">
+                <span className="font-bold w-32">Created At:</span>
+                <span className="text-gray-700">
                   {new Date(courseDetails?.createdAt).toLocaleDateString(
                     "en-US",
                     { day: "numeric", month: "short", year: "numeric" }
@@ -176,22 +176,22 @@ const Eachcourse = () => {
               </li>
             </ul>
           </div>
-          <div class="flex-1  bg-white rounded-lg shadow-xl p-8">
-            <h4 class="text-xl text-gray-900 font-bold">Teacher Details</h4>
-            <ul class="mt-2 text-gray-700">
-              <li class="flex border-y py-2">
-                <span class="font-bold w-32">Teach By:</span>
-                <span class="text-gray-700">{courseDetails?.teacher.name}</span>
+          <div className="flex-1  bg-white rounded-lg shadow-xl p-8">
+            <h4 className="text-xl text-gray-900 font-bold">Teacher Details</h4>
+            <ul className="mt-2 text-gray-700">
+              <li className="flex border-y py-2">
+                <span className="font-bold w-32">Teach By:</span>
+                <span className="text-gray-700">{courseDetails?.teacher.name}</span>
               </li>
-              <li class="flex border-b py-2">
-                <span class="font-bold w-32">Phone:</span>
-                <span class="text-gray-700">
+              <li className="flex border-b py-2">
+                <span className="font-bold w-32">Phone:</span>
+                <span className="text-gray-700">
                   {courseDetails?.teacher.phone}
                 </span>
               </li>
-              <li class="flex border-b py-2">
-                <span class="font-bold w-32">Joined At:</span>
-                <span class="text-gray-700">
+              <li className="flex border-b py-2">
+                <span className="font-bold w-32">Joined At:</span>
+                <span className="text-gray-700">
                   {new Date(
                     courseDetails?.teacher.createdAt
                   ).toLocaleDateString("en-US", {
@@ -206,19 +206,17 @@ const Eachcourse = () => {
         </div>
 
         <div>
-          <div className="border border-1 border-orange-500 text-gray-800 w-full mt-10 grid grid-cols-2 rounded-md">
+          <div className="grid w-full grid-cols-2 mt-10 text-gray-800 border border-orange-500 rounded-md border-1">
             <div
-              className={`text-center p-4 hover:bg-orange-500 hover:text-white cursor-pointer ${
-                activeTab === "enrolled" ? "bg-orange-500 text-white" : ""
-              }`}
+              className={`text-center p-4 hover:bg-orange-500 hover:text-white cursor-pointer ${activeTab === "enrolled" ? "bg-orange-500 text-white" : ""
+                }`}
               onClick={() => handleTabSwitch("enrolled")}
             >
               Enrolled Students
             </div>
             <div
-              className={`text-center p-4 hover:bg-orange-500 hover:text-white cursor-pointer ${
-                activeTab === "applied" ? "bg-orange-500 text-white" : ""
-              }`}
+              className={`text-center p-4 hover:bg-orange-500 hover:text-white cursor-pointer ${activeTab === "applied" ? "bg-orange-500 text-white" : ""
+                }`}
               onClick={() => handleTabSwitch("applied")}
             >
               Applied Students
@@ -226,13 +224,13 @@ const Eachcourse = () => {
           </div>
 
           <div className="mt-8">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
               {activeTab === "enrolled" &&
                 courseDetails?.enrolledStudents &&
                 courseDetails.enrolledStudents.map((student) => (
                   <div
                     key={student._id}
-                    className="border border-1 p-4 shadow-xl bg-orange-500 text-gray-100 rounded-md"
+                    className="p-4 text-gray-100 bg-orange-500 border rounded-md shadow-xl border-1"
                   >
                     <p>
                       Name: <span>{student.name}</span>
@@ -247,7 +245,7 @@ const Eachcourse = () => {
                 courseDetails.appliedStudents.map((student) => (
                   <div
                     key={student._id}
-                    className="border border-1 p-4 shadow-xl bg-orange-500 text-gray-100 rounded-md"
+                    className="p-4 text-gray-100 bg-orange-500 border rounded-md shadow-xl border-1"
                   >
                     <p>
                       Name: <span>{student.name}</span>

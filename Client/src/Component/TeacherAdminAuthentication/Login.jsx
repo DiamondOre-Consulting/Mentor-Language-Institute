@@ -126,7 +126,7 @@ const Login = () => {
     <>
       <Navbar />
       {loading && (
-        <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
+        <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-black bg-opacity-50">
           <ClipLoader
             color={"#FFA500"}
             loading={loading}
@@ -136,43 +136,41 @@ const Login = () => {
         </div>
       )}
       <div className="-mt-10">
-        <div className="flex flex-col justify-center items-center">
+        <div className="flex flex-col items-center justify-center">
           <div className="py-4">
             {activeTab === 0 && (
-              <section class="relative">
-                <div class="flex flex-col items-center justify-center mt-16 lg:py-0 ">
-                  <div class="md:w-full sm:w-1/2 bg-white rounded-lg shadow-lg  md:mt-0 sm:max-w-md xl:p-0">
-                    <div className="flex space-x-4 md:space-x-10  ">
+              <section className="relative">
+                <div className="flex flex-col items-center justify-center mt-16 lg:py-0 ">
+                  <div className="md:w-full sm:w-1/2 bg-white rounded-lg shadow-lg  md:mt-0 sm:max-w-md xl:p-0">
+                    <div className="flex space-x-4 md:space-x-10 ">
                       <button
-                        className={`py-2 px-4 md:px-10 border-b-2 ${
-                          activeTab === 0
+                        className={`py-2 px-4 md:px-10 border-b-2 ${activeTab === 0
                             ? "border-orange-500"
                             : "border-transparent"
-                        } focus:outline-none`}
+                          } focus:outline-none`}
                         onClick={() => handleTabClick(0)}
                       >
                         Admin Login
                       </button>
                       <button
-                        className={`py-2 px-4 md:px-10 border-b-2 ${
-                          activeTab === 1
+                        className={`py-2 px-4 md:px-10 border-b-2 ${activeTab === 1
                             ? "border-orange-500"
                             : "border-transparent"
-                        } focus:outline-none`}
+                          } focus:outline-none`}
                         onClick={() => handleTabClick(1)}
                       >
                         Teacher Login
                       </button>
                     </div>
-                    <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-                      <div className="flex justify-between items-center">
-                        <h1 class="text-xl  font-bold leading-tight tracking-tight text-gray-900 md:text-2xl ">
+                    <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
+                      <div className="flex items-center justify-between">
+                        <h1 className="text-xl  font-bold leading-tight tracking-tight text-gray-900 md:text-2xl ">
                           Admin
                         </h1>
                       </div>
 
                       <form
-                        class="space-y-4 md:space-y-6"
+                        className="space-y-4 md:space-y-6"
                         action="#"
                         onSubmit={handleAdminLogin}
                       >
@@ -183,7 +181,7 @@ const Login = () => {
                             value={username}
                             onChange={(e) => adminSetusername(e.target.value)}
                             placeholder="Enter Username"
-                            class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
+                            className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                             required=""
                           />
                         </div>
@@ -193,7 +191,7 @@ const Login = () => {
                           </label>
                           <div className="relative">
                             <input
-                              className="w-full rounded-lg border-1 p-4 pe-12 text-sm shadow-sm"
+                              className="w-full p-4 text-sm rounded-lg shadow-sm border-1 pe-12"
                               type={showPassword ? "text" : "password"}
                               placeholder="Password"
                               value={password}
@@ -202,9 +200,9 @@ const Login = () => {
                           </div>
                         </div>
 
-                        <div class="flex items-center justify-between">
-                          <div class="flex items-start">
-                            <div class="flex items-center h-5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-start">
+                            <div className="flex items-center h-5">
                               <input
                                 aria-describedby="remember"
                                 id="check"
@@ -213,12 +211,12 @@ const Login = () => {
                                 onChange={() =>
                                   setShowPassword((prev) => !prev)
                                 }
-                                class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300    "
+                                className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300    "
                                 required=""
                               />
                             </div>
-                            <div class="ml-3 text-sm">
-                              <label for="remember" class="text-gray-500 ">
+                            <div className="ml-3 text-sm">
+                              <label htmlFor="remember" className="text-gray-500 ">
                                 Show password
                               </label>
                             </div>
@@ -226,14 +224,14 @@ const Login = () => {
                           {/* <a href="#" class="text-sm font-medium text-primary-600 hover:underline ">Forgot password?</a> */}
                         </div>
                         <div className="w-full">
-                          <button className="md:w-96 bg-orange-400 text-white w-full p-2 rounded-md">
+                          <button className="w-full p-2 text-white bg-orange-400 rounded-md md:w-96">
                             Login
                           </button>
                         </div>
 
                         <a
                           href="#"
-                          class="text-center flex items-center justify-center text-sm font-medium text-primary-600 hover:underline "
+                          className="text-center flex items-center justify-center text-sm font-medium text-primary-600 hover:underline "
                         >
                           <Link to={"/"} className="underline"></Link>
                         </a>
@@ -244,40 +242,38 @@ const Login = () => {
               </section>
             )}
             {activeTab === 1 && (
-              <section class="relative">
-                <div class="flex flex-col items-center justify-center mt-16 lg:py-0 ">
-                  <div class="md:w-full sm:w-1/2 bg-white rounded-lg shadow-lg  md:mt-0 sm:max-w-md xl:p-0">
-                    <div className="flex space-x-4 md:space-x-10  ">
+              <section className="relative">
+                <div className="flex flex-col items-center justify-center mt-16 lg:py-0 ">
+                  <div className="md:w-full sm:w-1/2 bg-white rounded-lg shadow-lg  md:mt-0 sm:max-w-md xl:p-0">
+                    <div className="flex space-x-4 md:space-x-10 ">
                       <button
-                        className={`py-2 px-4 md:px-10 border-b-2 ${
-                          activeTab === 0
+                        className={`py-2 px-4 md:px-10 border-b-2 ${activeTab === 0
                             ? "border-orange-500"
                             : "border-transparent"
-                        } focus:outline-none`}
+                          } focus:outline-none`}
                         onClick={() => handleTabClick(0)}
                       >
                         Admin Login
                       </button>
                       <button
-                        className={`py-2 px-4 md:px-10 border-b-2 ${
-                          activeTab === 1
+                        className={`py-2 px-4 md:px-10 border-b-2 ${activeTab === 1
                             ? "border-orange-500"
                             : "border-transparent"
-                        } focus:outline-none`}
+                          } focus:outline-none`}
                         onClick={() => handleTabClick(1)}
                       >
                         Teacher Login
                       </button>
                     </div>
-                    <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
-                      <div className="flex justify-between items-center">
-                        <h1 class="text-xl  font-bold leading-tight tracking-tight text-gray-900 md:text-2xl ">
+                    <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
+                      <div className="flex items-center justify-between">
+                        <h1 className="text-xl  font-bold leading-tight tracking-tight text-gray-900 md:text-2xl ">
                           Teacher
                         </h1>
                       </div>
 
                       <form
-                        class="space-y-4 md:space-y-6"
+                        className="space-y-4 md:space-y-6"
                         action="#"
                         onSubmit={handleTeacherLogin}
                       >
@@ -288,7 +284,7 @@ const Login = () => {
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
                             placeholder="Enter Phone"
-                            class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
+                            className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                             required=""
                           />
                         </div>
@@ -298,7 +294,7 @@ const Login = () => {
                           </label>
                           <div className="relative">
                             <input
-                              className="w-full rounded-lg border-1 p-4 pe-12 text-sm shadow-sm"
+                              className="w-full p-4 text-sm rounded-lg shadow-sm border-1 pe-12"
                               type={showPassword ? "text" : "password"}
                               placeholder="Password"
                               value={password}
@@ -307,9 +303,9 @@ const Login = () => {
                           </div>
                         </div>
 
-                        <div class="flex items-center justify-between">
-                          <div class="flex items-start">
-                            <div class="flex items-center h-5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-start">
+                            <div className="flex items-center h-5">
                               <input
                                 aria-describedby="remember"
                                 id="check"
@@ -318,12 +314,12 @@ const Login = () => {
                                 onChange={() =>
                                   setShowPassword((prev) => !prev)
                                 }
-                                class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300    "
+                                className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300    "
                                 required=""
                               />
                             </div>
-                            <div class="ml-3 text-sm">
-                              <label for="remember" class="text-gray-500 ">
+                            <div className="ml-3 text-sm">
+                              <label htmlFor="remember" className="text-gray-500 ">
                                 Show password
                               </label>
                             </div>
@@ -331,14 +327,14 @@ const Login = () => {
                           {/* <a href="#" class="text-sm font-medium text-primary-600 hover:underline ">Forgot password?</a> */}
                         </div>
                         <div className="w-full">
-                          <button className="md:w-96 bg-orange-400 text-white w-full p-2 rounded-md">
+                          <button className="w-full p-2 text-white bg-orange-400 rounded-md md:w-96">
                             Login
                           </button>
                         </div>
 
                         <a
                           href="#"
-                          class="text-center flex items-center justify-center text-sm font-medium text-primary-600 hover:underline "
+                          className="text-center flex items-center justify-center text-sm font-medium text-primary-600 hover:underline "
                         >
                           <Link to={"/"} className="underline"></Link>
                         </a>
@@ -350,8 +346,8 @@ const Login = () => {
             )}
 
             {error && (
-              <div className="flex items-center justify-center bg-red-300 p-4 rounded-md">
-                <p className="text-center text-sm text-red-500">{error}</p>
+              <div className="flex items-center justify-center p-4 bg-red-300 rounded-md">
+                <p className="text-sm text-center text-red-500">{error}</p>
               </div>
             )}
           </div>
