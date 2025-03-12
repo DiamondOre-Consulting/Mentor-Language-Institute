@@ -133,9 +133,10 @@ const Home = () => {
        console.log(response)
        setPopupMessage("New Admin Has Been Created Successfully!");
         console.log("admin signup",response);
-        setUserName(response.data.newAdmin.username); // Assuming the username is returned in response.data.username
         setIsFormOpen(false);
         setFormData({ name: "", branch: "", phone: "", password: "" });
+        setUserName(response.data.newAdmin.username); // Assuming the username is returned in response.data.username
+     
       }
     } catch (error) {
       if (error.response) {
