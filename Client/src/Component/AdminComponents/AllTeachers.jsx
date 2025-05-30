@@ -21,7 +21,7 @@ const AllTeachers = () => {
         }
 
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-teachers",
+          "http://localhost:7000/api/admin-confi/all-teachers",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -73,7 +73,7 @@ const AllTeachers = () => {
       }
 
       const deleteCourse = await axios.delete(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/delete-teacher/${teacherid}`,
+        `http://localhost:7000/api/admin-confi/delete-teacher/${teacherid}`,
 
         {
           headers: {

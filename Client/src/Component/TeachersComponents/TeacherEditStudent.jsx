@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
+import { IoClose } from "react-icons/io5";
 
 const override = css`
   display: block;
@@ -10,59 +11,35 @@ const override = css`
   border-color: red;
 `;
 
-const EditStudent = () => {
+const TeacherEditStudent = ({ studentData, closingModel }) => {
+  // console.log("close model",closeModel)
   const navigate = useNavigate();
-  const [studentDetails, setStudentsDetails] = useState(null);
-  const [name, setName] = useState(studentDetails?.name || "");
-  const [phone, setPhone] = useState(studentDetails?.phone || "");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [dob, setdob] = useState();
-  const [dateOfBirth, setDateOfBirth] = useState();
   const [userName, setUserName] = useState("");
+  const [dob, setdob] = useState("");
+  const [studentDetails, setStudentsDetails] = useState(null);
   const [popupMessage, setPopupMessage] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [branch, setBranch] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleShowPassword = () => {
-    return setShowPass(!showPass);
-  };
-  const { id } = useParams();
+  const handleShowPassword = () => setShowPassword((prev) => !prev);
+
+  
   const token = localStorage.getItem("token");
 
-  const StudentDetails = async () => {
-    const studentResponse = await axios.get(
-      `http://localhost:7000/api/admin-confi/all-students/${id}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    const dateString = studentResponse?.data?.dob;
-    const date = new Date(dateString);
-
-    const day = String(date.getDate()).padStart(2, "0"); // Pad with 0 if day is single digit
-    const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-indexed (0 = January)
-    const year = date.getFullYear();
-
-    const formattedDate = `${day}-${month}-${year}`;
-    if (studentResponse?.status === 200) {
-      // Set student details
-      setStudentsDetails(studentResponse?.data);
-      setName(studentResponse?.data?.name || "");
-      setPhone(studentResponse?.data?.phone || "");
-      setdob(studentResponse?.data?.dob || "");
-      setDateOfBirth(formattedDate);
-
-      setUserName(studentResponse?.data?.userName || "");
-      setBranch(studentResponse?.data?.branch || "");
-    }
-  };
-
   useEffect(() => {
-    StudentDetails();
-  }, []);
+    if (studentData) {
+      setName(studentData.name || "");
+      setPhone(studentData.phone || "");
+      setUserName(studentData.userName || "");
+      setBranch(studentData.branch || "");
+      setdob(studentData.dob || "");
+      setPassword(studentData.password || "");
+    }
+  }, [studentData]);
 
   const handleStudentEdit = async (e) => {
     setLoading(true);
@@ -71,7 +48,7 @@ const EditStudent = () => {
 
     try {
       const response = await axios.put(
-        `http://localhost:7000/api/admin-confi/student-edit/${id}`,
+        `http://localhost:7000/api/teachers/student-edit/${studentData?._id}`,
         {
           name,
           phone,
@@ -94,6 +71,7 @@ const EditStudent = () => {
         setPassword("");
         setBranch("");
         setUserName("");
+        
       } else if (response.status === 400) {
         setPopupMessage(response.data.message);
       } else {
@@ -112,6 +90,7 @@ const EditStudent = () => {
       }
     } finally {
       setLoading(false);
+      closingModel()
     }
   };
 
@@ -135,10 +114,13 @@ const EditStudent = () => {
                 <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl ">
                   Edit Form
                 </h1>
-                {/* <img src={logo} alt="" className='w-24' /> */}
+                <IoClose  onClick={closingModel} className="text-2xl cursor-pointer"/>
               </div>
 
-              <form className="space-y-4 md:space-y-6" onSubmit={handleStudentEdit}>
+              <form
+                className="space-y-4 md:space-y-6"
+                onSubmit={handleStudentEdit}
+              >
                 <div>
                   <input
                     type="text"
@@ -194,7 +176,7 @@ const EditStudent = () => {
                     className="block mb-2 text-sm font-medium text-gray-900 "
                     htmlFor="dob"
                   >
-                    {dateOfBirth}
+                    {studentData?.dob.split("T")[0]}
                   </label>
                   <input
                     type="date"
@@ -209,9 +191,8 @@ const EditStudent = () => {
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
-                    value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="Enter New Password"
                     className="bg-gray-50 border border-gray-900 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-600 focus:border-gray-600 block w-full p-2.5      "
                     required=""
                   />
@@ -272,4 +253,4 @@ const EditStudent = () => {
   );
 };
 
-export default EditStudent;
+export default TeacherEditStudent;

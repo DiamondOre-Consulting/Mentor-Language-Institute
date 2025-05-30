@@ -43,7 +43,7 @@ console.log("hello")
         }
 
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-classes",
+          "http://localhost:7000/api/teachers/my-classes",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -71,7 +71,7 @@ console.log("hello")
 
     try {
       const response = await axios.post(
-        "https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/add-student",
+        "http://localhost:7000/api/teachers/add-student",
         {
           name,
           phone,

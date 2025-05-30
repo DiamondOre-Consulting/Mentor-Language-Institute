@@ -59,7 +59,7 @@ const Allstudents = () => {
         }
 
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students",
+          "http://localhost:7000/api/admin-confi/all-students",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -96,7 +96,7 @@ const Allstudents = () => {
         }
 
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-classes",
+          "http://localhost:7000/api/admin-confi/all-classes",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -175,7 +175,7 @@ const Allstudents = () => {
       const monthNumber = monthNameToNumber[feeMonth];
 
       const response = await axios.put(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/enroll-student/${selectedCourseId}/${selectedStudentId}`,
+        `http://localhost:7000/api/admin-confi/enroll-student/${selectedCourseId}/${selectedStudentId}`,
         {
           totalFee,
           feeMonth: monthNumber,
@@ -235,7 +235,7 @@ const Allstudents = () => {
       }
 
       const deactiveResponse = await axios.put(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/deactivate-account/${setuId}`,
+        `http://localhost:7000/api/admin-confi/deactivate-account/${setuId}`,
         { status },
         {
           headers: {
@@ -253,17 +253,17 @@ const Allstudents = () => {
     }
   };
 
-  const deleteSudentId = (studentId) => {
-    setStuId(studentId);
-    deleteStudent();
-  };
+  // const deleteSudentId = (studentId) => {
+  //   setStuId(studentId);
+  //   deleteStudent();
+  // };
 
-  const deleteStudent = async (e) => {
+  const deleteStudent = async (id) => {
     // e.preventDefault();
     try {
       const token = localStorage.getItem("token");
       const response = await axios.delete(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/delete-student/${setuId}`,
+        `http://localhost:7000/api/admin-confi/delete-student/${id}`,
 
         {
           headers: {
@@ -356,7 +356,7 @@ const Allstudents = () => {
                 <span
                   className="bg-red-500 p-2 text-[12px] text-gray-100 rounded-md"
                   onClick={() => {
-                    deleteSudentId(student._id);
+                    deleteStudent(student?._id);
                   }}
                 >
                   Delete Student

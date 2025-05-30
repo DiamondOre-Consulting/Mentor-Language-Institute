@@ -19,7 +19,7 @@ const UserVerify = ({ routeName }) => {
             }
             try {
                 const response = await axios.get(
-                    `https://mentor-language-institute-backend-hbyk.onrender.com/api/${routeName}/my-profile`,
+                    `http://localhost:7000/api/${routeName}/my-profile`,
                     {
                         headers: { Authorization: `Bearer ${token}` },
                     }

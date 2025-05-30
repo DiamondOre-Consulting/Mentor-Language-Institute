@@ -288,15 +288,22 @@ router.get("/all-teachers", AdminAuthenticateToken, async (req, res) => {
   try {
     const { branch } = req.user;
     if (!branch) {
-      const allTeachers = await Teachers.find({}, { password: 0 });
+      const allTeachers = await Teachers.find({}, { password: 0 }).populate({
+        path: "myClasses",
+      });
 
       return res.status(200).json(allTeachers);
     }
-    const allTeachers = await Teachers.find({ branch }, { password: 0 });
+    const allTeachers = await Teachers.find(
+      { branch },
+      { password: 0 }
+    ).populate({
+      path: "myClasses",
+    });
 
     return res.status(200).json(allTeachers);
   } catch (error) {
-    console.log("Something went wrong!!! ");
+    console.log("Something went wrong!!! ", error);
     res.status(500).json(error);
   }
 });
@@ -798,4 +805,27 @@ router.delete(
   }
 );
 
+router.get("/student-attendence/:teacherId", async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    const teacher = await Teachers.findById(teacherId).populate({
+      path: "myClasses",
+      populate: {
+        path: "enrolledStudents",
+        model: "Student",
+        populate: {
+          path: "attendanceDetail",
+          model: "Attendance",
+        },
+      },
+    });
+    res.status(200).json({
+      success: true,
+      studentAttendance: teacher,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Something went wrong!!!", error });
+  }
+});
 export default router;

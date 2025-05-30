@@ -41,11 +41,11 @@ const ChatTeacher = () => {
   }, [decodedToken]);
 
   useEffect(() => {
-    // Fetch students when the component mounts
+   
     const fetchStudents = async () => {
       try {
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/chat-all-students",
+          "http://localhost:7000/api/teachers/chat-all-students",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -71,10 +71,10 @@ const ChatTeacher = () => {
 
     if (isSmallScreen && !isOpen) {
       setIsTeacherSectionVisible(false);
-      setIsOpen(true); // Open the right portion
+      setIsOpen(true); 
     } else if (isSmallScreen && isOpen) {
       setIsOpen(false);
-      setIsTeacherSectionVisible(true); // Close the right portion
+      setIsTeacherSectionVisible(true); 
     }
   };
 
@@ -111,7 +111,7 @@ const ChatTeacher = () => {
                       </div>
                       <div class="ml-4 flex-1 border-b border-grey-lighter py-4">
                         <div class="flex items-bottom justify-between">
-                          <p class="text-grey-darkest">{student.name}</p>
+                          <p class="text-grey-darkest">{student?.name}</p>
                         </div>
                         <p class="text-grey-dark mt-1 text-sm">
                           {/* {classData.map((classItem, index) => {

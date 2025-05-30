@@ -66,7 +66,7 @@ const ChatBox = ({
   const fetchChatHistory = async (teacherId) => {
     try {
       const response = await axios.get(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/chats/get-messages-student/${teacherId}`,
+        `http://localhost:7000/api/chats/get-messages-student/${teacherId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

@@ -111,6 +111,11 @@ router.post("/add-student", TeacherAuthenticateToken, async (req, res) => {
 
     await newStudent.save();
 
+
+  await Teachers.updateMany(
+      { branch },
+      { $push: { myStudents: newStudent._id } }
+    );
     // Add the student to the enrolled students array in the class
     classData.enrolledStudents.push(newStudent._id);
     await classData.save();
@@ -124,6 +129,126 @@ router.post("/add-student", TeacherAuthenticateToken, async (req, res) => {
   }
 });
 
+router.get("/my-students", TeacherAuthenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.user;
+
+   
+    const teacher = await Teachers.findById(userId)
+      .populate({
+        path: "myClasses",
+        populate: {
+          path: "enrolledStudents",
+          model: "Student",
+          select: "-password", 
+        },
+      });
+
+    if (!teacher) {
+      return res.status(404).json({ message: "Teacher not found." });
+    }
+
+    const allStudents = teacher.myClasses.flatMap(cls => cls.enrolledStudents);
+
+    if (!allStudents || allStudents.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No students are enrolled in your classes." });
+    }
+
+    res.status(200).json(allStudents);
+  } catch (error) {
+    console.error("Error fetching students:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+});
+
+
+router.put("/student-edit/:id", TeacherAuthenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { name, phone, password, branch, userName, dob } = req.body;
+  console.log(name, phone, password, branch, userName, dob);
+
+  try {
+    // Validate input fields (optional, depending on your requirements)
+
+    // Find the student by ID
+    const student = await Students.findById(id);
+    if (!student) {
+      return res.status(404).json({ message: "Student not found." });
+    }
+
+    // Check if username already exists (excluding the current student)
+    const existingUserName = await Students.findOne({ userName });
+    console.log(existingUserName);
+    if (existingUserName && existingUserName._id.toString() !== id) {
+      return res.status(400).json({
+        message: "Username already taken. Please enter a unique username",
+      });
+    }
+
+    // Update student details
+    // student.name = name || student.name;
+    // student.phone = phone || student.phone;
+    // student.branch = branch || student.branch;
+    // student.userName = userName || student.userName;
+    // student.dob = dob || student.dob;
+    if (name) {
+      student.name = await name;
+    }
+    if (phone) {
+      student.phone = await phone;
+    }
+    if (branch) {
+      student.branch = await branch;
+    }
+    if (userName) {
+      student.userName = await userName;
+    }
+    if (dob) {
+      student.dob = await dob;
+    }
+
+    // If password is provided, hash it and update the password
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      student.password = await bcrypt.hash(password, salt);
+    }
+
+    // Save the updated student details
+    await student.save();
+
+    // Send a success response
+    res.status(200).json({ message: "Student details updated successfully." });
+  } catch (error) {
+    console.error("Error updating student details:", error);
+    res.status(500).json({ message: "Server error." });
+  }
+});
+
+
+
+router.delete(
+  "/delete-student/:id",
+  TeacherAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const deleteStudent = await Students.findByIdAndDelete({ _id: id });
+      if (!deleteStudent) {
+        return res
+          .status(403)
+          .json({ message: "No student Found with this id" });
+      }
+
+      res.status(200).json({ message: "Student deleted successfully!!!" });
+    } catch (error) {
+      console.log(error.message);
+      res.status(500).json({ message: "Something went wrong!!!", error });
+    }
+  }
+);
 
 router.get("/my-classes", TeacherAuthenticateToken, async (req, res) => {
   try {
@@ -430,49 +555,39 @@ router.post(
 router.get("/chat-all-students", TeacherAuthenticateToken, async (req, res) => {
   try {
     const { userId } = req.user;
-    let allStudentIds = [];
-    let allStudents = [];
 
-    const currentUser = await Teachers.findById({ _id: userId });
-
-    // if(currentUser.messages.length == 0) {
+    const currentUser = await Teachers.findById(userId);
     const myClasses = currentUser.myClasses;
+
+    let allStudentIds = [];
 
     await Promise.all(
       myClasses.map(async (eachClass) => {
-        const currentClass = await Classes.findById({ _id: eachClass });
-        let studentsIds = currentClass.enrolledStudents;
-        studentsIds.forEach((studentId) => {
-          const stringId = String(studentId).trim().toLowerCase(); // Normalize ID
+        const currentClass = await Classes.findById(eachClass);
+        currentClass.enrolledStudents.forEach((studentId) => {
+          const stringId = String(studentId).trim().toLowerCase();
           if (!allStudentIds.includes(stringId)) {
             allStudentIds.push(stringId);
           }
         });
       })
     );
-    // allStudentIds = [...new Set(allStudentIds)];
 
-    // Convert strings to ObjectIds
-    const objectIds = allStudentIds.map(
-      (id) => new mongoose.Types.ObjectId(id)
-    );
-    console.log(objectIds);
+    const objectIds = allStudentIds.map(id => new mongoose.Types.ObjectId(id));
 
-    await Promise.all(
-      objectIds.map(async (eachId) => {
-        const eachStudent = await Students.findById({ _id: eachId });
-        allStudents.push(eachStudent);
-      })
+    const students = await Promise.all(
+      objectIds.map(id => Students.findById(id))
     );
 
-    res.status(201).json(allStudents);
+    const filteredStudents = students.filter(student => student !== null);
 
-    // }
+    res.status(201).json(filteredStudents);
   } catch (error) {
     console.log("Something went wrong!!! ", error);
     res.status(500).json(error);
   }
 });
+
 
 
 export default router;

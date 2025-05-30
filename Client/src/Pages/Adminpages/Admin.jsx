@@ -46,7 +46,7 @@ const Admin = () => {
 
         // Fetch associates data from the backend
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/my-profile",
+          "http://localhost:7000/api/admin-confi/my-profile",
           {
             headers: {
               Authorization: `Bearer ${token}`,

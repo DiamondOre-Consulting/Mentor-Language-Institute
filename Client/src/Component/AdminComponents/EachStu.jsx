@@ -48,7 +48,7 @@ const EachStu = () => {
         setLoading(true);
         // Fetch student details
         const studentResponse = await axios.get(
-          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students/${id}`,
+          `http://localhost:7000/api/admin-confi/all-students/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -64,7 +64,7 @@ const EachStu = () => {
           const classesData = [];
           for (const classId of classIds) {
             const classResponse = await axios.get(
-              `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-classes/${classId}`,
+              `http://localhost:7000/api/admin-confi/all-classes/${classId}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -77,7 +77,7 @@ const EachStu = () => {
               // Fetch teacher associated with this class
               const teacherId = classResponse.data.teachBy;
               const teacherResponse = await axios.get(
-                `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-teachers/${teacherId}`,
+                `http://localhost:7000/api/admin-confi/all-teachers/${teacherId}`,
                 {
                   headers: {
                     Authorization: `Bearer ${token}`,
@@ -119,7 +119,7 @@ const EachStu = () => {
       try {
         if (selectedCourseId) {
           const attendanceResponse = await axios.get(
-            `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/attendance/${selectedCourseId}/${id}`,
+            `http://localhost:7000/api/admin-confi/attendance/${selectedCourseId}/${id}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -164,7 +164,7 @@ const EachStu = () => {
       try {
         if (selectedCourseId) {
           const FeeResponse = await axios.get(
-            `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/fee/${selectedCourseId}/${id}`,
+            `http://localhost:7000/api/admin-confi/fee/${selectedCourseId}/${id}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -218,7 +218,7 @@ const EachStu = () => {
       }
 
       const response = await axios.put(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/update-fee/${selectedCourseId}/${id}`,
+        `http://localhost:7000/api/admin-confi/update-fee/${selectedCourseId}/${id}`,
         {
           feeMonth: monthNameToNumber[selectedMonth],
           paid: paidStatus === "true",

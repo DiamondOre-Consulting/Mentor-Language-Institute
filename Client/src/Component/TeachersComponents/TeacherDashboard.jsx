@@ -8,6 +8,9 @@ import { useNavigate } from "react-router-dom";
 import ChatTeacher from "../../Pages/Teacherpages/ChatTeacher";
 import Error from "..//Studentcomponents/Stuauth/Error";
 import TeacherAddStudent from "./TeacherAddStudent";
+import Allstudents from "../AdminComponents/Allstudents";
+import TeacherAllStudents from "./TeacherAllStudents";
+import TeacherEditStudent from "./TeacherEditStudent";
 
 const TeacherDashboard = ({ teacherData }) => {
   const { decodedToken } = useJwt(localStorage.getItem("token"));
@@ -49,6 +52,19 @@ const TeacherDashboard = ({ teacherData }) => {
                 path="/myaccount"
                 element={<TeacherProfile teacherData={teacherData} />}
               />
+
+                <Route
+                path="/all-students"
+                element={<TeacherAllStudents teacherData={teacherData} />}
+              />
+
+
+
+                <Route
+                path="/each-student/:id"
+                element={<TeacherEditStudent teacherData={teacherData} />}
+              />
+
               <Route path="/add-student" element={<TeacherAddStudent />} />
               <Route
                 path="/allstudents/:selectedClassId"

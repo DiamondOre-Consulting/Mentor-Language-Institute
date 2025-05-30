@@ -55,7 +55,7 @@ const ChatAdmin = () => {
         }
 
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-teachers",
+          "http://localhost:7000/api/admin-confi/all-teachers",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -88,7 +88,7 @@ const ChatAdmin = () => {
         }
 
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students",
+          "http://localhost:7000/api/admin-confi/all-students",
           {
             headers: {
               Authorization: `Bearer ${token}`,

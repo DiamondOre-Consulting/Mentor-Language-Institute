@@ -48,7 +48,7 @@ const Eachcourse = () => {
 
         // Fetch course details
         const response = await axios.get(
-          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-classes/${id}`,
+          `http://localhost:7000/api/admin-confi/all-classes/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -63,7 +63,7 @@ const Eachcourse = () => {
           // Fetch teacher details
           const teacherId = courseData.teachBy;
           const teacherResponse = await axios.get(
-            `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-teachers/${teacherId}`,
+            `http://localhost:7000/api/admin-confi/all-teachers/${teacherId}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -83,7 +83,7 @@ const Eachcourse = () => {
 
           for (const studentId of enrolledStudents) {
             const studentResponse = await axios.get(
-              `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students/${studentId}`,
+              `http://localhost:7000/api/admin-confi/all-students/${studentId}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -104,7 +104,7 @@ const Eachcourse = () => {
 
           for (const studentId of applyStudents) {
             const studentResponse = await axios.get(
-              `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students/${studentId}`,
+              `http://localhost:7000/api/admin-confi/all-students/${studentId}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -181,7 +181,7 @@ const Eachcourse = () => {
             <ul className="mt-2 text-gray-700">
               <li className="flex border-y py-2">
                 <span className="font-bold w-32">Teach By:</span>
-                <span className="text-gray-700">{courseDetails?.teacher.name}</span>
+                <span className="text-gray-700">{courseDetails?.teacher?.name}</span>
               </li>
               <li className="flex border-b py-2">
                 <span className="font-bold w-32">Phone:</span>
@@ -229,14 +229,14 @@ const Eachcourse = () => {
                 courseDetails?.enrolledStudents &&
                 courseDetails.enrolledStudents.map((student) => (
                   <div
-                    key={student._id}
+                    key={student?._id}
                     className="p-4 text-gray-100 bg-orange-500 border rounded-md shadow-xl border-1"
                   >
                     <p>
-                      Name: <span>{student.name}</span>
+                      Name: <span>{student?.name}</span>
                     </p>
                     <p>
-                      Phone: <span>{student.phone}</span>
+                      Phone: <span>{student?.phone}</span>
                     </p>
                   </div>
                 ))}
@@ -248,10 +248,10 @@ const Eachcourse = () => {
                     className="p-4 text-gray-100 bg-orange-500 border rounded-md shadow-xl border-1"
                   >
                     <p>
-                      Name: <span>{student.name}</span>
+                      Name: <span>{student?.name}</span>
                     </p>
                     <p>
-                      Phone: <span>{student.phone}</span>
+                      Phone: <span>{student?.phone}</span>
                     </p>
                   </div>
                 ))}
