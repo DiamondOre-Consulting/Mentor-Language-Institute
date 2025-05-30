@@ -73,12 +73,13 @@ const Eachcourse = () => {
 
           if (teacherResponse.status === 200) {
             const teacherData = teacherResponse.data;
-            // console.log("Teacher details:", teacherData);
+            console.log("Teacher details:", teacherData);
             courseData.teacher = teacherData;
           }
 
           // Fetch details of enrolled students
           const enrolledStudents = courseData.enrolledStudents;
+          console.log("enrolled students",enrolledStudents)
           const enrolledStudentsDetails = [];
 
           for (const studentId of enrolledStudents) {
@@ -93,11 +94,11 @@ const Eachcourse = () => {
 
             if (studentResponse.status === 200) {
               const studentData = studentResponse.data;
-              // console.log("Enrolled student details:", studentData);
+              console.log("Enrolled student details:", studentData);
               enrolledStudentsDetails.push(studentData);
             }
           }
-
+console.log(enrolledStudents)
           // Fetch details of applied students
           const applyStudents = courseData.appliedStudents;
           const appliedStudentsDetails = [];
@@ -113,8 +114,9 @@ const Eachcourse = () => {
             );
 
             if (studentResponse.status === 200) {
+
               const studentData = studentResponse.data;
-              // console.log("Applied student details:", studentData);
+              console.log("Applied student details:", studentData);
               appliedStudentsDetails.push(studentData);
             }
           }
@@ -122,7 +124,7 @@ const Eachcourse = () => {
           // Set course details including teacher, enrolled students, and applied students
           setCourseDetails({
             ...courseData,
-            enrolledStudents: enrolledStudentsDetails,
+            enrolledStudents: enrolledStudentsDetails.filter(Boolean),
             appliedStudents: appliedStudentsDetails,
           });
         }
@@ -136,7 +138,7 @@ const Eachcourse = () => {
     fetchCourseDetails();
   }, []);
 
-  // console.log("coursedetails", courseDetails)
+  // console.log("coursedetails", courseDetails.enrolledStudents)
   return (
     <>
       <div>
@@ -153,7 +155,7 @@ const Eachcourse = () => {
         <h1 className="px-4 mb-4 text-2xl font-bold md:px-0 md:mb-1">
           {courseDetails?.classTitle}
         </h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 2xl:w-1/3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex-1  bg-white rounded-lg shadow-xl p-8">
             <h4 className="text-xl text-gray-900 font-bold">Course Details</h4>
             <ul className="mt-2 text-gray-700">

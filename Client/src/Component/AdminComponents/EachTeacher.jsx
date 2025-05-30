@@ -194,7 +194,7 @@ const EachTeacher = () => {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3 ">
             {classesData.map((course) => (
               <div
-                className="border border-0 rounded-md shadow-xl cursor-pointer hover:shadow-none"
+                className="border border-0 min-w-80 rounded-md shadow-xl cursor-pointer hover:shadow-none"
                 key={course?._id}
               >
                 <div className="col-span-1 px-2 py-3 bg-orange-500 rounded-md">

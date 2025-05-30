@@ -121,7 +121,7 @@ const EachTeacherClassStudentAttendance = () => {
 
         if (attendanceResponse.status === 200) {
           // console.log("a det", attendanceResponse.data)
-
+// const filteredData = attendanceResponse?.data?.filter
           const mapping = attendanceResponse.data
             .filter((item) => item.detailAttendance)
             .map((item) => item.detailAttendance);
@@ -150,6 +150,8 @@ const EachTeacherClassStudentAttendance = () => {
             );
             if (studentResponse.status === 200) {
               const data = studentResponse.data;
+
+              // console.log(daattaa,data)
               studentData.push(data);
 
               // console.log("allstudents details", studentDetails)
@@ -407,7 +409,7 @@ const EachTeacherClassStudentAttendance = () => {
 
                 // Find the attendance details for the current student
                 const studentAttendanceDetails = attendanceDetails.find(
-                  (attendance) => attendance.studentId === student._id
+                  (attendance) => attendance.studentId === student?._id
                 );
                 const studentTotalClassesTaken = studentAttendanceDetails
                   ? studentAttendanceDetails.detailAttendance
@@ -432,7 +434,7 @@ const EachTeacherClassStudentAttendance = () => {
                 const showEditIcon = teachercommission === 0;
 
                 return (
-                  <tr key={student._id} className="bg-white border-b ">
+                  <tr key={student?._id} className="bg-white border-b ">
                     <th
                       scope="row"
                       className="flex items-center py-4 pl-6 text-gray-900 pr-14 md:pl-6 md:pr-6 whitespace-nowrap bg-orange-50"
@@ -444,10 +446,10 @@ const EachTeacherClassStudentAttendance = () => {
                       />
                       <div className="ps-3">
                         <div className="text-base font-semibold">
-                          {student.name}
+                          {student?.name}
                         </div>
                         <div className="font-normal text-gray-500">
-                          {student.phone}
+                          {student?.phone}
                         </div>
                       </div>
                     </th>
@@ -460,8 +462,8 @@ const EachTeacherClassStudentAttendance = () => {
                           <svg
                             onClick={() =>
                               handleFetchStudentDetails(
-                                student._id,
-                                student.name
+                                student?._id,
+                                student?.name
                               )
                             }
                             className="w-6 h-6 text-red-600"
