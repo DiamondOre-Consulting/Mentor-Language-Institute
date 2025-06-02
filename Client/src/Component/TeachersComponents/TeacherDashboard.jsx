@@ -53,14 +53,12 @@ const TeacherDashboard = ({ teacherData }) => {
                 element={<TeacherProfile teacherData={teacherData} />}
               />
 
-                <Route
+              <Route
                 path="/all-students"
                 element={<TeacherAllStudents teacherData={teacherData} />}
               />
 
-
-
-                <Route
+              <Route
                 path="/each-student/:id"
                 element={<TeacherEditStudent teacherData={teacherData} />}
               />

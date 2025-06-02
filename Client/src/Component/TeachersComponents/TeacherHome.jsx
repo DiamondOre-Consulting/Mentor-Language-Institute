@@ -215,8 +215,6 @@ const TeacherHome = ({ teacherData }) => {
     }
   };
 
-
-  
   return (
     <>
       <div className="md:mt-0 p-6">

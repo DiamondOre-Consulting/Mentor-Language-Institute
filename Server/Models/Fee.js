@@ -11,7 +11,7 @@ const feeSchema = new mongoose.Schema({
   },
   totalFee: {
     type: Number,
-    required: true
+    // required: true
   },
   detailFee: {
     type: [

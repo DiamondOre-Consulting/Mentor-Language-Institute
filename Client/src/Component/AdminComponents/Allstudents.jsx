@@ -304,11 +304,11 @@ const Allstudents = () => {
           onChange={handleSearchInputChange}
         />
       </div>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 shadow-3xl">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3 shadow-3xl">
         {filteredStudents.map((student) => (
           <>
             <div
-              className={`block max-w-sm p-4 ${student.deactivated
+              className={`block w-full p-4 ${student.deactivated
                 ? "bg-red-300 text-red-300 hover:text-red-400 hover:bg-red-400"
                 : "bg-white hover:bg-gray-100"
                 }border border-gray-200 rounded-lg shadow     cursor-pointer`}
@@ -345,7 +345,7 @@ const Allstudents = () => {
               <p className="text-sm font-normal text-gray-700 ">
                 phone :- <span>{student.phone}</span>
               </p>
-              <div className="flex justify-between mt-4">
+              <div className="flex justify-between  items-center mt-4">
                 <span
                   className="px-2 py-1 text-sm text-gray-100 bg-green-400 rounded-md"
                   onClick={() => openForm(student._id)}

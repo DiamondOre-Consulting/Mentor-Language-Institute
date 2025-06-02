@@ -11,7 +11,7 @@ import Fee from "../Models/Fee.js";
 import ClassAccessStatus from "../Models/ClassAccessStatus.js";
 import Attendance from "../Models/Attendance.js";
 import Commission from "../Models/Commission.js";
-
+import ExcelJS from "exceljs";
 dotenv.config();
 
 const secretKey = process.env.ADMIN_JWT_SECRET;
@@ -482,8 +482,8 @@ router.put(
     try {
       const { id1, id2 } = req.params;
       const { feeMonth, paid, amountPaid } = req.body;
-
-      await Fee.findOneAndUpdate(
+      console.log(feeMonth, paid, amountPaid, "classid", id1, "studentid", id2);
+      const fee = await Fee.findOneAndUpdate(
         { classId: id1, studentId: id2 },
         {
           $push: {
@@ -493,14 +493,26 @@ router.put(
               amountPaid,
             },
           },
-        }
+        },
+        { upsert: true, new: true }
       );
 
-      res
-        .status(200)
-        .json({ message: `Fee for ${feeMonth} is updated successfully.` });
+      if (fee) {
+        const totalFee = fee.detailFee.reduce(
+          (sum, fee) => sum + (fee.amountPaid || 0),
+          0
+        );
+
+        fee.totalFee = totalFee;
+        await fee.save();
+      }
+      console.log("feees", fee);
+      res.json(200, {
+        message: `Fee for ${feeMonth} is updated successfully.`,
+        fee,
+      });
     } catch (error) {
-      console.log("Something went wrong!!! ");
+      console.log("Something went wrong!!! ", error);
       res.status(500).json(error);
     }
   }
@@ -805,27 +817,118 @@ router.delete(
   }
 );
 
-router.get("/student-attendence/:teacherId", async (req, res) => {
+router.get("/download-attendance-report", async (req, res) => {
   try {
-    const { teacherId } = req.params;
-    const teacher = await Teachers.findById(teacherId).populate({
-      path: "myClasses",
+    const { month, year } = req.query;
+
+    if (!month || !year) {
+      return res.status(400).send("Please provide both month and year.");
+    }
+    console.log(month, year);
+    const allClasses = await Classes.find({}).populate({
+      path: "enrolledStudents",
       populate: {
-        path: "enrolledStudents",
-        model: "Student",
-        populate: {
-          path: "attendanceDetail",
-          model: "Attendance",
-        },
+        path: "attendanceDetail",
+        model: "Attendance",
       },
     });
-    res.status(200).json({
-      success: true,
-      studentAttendance: teacher,
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Something went wrong!!!", error });
+
+    // console.log(allClasses);
+
+    // Initialize workbook and sheet
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Attendance Report");
+
+    // Title Row
+    const monthName = new Date(`${year}-${month}-01`).toLocaleString(
+      "default",
+      { month: "long" }
+    );
+    sheet.mergeCells("A1", "C1");
+    const titleCell = sheet.getCell("A1");
+    titleCell.value = `Attendance Report - ${monthName} ${year}`;
+    titleCell.font = { bold: true, size: 14 };
+    titleCell.alignment = { horizontal: "center" };
+
+    let currentRow = 3;
+
+    for (const course of allClasses) {
+      const courseTitle = course.classTitle || "Unnamed Course";
+
+      sheet.mergeCells(`A${currentRow}:C${currentRow}`);
+      sheet.getCell(`A${currentRow}`).value = courseTitle;
+      sheet.getCell(`A${currentRow}`).font = {
+        bold: true,
+        color: { argb: "FF000000" },
+      };
+      sheet.getCell(`A${currentRow}`).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFFBE2C3" },
+      };
+      currentRow++;
+
+      // Table Header
+      sheet.getRow(currentRow).values = ["Sno.", "Name", "No. of Classes"];
+      sheet.getRow(currentRow).font = { bold: true };
+      sheet.getRow(currentRow).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFF2B632" },
+      };
+      currentRow++;
+
+      let sno = 1;
+
+      for (const student of course.enrolledStudents) {
+        let total = 0;
+
+        for (const attendance of student.attendanceDetail || []) {
+          // ONLY process attendance if the classId matches the current course
+          if (String(attendance.classId) !== String(course._id)) continue;
+
+          for (const detail of attendance.detailAttendance || []) {
+            const [day, mon, yr] = detail.classDate.split("-").map(Number);
+            if (mon === parseInt(month) && yr === parseInt(year)) {
+              total += parseInt(detail?.numberOfClassesTaken || 0);
+            }
+          }
+        }
+
+        const row = sheet.getRow(currentRow);
+        row.values = [sno++, student.name, total];
+        if (total === 0) {
+          row.getCell(2).font = { color: { argb: "FFFF0000" }, bold: true };
+        }
+        currentRow++;
+      }
+
+      currentRow++;
+    }
+
+    // Set column widths
+    sheet.columns = [
+      { key: "sno", width: 10 },
+      { key: "name", width: 30 },
+      { key: "total", width: 20 },
+    ];
+
+    // Prepare for download
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=Attendance_${month}_${year}.xlsx`
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error("Excel generation error:", err);
+    res.status(500).send("Failed to generate Excel report.");
   }
 });
+
 export default router;

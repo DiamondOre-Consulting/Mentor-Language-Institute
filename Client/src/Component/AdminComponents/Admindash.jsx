@@ -16,6 +16,7 @@ import EachTeacherClassStudentAttendance from "./EachTeacherClassStudentAttendan
 import Error from "..//Studentcomponents/Stuauth/Error";
 import ChatAdmin from "../../Pages/Adminpages/ChatAdmin";
 import EditStudent from "./EditStudent";
+import DownloadAttendanceReport from "./DownloadAttendanceReport";
 
 const Admindash = () => {
   const navigate = useNavigate();
@@ -67,6 +68,7 @@ const Admindash = () => {
                 <Route path="/allcourses/:id" element={<Eachcourse />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/admin/chat/*" element={<ChatAdmin />} />
+                <Route path="/attendance-report" element={<DownloadAttendanceReport/>}/>
                 <Route path="*" element={<Error />} />
               </Route>
               {/* <Route path='/Chat' element={<Chat/>}/> */}

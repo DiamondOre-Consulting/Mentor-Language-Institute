@@ -103,6 +103,8 @@ const EachStu = () => {
     fetchStudentDetails();
   }, [id, token]);
 
+console.log(classes)
+
   const handleTabClick = (tab) => {
     setActiveTab(tab);
   };
@@ -111,7 +113,7 @@ const EachStu = () => {
     setSelectedCourseId(event.target.value);
   };
 
-  // attendence
+  console.log("slected course Id",selectedCourseId)
 
   useEffect(() => {
     const fetchAttendanceDetails = async () => {
@@ -163,6 +165,7 @@ const EachStu = () => {
     const fetchFeeDetails = async () => {
       try {
         if (selectedCourseId) {
+          console.log( "asdfghjkl",selectedCourseId  , id)
           const FeeResponse = await axios.get(
             `http://localhost:7000/api/admin-confi/fee/${selectedCourseId}/${id}`,
             {
@@ -171,14 +174,15 @@ const EachStu = () => {
               },
             }
           );
+          
           if (FeeResponse.status === 200) {
-            // console.log("Fee details:", FeeResponse.data);
+            console.log("Fee details:", FeeResponse.data);
             setTotalFee(FeeResponse.data.totalFee);
             const feeDetailsWithMonthNames = {
               ...FeeResponse.data,
-              detailFee: FeeResponse.data.detailFee.map((fee) => ({
+              detailFee: FeeResponse?.data?.detailFee?.map((fee) => ({
                 ...fee,
-                feeMonth: numberToMonthName[fee.feeMonth], // Convert month number to name
+                feeMonth: numberToMonthName[fee.feeMonth], 
               })),
             };
             setFeeDetails(feeDetailsWithMonthNames);
@@ -217,6 +221,8 @@ const EachStu = () => {
         return;
       }
 
+
+        console.log(selectedMonth  , amount , paidStatus)
       const response = await axios.put(
         `http://localhost:7000/api/admin-confi/update-fee/${selectedCourseId}/${id}`,
         {
@@ -230,27 +236,29 @@ const EachStu = () => {
           },
         }
       );
-      if (response.status === 200) {
+
+      console.log("update fee details", response)
+      if (response?.status === 200) {
         // console.log("Fee updated successfully");
-        const updatedFeeDetails = [...feedetails.detailFee];
+        const updatedFeeDetails = [...feedetails?.detailFee || []];
         updatedFeeDetails.push({
           feeMonth: selectedMonth,
           amountPaid: amount,
           paid: paidStatus === "true",
         });
         setFeeDetails({ ...feedetails, detailFee: updatedFeeDetails });
-        // Optionally, you can update the fee details state after successful update
+     
       }
     } catch (error) {
       console.error("Error updating fee:", error);
     }
   };
 
-  // console.log(classes)
+console.log("fee detailsssssss",feedetails)
 
   return (
     <>
-      {" "}
+   
       {loading && (
         <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
           <ClipLoader
@@ -356,15 +364,20 @@ const EachStu = () => {
 
               {activeTab === "FeeDetails" && (
                 <div className="bg-white pt-10">
-                  <select onChange={handleCourseSelection}>
-                    <option value="">Select Course</option>
-                    {classes.map((course) => (
-                      <option key={course._id} value={course._id}>
-                        {course.classTitle}
-                      </option>
-                    ))}
-                  </select>
-
+                <select
+  className="p-2 border rounded"
+  onChange={handleCourseSelection}
+  value={selectedCourseId || ""}
+>
+  <option value="" disabled>
+    Select a course
+  </option>
+  {classes.map((course) => (
+    <option key={course._id} value={course._id}>
+      {course.classTitle}
+    </option>
+  ))}
+</select>
                   <div>
                     <div class="relative overflow-x-auto mt-8">
                       <span className=" mb-1 float-right rounded-md  mr-3">
@@ -386,7 +399,7 @@ const EachStu = () => {
                         </thead>
                         <tbody>
                           {feedetails &&
-                            feedetails.detailFee.map((fee) => (
+                            feedetails?.detailFee?.map((fee) => (
                               <tr class="bg-white border-b  ">
                                 <th
                                   scope="row"
@@ -399,7 +412,7 @@ const EachStu = () => {
                                   scope="row"
                                   class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
                                 >
-                                  {fee.amountPaid}
+                                  {fee.amountPaid.toLocaleString("en-IN", { style: "currency", currency: "INR" })}
                                 </th>
 
                                 <td
