@@ -46,7 +46,7 @@ const TeacherAddStudent = () => {
         }
 
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-classes",
+          "http://localhost:7000/api/teachers/my-classes",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -74,7 +74,7 @@ const TeacherAddStudent = () => {
 
     try {
       const response = await axios.post(
-        "https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/add-student",
+        "http://localhost:7000/api/teachers/add-student",
         {
           name,
           phone,
@@ -117,7 +117,7 @@ const TeacherAddStudent = () => {
   };
 
   return (
-    <div className="w-full  min-h-screen flex items-center justify-center px-4 py-8 bg-white">
+    <div className="w-full  min-h-screen flex items-center justify-center px-4 py-18 md:py-6 bg-white">
       <section className="relative w-full">
         {loading && (
           <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
