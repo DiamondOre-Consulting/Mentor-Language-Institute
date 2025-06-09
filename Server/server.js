@@ -15,7 +15,7 @@ const server = createServer(app);
 // const io = new Server(server);
 const io = new Server(server, {
   cors: {
-    origin: "https://www.mentorlanguageinstitute.com",
+    origin: ["https://www.mentorlanguageinstitute.com", "*"],
     methods: ["GET", "POST"],
     credentials: true,
   },

@@ -192,7 +192,7 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
                     className="block mb-2 text-sm font-medium text-gray-900 "
                     htmlFor="dob"
                   >
-                    {studentData?.dob.split("T")[0]}
+                    {studentData?.dob?.split("T")[0]}
                   </label>
                   <input
                     type="date"

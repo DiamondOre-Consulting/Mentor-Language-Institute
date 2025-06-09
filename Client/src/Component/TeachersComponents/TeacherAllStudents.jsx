@@ -63,7 +63,7 @@ const TeacherAllStudents = () => {
   };
 
   const handleDownloadAttendance = async (studentId) => {
-    const [year, month] = selectedMonthYear.split("-");
+    const [year, month] = selectedMonthYear?.split("-");
 
     try {
       const response = await axios.get(
@@ -94,8 +94,8 @@ const TeacherAllStudents = () => {
 
   console.log(studentList);
   return (
-    <div className="px-4 py-6">
-      <div className=" rounded-lg shadow-md p-4">
+    <div className="px-4 py-8">
+      <div className="  ">
         <h2 className="text-2xl md:text-3xl font-semibold mb-4 text-left md:pt-0 pt-10">
           Student List
         </h2>

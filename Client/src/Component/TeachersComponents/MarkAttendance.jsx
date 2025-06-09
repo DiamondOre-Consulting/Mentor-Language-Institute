@@ -195,7 +195,11 @@ const MarkAttendance = () => {
                           }
                         }}
                       >
-                        {todayRecord ? <p>Edit</p> : <p> Mark Attendance</p>}
+                        {todayRecord ? (
+                          <p>Edit Attendance</p>
+                        ) : (
+                          <p> Mark Attendance</p>
+                        )}
                       </button>
                     </td>
                   </tr>
