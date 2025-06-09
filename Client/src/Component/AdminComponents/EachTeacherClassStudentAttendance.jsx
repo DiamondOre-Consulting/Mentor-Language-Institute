@@ -53,7 +53,7 @@ const EachTeacherClassStudentAttendance = () => {
         }
 
         const response = await axios.get(
-          `http://localhost:7000/api/admin-confi/all-classes/${selectedClassId}`,
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-classes/${selectedClassId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -71,7 +71,7 @@ const EachTeacherClassStudentAttendance = () => {
 
           for (const studentIds of enrolledStudents) {
             const studentResponse = await axios.get(
-              `http://localhost:7000/api/admin-confi/all-students/${studentIds}`,
+              `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students/${studentIds}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -108,7 +108,7 @@ const EachTeacherClassStudentAttendance = () => {
         }
 
         const attendanceResponse = await axios.get(
-          `http://localhost:7000/api/admin-confi/attendance/${selectedClassId}`,
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/attendance/${selectedClassId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -121,7 +121,7 @@ const EachTeacherClassStudentAttendance = () => {
 
         if (attendanceResponse.status === 200) {
           // console.log("a det", attendanceResponse.data)
-// const filteredData = attendanceResponse?.data?.filter
+          // const filteredData = attendanceResponse?.data?.filter
           const mapping = attendanceResponse.data
             .filter((item) => item.detailAttendance)
             .map((item) => item.detailAttendance);
@@ -141,7 +141,7 @@ const EachTeacherClassStudentAttendance = () => {
           const studentData = [];
           for (const studentid of studentIds) {
             const studentResponse = await axios.get(
-              `http://localhost:7000/api/admin-confi/all-students/${studentid}`,
+              `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students/${studentid}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -205,7 +205,7 @@ const EachTeacherClassStudentAttendance = () => {
       }
 
       const response = await axios.post(
-        `http://localhost:7000/api/admin-confi/update-commission/${selectedClassId}/${selectedstudentId}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/update-commission/${selectedClassId}/${selectedstudentId}`,
         {
           classDate: selectedDate,
           commission,
@@ -244,7 +244,7 @@ const EachTeacherClassStudentAttendance = () => {
         // const commission = [];
 
         const monthlyCommissionReport = await axios.get(
-          `http://localhost:7000/api/admin-confi/monthly-commission/${id}/${selectedClassId}`,
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/monthly-commission/${id}/${selectedClassId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -267,7 +267,7 @@ const EachTeacherClassStudentAttendance = () => {
     const fetchStudentData = async () => {
       try {
         const studentList = await axios.get(
-          `http://localhost:7000/api/admin-confi/get-studentsListBySub/${selectedClassId}`,
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/get-studentsListBySub/${selectedClassId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -308,7 +308,7 @@ const EachTeacherClassStudentAttendance = () => {
       }
 
       const response = await axios.post(
-        `http://localhost:7000/api/admin-confi/update-monthly-commission/${commissionId}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/update-monthly-commission/${commissionId}`,
         {
           commission,
           paid,
@@ -322,7 +322,6 @@ const EachTeacherClassStudentAttendance = () => {
       );
 
       if (response.status === 200) {
-
         setShowPopupMonthly(false);
         window.location.reload();
 
@@ -406,29 +405,28 @@ const EachTeacherClassStudentAttendance = () => {
             </thead>
             <tbody>
               {studentDetails.map((student, index) => {
-
                 // Find the attendance details for the current student
                 const studentAttendanceDetails = attendanceDetails.find(
                   (attendance) => attendance.studentId === student?._id
                 );
                 const studentTotalClassesTaken = studentAttendanceDetails
                   ? studentAttendanceDetails.detailAttendance
-                    .filter((detail) => detail.classDate === selectedDate) // Filter by selected date
-                    .reduce(
-                      (total, detail) =>
-                        total + (+detail.numberOfClassesTaken || 0),
-                      0
-                    )
+                      .filter((detail) => detail.classDate === selectedDate) // Filter by selected date
+                      .reduce(
+                        (total, detail) =>
+                          total + (+detail.numberOfClassesTaken || 0),
+                        0
+                      )
                   : 0;
 
                 const teachercommission = studentAttendanceDetails
                   ? studentAttendanceDetails.detailAttendance
-                    .filter((details) => details.classDate === selectedDate)
-                    .reduce(
-                      (totalCommission, detail) =>
-                        totalCommission + detail.commission,
-                      0
-                    )
+                      .filter((details) => details.classDate === selectedDate)
+                      .reduce(
+                        (totalCommission, detail) =>
+                          totalCommission + detail.commission,
+                        0
+                      )
                   : 0;
 
                 const showEditIcon = teachercommission === 0;
@@ -542,10 +540,11 @@ const EachTeacherClassStudentAttendance = () => {
                       {commission.commission}
                     </td>
                     <td
-                      className={`px-6 py-4 text-center ${commission.paid
-                        ? "text-green-500 font-bold"
-                        : "text-red-400"
-                        }`}
+                      className={`px-6 py-4 text-center ${
+                        commission.paid
+                          ? "text-green-500 font-bold"
+                          : "text-red-400"
+                      }`}
                     >
                       {commission.paid ? "paid" : "Unpaid"}
                     </td>
@@ -683,10 +682,10 @@ const EachTeacherClassStudentAttendance = () => {
                   <td className="px-6 py-4">
                     {student?.dob
                       ? new Date(student.dob).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })
                       : "N/A"}
                   </td>
                 </tr>

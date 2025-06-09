@@ -71,7 +71,7 @@ const TeacherHome = ({ teacherData }) => {
       const classesData = [];
       for (const classId of classIds) {
         const classResponse = await axios.get(
-          `http://localhost:7000/api/teachers/my-classes/${classId}`,
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-classes/${classId}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -105,7 +105,7 @@ const TeacherHome = ({ teacherData }) => {
         }
 
         const classresponse = await axios.get(
-          `http://localhost:7000/api/teachers/my-classes/${selectedClassId}`,
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-classes/${selectedClassId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -132,7 +132,7 @@ const TeacherHome = ({ teacherData }) => {
       setShowLoader(true);
 
       const response = await axios.post(
-        `http://localhost:7000/api/teachers/schedule-class/${selectedClassId}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/schedule-class/${selectedClassId}`,
         { date, numberOfClasses },
         {
           headers: {
@@ -167,7 +167,7 @@ const TeacherHome = ({ teacherData }) => {
         }
 
         const response = await axios.get(
-          "http://localhost:7000/api/teachers/my-classes",
+          "https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-classes",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -196,7 +196,7 @@ const TeacherHome = ({ teacherData }) => {
       }
 
       const response = await axios.put(
-        `http://localhost:7000/api/teachers/update-class-hours/${selectedClassId}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/update-class-hours/${selectedClassId}`,
         { updatedHours: updateHoursInput },
         {
           headers: {
@@ -263,9 +263,10 @@ const TeacherHome = ({ teacherData }) => {
                         </Button>
                       </Tooltip>
 
-                      <a
+                      <Link
+                        to={`/teacher-dashboard/allstudents/${course?._id}`}
                         className="text-gray-100 flex items-center text-sm mt-1 justify-end"
-                        onClick={() => handleViewClass(course._id)}
+                        // onClick={() => handleViewClass(course._id)}
                       >
                         View
                         <svg
@@ -282,7 +283,7 @@ const TeacherHome = ({ teacherData }) => {
                           <path stroke="none" d="M0 0h24v24H0z" />
                           <polyline points="9 6 15 12 9 18" />
                         </svg>
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 ))
@@ -303,7 +304,7 @@ const TeacherHome = ({ teacherData }) => {
         </div>
       )}
 
-      {showPopupCourses && (
+      {/* {showPopupCourses && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50">
           <section className="rounded-lg shadow-xl bg-white w-4/5 sm:w-3/5 lg:w-1/4 relative">
             <svg
@@ -345,7 +346,7 @@ const TeacherHome = ({ teacherData }) => {
             </div>
           </section>
         </div>
-      )}
+      )} */}
 
       {showScheduleClass && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50">

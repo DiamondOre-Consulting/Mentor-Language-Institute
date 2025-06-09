@@ -33,6 +33,7 @@
     "react-text-transition": "^3.1.0",
     "slick-carousel": "^1.8.1",
     "socket.io-client": "^4.7.5",
+    "sonner": "^2.0.5",
     "translate": "^3.0.0",
     "xlsx": "^0.18.5"
   },

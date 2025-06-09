@@ -45,7 +45,7 @@ const EachTeacher = () => {
 
         // Fetch associates data from the backend
         const response = await axios.get(
-          `http://localhost:7000/api/admin-confi/all-teachers/${id}`,
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-teachers/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -84,7 +84,7 @@ const EachTeacher = () => {
         const classesData = [];
         for (const classId of classIds) {
           const classResponse = await axios.get(
-            `http://localhost:7000/api/admin-confi/all-classes/${classId}`,
+            `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-classes/${classId}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -132,7 +132,10 @@ const EachTeacher = () => {
         />
       </div>
       <div className="flex flex-col items-center -mt-20">
-        <img src={userimage} className="w-40 border-4 border-white rounded-full" />
+        <img
+          src={userimage}
+          className="w-40 border-4 border-white rounded-full"
+        />
         <div className="flex items-center mt-2 space-x-2">
           <p className="text-2xl">{teacherDetails?.name}</p>
           <span className="p-1 bg-blue-500 rounded-full" title="Verified">

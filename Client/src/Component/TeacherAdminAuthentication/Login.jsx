@@ -30,7 +30,7 @@ const Login = () => {
     // Perform login logic here
     try {
       const response = await axios.post(
-        "http://localhost:7000/api/admin-confi/login-admin",
+        "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/login-admin",
         {
           username,
           password,
@@ -76,7 +76,7 @@ const Login = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:7000/api/teachers/login-teacher",
+        "https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/login-teacher",
         {
           phone,
           password,
@@ -136,27 +136,29 @@ const Login = () => {
         </div>
       )}
       <div className="-mt-10">
-        <div className="flex flex-col items-center justify-center">
-          <div className="py-4">
+        <div className="flex flex-col  items-center justify-center">
+          <div className="py-4   border-black w-full">
             {activeTab === 0 && (
               <section className="relative">
                 <div className="flex flex-col items-center justify-center mt-16 lg:py-0 ">
                   <div className="md:w-full sm:w-1/2 bg-white rounded-lg shadow-lg  md:mt-0 sm:max-w-md xl:p-0">
-                    <div className="flex space-x-4 md:space-x-10 ">
+                    <div className="flex  space-x-4 md:space-x-10 ">
                       <button
-                        className={`py-2 px-4 md:px-10 border-b-2 ${activeTab === 0
+                        className={`py-2 px-4 md:px-10 w-full border-b-2 ${
+                          activeTab === 0
                             ? "border-orange-500"
                             : "border-transparent"
-                          } focus:outline-none`}
+                        } focus:outline-none`}
                         onClick={() => handleTabClick(0)}
                       >
                         Admin Login
                       </button>
                       <button
-                        className={`py-2 px-4 md:px-10 border-b-2 ${activeTab === 1
+                        className={`py-2 px-4 md:px-10 w-full border-b-2 ${
+                          activeTab === 1
                             ? "border-orange-500"
                             : "border-transparent"
-                          } focus:outline-none`}
+                        } focus:outline-none`}
                         onClick={() => handleTabClick(1)}
                       >
                         Teacher Login
@@ -216,7 +218,10 @@ const Login = () => {
                               />
                             </div>
                             <div className="ml-3 text-sm">
-                              <label htmlFor="remember" className="text-gray-500 ">
+                              <label
+                                htmlFor="remember"
+                                className="text-gray-500 "
+                              >
                                 Show password
                               </label>
                             </div>
@@ -247,19 +252,21 @@ const Login = () => {
                   <div className="md:w-full sm:w-1/2 bg-white rounded-lg shadow-lg  md:mt-0 sm:max-w-md xl:p-0">
                     <div className="flex space-x-4 md:space-x-10 ">
                       <button
-                        className={`py-2 px-4 md:px-10 border-b-2 ${activeTab === 0
+                        className={`py-2 px-4 w-full md:px-10 border-b-2 ${
+                          activeTab === 0
                             ? "border-orange-500"
                             : "border-transparent"
-                          } focus:outline-none`}
+                        } focus:outline-none`}
                         onClick={() => handleTabClick(0)}
                       >
                         Admin Login
                       </button>
                       <button
-                        className={`py-2 px-4 md:px-10 border-b-2 ${activeTab === 1
+                        className={`py-2 px-4 w-full md:px-10 border-b-2 ${
+                          activeTab === 1
                             ? "border-orange-500"
                             : "border-transparent"
-                          } focus:outline-none`}
+                        } focus:outline-none`}
                         onClick={() => handleTabClick(1)}
                       >
                         Teacher Login
@@ -319,7 +326,10 @@ const Login = () => {
                               />
                             </div>
                             <div className="ml-3 text-sm">
-                              <label htmlFor="remember" className="text-gray-500 ">
+                              <label
+                                htmlFor="remember"
+                                className="text-gray-500 "
+                              >
                                 Show password
                               </label>
                             </div>

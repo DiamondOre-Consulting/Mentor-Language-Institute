@@ -19,6 +19,7 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
   const [password, setPassword] = useState("");
   const [userName, setUserName] = useState("");
   const [dob, setdob] = useState("");
+  const [grade, setGrade] = useState("");
   const [studentDetails, setStudentsDetails] = useState(null);
   const [popupMessage, setPopupMessage] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -27,7 +28,6 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
 
   const handleShowPassword = () => setShowPassword((prev) => !prev);
 
-  
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -38,6 +38,7 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
       setBranch(studentData.branch || "");
       setdob(studentData.dob || "");
       setPassword(studentData.password || "");
+      setGrade(studentData?.grade || "");
     }
   }, [studentData]);
 
@@ -48,13 +49,14 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
 
     try {
       const response = await axios.put(
-        `http://localhost:7000/api/teachers/student-edit/${studentData?._id}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/student-edit/${studentData?._id}`,
         {
           name,
           phone,
           password,
           branch,
           userName,
+          grade,
           dob,
         },
         {
@@ -71,7 +73,6 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
         setPassword("");
         setBranch("");
         setUserName("");
-        
       } else if (response.status === 400) {
         setPopupMessage(response.data.message);
       } else {
@@ -90,7 +91,7 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
       }
     } finally {
       setLoading(false);
-      closingModel()
+      closingModel();
     }
   };
 
@@ -114,7 +115,10 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
                 <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl ">
                   Edit Form
                 </h1>
-                <IoClose  onClick={closingModel} className="text-2xl cursor-pointer"/>
+                <IoClose
+                  onClick={closingModel}
+                  className="text-2xl cursor-pointer"
+                />
               </div>
 
               <form
@@ -146,6 +150,18 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
                   />
                 </div>
 
+                <div>
+                  <input
+                    type="text"
+                    name="grade"
+                    id="grade"
+                    value={grade}
+                    onChange={(e) => setGrade(e.target.value)}
+                    placeholder="Enter Grade"
+                    className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
+                    required=""
+                  />
+                </div>
                 <div>
                   <input
                     type="phone"

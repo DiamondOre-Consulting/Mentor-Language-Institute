@@ -9,6 +9,7 @@ import Classes from "../Models/Classes.js";
 import Students from "../Models/Students.js";
 import Attendance from "../Models/Attendance.js";
 import Commission from "../Models/Commission.js";
+import ExcelJS from "exceljs";
 
 dotenv.config();
 
@@ -79,53 +80,65 @@ router.get("/my-profile", TeacherAuthenticateToken, async (req, res) => {
 
 router.post("/add-student", TeacherAuthenticateToken, async (req, res) => {
   try {
-    const { userId, branch } = req.user; // Teacher details from token
-    const { name, phone, password, userName, dob, courseId } = req.body;
+    const { userId, branch } = req.user;
+    const { name, phone, password, userName, dob, courseId, grade } = req.body;
 
-    // Check if the class exists and is assigned to the teacher
-    const classData = await Classes.findOne({ _id: courseId, teachBy: userId });
-    if (!classData) {
-      return res.status(404).json({ message: "Class not found or unauthorized" });
+    // Check if the username is already taken
+    const existingStudent = await Students.findOne({ userName });
+    if (existingStudent) {
+      return res.status(400).json({
+        message: "Student with this username already exists!",
+      });
     }
 
-    // Check if a student with the given username already exists
-    const studentUser = await Students.findOne({ userName });
-    if (studentUser) {
-      return res.status(400).json({ message: "Student with this username already exists!!!" });
+    let classData = null;
+
+    // If courseId is provided, validate the class
+    if (courseId) {
+      classData = await Classes.findOne({ _id: courseId, teachBy: userId });
+      if (!classData) {
+        return res
+          .status(404)
+          .json({ message: "Class not found or unauthorized." });
+      }
     }
 
-    // Hash the password
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create a new student
+    // Create student
     const newStudent = new Students({
-      branch: branch,
+      branch,
       teachBy: userId,
       userName,
       dob,
       name,
       phone,
       password: hashedPassword,
-      classes: courseId,
+      grade,
+      classes: courseId ? [courseId] : [],
     });
 
     await newStudent.save();
 
-
-  await Teachers.updateMany(
+    // Add student to teacher's list
+    await Teachers.updateMany(
       { branch },
-      { $push: { myStudents: newStudent._id } }
+      { $addToSet: { myStudents: newStudent._id } }
     );
-    // Add the student to the enrolled students array in the class
-    classData.enrolledStudents.push(newStudent._id);
-    await classData.save();
 
-    return res
-      .status(200)
-      .json({ message: `New student has been registered successfully!!!` });
+    // Add to class if courseId exists
+    if (classData) {
+      classData.enrolledStudents.push(newStudent._id);
+      await classData.save();
+    }
+
+    return res.status(200).json({
+      message: "New student has been registered successfully!",
+    });
   } catch (error) {
-    console.log("Something went wrong!!! ", error.message);
-    res.status(500).json(error);
+    console.error("Something went wrong:", error.message);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 
@@ -133,22 +146,26 @@ router.get("/my-students", TeacherAuthenticateToken, async (req, res) => {
   try {
     const { userId } = req.user;
 
-   
-    const teacher = await Teachers.findById(userId)
-      .populate({
-        path: "myClasses",
+    const teacher = await Teachers.findById(userId).populate({
+      path: "myClasses",
+      populate: {
+        path: "enrolledStudents",
+        model: "Student",
+        select: "-password",
         populate: {
-          path: "enrolledStudents",
-          model: "Student",
-          select: "-password", 
+          path: "attendanceDetail",
+          model: "Attendance",
         },
-      });
+      },
+    });
 
     if (!teacher) {
       return res.status(404).json({ message: "Teacher not found." });
     }
 
-    const allStudents = teacher.myClasses.flatMap(cls => cls.enrolledStudents);
+    const allStudents = teacher.myClasses.flatMap(
+      (cls) => cls.enrolledStudents
+    );
 
     if (!allStudents || allStudents.length === 0) {
       return res
@@ -163,11 +180,10 @@ router.get("/my-students", TeacherAuthenticateToken, async (req, res) => {
   }
 });
 
-
 router.put("/student-edit/:id", TeacherAuthenticateToken, async (req, res) => {
   const { id } = req.params;
-  const { name, phone, password, branch, userName, dob } = req.body;
-  console.log(name, phone, password, branch, userName, dob);
+  const { name, phone, password, branch, userName, dob, grade } = req.body;
+  console.log(name, phone, password, branch, userName, dob, grade);
 
   try {
     // Validate input fields (optional, depending on your requirements)
@@ -209,6 +225,10 @@ router.put("/student-edit/:id", TeacherAuthenticateToken, async (req, res) => {
       student.dob = await dob;
     }
 
+    if (grade) {
+      student.grade = await grade;
+    }
+
     // If password is provided, hash it and update the password
     if (password) {
       const salt = await bcrypt.genSalt(10);
@@ -225,8 +245,6 @@ router.put("/student-edit/:id", TeacherAuthenticateToken, async (req, res) => {
     res.status(500).json({ message: "Server error." });
   }
 });
-
-
 
 router.delete(
   "/delete-student/:id",
@@ -573,13 +591,15 @@ router.get("/chat-all-students", TeacherAuthenticateToken, async (req, res) => {
       })
     );
 
-    const objectIds = allStudentIds.map(id => new mongoose.Types.ObjectId(id));
-
-    const students = await Promise.all(
-      objectIds.map(id => Students.findById(id))
+    const objectIds = allStudentIds.map(
+      (id) => new mongoose.Types.ObjectId(id)
     );
 
-    const filteredStudents = students.filter(student => student !== null);
+    const students = await Promise.all(
+      objectIds.map((id) => Students.findById(id))
+    );
+
+    const filteredStudents = students.filter((student) => student !== null);
 
     res.status(201).json(filteredStudents);
   } catch (error) {
@@ -588,6 +608,251 @@ router.get("/chat-all-students", TeacherAuthenticateToken, async (req, res) => {
   }
 });
 
+router.post("/mark-attendance/:studentId", async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const { classDate, numberOfClassesTaken, grade } = req.body;
+    console.log("bodyyyyyyyyyyyyy", classDate, numberOfClassesTaken, grade);
+    if (!classDate || !numberOfClassesTaken) {
+      return res
+        .status(400)
+        .json({ message: "Missing classDate or numberOfClassesTaken." });
+    }
 
+    const student = await Students.findById(studentId).populate("classes");
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found." });
+    }
+
+    const classId = student.classes?.[0]?._id || null;
+    // Find existing attendance
+    let attendance = await Attendance.findOne({ studentId, classId });
+
+    if (!attendance) {
+      attendance = new Attendance({
+        studentId,
+        classId,
+        totalClassesTaken: numberOfClassesTaken,
+        detailAttendance: [
+          {
+            classDate,
+            numberOfClassesTaken,
+            grade,
+          },
+        ],
+      });
+    } else {
+      attendance.detailAttendance.push({
+        classDate,
+        numberOfClassesTaken,
+        grade,
+      });
+    }
+
+    await attendance.save();
+
+    await Students.findByIdAndUpdate(studentId, {
+      $addToSet: { attendanceDetail: attendance._id },
+    });
+
+    res.status(200).json({
+      message: "Attendance marked successfully.",
+      attendance,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error while marking attendance." });
+  }
+});
+
+router.put(
+  "/edit-attendance/:studentId/:attendanceEntryId",
+  async (req, res) => {
+    try {
+      const { studentId, attendanceEntryId } = req.params;
+      const { classDate, numberOfClassesTaken, grade } = req.body;
+
+      // Find attendance doc by studentId (and other filters if you want)
+      const attendance = await Attendance.findOne({ studentId });
+
+      if (!attendance) {
+        return res
+          .status(404)
+          .json({ message: "Attendance record not found." });
+      }
+
+      // Find subdocument in detailAttendance array by its _id
+      const attendanceEntry = attendance.detailAttendance.id(attendanceEntryId);
+
+      if (!attendanceEntry) {
+        return res.status(404).json({ message: "Attendance entry not found." });
+      }
+
+      // Update fields
+      attendanceEntry.classDate = classDate; // optional, if you want to update date
+      attendanceEntry.numberOfClassesTaken = numberOfClassesTaken;
+      attendanceEntry.grade = grade;
+
+      await attendance.save();
+
+      res.status(200).json({
+        message: "Attendance updated successfully.",
+        attendance,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Error while editing attendance." });
+    }
+  }
+);
+
+router.get("/download-student-attendance/:studentId", async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const { year, month } = req.query;
+
+    // Fetch student with attendance populated, only courseName from classes
+    const student = await Students.findById(studentId)
+      .populate("attendanceDetail")
+      .populate("classes", "classTitle");
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found." });
+    }
+
+    const attendanceRecord = student.attendanceDetail?.[0];
+
+    if (!attendanceRecord) {
+      return res.status(404).json({ message: "Attendance record not found." });
+    }
+
+    const detailAttendance = attendanceRecord.detailAttendance || [];
+
+    const filteredAttendance = detailAttendance.filter((entry) => {
+      const [day, entryMonth, entryYear] = entry.classDate.split("-");
+      if (year && entryYear !== year) return false;
+      if (month && entryMonth !== month) return false;
+      return true;
+    });
+
+    const totalClasses = filteredAttendance.reduce((sum, entry) => {
+      return sum + parseFloat(entry.numberOfClassesTaken || 0);
+    }, 0);
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Attendance");
+
+    const headerStyle = {
+      font: { bold: true },
+      alignment: { horizontal: "left" },
+    };
+
+    worksheet.addRow(["Student Name", student.name]).eachCell((cell) => {
+      cell.font = { bold: true };
+    });
+    worksheet.addRow(["Phone", student.phone]).eachCell((cell) => {
+      cell.font = { bold: true };
+    });
+
+    worksheet.addRow(["Grade", student.grade]).eachCell((cell) => {
+      cell.font = { bold: true };
+    });
+    worksheet
+      .addRow([
+        "Course(s)",
+        student.classes.length > 0
+          ? student.classes.map((cls) => cls.classTitle || cls._id).join(", ")
+          : "N/A",
+      ])
+      .eachCell((cell) => {
+        cell.font = { bold: true };
+      });
+
+    worksheet
+      .addRow(["Total Classes This Month", totalClasses])
+      .eachCell((cell) => {
+        cell.font = { bold: true };
+      });
+
+    worksheet.addRow([]);
+
+    // Table header row
+    const headerRow = worksheet.addRow([
+      "Class Date",
+      "Number of Hours",
+      // "Grade",
+    ]);
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF9BC2E6" },
+      };
+      cell.font = { bold: true };
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      cell.alignment = { horizontal: "center" };
+    });
+
+    // Add attendance rows
+    filteredAttendance.forEach((entry) => {
+      const row = worksheet.addRow([
+        entry.classDate,
+        entry.numberOfClassesTaken,
+        // entry.grade,
+      ]);
+
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
+        };
+      });
+    });
+
+    // Add TOTAL row
+    const totalRow = worksheet.addRow(["TOTAL", totalClasses]);
+
+    totalRow.eachCell((cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFFFF176" }, // Light Yellow background
+      };
+      cell.font = { bold: true };
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+    });
+
+    // Send the file
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=attendance_${student.name}_${year || "all"}_${
+        month || "all"
+      }.xlsx`
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error("Error generating attendance report:", error);
+    res.status(500).json({ message: "Failed to generate attendance report." });
+  }
+});
 
 export default router;

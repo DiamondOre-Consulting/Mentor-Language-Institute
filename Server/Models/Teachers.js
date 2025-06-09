@@ -31,7 +31,7 @@ const teacherSchema = new mongoose.Schema({
     type: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref:"Classes"
+        ref: "Classes",
       },
     ],
     default: [],
@@ -40,6 +40,7 @@ const teacherSchema = new mongoose.Schema({
     type: [
       {
         type: mongoose.Schema.Types.ObjectId,
+        ref: "Students",
       },
     ],
     default: [],

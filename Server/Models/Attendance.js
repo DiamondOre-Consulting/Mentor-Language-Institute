@@ -7,27 +7,34 @@ const attendanceSchema = new mongoose.Schema({
   },
   studentId: {
     type: mongoose.Schema.Types.ObjectId,
-    required: true
+    required: true,
   },
   totalClassesTaken: {
     type: String,
-    default: "0"
+    default: "0",
   },
+
   detailAttendance: {
     type: [
       {
         classDate: {
-            type: String,
-            default: Date.now
+          type: String,
+          default: Date.now,
         },
         numberOfClassesTaken: {
           type: String,
-          default: "0"
+          default: "0",
         },
+        grade: {
+          type: String,
+          // required: true,
+          default: "Invalid",
+        },
+
         commission: {
           type: Number,
-          default: 0
-        } 
+          default: 0,
+        },
       },
     ],
     default: [],

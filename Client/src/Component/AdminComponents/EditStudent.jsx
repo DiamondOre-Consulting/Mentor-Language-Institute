@@ -32,7 +32,7 @@ const EditStudent = () => {
 
   const StudentDetails = async () => {
     const studentResponse = await axios.get(
-      `http://localhost:7000/api/admin-confi/all-students/${id}`,
+      `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students/${id}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -71,7 +71,7 @@ const EditStudent = () => {
 
     try {
       const response = await axios.put(
-        `http://localhost:7000/api/admin-confi/student-edit/${id}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/student-edit/${id}`,
         {
           name,
           phone,
@@ -138,7 +138,10 @@ const EditStudent = () => {
                 {/* <img src={logo} alt="" className='w-24' /> */}
               </div>
 
-              <form className="space-y-4 md:space-y-6" onSubmit={handleStudentEdit}>
+              <form
+                className="space-y-4 md:space-y-6"
+                onSubmit={handleStudentEdit}
+              >
                 <div>
                   <input
                     type="text"

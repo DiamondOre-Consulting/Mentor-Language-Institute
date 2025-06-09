@@ -61,7 +61,6 @@ const TeacherAllStudentEachCourse = () => {
     "2032",
   ];
 
-
   useEffect(() => {
     const fetchCourseDetails = async () => {
       try {
@@ -75,7 +74,7 @@ const TeacherAllStudentEachCourse = () => {
         }
 
         const response = await axios.get(
-          `http://localhost:7000/api/teachers/my-classes/${selectedClassId}`,
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-classes/${selectedClassId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -92,7 +91,7 @@ const TeacherAllStudentEachCourse = () => {
 
           for (const studentIds of enrolledStudents) {
             const studentResponse = await axios.get(
-              `http://localhost:7000/api/teachers/student/${studentIds}`,
+              `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/student/${studentIds}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -128,7 +127,7 @@ const TeacherAllStudentEachCourse = () => {
       }
 
       const attendanceResponse = await axios.get(
-        `http://localhost:7000/api/teachers/attendance/${selectedClassId}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/attendance/${selectedClassId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -140,7 +139,6 @@ const TeacherAllStudentEachCourse = () => {
       );
 
       if (attendanceResponse.status === 200) {
-
         const mapping = attendanceResponse.data
           .filter((item) => item.detailAttendance)
           .map((item) => item.detailAttendance);
@@ -150,14 +148,13 @@ const TeacherAllStudentEachCourse = () => {
         );
         setAttendanceDetails(attendanceResponse.data);
 
-
         const studentIds = attendanceResponse.data.map(
           (item) => item.studentId
         );
         const studentData = [];
         for (const studentid of studentIds) {
           const studentResponse = await axios.get(
-            `http://localhost:7000/api/teachers/student/${studentid}`,
+            `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/student/${studentid}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -167,7 +164,6 @@ const TeacherAllStudentEachCourse = () => {
           if (studentResponse.status === 200) {
             const data = studentResponse.data;
             studentData.push(data);
-
           }
         }
         setStudentsDetails(studentData);
@@ -179,13 +175,11 @@ const TeacherAllStudentEachCourse = () => {
     }
   };
   useEffect(() => {
-
     // Call fetchAttendanceDetails when selectedDate or selectedClassId changes
     fetchAttendanceDetails();
   }, [selectedDate, selectedClassId]);
 
   const handleFetchStudentDetails = (studentId, studentName) => {
-
     setSelectedStudentName(studentName);
     setSelectedStudentId(studentId);
 
@@ -221,7 +215,7 @@ const TeacherAllStudentEachCourse = () => {
       }
 
       const response = await axios.put(
-        `http://localhost:7000/api/teachers/update-attendance/${selectedClassId}/${selectedstudentId}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/update-attendance/${selectedClassId}/${selectedstudentId}`,
         {
           attendanceDate: selectedDate,
           numberOfClassesTaken,
@@ -234,15 +228,14 @@ const TeacherAllStudentEachCourse = () => {
       );
 
       if (response.status === 200) {
-
         setShowPopup(false);
         setAttendanceDetailsMap((prevAttendanceDetailsMap) => ({
           ...prevAttendanceDetailsMap,
           [selectedstudentId]: numberOfClassesTaken,
         }));
-        console.log("response dataaaaaaaaaa",response?.data)
-       await  getMonthlyCommission()
-       await fetchAttendanceDetails()
+        console.log("response dataaaaaaaaaa", response?.data);
+        await getMonthlyCommission();
+        await fetchAttendanceDetails();
         // handleFetchStudentDetails()
       }
     } catch (error) {
@@ -264,7 +257,7 @@ const TeacherAllStudentEachCourse = () => {
       // const commission = [];
 
       const monthlyCommissionReport = await axios.get(
-        `http://localhost:7000/api/teachers/my-commission/${selectedClassId}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-commission/${selectedClassId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -281,7 +274,6 @@ const TeacherAllStudentEachCourse = () => {
       setLoading(false);
     }
   };
-
 
   useEffect(() => {
     getMonthlyCommission();
@@ -301,7 +293,7 @@ const TeacherAllStudentEachCourse = () => {
       }
 
       const response = await axios.post(
-        `http://localhost:7000/api/teachers/add-monthly-classes/${selectedClassId}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/add-monthly-classes/${selectedClassId}`,
         {
           monthName: selectedMonth,
           year: selectedYear,
@@ -315,7 +307,6 @@ const TeacherAllStudentEachCourse = () => {
       );
 
       if (response.status === 200) {
-
         window.location.reload();
 
         // Clear the input fields
@@ -335,7 +326,7 @@ const TeacherAllStudentEachCourse = () => {
     const fetchStudentData = async () => {
       try {
         const studentList = await axios.get(
-          `http://localhost:7000/api/admin-confi/get-studentsListBySub/${selectedClassId}`
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/get-studentsListBySub/${selectedClassId}`
         );
 
         if (studentList?.data?.success) {
@@ -418,30 +409,29 @@ const TeacherAllStudentEachCourse = () => {
             </thead>
             <tbody>
               {studentDetails.map((student, index) => {
-
                 // Find the attendance details for the current student
                 const studentAttendanceDetails = attendanceDetails.find(
                   (attendance) => attendance.studentId === student._id
                 );
                 const studentTotalClassesTaken = studentAttendanceDetails
                   ? studentAttendanceDetails.detailAttendance
-                    .filter((detail) => detail.classDate === selectedDate) // Filter by selected date
-                    .reduce(
-                      (total, detail) =>
-                        total + (+detail.numberOfClassesTaken || 0),
-                      0
-                    )
+                      .filter((detail) => detail.classDate === selectedDate) // Filter by selected date
+                      .reduce(
+                        (total, detail) =>
+                          total + (+detail.numberOfClassesTaken || 0),
+                        0
+                      )
                   : 0;
                 const showEditIcon = studentTotalClassesTaken === 0;
 
                 const teachercommission = studentAttendanceDetails
                   ? studentAttendanceDetails.detailAttendance
-                    .filter((details) => details.classDate === selectedDate)
-                    .reduce(
-                      (totalCommission, detail) =>
-                        totalCommission + detail.commission,
-                      0
-                    )
+                      .filter((details) => details.classDate === selectedDate)
+                      .reduce(
+                        (totalCommission, detail) =>
+                          totalCommission + detail.commission,
+                        0
+                      )
                   : 0;
 
                 return (
@@ -490,34 +480,38 @@ const TeacherAllStudentEachCourse = () => {
                             <line x1="13.5" y1="6.5" x2="17.5" y2="10.5" />
                           </svg>
                         ) : (
-                          <div className="flex space-x-4 items-center ">{studentTotalClassesTaken}      
-                          
-                          <svg
-                            onClick={() =>
-                              handleFetchStudentDetails(
-                                student._id,
-                                student.name
-                              )
-                            }
-                            className="w-6 h-6 text-red-600 ml-4"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            strokeWidth="2"
-                            stroke="currentColor"
-                            fill="none"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            {" "}
-                            <path stroke="none" d="M0 0h24v24H0z" />{" "}
-                            <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4" />{" "}
-                            <line x1="13.5" y1="6.5" x2="17.5" y2="10.5" />
-                          </svg></div>
+                          <div className="flex space-x-4 items-center ">
+                            {studentTotalClassesTaken}
+
+                            <svg
+                              onClick={() =>
+                                handleFetchStudentDetails(
+                                  student._id,
+                                  student.name
+                                )
+                              }
+                              className="w-6 h-6 text-red-600 ml-4"
+                              width="24"
+                              height="24"
+                              viewBox="0 0 24 24"
+                              strokeWidth="2"
+                              stroke="currentColor"
+                              fill="none"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              {" "}
+                              <path stroke="none" d="M0 0h24v24H0z" />{" "}
+                              <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4" />{" "}
+                              <line x1="13.5" y1="6.5" x2="17.5" y2="10.5" />
+                            </svg>
+                          </div>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-center">{teachercommission}</td>
+                    <td className="px-6 py-4 text-center">
+                      {teachercommission}
+                    </td>
                   </tr>
                 );
               })}
@@ -572,10 +566,11 @@ const TeacherAllStudentEachCourse = () => {
                       {commission.commission}
                     </td>
                     <td
-                      className={`px-6 py-4 text-center ${commission.paid
-                        ? "text-green-500 font-bold"
-                        : "text-red-400"
-                        }`}
+                      className={`px-6 py-4 text-center ${
+                        commission.paid
+                          ? "text-green-500 font-bold"
+                          : "text-red-400"
+                      }`}
                     >
                       {commission.paid ? "paid" : "Unpaid"}
                     </td>

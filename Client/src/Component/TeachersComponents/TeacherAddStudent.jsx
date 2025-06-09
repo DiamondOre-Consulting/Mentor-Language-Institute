@@ -19,6 +19,7 @@ const TeacherAddStudent = () => {
   const [password, setPassword] = useState("");
   const [dob, setDob] = useState("");
   const [userName, setUserName] = useState("");
+  const [grade, setGrade] = useState("");
   const [branch, setBranch] = useState("");
   const [courseId, setCourseId] = useState(""); // Added courseId
   const [popupMessage, setPopupMessage] = useState(null);
@@ -30,7 +31,9 @@ const TeacherAddStudent = () => {
     setShowPassword(!showPassword);
   };
 
-console.log("hello")
+  console.log(grade);
+
+  console.log("hello");
 
   useEffect(() => {
     const fetchAllCourses = async () => {
@@ -39,11 +42,11 @@ console.log("hello")
         if (!token) {
           console.error("No token found");
           navigate("/login");
-          return
+          return;
         }
 
         const response = await axios.get(
-          "http://localhost:7000/api/teachers/my-classes",
+          "https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-classes",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -71,7 +74,7 @@ console.log("hello")
 
     try {
       const response = await axios.post(
-        "http://localhost:7000/api/teachers/add-student",
+        "https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/add-student",
         {
           name,
           phone,
@@ -79,6 +82,7 @@ console.log("hello")
           userName,
           dob,
           courseId,
+          grade,
         },
         {
           headers: {
@@ -95,6 +99,7 @@ console.log("hello")
         setDob("");
         setUserName("");
         setCourseId("");
+        setGrade("");
       } else if (response.status === 400) {
         setPopupMessage("Please Enter a Unique UserName");
       } else {
@@ -112,20 +117,28 @@ console.log("hello")
   };
 
   return (
-    <div className="w-full h-full">
-      <section className="relative mt-10">
+    <div className="w-full  min-h-screen flex items-center justify-center px-4 py-8 bg-white">
+      <section className="relative w-full">
         {loading && (
           <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
-            <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
+            <ClipLoader
+              color={"#FFA500"}
+              loading={loading}
+              css={override}
+              size={70}
+            />
           </div>
         )}
-        <div className="flex flex-col items-center justify-center mt-16">
-          <div className="md:w-[60vw] w-[70vw]    rounded-lg shadow border-t-4 border-orange-400">
+        <div className="flex flex-col items-center justify-center">
+          <div className="w-full max-w-lg md:max-w-2xl lg:max-w-3xl rounded-lg shadow border-t-4 border-orange-400 bg-white">
             <div className="p-6 space-y-4">
-              <h1 className="text-xl font-bold text-center text-gray-900 md:text-2xl">
+              <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-center text-gray-900">
                 Student Registration Form
               </h1>
-              <form className="space-y-4 mx-auto  border border-1 p-4 " onSubmit={handleStudentRegister}>
+              <form
+                className="space-y-4 border p-4 rounded-md"
+                onSubmit={handleStudentRegister}
+              >
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-900">
                     Username
@@ -135,10 +148,11 @@ console.log("hello")
                     value={userName}
                     onChange={(e) => setUserName(e.target.value)}
                     placeholder="Please Enter a unique userName"
-                    className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg w-full p-2.5"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
                     required
                   />
                 </div>
+
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-900">
                     Name
@@ -148,10 +162,11 @@ console.log("hello")
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter Student Name"
-                    className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg w-full p-2.5"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
                     required
                   />
                 </div>
+
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-900">
                     Phone
@@ -161,10 +176,11 @@ console.log("hello")
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="Enter Phone No"
-                    className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg w-full p-2.5"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
                     required
                   />
                 </div>
+
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-900">
                     Date of Birth
@@ -173,10 +189,11 @@ console.log("hello")
                     type="date"
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
-                    className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg w-full p-2.5"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
                     required
                   />
                 </div>
+
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-900">
                     Select Course
@@ -184,19 +201,33 @@ console.log("hello")
                   <select
                     value={courseId}
                     onChange={(e) => setCourseId(e.target.value)}
-                    className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg w-full p-2.5"
-                    required
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
                   >
                     <option value="" disabled>
                       -- Select a Course --
                     </option>
                     {classesData.map((course) => (
-                      <option key={course._id} value={course._id} className="text-black">
+                      <option key={course._id} value={course._id}>
                         {course.classTitle}
                       </option>
                     ))}
                   </select>
                 </div>
+
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-gray-900">
+                    Grade
+                  </label>
+                  <input
+                    type="text"
+                    value={grade}
+                    placeholder="Enter Student Grade"
+                    onChange={(e) => setGrade(e.target.value)}
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
+                    required
+                  />
+                </div>
+
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-900">
                     Password
@@ -206,7 +237,7 @@ console.log("hello")
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg w-full p-2.5"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
                     required
                   />
                   <div className="flex items-center mt-2">
@@ -220,41 +251,38 @@ console.log("hello")
                     </label>
                   </div>
                 </div>
-             
+
                 <button
                   type="submit"
-                  className="bg-orange-400 text-white w-full p-2 rounded-md"
+                  className="bg-orange-400 text-white w-full py-2 rounded-md text-lg font-semibold hover:bg-orange-500 transition"
                 >
                   Add Student
                 </button>
               </form>
+
               {popupMessage && (
-                    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                      <div className="bg-white p-4 rounded-lg shadow-md">
-                        <svg
-                          class="h-6 w-6 text-red-500 float-right -mt-2 cursor-pointer"
-                          onClick={() => setPopupMessage(null)}
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          stroke-width="2"
-                          stroke="currentColor"
-                          fill="none"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                        >
-                          {" "}
-                          <path stroke="none" d="M0 0h24v24H0z" />{" "}
-                          <line x1="18" y1="6" x2="6" y2="18" />{" "}
-                          <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                        <p className="text-lg font-bold mt-4 text-green-700">
-                          {popupMessage}
-                        </p>
-                        {/* <button className="bg-orange-500 text-white py-2 px-4 rounded-md" onClick={() => setPopupMessage(null)}>Close</button> */}
-                      </div>
-                    </div>
-                  )}
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 px-4">
+                  <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md relative">
+                    <svg
+                      className="h-6 w-6 text-red-500 absolute top-4 right-4 cursor-pointer"
+                      onClick={() => setPopupMessage(null)}
+                      viewBox="0 0 24 24"
+                      strokeWidth="2"
+                      stroke="currentColor"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path stroke="none" d="M0 0h24v24H0z" />
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                    <p className="text-lg font-bold mt-4 text-green-700 text-center">
+                      {popupMessage}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

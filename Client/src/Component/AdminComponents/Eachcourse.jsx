@@ -48,7 +48,7 @@ const Eachcourse = () => {
 
         // Fetch course details
         const response = await axios.get(
-          `http://localhost:7000/api/admin-confi/all-classes/${id}`,
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-classes/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -63,7 +63,7 @@ const Eachcourse = () => {
           // Fetch teacher details
           const teacherId = courseData.teachBy;
           const teacherResponse = await axios.get(
-            `http://localhost:7000/api/admin-confi/all-teachers/${teacherId}`,
+            `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-teachers/${teacherId}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -79,12 +79,12 @@ const Eachcourse = () => {
 
           // Fetch details of enrolled students
           const enrolledStudents = courseData.enrolledStudents;
-          console.log("enrolled students",enrolledStudents)
+          console.log("enrolled students", enrolledStudents);
           const enrolledStudentsDetails = [];
 
           for (const studentId of enrolledStudents) {
             const studentResponse = await axios.get(
-              `http://localhost:7000/api/admin-confi/all-students/${studentId}`,
+              `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students/${studentId}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -98,14 +98,14 @@ const Eachcourse = () => {
               enrolledStudentsDetails.push(studentData);
             }
           }
-console.log(enrolledStudents)
+          console.log(enrolledStudents);
           // Fetch details of applied students
           const applyStudents = courseData.appliedStudents;
           const appliedStudentsDetails = [];
 
           for (const studentId of applyStudents) {
             const studentResponse = await axios.get(
-              `http://localhost:7000/api/admin-confi/all-students/${studentId}`,
+              `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students/${studentId}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -114,7 +114,6 @@ console.log(enrolledStudents)
             );
 
             if (studentResponse.status === 200) {
-
               const studentData = studentResponse.data;
               console.log("Applied student details:", studentData);
               appliedStudentsDetails.push(studentData);
@@ -161,11 +160,15 @@ console.log(enrolledStudents)
             <ul className="mt-2 text-gray-700">
               <li className="flex border-y py-2">
                 <span className="font-bold w-32">Title:</span>
-                <span className="text-gray-700">{courseDetails?.classTitle}</span>
+                <span className="text-gray-700">
+                  {courseDetails?.classTitle}
+                </span>
               </li>
               <li className="flex border-b py-2">
                 <span className="font-bold w-32">Total Hours:</span>
-                <span className="text-gray-700">{courseDetails?.totalHours}</span>
+                <span className="text-gray-700">
+                  {courseDetails?.totalHours}
+                </span>
               </li>
               <li className="flex border-b py-2">
                 <span className="font-bold w-32">Created At:</span>
@@ -183,7 +186,9 @@ console.log(enrolledStudents)
             <ul className="mt-2 text-gray-700">
               <li className="flex border-y py-2">
                 <span className="font-bold w-32">Teach By:</span>
-                <span className="text-gray-700">{courseDetails?.teacher?.name}</span>
+                <span className="text-gray-700">
+                  {courseDetails?.teacher?.name}
+                </span>
               </li>
               <li className="flex border-b py-2">
                 <span className="font-bold w-32">Phone:</span>
@@ -210,15 +215,17 @@ console.log(enrolledStudents)
         <div>
           <div className="grid w-full grid-cols-2 mt-10 text-gray-800 border border-orange-500 rounded-md border-1">
             <div
-              className={`text-center p-4 hover:bg-orange-500 hover:text-white cursor-pointer ${activeTab === "enrolled" ? "bg-orange-500 text-white" : ""
-                }`}
+              className={`text-center p-4 hover:bg-orange-500 hover:text-white cursor-pointer ${
+                activeTab === "enrolled" ? "bg-orange-500 text-white" : ""
+              }`}
               onClick={() => handleTabSwitch("enrolled")}
             >
               Enrolled Students
             </div>
             <div
-              className={`text-center p-4 hover:bg-orange-500 hover:text-white cursor-pointer ${activeTab === "applied" ? "bg-orange-500 text-white" : ""
-                }`}
+              className={`text-center p-4 hover:bg-orange-500 hover:text-white cursor-pointer ${
+                activeTab === "applied" ? "bg-orange-500 text-white" : ""
+              }`}
               onClick={() => handleTabSwitch("applied")}
             >
               Applied Students

@@ -16,7 +16,6 @@ const Admin = () => {
     return;
   }
 
-
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -46,7 +45,7 @@ const Admin = () => {
 
         // Fetch associates data from the backend
         const response = await axios.get(
-          "http://localhost:7000/api/admin-confi/my-profile",
+          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/my-profile",
           {
             headers: {
               Authorization: `Bearer ${token}`,

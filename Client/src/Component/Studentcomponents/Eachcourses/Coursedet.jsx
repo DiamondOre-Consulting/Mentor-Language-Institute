@@ -24,59 +24,39 @@ const Coursedet = () => {
   const [feedetails, setFeeDetails] = useState(null);
   const [myenroll, setEnroll] = useState("");
   const [loading, setLoading] = useState(false);
-  useEffect(() => {
-    const fetchStudentData = async () => {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem("token");
+  const fetchStudentData = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
 
-        if (!token) {
-          // Token not found in local storage, handle the error or redirect to the login page
-          console.error("No token found");
-          navigate("/student-login");
-          return;
+      if (!token) {
+        // Token not found in local storage, handle the error or redirect to the login page
+        console.error("No token found");
+        navigate("/student-login");
+        return;
+      }
+
+      // Fetch associates data from the backend
+      const response = await axios.get(
+        "https://mentor-language-institute-backend-hbyk.onrender.com/api/students/my-profile",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
+      );
+      if (response.status == 200) {
+        // console.log("studetails", response.data);
+        const studentdetails = response.data;
+        setStudentData(studentdetails);
 
-        // Fetch associates data from the backend
-        const response = await axios.get(
-          "http://localhost:7000/api/students/my-profile",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (response.status == 200) {
-          // console.log("studetails", response.data);
-          const studentdetails = response.data;
-          setStudentData(studentdetails);
+        const classes = response.data.classes;
+        // console.log("classes", classes)
 
-          const classes = response.data.classes;
-          // console.log("classes", classes)
-
-          const allEnrClassData = [];
-          for (const ids of classes) {
-            const AllEnrollResponse = await axios.get(
-              `http://localhost:7000/api/students/all-courses/${ids}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-
-            if (AllEnrollResponse.status === 200) {
-              // console.log("allenrollids", AllEnrollResponse.data)
-              const enroll = AllEnrollResponse.data;
-              allEnrClassData.push(enroll);
-              setEnroll(allEnrClassData); // Update state variable here instead of setEnroll
-              // console.log("allenrolls", myenroll)
-            }
-          }
-
-          const allEnrollClassData = [];
-          const classResponse = await axios.get(
-            `http://localhost:7000/api/students/all-courses/${id}`,
+        const allEnrClassData = [];
+        for (const ids of classes) {
+          const AllEnrollResponse = await axios.get(
+            `https://mentor-language-institute-backend-hbyk.onrender.com/api/students/all-courses/${ids}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -84,39 +64,59 @@ const Coursedet = () => {
             }
           );
 
-          if (classResponse.status === 200) {
-            const classData = classResponse.data;
-            // console.log("Enrolled class details:", classData);
-            setClassData(classData);
-            allEnrollClassData.push(classData);
-
-            const teacherId = classResponse.data.teachBy;
-            const teacherResponse = await axios.get(
-              `http://localhost:7000/api/students/teacher/${teacherId}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-            if (teacherResponse.status === 200) {
-              // Add teacher information to class data
-              classResponse.data.teacher = teacherResponse.data;
-            }
+          if (AllEnrollResponse.status === 200) {
+            // console.log("allenrollids", AllEnrollResponse.data)
+            const enroll = AllEnrollResponse.data;
+            allEnrClassData.push(enroll);
+            setEnroll(allEnrClassData); // Update state variable here instead of setEnroll
+            // console.log("allenrolls", myenroll)
           }
-
-          setAllClassData(allEnrollClassData);
-          // console.log("enroll class array", allEnrollclassData);
-        } else {
-          // console.log(response.data);
         }
-      } catch (error) {
-        console.error("Error fetching student data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
 
+        const allEnrollClassData = [];
+        const classResponse = await axios.get(
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/students/all-courses/${id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (classResponse.status === 200) {
+          const classData = classResponse.data;
+          // console.log("Enrolled class details:", classData);
+          setClassData(classData);
+          allEnrollClassData.push(classData);
+
+          const teacherId = classResponse.data.teachBy;
+          const teacherResponse = await axios.get(
+            `https://mentor-language-institute-backend-hbyk.onrender.com/api/students/teacher/${teacherId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          if (teacherResponse.status === 200) {
+            // Add teacher information to class data
+            classResponse.data.teacher = teacherResponse.data;
+          }
+        }
+
+        setAllClassData(allEnrollClassData);
+        // console.log("enroll class array", allEnrollclassData);
+      } else {
+        // console.log(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching student data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchStudentData();
   }, [id]);
 
@@ -137,7 +137,7 @@ const Coursedet = () => {
         }
 
         const attendanceResponse = await axios.get(
-          `http://localhost:7000/api/students/my-attendance/${id}`,
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/students/my-attendance/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -189,7 +189,7 @@ const Coursedet = () => {
         }
 
         const FeeResponse = await axios.get(
-          `http://localhost:7000/api/students/my-fee-details/${id}`,
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/students/my-fee-details/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

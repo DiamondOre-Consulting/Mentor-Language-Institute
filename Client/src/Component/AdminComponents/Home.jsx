@@ -34,7 +34,7 @@ const Home = () => {
         }
 
         const response = await axios.get(
-          "http://localhost:7000/api/admin-confi/all-students",
+          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -66,7 +66,7 @@ const Home = () => {
         }
 
         const response = await axios.get(
-          "http://localhost:7000/api/admin-confi/all-classes",
+          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-classes",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -98,7 +98,7 @@ const Home = () => {
         }
 
         const response = await axios.get(
-          "http://localhost:7000/api/admin-confi/all-teachers",
+          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-teachers",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -125,27 +125,25 @@ const Home = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "http://localhost:7000/api/admin-confi/signup-admin",
+        "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/signup-admin",
         formData
       );
 
       if (response.status == 201) {
-       console.log(response)
-       setPopupMessage("New Admin Has Been Created Successfully!");
-        console.log("admin signup",response);
+        console.log(response);
+        setPopupMessage("New Admin Has Been Created Successfully!");
+        console.log("admin signup", response);
         setIsFormOpen(false);
         setFormData({ name: "", branch: "", phone: "", password: "" });
         setUserName(response.data.newAdmin.username); // Assuming the username is returned in response.data.username
-     
       }
     } catch (error) {
       if (error.response) {
-        const status = error.respnse.status;
+        const status = error.response.status;
         if (status == 409) {
           setPopupMessage("Admin Already Exists");
         }
       }
-    
     }
   };
 

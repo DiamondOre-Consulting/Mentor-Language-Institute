@@ -42,15 +42,13 @@ const Maindash = () => {
         const token = localStorage.getItem("token");
 
         if (!token) {
-          // Token not found in local storage, handle the error or redirect to the login page
           console.error("No token found");
           navigate("/login");
           return;
         }
 
-        // Fetch associates data from the backend
         const response = await axios.get(
-          "http://localhost:7000/api/students/my-profile",
+          "https://mentor-language-institute-backend-hbyk.onrender.com/api/students/my-profile",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -58,12 +56,9 @@ const Maindash = () => {
           }
         );
         if (response.status == 200) {
-          // console.log(response.data.name);
           const stu = response.data;
-          // console.log("students details", stu)
           setStudentData(stu);
         } else {
-          // console.log(response.data);
         }
       } catch (error) {
         console.error("Error fetching student data:", error);

@@ -15,7 +15,7 @@ const DownloadAttendanceReport = () => {
   const getAttendanceReport = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:7000/api/admin-confi/download-attendance-report?month=${selectedMonth}&year=${selectedYear}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/download-attendance-report?month=${selectedMonth}&year=${selectedYear}`,
         {
           responseType: "arraybuffer",
         }
@@ -117,7 +117,7 @@ const DownloadAttendanceReport = () => {
   const handleDownload = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:7000/api/admin-confi/download-attendance-report?month=${selectedMonth}&year=${selectedYear}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/download-attendance-report?month=${selectedMonth}&year=${selectedYear}`,
         {
           responseType: "blob",
         }

@@ -30,7 +30,7 @@ const ChatBoxAdmin = ({
     const fetchChatHistory = async (selectedTeacherId, selectedStudentId) => {
       try {
         const response = await axios.get(
-          `http://localhost:7000/api/chats/get-messages-admin/${selectedTeacherId}/${selectedStudentId}`,
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/chats/get-messages-admin/${selectedTeacherId}/${selectedStudentId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -68,7 +68,7 @@ const ChatBoxAdmin = ({
 
         // Fetch associates data from the backend
         const response = await axios.get(
-          `http://localhost:7000/api/admin-confi/all-teachers/${selectedTeacherId}`,
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-teachers/${selectedTeacherId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -93,7 +93,7 @@ const ChatBoxAdmin = ({
       try {
         // Fetch student details
         const studentResponse = await axios.get(
-          `http://localhost:7000/api/admin-confi/all-students/${selectedStudentId}`,
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students/${selectedStudentId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -125,8 +125,9 @@ const ChatBoxAdmin = ({
   return (
     <>
       <div
-        className={`md:w-2/3 border md:flex bg-gray-200 flex-col ${isOpen ? "w-full h-full" : "hidden"
-          }`}
+        className={`md:w-2/3 border md:flex bg-gray-200 flex-col ${
+          isOpen ? "w-full h-full" : "hidden"
+        }`}
       >
         <div className="fixed top-0 flex flex-row items-center justify-between w-full px-3 py-2 bg-white bg-grey-lighter md:static absolue">
           <div className="flex items-center bg-white">
@@ -168,16 +169,18 @@ const ChatBoxAdmin = ({
             {chatHistory.map((message) => (
               <div
                 key={message._id}
-                className={`flex ${message.senderId === teacher._id
-                  ? "justify-start"
-                  : "justify-end"
-                  } mb-2`}
+                className={`flex ${
+                  message.senderId === teacher._id
+                    ? "justify-start"
+                    : "justify-end"
+                } mb-2`}
               >
                 <div
-                  className={`rounded py-2 px-3 ${message.senderId === teacher._id
-                    ? "bg-gray-100"
-                    : "bg-green-100"
-                    }`}
+                  className={`rounded py-2 px-3 ${
+                    message.senderId === teacher._id
+                      ? "bg-gray-100"
+                      : "bg-green-100"
+                  }`}
                 >
                   <span className="px-2 py-1 text-xs text-gray-900 bg-orange-200 rounded-full">
                     {message.senderId === teacher._id ? "Teacher" : "Student"}

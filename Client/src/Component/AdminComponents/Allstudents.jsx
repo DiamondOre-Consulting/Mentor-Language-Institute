@@ -59,7 +59,7 @@ const Allstudents = () => {
         }
 
         const response = await axios.get(
-          "http://localhost:7000/api/admin-confi/all-students",
+          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -96,7 +96,7 @@ const Allstudents = () => {
         }
 
         const response = await axios.get(
-          "http://localhost:7000/api/admin-confi/all-classes",
+          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-classes",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -175,7 +175,7 @@ const Allstudents = () => {
       const monthNumber = monthNameToNumber[feeMonth];
 
       const response = await axios.put(
-        `http://localhost:7000/api/admin-confi/enroll-student/${selectedCourseId}/${selectedStudentId}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/enroll-student/${selectedCourseId}/${selectedStudentId}`,
         {
           totalFee,
           feeMonth: monthNumber,
@@ -235,7 +235,7 @@ const Allstudents = () => {
       }
 
       const deactiveResponse = await axios.put(
-        `http://localhost:7000/api/admin-confi/deactivate-account/${setuId}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/deactivate-account/${setuId}`,
         { status },
         {
           headers: {
@@ -263,7 +263,7 @@ const Allstudents = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.delete(
-        `http://localhost:7000/api/admin-confi/delete-student/${id}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/delete-student/${id}`,
 
         {
           headers: {
@@ -308,10 +308,11 @@ const Allstudents = () => {
         {filteredStudents.map((student) => (
           <>
             <div
-              className={`block w-full p-4 ${student.deactivated
-                ? "bg-red-300 text-red-300 hover:text-red-400 hover:bg-red-400"
-                : "bg-white hover:bg-gray-100"
-                }border border-gray-200 rounded-lg shadow     cursor-pointer`}
+              className={`block w-full p-4 ${
+                student.deactivated
+                  ? "bg-red-300 text-red-300 hover:text-red-400 hover:bg-red-400"
+                  : "bg-white hover:bg-gray-100"
+              }border border-gray-200 rounded-lg shadow     cursor-pointer`}
             >
               <div className="flex justify-between items-cetner">
                 {" "}

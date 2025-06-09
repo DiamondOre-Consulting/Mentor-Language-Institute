@@ -66,7 +66,7 @@ const ChatBox = ({
   const fetchChatHistory = async (teacherId) => {
     try {
       const response = await axios.get(
-        `http://localhost:7000/api/chats/get-messages-student/${teacherId}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/chats/get-messages-student/${teacherId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -128,8 +128,9 @@ const ChatBox = ({
   return (
     <>
       <div
-        className={`md:w-2/3 border  bg-gray-200 md:flex flex-col ${isOpen ? "w-full h-full" : "hidden"
-          }`}
+        className={`md:w-2/3 border  bg-gray-200 md:flex flex-col ${
+          isOpen ? "w-full h-full" : "hidden"
+        }`}
       >
         <div className="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center w-full fixed bg-white ">
           <div className="flex items-center bg-white">
@@ -165,12 +166,14 @@ const ChatBox = ({
             {chatHistory.map((message) => (
               <div
                 key={message._id}
-                className={`flex ${message.senderId === userId ? "justify-end" : "justify-start"
-                  } mb-2`}
+                className={`flex ${
+                  message.senderId === userId ? "justify-end" : "justify-start"
+                } mb-2`}
               >
                 <div
-                  className={`rounded py-2 px-3 ${message.senderId === userId ? "bg-green-100" : "bg-gray-100"
-                    }`}
+                  className={`rounded py-2 px-3 ${
+                    message.senderId === userId ? "bg-green-100" : "bg-gray-100"
+                  }`}
                 >
                   <p className="text-md mt-1">{message.message}</p>
                   <p className="text-right  text-grey-dark mt-1">

@@ -11,6 +11,7 @@ import TeacherAddStudent from "./TeacherAddStudent";
 import Allstudents from "../AdminComponents/Allstudents";
 import TeacherAllStudents from "./TeacherAllStudents";
 import TeacherEditStudent from "./TeacherEditStudent";
+import MarkAttendance from "./MarkAttendance";
 
 const TeacherDashboard = ({ teacherData }) => {
   const { decodedToken } = useJwt(localStorage.getItem("token"));
@@ -47,6 +48,8 @@ const TeacherDashboard = ({ teacherData }) => {
                 index
                 element={<TeacherHome teacherData={teacherData} />}
               />
+
+              <Route path="/mark-attendance" element={<MarkAttendance />} />
               <Route path="/teacher/chat/*" element={<ChatTeacher />} />
               <Route
                 path="/myaccount"

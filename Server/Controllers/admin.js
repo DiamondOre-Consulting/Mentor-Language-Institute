@@ -22,9 +22,9 @@ router.post("/signup-admin", async (req, res) => {
   try {
     const { name, phone, password, branch } = req.body;
 
-    const adminuser = Admin.exists({ phone });
+    const adminuser = Admin.findOne({ phone });
 
-    if (!adminuser) {
+    if (adminuser) {
       return res.status(409).json({ message: "Admin user already exists" });
     }
 
@@ -51,17 +51,25 @@ router.post("/signup-admin", async (req, res) => {
 router.post("/login-admin", async (req, res) => {
   try {
     const { username, password } = req.body;
+    console.log(username, password);
     const user = await Admin.findOne({ username });
+    console.log(user);
     if (!user) {
+      console.log(1);
       return res.status(401).json({ message: "Invalid username" });
     }
 
+    console.log(2);
     // Compare the passwords
     const passwordMatch = await bcrypt.compare(password, user.password);
+    console.log(3);
+    console.log(passwordMatch);
     if (!passwordMatch) {
+      console.log(4);
       return res.status(401).json({ message: "Invalid password" });
     }
 
+    console.log(5);
     // Generate JWT token
     const token = jwt.sign(
       {
@@ -114,7 +122,7 @@ router.get("/my-profile", AdminAuthenticateToken, async (req, res) => {
 
 router.put("/student-edit/:id", AdminAuthenticateToken, async (req, res) => {
   const { id } = req.params;
-  const { name, phone, password, branch, userName, dob } = req.body;
+  const { name, phone, password, branch, userName, dob, grade } = req.body;
   console.log(name, phone, password, branch, userName, dob);
 
   try {
@@ -155,6 +163,10 @@ router.put("/student-edit/:id", AdminAuthenticateToken, async (req, res) => {
     }
     if (dob) {
       student.dob = await dob;
+    }
+
+    if (grade) {
+      student.grade = await grade;
     }
 
     // If password is provided, hash it and update the password
@@ -283,6 +295,74 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
   }
 });
 
+//All admin
+
+router.get("/all-admin", async (req, res) => {
+  try {
+    const admin = await Admin.find({}, { password: 0 });
+    return res.status(200).json(admin);
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+router.delete("/delete-admin/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const isAdminExist = await Admin.findByIdAndDelete(id);
+    return res.status(200).json({ message: "deleted successfully" });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+router.put("/edit-admin/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, phone, password } = req.body;
+    console.log("this is password", password);
+    const admin = await Admin.findById(id);
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found!" });
+    }
+
+    const updatedName = name || admin.name;
+    const updatedPhone = phone || admin.phone;
+
+    console.log("updatedName:", updatedName);
+    console.log("updatedPhone:", updatedPhone);
+
+    const username = `${updatedName}-${updatedPhone}`;
+    console.log(username);
+    const isUserNameExist = await Admin.findOne({
+      _id: { $ne: id },
+      username,
+    });
+
+    // if (isUserNameExist) {
+    //   return res.status(400).json({
+    //     message: "Username already taken. Please enter a unique username.",
+    //   });
+    // }
+
+    if (name) admin.name = name;
+    if (phone) admin.phone = phone;
+    admin.username = username;
+
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      admin.password = await bcrypt.hash(password, salt);
+    }
+
+    await admin.save();
+
+    res.status(200).json({ message: "Admin updated successfully!", admin });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Something went wrong!" });
+  }
+});
+
 // GET ALL TEACHERS
 router.get("/all-teachers", AdminAuthenticateToken, async (req, res) => {
   try {
@@ -329,7 +409,7 @@ router.get("/all-teachers/:id", AdminAuthenticateToken, async (req, res) => {
 router.post("/add-student", AdminAuthenticateToken, async (req, res) => {
   try {
     const { branch } = req.user;
-    const { name, phone, password, userName, dob } = req.body;
+    const { name, phone, password, userName, dob, courseId, grade } = req.body;
 
     const studentUser = await Students.findOne({ userName });
 
@@ -337,6 +417,17 @@ router.post("/add-student", AdminAuthenticateToken, async (req, res) => {
       return res
         .status(409)
         .json({ message: "Student with this username already exist!!!" });
+    }
+
+    let classData = null;
+
+    if (courseId) {
+      classData = await Classes.findOne({ _id: courseId });
+      if (!classData) {
+        return res
+          .status(404)
+          .json({ message: "Class not found or unauthorized." });
+      }
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -347,10 +438,22 @@ router.post("/add-student", AdminAuthenticateToken, async (req, res) => {
       dob,
       name,
       phone,
+      grade,
       password: hashedPassword,
+      classes: courseId ? [courseId] : [],
     });
 
     await newStudent.save();
+
+    await Teachers.updateMany(
+      { branch },
+      { $addToSet: { myStudents: newStudent._id } }
+    );
+
+    if (classData) {
+      classData.enrolledStudents.push(newStudent._id);
+      await classData.save();
+    }
 
     return res
       .status(200)
@@ -824,6 +927,7 @@ router.get("/download-attendance-report", async (req, res) => {
     if (!month || !year) {
       return res.status(400).send("Please provide both month and year.");
     }
+
     console.log(month, year);
     const allClasses = await Classes.find({}).populate({
       path: "enrolledStudents",
@@ -869,7 +973,12 @@ router.get("/download-attendance-report", async (req, res) => {
       currentRow++;
 
       // Table Header
-      sheet.getRow(currentRow).values = ["Sno.", "Name", "No. of Classes"];
+      sheet.getRow(currentRow).values = [
+        "Sno.",
+        "Name",
+        "No. of Hours",
+        "Grade",
+      ];
       sheet.getRow(currentRow).font = { bold: true };
       sheet.getRow(currentRow).fill = {
         type: "pattern",
@@ -882,24 +991,32 @@ router.get("/download-attendance-report", async (req, res) => {
 
       for (const student of course.enrolledStudents) {
         let total = 0;
+        let grade = [];
 
         for (const attendance of student.attendanceDetail || []) {
-          // ONLY process attendance if the classId matches the current course
           if (String(attendance.classId) !== String(course._id)) continue;
 
           for (const detail of attendance.detailAttendance || []) {
             const [day, mon, yr] = detail.classDate.split("-").map(Number);
             if (mon === parseInt(month) && yr === parseInt(year)) {
-              total += parseInt(detail?.numberOfClassesTaken || 0);
+              total += parseFloat(detail?.numberOfClassesTaken || 0); // support decimals
+              // if (detail.grade) grades.push(detail.grade);
             }
           }
         }
 
         const row = sheet.getRow(currentRow);
-        row.values = [sno++, student.name, total];
+        row.values = [
+          sno++,
+          student.name,
+          total.toFixed(1),
+          (grade = student?.grade),
+        ];
+
         if (total === 0) {
           row.getCell(2).font = { color: { argb: "FFFF0000" }, bold: true };
         }
+
         currentRow++;
       }
 
@@ -911,6 +1028,7 @@ router.get("/download-attendance-report", async (req, res) => {
       { key: "sno", width: 10 },
       { key: "name", width: 30 },
       { key: "total", width: 20 },
+      { key: "grade", width: 20 },
     ];
 
     // Prepare for download

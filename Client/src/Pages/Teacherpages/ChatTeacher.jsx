@@ -41,11 +41,10 @@ const ChatTeacher = () => {
   }, [decodedToken]);
 
   useEffect(() => {
-   
     const fetchStudents = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:7000/api/teachers/chat-all-students",
+          "https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/chat-all-students",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -71,10 +70,10 @@ const ChatTeacher = () => {
 
     if (isSmallScreen && !isOpen) {
       setIsTeacherSectionVisible(false);
-      setIsOpen(true); 
+      setIsOpen(true);
     } else if (isSmallScreen && isOpen) {
       setIsOpen(false);
-      setIsTeacherSectionVisible(true); 
+      setIsTeacherSectionVisible(true);
     }
   };
 

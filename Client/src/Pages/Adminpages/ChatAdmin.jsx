@@ -55,7 +55,7 @@ const ChatAdmin = () => {
         }
 
         const response = await axios.get(
-          "http://localhost:7000/api/admin-confi/all-teachers",
+          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-teachers",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -88,7 +88,7 @@ const ChatAdmin = () => {
         }
 
         const response = await axios.get(
-          "http://localhost:7000/api/admin-confi/all-students",
+          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -117,7 +117,6 @@ const ChatAdmin = () => {
 
   const handleSearch = () => {
     setIsSearchClicked(true);
-
 
     if (isSmallScreen && !isOpen) {
       setIsTeacherSectionVisible(false);
@@ -148,8 +147,9 @@ const ChatAdmin = () => {
           <div className="h-full border rounded shadow-lg md:flex border-grey">
             {isTeacherSectionVisible && (
               <div
-                className={`md:w-1/3 border flex flex-col ${isSmallScreen && !isOpen ? "w-full" : "p-2"
-                  }`}
+                className={`md:w-1/3 border flex flex-col ${
+                  isSmallScreen && !isOpen ? "w-full" : "p-2"
+                }`}
               >
                 {/* Left portion */}
 

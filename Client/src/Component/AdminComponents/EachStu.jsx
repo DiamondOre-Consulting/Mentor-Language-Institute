@@ -48,7 +48,7 @@ const EachStu = () => {
         setLoading(true);
         // Fetch student details
         const studentResponse = await axios.get(
-          `http://localhost:7000/api/admin-confi/all-students/${id}`,
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -64,7 +64,7 @@ const EachStu = () => {
           const classesData = [];
           for (const classId of classIds) {
             const classResponse = await axios.get(
-              `http://localhost:7000/api/admin-confi/all-classes/${classId}`,
+              `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-classes/${classId}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -77,7 +77,7 @@ const EachStu = () => {
               // Fetch teacher associated with this class
               const teacherId = classResponse.data.teachBy;
               const teacherResponse = await axios.get(
-                `http://localhost:7000/api/admin-confi/all-teachers/${teacherId}`,
+                `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-teachers/${teacherId}`,
                 {
                   headers: {
                     Authorization: `Bearer ${token}`,
@@ -103,7 +103,7 @@ const EachStu = () => {
     fetchStudentDetails();
   }, [id, token]);
 
-console.log(classes)
+  console.log(classes);
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
@@ -113,7 +113,7 @@ console.log(classes)
     setSelectedCourseId(event.target.value);
   };
 
-  console.log("slected course Id",selectedCourseId)
+  console.log("slected course Id", selectedCourseId);
 
   useEffect(() => {
     const fetchAttendanceDetails = async () => {
@@ -121,7 +121,7 @@ console.log(classes)
       try {
         if (selectedCourseId) {
           const attendanceResponse = await axios.get(
-            `http://localhost:7000/api/admin-confi/attendance/${selectedCourseId}/${id}`,
+            `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/attendance/${selectedCourseId}/${id}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -165,16 +165,16 @@ console.log(classes)
     const fetchFeeDetails = async () => {
       try {
         if (selectedCourseId) {
-          console.log( "asdfghjkl",selectedCourseId  , id)
+          console.log("asdfghjkl", selectedCourseId, id);
           const FeeResponse = await axios.get(
-            `http://localhost:7000/api/admin-confi/fee/${selectedCourseId}/${id}`,
+            `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/fee/${selectedCourseId}/${id}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
             }
           );
-          
+
           if (FeeResponse.status === 200) {
             console.log("Fee details:", FeeResponse.data);
             setTotalFee(FeeResponse.data.totalFee);
@@ -182,7 +182,7 @@ console.log(classes)
               ...FeeResponse.data,
               detailFee: FeeResponse?.data?.detailFee?.map((fee) => ({
                 ...fee,
-                feeMonth: numberToMonthName[fee.feeMonth], 
+                feeMonth: numberToMonthName[fee.feeMonth],
               })),
             };
             setFeeDetails(feeDetailsWithMonthNames);
@@ -221,10 +221,9 @@ console.log(classes)
         return;
       }
 
-
-        console.log(selectedMonth  , amount , paidStatus)
+      console.log(selectedMonth, amount, paidStatus);
       const response = await axios.put(
-        `http://localhost:7000/api/admin-confi/update-fee/${selectedCourseId}/${id}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/update-fee/${selectedCourseId}/${id}`,
         {
           feeMonth: monthNameToNumber[selectedMonth],
           paid: paidStatus === "true",
@@ -237,28 +236,26 @@ console.log(classes)
         }
       );
 
-      console.log("update fee details", response)
+      console.log("update fee details", response);
       if (response?.status === 200) {
         // console.log("Fee updated successfully");
-        const updatedFeeDetails = [...feedetails?.detailFee || []];
+        const updatedFeeDetails = [...(feedetails?.detailFee || [])];
         updatedFeeDetails.push({
           feeMonth: selectedMonth,
           amountPaid: amount,
           paid: paidStatus === "true",
         });
         setFeeDetails({ ...feedetails, detailFee: updatedFeeDetails });
-     
       }
     } catch (error) {
       console.error("Error updating fee:", error);
     }
   };
 
-console.log("fee detailsssssss",feedetails)
+  console.log("fee detailsssssss", feedetails);
 
   return (
     <>
-   
       {loading && (
         <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
           <ClipLoader
@@ -364,20 +361,20 @@ console.log("fee detailsssssss",feedetails)
 
               {activeTab === "FeeDetails" && (
                 <div className="bg-white pt-10">
-                <select
-  className="p-2 border rounded"
-  onChange={handleCourseSelection}
-  value={selectedCourseId || ""}
->
-  <option value="" disabled>
-    Select a course
-  </option>
-  {classes.map((course) => (
-    <option key={course._id} value={course._id}>
-      {course.classTitle}
-    </option>
-  ))}
-</select>
+                  <select
+                    className="p-2 border rounded"
+                    onChange={handleCourseSelection}
+                    value={selectedCourseId || ""}
+                  >
+                    <option value="" disabled>
+                      Select a course
+                    </option>
+                    {classes.map((course) => (
+                      <option key={course._id} value={course._id}>
+                        {course.classTitle}
+                      </option>
+                    ))}
+                  </select>
                   <div>
                     <div class="relative overflow-x-auto mt-8">
                       <span className=" mb-1 float-right rounded-md  mr-3">
@@ -412,7 +409,10 @@ console.log("fee detailsssssss",feedetails)
                                   scope="row"
                                   class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
                                 >
-                                  {fee.amountPaid.toLocaleString("en-IN", { style: "currency", currency: "INR" })}
+                                  {fee.amountPaid.toLocaleString("en-IN", {
+                                    style: "currency",
+                                    currency: "INR",
+                                  })}
                                 </th>
 
                                 <td

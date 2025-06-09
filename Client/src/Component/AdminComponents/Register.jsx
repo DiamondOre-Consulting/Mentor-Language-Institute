@@ -17,6 +17,8 @@ const Register = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [allCourses, setAllCourses] = useState([]);
+  const [courseId, setCourseId] = useState("");
 
   const handleTabClick = (index) => {
     setActiveTab(index);
@@ -78,7 +80,7 @@ const Register = () => {
       };
 
       const response = await axios.post(
-        "http://localhost:7000/api/admin-confi/add-new-class",
+        "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/add-new-class",
         formData,
         {
           headers: {
@@ -144,7 +146,7 @@ const Register = () => {
         }
 
         const response = await axios.get(
-          "http://localhost:7000/api/admin-confi/all-teachers",
+          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-teachers",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -172,6 +174,7 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [dob, setdob] = useState();
   const [userName, setUserName] = useState("");
+  const [grade, setGrade] = useState("");
   const [popupMessage, setPopupMessage] = useState(null);
 
   const handleteacherRegister = async (e) => {
@@ -194,7 +197,7 @@ const Register = () => {
       }
 
       const response = await axios.post(
-        "http://localhost:7000/api/admin-confi/add-teacher",
+        "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/add-teacher",
         {
           name,
           phone,
@@ -261,13 +264,15 @@ const Register = () => {
       }
 
       const response = await axios.post(
-        "http://localhost:7000/api/admin-confi/add-student",
+        "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/add-student",
         {
           name,
           phone,
           password,
           userName,
           dob,
+          grade,
+          courseId,
         },
 
         {
@@ -303,6 +308,40 @@ const Register = () => {
     }
   };
 
+  const fetchAllcourses = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const response = await axios.get(
+        "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-classes",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (response.status == 200) {
+        console.log(response?.data);
+
+        setAllCourses(response?.data);
+      }
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllcourses();
+  }, []);
+
   return (
     <div className="">
       {loading && (
@@ -318,22 +357,25 @@ const Register = () => {
       <div className="flex flex-col items-center justify-center">
         <div className="flex space-x-2 md:space-x-4">
           <button
-            className={`py-2 px-0 md:px-4 border-b-2 ${activeTab === 0 ? "border-orange-500" : "border-transparent"
-              } focus:outline-none`}
+            className={`py-2 px-0 md:px-4 border-b-2 ${
+              activeTab === 0 ? "border-orange-500" : "border-transparent"
+            } focus:outline-none`}
             onClick={() => handleTabClick(0)}
           >
             Register Student
           </button>
           <button
-            className={`py-2 px-0 md:px-4 border-b-2 ${activeTab === 1 ? "border-orange-500" : "border-transparent"
-              } focus:outline-none`}
+            className={`py-2 px-0 md:px-4 border-b-2 ${
+              activeTab === 1 ? "border-orange-500" : "border-transparent"
+            } focus:outline-none`}
             onClick={() => handleTabClick(1)}
           >
             Register Teacher
           </button>
           <button
-            className={`py-2 px-0 md:px-4 border-b-2 ${activeTab === 2 ? "border-orange-500" : "border-transparent"
-              } focus:outline-none`}
+            className={`py-2 px-0 md:px-4 border-b-2 ${
+              activeTab === 2 ? "border-orange-500" : "border-transparent"
+            } focus:outline-none`}
             onClick={() => handleTabClick(2)}
           >
             Add New Courses
@@ -382,6 +424,22 @@ const Register = () => {
                           required=""
                         />
                       </div>
+
+                      <div>
+                        <label className="block w-full mb-2 text-sm font-medium text-gray-900">
+                          Grade
+                        </label>
+                        <input
+                          type="text"
+                          name="grade"
+                          value={grade}
+                          onChange={(e) => setGrade(e.target.value)}
+                          className=" bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                          placeholder="Enter Grade"
+                          required=""
+                        />
+                      </div>
+
                       <div>
                         <label className="block mb-2 text-sm font-medium text-gray-900 ">
                           Phone
@@ -411,6 +469,26 @@ const Register = () => {
                           onChange={(e) => setdob(e.target.value)} // Capture the date input
                           required
                         />
+                      </div>
+
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-900">
+                          Select Course
+                        </label>
+                        <select
+                          value={courseId}
+                          onChange={(e) => setCourseId(e.target.value)}
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
+                        >
+                          <option value="" disabled>
+                            -- Select a Course --
+                          </option>
+                          {allCourses?.map((course) => (
+                            <option key={course?._id} value={course?._id}>
+                              {course?.classTitle}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div>
                         <label className="block mb-2 text-sm font-medium text-gray-900 ">
