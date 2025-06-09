@@ -117,8 +117,8 @@ const TeacherAddStudent = () => {
   };
 
   return (
-    <div className="w-full  min-h-screen flex items-center justify-center px-4 py-18 md:py-6 bg-white">
-      <section className="relative w-full">
+    <div className="w-full  min-h-screen flex items-center justify-center px-4 py-8 bg-white">
+      <section className="relative w-full mt-10">
         {loading && (
           <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
             <ClipLoader
