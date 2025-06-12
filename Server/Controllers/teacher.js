@@ -569,6 +569,81 @@ router.post(
   }
 );
 
+//edit commission
+
+router.put(
+  "/edit-monthly-classes/:commissionId",
+  TeacherAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { commissionId } = req.params;
+      const { monthName, year, classesTaken } = req.body;
+
+      const commission = await Commission.findById(commissionId);
+
+      if (!commission) {
+        return res.status(404).json({ message: "Commission record not found" });
+      }
+
+      if (commission.paid === true) {
+        return res
+          .status(403)
+          .json({ message: "Cannot edit. Commission already marked as paid." });
+      }
+
+      const updatedCommission = await Commission.findByIdAndUpdate(
+        commissionId,
+        { monthName, year, classesTaken },
+        { new: true }
+      );
+
+      res.status(200).json({
+        message: "Monthly classes updated successfully!",
+        updatedCommission,
+      });
+    } catch (error) {
+      console.error("Error updating monthly classes:", error);
+      res.status(500).json({ message: "Server error", error });
+    }
+  }
+);
+
+router.delete(
+  "/delete-monthly-classes/:commissionId",
+  TeacherAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { commissionId } = req.params;
+
+      const commission = await Commission.findById(commissionId);
+
+      if (!commission) {
+        return res.status(404).json({ message: "Commission record not found" });
+      }
+
+      if (commission.paid === true) {
+        return res
+          .status(403)
+          .json({
+            message: "Cannot delete. Commission already marked as paid.",
+          });
+      }
+
+      const deletedCommission = await Commission.findByIdAndDelete(
+        commissionId
+      );
+
+      res.status(200).json({
+        message: "Monthly classes deleted successfully!",
+        deletedCommission,
+      });
+    } catch (error) {
+      console.error("Error deleting monthly classes:", error);
+      res.status(500).json({ message: "Server error", error });
+    }
+  }
+);
+
 // CHATTING LIST OF STUDENTS
 router.get("/chat-all-students", TeacherAuthenticateToken, async (req, res) => {
   try {
@@ -854,5 +929,34 @@ router.get("/download-student-attendance/:studentId", async (req, res) => {
     res.status(500).json({ message: "Failed to generate attendance report." });
   }
 });
+
+//deactivate student
+
+router.put(
+  "/deactivate-account/:id",
+  TeacherAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      await Students.findByIdAndUpdate(
+        {
+          _id: id,
+        },
+        {
+          $set: { deactivated: status },
+        }
+      );
+
+      res
+        .status(201)
+        .json({ message: "Deactivation status got updated successfully!!!" });
+    } catch (error) {
+      console.log("Something went wrong!!! ");
+      res.status(500).json(error);
+    }
+  }
+);
 
 export default router;

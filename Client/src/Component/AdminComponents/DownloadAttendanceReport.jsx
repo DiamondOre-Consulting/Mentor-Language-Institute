@@ -2,21 +2,67 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import * as XLSX from "xlsx";
 import { MdFileDownload } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
 
 const DownloadAttendanceReport = () => {
   const date = new Date();
   const currentMonth = String(date.getMonth() + 1).padStart(2, "0");
   const currentYear = date.getFullYear();
-
+  const navigate = useNavigate();
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [excelData, setExcelData] = useState([]);
+  const [allCourses, setAllCourses] = useState([]);
+  const [selectedCourseId, setSelectedCourseId] = useState("");
+  console.log(selectedCourseId);
+  const fetchAllcourses = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const response = await axios.get(
+        "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-classes",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (response.status === 200) {
+        const allcourses = response.data;
+        setAllCourses(allcourses);
+      }
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    } finally {
+    }
+  };
+
+  useEffect(() => {
+    fetchAllcourses();
+  }, [navigate]);
+
+  console.log("allCourses", allCourses);
 
   const getAttendanceReport = async () => {
     try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      console.log(token);
       const response = await axios.get(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/download-attendance-report?month=${selectedMonth}&year=${selectedYear}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/download-attendance-report?month=${selectedMonth}&year=${selectedYear}&courseId=${selectedCourseId}`,
         {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           responseType: "arraybuffer",
         }
       );
@@ -37,7 +83,7 @@ const DownloadAttendanceReport = () => {
 
   useEffect(() => {
     getAttendanceReport();
-  }, [selectedMonth, selectedYear]);
+  }, [selectedMonth, selectedYear, selectedCourseId]);
 
   const processData = () => {
     let sections = [];
@@ -116,9 +162,18 @@ const DownloadAttendanceReport = () => {
 
   const handleDownload = async () => {
     try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
       const response = await axios.get(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/download-attendance-report?month=${selectedMonth}&year=${selectedYear}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/download-attendance-report?month=${selectedMonth}&year=${selectedYear}&courseId=${selectedCourseId}`,
         {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           responseType: "blob",
         }
       );
@@ -128,13 +183,12 @@ const DownloadAttendanceReport = () => {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
 
-      // Create a download link
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `Attendance_Report_${selectedMonth}_${selectedYear}.xlsx`;
       a.click();
-      window.URL.revokeObjectURL(url); // Clean up
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error downloading Excel file:", error);
     }
@@ -173,6 +227,18 @@ const DownloadAttendanceReport = () => {
             <option value={2026}>2026</option>
             <option value={2027}>2027</option>
             <option value={2028}>2028</option>
+          </select>
+
+          <select
+            onChange={(e) => setSelectedCourseId(e.target.value)}
+            value={selectedCourseId}
+          >
+            <option value="">All Courses</option>
+            {allCourses?.map((c) => (
+              <option key={c._id} value={c._id}>
+                {c?.classTitle}
+              </option>
+            ))}
           </select>
         </div>
         <MdFileDownload

@@ -46,7 +46,7 @@ const TeacherAddStudent = () => {
         }
 
         const response = await axios.get(
-          "http://localhost:7000/api/teachers/my-classes",
+          "https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-classes",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -74,7 +74,7 @@ const TeacherAddStudent = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:7000/api/teachers/add-student",
+        "https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/add-student",
         {
           name,
           phone,

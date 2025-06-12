@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import TeacherEditStudent from "./TeacherEditStudent";
+import { toast } from "sonner";
 
 const TeacherAllStudents = () => {
   const [studentList, setStudentList] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [status, setStatus] = useState(null);
+
   const [selectedMonthYear, setSelectedMonthYear] = useState(() => {
     const today = new Date();
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(
@@ -60,6 +63,37 @@ const TeacherAllStudents = () => {
       console.log(response);
       fetchStudentData();
     } catch (error) {}
+  };
+
+  const handleActiveAndDeactivateStudent = async (status, id) => {
+    console.log("this is  a stutus and id ", status, id);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const deactiveResponse = await axios.put(
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/deactivate-account/${id}`,
+        { status },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      await fetchStudentData();
+      if (deactiveResponse.status === 201) {
+        toast.success(
+          `Student ${status ? "Deactivated" : "Activated"} successfully`
+        );
+        // setShowPopup(false);
+      }
+    } catch (error) {
+      console.error("Error deactivating account:", error);
+    }
   };
 
   const handleDownloadAttendance = async (studentId) => {
@@ -131,6 +165,10 @@ const TeacherAllStudents = () => {
                 </th>
 
                 <th scope="col" className="px-6 py-3">
+                  Status
+                </th>
+
+                <th scope="col" className="px-6 py-3">
                   Attendance
                 </th>
               </tr>
@@ -154,16 +192,42 @@ const TeacherAllStudents = () => {
                           onClick={() => handleEditClick(student)}
                           className="text-blue-600 hover:underline"
                         >
-                          Edit/
+                          Edit
                         </button>
 
-                        <button
+                        {/* <button
                           onClick={() => handleDeleteClick(student?._id)}
                           className="text-red-600 hover:underline"
                         >
                           Delete
-                        </button>
+                        </button> */}
                       </div>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <label class="switch">
+                        <input
+                          type="checkbox"
+                          checked={student?.deactivated}
+                          onChange={(e) =>
+                            handleActiveAndDeactivateStudent(
+                              e.target.checked,
+                              student?._id
+                            )
+                          }
+                        />
+                        <span class="slider">
+                          <svg
+                            class="slider-icon"
+                            viewBox="0 0 32 32"
+                            xmlns="http://www.w3.org/2000/svg"
+                            aria-hidden="true"
+                            role="presentation"
+                          >
+                            <path fill="none" d="m4 16.5 8 8 16-16"></path>
+                          </svg>
+                        </span>
+                      </label>
                     </td>
 
                     <td className="px-6 py-4">

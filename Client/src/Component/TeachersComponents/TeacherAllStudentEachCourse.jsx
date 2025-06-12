@@ -7,6 +7,7 @@ import { useJwt } from "react-jwt";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 import userimg2 from "..//..//assets/userimg2.png";
+import { toast } from "sonner";
 
 const override = css`
   display: block;
@@ -33,6 +34,7 @@ const TeacherAllStudentEachCourse = () => {
   const [monthCommissionDetails, setMonthlyCommissionDetails] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
+  const [editingCommissionId, setEditingCommissionId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [monthlyClassTaken, setMonthlyClassTaken] = useState("");
   const months = [
@@ -196,7 +198,7 @@ const TeacherAllStudentEachCourse = () => {
     );
     if (selectedDateObj) {
       setSelectedDate(selectedDate);
-      setNumberOfClasses(selectedDateObj.numberOfClasses); // Access the number of classes from the selected date object
+      setNumberOfClasses(selectedDateObj.numberOfClasses);
     }
   };
 
@@ -229,6 +231,8 @@ const TeacherAllStudentEachCourse = () => {
 
       if (response.status === 200) {
         setShowPopup(false);
+        setSelectedMonth("");
+        setSelectedYear("");
         setAttendanceDetailsMap((prevAttendanceDetailsMap) => ({
           ...prevAttendanceDetailsMap,
           [selectedstudentId]: numberOfClassesTaken,
@@ -242,6 +246,8 @@ const TeacherAllStudentEachCourse = () => {
       console.log("");
     } finally {
       setLoading(false);
+      setSelectedMonth("");
+      setSelectedYear("");
     }
   };
 
@@ -287,35 +293,55 @@ const TeacherAllStudentEachCourse = () => {
       if (!token) {
         navigate("/login");
       }
-      if (!selectedMonth || !selectedYear || !monthlyClassTaken) {
+      if (!selectedMonth || !selectedYear) {
         alert("Please fill in all fields.");
         return;
       }
 
-      const response = await axios.post(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/add-monthly-classes/${selectedClassId}`,
-        {
-          monthName: selectedMonth,
-          year: selectedYear,
-          classesTaken: monthlyClassTaken,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
+      let response;
+
+      if (editingCommissionId) {
+        // Update existing
+        response = await axios.put(
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/edit-monthly-classes/${editingCommissionId}`,
+          {
+            monthName: selectedMonth,
+            year: selectedYear,
+            classesTaken: monthlyClassTaken,
           },
-        }
-      );
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+      } else {
+        // Add new
+        response = await axios.post(
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/add-monthly-classes/${selectedClassId}`,
+          {
+            monthName: selectedMonth,
+            year: selectedYear,
+            classesTaken: monthlyClassTaken,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      }
 
       if (response.status === 200) {
-        window.location.reload();
-
-        // Clear the input fields
+        toast.success(
+          editingCommissionId ? "Commission updated." : "Commission added."
+        );
         setSelectedMonth("");
         setSelectedYear("");
         setMonthlyClassTaken("");
+        setEditingCommissionId(null);
+        getMonthlyCommission(); // refresh
       }
     } catch (error) {
-      console.log("");
+      console.error("Error in updateMonthlyCommission", error);
     } finally {
       setLoading(false);
     }
@@ -338,6 +364,35 @@ const TeacherAllStudentEachCourse = () => {
     };
     fetchStudentData();
   }, []);
+
+  const handleEditCommission = (commission) => {
+    setSelectedMonth(commission.monthName);
+    setSelectedYear(commission.year);
+    setMonthlyClassTaken(commission.classesTaken);
+    setEditingCommissionId(commission._id);
+  };
+
+  const handleDeleteCommission = async (commissionId) => {
+    if (!window.confirm("Are you sure you want to delete this entry?")) return;
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await axios.delete(
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/delete-monthly-classes/${commissionId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.status === 200) {
+        toast.success("Deleted successfully.");
+        getMonthlyCommission();
+      }
+    } catch (error) {
+      console.log("Error deleting commission", error);
+    }
+  };
 
   return (
     <div className="p-4">
@@ -529,9 +584,9 @@ const TeacherAllStudentEachCourse = () => {
                 <th scope="col" className="px-6 py-3">
                   Year
                 </th>
-                <th scope="col" className="px-6 py-3">
+                {/* <th scope="col" className="px-6 py-3">
                   Classes Taken
-                </th>
+                </th> */}
                 <th scope="col" className="px-6 py-3">
                   commission
                 </th>
@@ -543,6 +598,11 @@ const TeacherAllStudentEachCourse = () => {
                 <th scope="col" className="px-6 py-3">
                   Remarks(if any)
                 </th>
+
+                <th scope="col" className="px-6 py-3">
+                  action
+                </th>
+
                 <th scope="col" className="px-6 py-3">
                   submit
                 </th>
@@ -556,12 +616,42 @@ const TeacherAllStudentEachCourse = () => {
                     className="bg-white border-b cursor-pointer hover:bg-gray-50"
                   >
                     <td className="px-6 py-4 text-center">
-                      {commission.monthName}
+                      {editingCommissionId === commission._id ? (
+                        <select
+                          className="border px-2 py-1 rounded"
+                          value={selectedMonth}
+                          onChange={(e) => setSelectedMonth(e.target.value)}
+                        >
+                          {months.map((month, idx) => (
+                            <option key={idx} value={month}>
+                              {month}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        commission.monthName
+                      )}
                     </td>
-                    <td className="px-6 py-4 text-center">{commission.year}</td>
                     <td className="px-6 py-4 text-center">
-                      {commission.classesTaken}
+                      {editingCommissionId === commission._id ? (
+                        <select
+                          className="border px-2 py-1 rounded"
+                          value={selectedYear}
+                          onChange={(e) => setSelectedYear(e.target.value)}
+                        >
+                          {years.map((year, idx) => (
+                            <option key={idx} value={year}>
+                              {year}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        commission.year
+                      )}
                     </td>
+                    {/* <td className="px-6 py-4 text-center">
+                      {commission.classesTaken}
+                    </td> */}
                     <td className="px-6 py-4 text-center">
                       {commission.commission}
                     </td>
@@ -577,6 +667,36 @@ const TeacherAllStudentEachCourse = () => {
                     <td className="px-6 py-4 text-sm text-center">
                       {commission.remarks}
                     </td>
+                    <td className="px-6 flex gap-x-2 items-center justify-center py-4 text-center underline text-red-500">
+                      <p
+                        onClick={() => handleEditCommission(commission)}
+                        className="cursor-pointer hover:text-orange-600"
+                      >
+                        Edit
+                      </p>
+
+                      <p
+                        onClick={() => handleDeleteCommission(commission._id)}
+                        className="cursor-pointer hover:text-orange-600"
+                      >
+                        Delete
+                      </p>
+                    </td>
+
+                    {editingCommissionId === commission._id && (
+                      <td className="px-2 py-4 text-center">
+                        <button
+                          onClick={updateMonthlyCommission}
+                          className="px-2 py-1 text-white bg-orange-500 rounded"
+                        >
+                          Save
+                        </button>
+                      </td>
+                    )}
+
+                    {/* <td className="px-6 py-4 text-center">
+                      {commission.classesTaken}
+                    </td> */}
                   </tr>
                 ))}
 
@@ -584,6 +704,7 @@ const TeacherAllStudentEachCourse = () => {
                 <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                   <select
                     className=""
+                    value={selectedMonth}
                     onChange={(e) => setSelectedMonth(e.target.value)}
                   >
                     <option>Select Month</option>
@@ -598,6 +719,8 @@ const TeacherAllStudentEachCourse = () => {
                 <td className="px-2 py-4 font-medium text-gray-900 whitespace-nowrap ">
                   <select
                     className=""
+                    value={selectedYear}
+                    s
                     onChange={(e) => setSelectedYear(e.target.value)}
                   >
                     <option>Select Year</option>
@@ -609,7 +732,7 @@ const TeacherAllStudentEachCourse = () => {
                   </select>
                 </td>
 
-                <td className="px-2 py-4 font-medium text-gray-900 whitespace-nowrap ">
+                {/* <td className="px-2 py-4 font-medium text-gray-900 whitespace-nowrap ">
                   <input
                     type="text"
                     className=""
@@ -617,13 +740,15 @@ const TeacherAllStudentEachCourse = () => {
                     value={monthlyClassTaken}
                     onChange={(e) => setMonthlyClassTaken(e.target.value)}
                   ></input>
-                  {/* <button className="px-4 py-2 ml-2 text-gray-200 bg-green-600 rounded-md" >Update Fee</button> */}
-                </td>
+                 
+                </td> */}
 
                 <td className="px-6 py-4 text-center">0</td>
 
                 <td className="px-6 py-4 text-center">Unpaid</td>
                 <td className="px-6 py-4 text-center"></td>
+                <td className="px-6 py-4 text-center"></td>
+
                 <td className="px-2 py-4 text-center">
                   <button
                     className="px-2 py-1 ml-2 text-gray-200 bg-green-600 rounded-md"

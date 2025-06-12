@@ -920,133 +920,150 @@ router.delete(
   }
 );
 
-router.get("/download-attendance-report", async (req, res) => {
-  try {
-    const { month, year } = req.query;
+router.get(
+  "/download-attendance-report",
+  AdminAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { month, year, courseId } = req.query;
+      const { branch } = req.user;
 
-    if (!month || !year) {
-      return res.status(400).send("Please provide both month and year.");
-    }
+      if (!month || !year) {
+        return res.status(400).send("Please provide both month and year.");
+      }
 
-    console.log(month, year);
-    const allClasses = await Classes.find({}).populate({
-      path: "enrolledStudents",
-      populate: {
-        path: "attendanceDetail",
-        model: "Attendance",
-      },
-    });
+      let allClasses = [];
 
-    // console.log(allClasses);
+      if (courseId) {
+        // Fetch a specific class by ID and branch
+        const course = await Classes.findOne({
+          _id: courseId,
+          branch,
+        }).populate({
+          path: "enrolledStudents",
+          populate: {
+            path: "attendanceDetail",
+            model: "Attendance",
+          },
+        });
 
-    // Initialize workbook and sheet
-    const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet("Attendance Report");
-
-    // Title Row
-    const monthName = new Date(`${year}-${month}-01`).toLocaleString(
-      "default",
-      { month: "long" }
-    );
-    sheet.mergeCells("A1", "C1");
-    const titleCell = sheet.getCell("A1");
-    titleCell.value = `Attendance Report - ${monthName} ${year}`;
-    titleCell.font = { bold: true, size: 14 };
-    titleCell.alignment = { horizontal: "center" };
-
-    let currentRow = 3;
-
-    for (const course of allClasses) {
-      const courseTitle = course.classTitle || "Unnamed Course";
-
-      sheet.mergeCells(`A${currentRow}:C${currentRow}`);
-      sheet.getCell(`A${currentRow}`).value = courseTitle;
-      sheet.getCell(`A${currentRow}`).font = {
-        bold: true,
-        color: { argb: "FF000000" },
-      };
-      sheet.getCell(`A${currentRow}`).fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FFFBE2C3" },
-      };
-      currentRow++;
-
-      // Table Header
-      sheet.getRow(currentRow).values = [
-        "Sno.",
-        "Name",
-        "No. of Hours",
-        "Grade",
-      ];
-      sheet.getRow(currentRow).font = { bold: true };
-      sheet.getRow(currentRow).fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FFF2B632" },
-      };
-      currentRow++;
-
-      let sno = 1;
-
-      for (const student of course.enrolledStudents) {
-        let total = 0;
-        let grade = [];
-
-        for (const attendance of student.attendanceDetail || []) {
-          if (String(attendance.classId) !== String(course._id)) continue;
-
-          for (const detail of attendance.detailAttendance || []) {
-            const [day, mon, yr] = detail.classDate.split("-").map(Number);
-            if (mon === parseInt(month) && yr === parseInt(year)) {
-              total += parseFloat(detail?.numberOfClassesTaken || 0); // support decimals
-              // if (detail.grade) grades.push(detail.grade);
-            }
-          }
+        if (!course) {
+          return res.status(404).send("Course not found for this branch.");
         }
 
-        const row = sheet.getRow(currentRow);
-        row.values = [
-          sno++,
-          student.name,
-          total.toFixed(1),
-          (grade = student?.grade),
-        ];
+        allClasses.push(course); // Wrap in array for uniform processing
+      } else {
+        // Fetch all classes in branch
+        allClasses = await Classes.find({ branch }).populate({
+          path: "enrolledStudents",
+          populate: {
+            path: "attendanceDetail",
+            model: "Attendance",
+          },
+        });
+      }
 
-        if (total === 0) {
-          row.getCell(2).font = { color: { argb: "FFFF0000" }, bold: true };
+      // Excel generation logic
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet("Attendance Report");
+
+      const monthName = new Date(`${year}-${month}-01`).toLocaleString(
+        "default",
+        { month: "long" }
+      );
+
+      sheet.mergeCells("A1", "C1");
+      const titleCell = sheet.getCell("A1");
+      titleCell.value = `Attendance Report - ${monthName} ${year}`;
+      titleCell.font = { bold: true, size: 14 };
+      titleCell.alignment = { horizontal: "center" };
+
+      let currentRow = 3;
+
+      for (const course of allClasses) {
+        const courseTitle = course.classTitle || "Unnamed Course";
+
+        sheet.mergeCells(`A${currentRow}:C${currentRow}`);
+        sheet.getCell(`A${currentRow}`).value = courseTitle;
+        sheet.getCell(`A${currentRow}`).font = {
+          bold: true,
+          color: { argb: "FF000000" },
+        };
+        sheet.getCell(`A${currentRow}`).fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFFBE2C3" },
+        };
+        currentRow++;
+
+        // Table headers
+        sheet.getRow(currentRow).values = [
+          "Sno.",
+          "Name",
+          "No. of Hours",
+          "Grade",
+        ];
+        sheet.getRow(currentRow).font = { bold: true };
+        sheet.getRow(currentRow).fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFF2B632" },
+        };
+        currentRow++;
+
+        let sno = 1;
+
+        for (const student of course.enrolledStudents) {
+          let total = 0;
+          let grade = student?.grade || "";
+
+          for (const attendance of student.attendanceDetail || []) {
+            if (String(attendance.classId) !== String(course._id)) continue;
+
+            for (const detail of attendance.detailAttendance || []) {
+              const [day, mon, yr] = detail.classDate.split("-").map(Number);
+              if (mon === parseInt(month) && yr === parseInt(year)) {
+                total += parseFloat(detail?.numberOfClassesTaken || 0);
+              }
+            }
+          }
+
+          const row = sheet.getRow(currentRow);
+          row.values = [sno++, student.name, total.toFixed(1), grade];
+
+          if (total === 0) {
+            row.getCell(2).font = { color: { argb: "FFFF0000" }, bold: true };
+          }
+
+          currentRow++;
         }
 
         currentRow++;
       }
 
-      currentRow++;
+      sheet.columns = [
+        { key: "sno", width: 10 },
+        { key: "name", width: 30 },
+        { key: "total", width: 20 },
+        { key: "grade", width: 20 },
+      ];
+
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename=Attendance_${month}_${year}.xlsx`
+      );
+
+      await workbook.xlsx.write(res);
+      res.end();
+    } catch (err) {
+      console.error("Excel generation error:", err);
+      res.status(500).send("Failed to generate Excel report.");
     }
-
-    // Set column widths
-    sheet.columns = [
-      { key: "sno", width: 10 },
-      { key: "name", width: 30 },
-      { key: "total", width: 20 },
-      { key: "grade", width: 20 },
-    ];
-
-    // Prepare for download
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=Attendance_${month}_${year}.xlsx`
-    );
-
-    await workbook.xlsx.write(res);
-    res.end();
-  } catch (err) {
-    console.error("Excel generation error:", err);
-    res.status(500).send("Failed to generate Excel report.");
   }
-});
+);
 
 export default router;

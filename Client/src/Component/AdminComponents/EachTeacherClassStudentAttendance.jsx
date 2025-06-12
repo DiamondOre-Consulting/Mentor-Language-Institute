@@ -53,7 +53,7 @@ const EachTeacherClassStudentAttendance = () => {
         }
 
         const response = await axios.get(
-          `http://localhost:7000/api/admin-confi/all-classes/${selectedClassId}`,
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-classes/${selectedClassId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -71,7 +71,7 @@ const EachTeacherClassStudentAttendance = () => {
 
           for (const studentIds of enrolledStudents) {
             const studentResponse = await axios.get(
-              `http://localhost:7000/api/admin-confi/all-students/${studentIds}`,
+              `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students/${studentIds}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -108,7 +108,7 @@ const EachTeacherClassStudentAttendance = () => {
         }
 
         const attendanceResponse = await axios.get(
-          `http://localhost:7000/api/admin-confi/attendance/${selectedClassId}`,
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/attendance/${selectedClassId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -141,7 +141,7 @@ const EachTeacherClassStudentAttendance = () => {
           const studentData = [];
           for (const studentid of studentIds) {
             const studentResponse = await axios.get(
-              `http://localhost:7000/api/admin-confi/all-students/${studentid}`,
+              `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students/${studentid}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -205,7 +205,7 @@ const EachTeacherClassStudentAttendance = () => {
       }
 
       const response = await axios.post(
-        `http://localhost:7000/api/admin-confi/update-commission/${selectedClassId}/${selectedstudentId}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/update-commission/${selectedClassId}/${selectedstudentId}`,
         {
           classDate: selectedDate,
           commission,
@@ -244,7 +244,7 @@ const EachTeacherClassStudentAttendance = () => {
         // const commission = [];
 
         const monthlyCommissionReport = await axios.get(
-          `http://localhost:7000/api/admin-confi/monthly-commission/${id}/${selectedClassId}`,
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/monthly-commission/${id}/${selectedClassId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -267,7 +267,7 @@ const EachTeacherClassStudentAttendance = () => {
     const fetchStudentData = async () => {
       try {
         const studentList = await axios.get(
-          `http://localhost:7000/api/admin-confi/get-studentsListBySub/${selectedClassId}`,
+          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/get-studentsListBySub/${selectedClassId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -308,7 +308,7 @@ const EachTeacherClassStudentAttendance = () => {
       }
 
       const response = await axios.post(
-        `http://localhost:7000/api/admin-confi/update-monthly-commission/${commissionId}`,
+        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/update-monthly-commission/${commissionId}`,
         {
           commission,
           paid,
