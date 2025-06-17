@@ -51,7 +51,7 @@ const Message = () => {
         }
 
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students",
+          "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-students",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -82,7 +82,7 @@ const Message = () => {
           const courseDetails = await Promise.all(
             appliedCourses.map(async (course) => {
               const classDetails = await axios.get(
-                `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-classes/${course.classId}`,
+                `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-classes/${course.classId}`,
                 {
                   headers: {
                     Authorization: `Bearer ${token}`,
@@ -159,7 +159,7 @@ const Message = () => {
       const monthNumber = monthNameToNumber[feeMonth];
 
       const response = await axios.put(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/enroll-student/${selectedClassId}/${selectedStudentId}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/enroll-student/${selectedClassId}/${selectedStudentId}`,
         {
           totalFee,
           feeMonth: monthNumber,

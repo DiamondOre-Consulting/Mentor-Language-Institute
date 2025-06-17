@@ -30,7 +30,7 @@ const Login = () => {
     // Perform login logic here
     try {
       const response = await axios.post(
-        "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/login-admin",
+        "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/login-admin",
         {
           username,
           password,
@@ -76,7 +76,7 @@ const Login = () => {
 
     try {
       const response = await axios.post(
-        "https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/login-teacher",
+        "https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/login-teacher",
         {
           phone,
           password,

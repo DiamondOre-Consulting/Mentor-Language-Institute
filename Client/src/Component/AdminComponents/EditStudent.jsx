@@ -32,7 +32,7 @@ const EditStudent = () => {
 
   const StudentDetails = async () => {
     const studentResponse = await axios.get(
-      `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students/${id}`,
+      `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-students/${id}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -71,7 +71,7 @@ const EditStudent = () => {
 
     try {
       const response = await axios.put(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/student-edit/${id}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/student-edit/${id}`,
         {
           name,
           phone,

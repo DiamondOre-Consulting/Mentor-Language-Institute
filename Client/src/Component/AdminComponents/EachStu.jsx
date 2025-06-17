@@ -48,7 +48,7 @@ const EachStu = () => {
         setLoading(true);
         // Fetch student details
         const studentResponse = await axios.get(
-          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students/${id}`,
+          `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-students/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -64,7 +64,7 @@ const EachStu = () => {
           const classesData = [];
           for (const classId of classIds) {
             const classResponse = await axios.get(
-              `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-classes/${classId}`,
+              `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-classes/${classId}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -77,7 +77,7 @@ const EachStu = () => {
               // Fetch teacher associated with this class
               const teacherId = classResponse.data.teachBy;
               const teacherResponse = await axios.get(
-                `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-teachers/${teacherId}`,
+                `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-teachers/${teacherId}`,
                 {
                   headers: {
                     Authorization: `Bearer ${token}`,
@@ -121,7 +121,7 @@ const EachStu = () => {
       try {
         if (selectedCourseId) {
           const attendanceResponse = await axios.get(
-            `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/attendance/${selectedCourseId}/${id}`,
+            `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/attendance/${selectedCourseId}/${id}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -167,7 +167,7 @@ const EachStu = () => {
         if (selectedCourseId) {
           console.log("asdfghjkl", selectedCourseId, id);
           const FeeResponse = await axios.get(
-            `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/fee/${selectedCourseId}/${id}`,
+            `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/fee/${selectedCourseId}/${id}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -223,7 +223,7 @@ const EachStu = () => {
 
       console.log(selectedMonth, amount, paidStatus);
       const response = await axios.put(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/update-fee/${selectedCourseId}/${id}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/update-fee/${selectedCourseId}/${id}`,
         {
           feeMonth: monthNameToNumber[selectedMonth],
           paid: paidStatus === "true",

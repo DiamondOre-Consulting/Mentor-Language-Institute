@@ -20,7 +20,7 @@ const AllAdmin = () => {
   const handleGetAllAdmin = async () => {
     try {
       const response = await axios.get(
-        "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-admin"
+        "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-admin"
       );
       console.log(response);
       setAllAdmin(response?.data);
@@ -34,7 +34,7 @@ const AllAdmin = () => {
 
     try {
       const res = await axios.delete(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/delete-admin/${id}`
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/delete-admin/${id}`
       );
 
       toast.success("Admin deleted!", { id: toastId });
@@ -60,7 +60,7 @@ const AllAdmin = () => {
     console.log(editData);
     try {
       const response = await axios.put(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/edit-admin/${id}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/edit-admin/${id}`,
         editData
       );
       await handleGetAllAdmin();

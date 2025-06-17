@@ -80,7 +80,7 @@ const Register = () => {
       };
 
       const response = await axios.post(
-        "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/add-new-class",
+        "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/add-new-class",
         formData,
         {
           headers: {
@@ -146,7 +146,7 @@ const Register = () => {
         }
 
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-teachers",
+          "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-teachers",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -197,7 +197,7 @@ const Register = () => {
       }
 
       const response = await axios.post(
-        "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/add-teacher",
+        "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/add-teacher",
         {
           name,
           phone,
@@ -264,7 +264,7 @@ const Register = () => {
       }
 
       const response = await axios.post(
-        "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/add-student",
+        "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/add-student",
         {
           name,
           phone,
@@ -319,7 +319,7 @@ const Register = () => {
       }
 
       const response = await axios.get(
-        "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-classes",
+        "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-classes",
         {
           headers: {
             Authorization: `Bearer ${token}`,

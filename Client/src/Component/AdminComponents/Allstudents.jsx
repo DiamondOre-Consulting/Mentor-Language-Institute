@@ -59,7 +59,7 @@ const Allstudents = () => {
         }
 
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students",
+          "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-students",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -96,7 +96,7 @@ const Allstudents = () => {
         }
 
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-classes",
+          "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-classes",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -175,7 +175,7 @@ const Allstudents = () => {
       const monthNumber = monthNameToNumber[feeMonth];
 
       const response = await axios.put(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/enroll-student/${selectedCourseId}/${selectedStudentId}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/enroll-student/${selectedCourseId}/${selectedStudentId}`,
         {
           totalFee,
           feeMonth: monthNumber,
@@ -235,7 +235,7 @@ const Allstudents = () => {
       }
 
       const deactiveResponse = await axios.put(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/deactivate-account/${setuId}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/deactivate-account/${setuId}`,
         { status },
         {
           headers: {
@@ -263,7 +263,7 @@ const Allstudents = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.delete(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/delete-student/${id}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/delete-student/${id}`,
 
         {
           headers: {

@@ -46,7 +46,7 @@ const TeacherAddStudent = () => {
         }
 
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-classes",
+          "https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/my-classes",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -74,7 +74,7 @@ const TeacherAddStudent = () => {
 
     try {
       const response = await axios.post(
-        "https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/add-student",
+        "https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/add-student",
         {
           name,
           phone,

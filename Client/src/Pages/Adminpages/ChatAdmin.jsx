@@ -55,7 +55,7 @@ const ChatAdmin = () => {
         }
 
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-teachers",
+          "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-teachers",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -88,7 +88,7 @@ const ChatAdmin = () => {
         }
 
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students",
+          "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-students",
           {
             headers: {
               Authorization: `Bearer ${token}`,

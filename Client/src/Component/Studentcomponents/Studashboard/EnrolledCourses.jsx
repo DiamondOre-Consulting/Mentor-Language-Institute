@@ -21,7 +21,7 @@ const EnrolledCourses = () => {
 
         // Fetch associates data from the backend
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/students/my-profile",
+          "https://mentor-backend-rbac6.ondigitalocean.app/api/students/my-profile",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -36,7 +36,7 @@ const EnrolledCourses = () => {
 
           for (const classId of classes) {
             const classResponse = await axios.get(
-              `https://mentor-language-institute-backend-hbyk.onrender.com/api/students/all-courses/${classId}`,
+              `https://mentor-backend-rbac6.ondigitalocean.app/api/students/all-courses/${classId}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,

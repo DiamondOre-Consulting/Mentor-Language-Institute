@@ -36,7 +36,7 @@ const Parentlog = () => {
 
     try {
       const response = await axios.post(
-        "https://mentor-language-institute-backend-hbyk.onrender.com/api/students/signup",
+        "https://mentor-backend-rbac6.ondigitalocean.app/api/students/signup",
         {
           name,
           phone,

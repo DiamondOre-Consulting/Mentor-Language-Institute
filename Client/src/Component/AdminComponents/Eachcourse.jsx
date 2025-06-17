@@ -48,7 +48,7 @@ const Eachcourse = () => {
 
         // Fetch course details
         const response = await axios.get(
-          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-classes/${id}`,
+          `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-classes/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -63,7 +63,7 @@ const Eachcourse = () => {
           // Fetch teacher details
           const teacherId = courseData.teachBy;
           const teacherResponse = await axios.get(
-            `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-teachers/${teacherId}`,
+            `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-teachers/${teacherId}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -84,7 +84,7 @@ const Eachcourse = () => {
 
           for (const studentId of enrolledStudents) {
             const studentResponse = await axios.get(
-              `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students/${studentId}`,
+              `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-students/${studentId}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -105,7 +105,7 @@ const Eachcourse = () => {
 
           for (const studentId of applyStudents) {
             const studentResponse = await axios.get(
-              `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students/${studentId}`,
+              `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-students/${studentId}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,

@@ -94,7 +94,7 @@ const LanguageCourses = () => {
             return;
           }
           const response = await axios.get(
-            `https://mentor-language-institute-backend-hbyk.onrender.com/api/students/all-courses/${selectedCourseId}`,
+            `https://mentor-backend-rbac6.ondigitalocean.app/api/students/all-courses/${selectedCourseId}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -130,7 +130,7 @@ const LanguageCourses = () => {
         }
 
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/students/all-courses",
+          "https://mentor-backend-rbac6.ondigitalocean.app/api/students/all-courses",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -167,7 +167,7 @@ const LanguageCourses = () => {
       // console.log("after try block applied course ", selectedCourseId)
 
       const response = await axios.post(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/students/apply-course/${selectedCourseId}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/students/apply-course/${selectedCourseId}`,
         {},
         {
           headers: {

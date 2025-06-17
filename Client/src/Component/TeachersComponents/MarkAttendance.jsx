@@ -26,7 +26,7 @@ const MarkAttendance = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-students`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/my-students`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -67,7 +67,7 @@ const MarkAttendance = () => {
       // If record exists → edit
       if (todayRecord && attendanceEntryId) {
         await axios.put(
-          `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/edit-attendance/${selectedStudent._id}/${attendanceEntryId}`,
+          `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/edit-attendance/${selectedStudent._id}/${attendanceEntryId}`,
           {
             classDate: formatDate(selectedDate),
             numberOfClassesTaken: inputHours,
@@ -82,7 +82,7 @@ const MarkAttendance = () => {
         console.log("Edited attendance");
       } else {
         await axios.post(
-          `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/mark-attendance/${selectedStudent._id}`,
+          `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/mark-attendance/${selectedStudent._id}`,
           {
             classDate: formatDate(selectedDate),
             numberOfClassesTaken: inputHours,

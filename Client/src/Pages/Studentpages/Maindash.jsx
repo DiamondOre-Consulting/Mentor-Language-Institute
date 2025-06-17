@@ -48,7 +48,7 @@ const Maindash = () => {
         }
 
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/students/my-profile",
+          "https://mentor-backend-rbac6.ondigitalocean.app/api/students/my-profile",
           {
             headers: {
               Authorization: `Bearer ${token}`,

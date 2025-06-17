@@ -71,7 +71,7 @@ const TeacherHome = ({ teacherData }) => {
       const classesData = [];
       for (const classId of classIds) {
         const classResponse = await axios.get(
-          `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-classes/${classId}`,
+          `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/my-classes/${classId}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -105,7 +105,7 @@ const TeacherHome = ({ teacherData }) => {
         }
 
         const classresponse = await axios.get(
-          `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-classes/${selectedClassId}`,
+          `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/my-classes/${selectedClassId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -132,7 +132,7 @@ const TeacherHome = ({ teacherData }) => {
       setShowLoader(true);
 
       const response = await axios.post(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/schedule-class/${selectedClassId}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/schedule-class/${selectedClassId}`,
         { date, numberOfClasses },
         {
           headers: {
@@ -167,7 +167,7 @@ const TeacherHome = ({ teacherData }) => {
         }
 
         const response = await axios.get(
-          "https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-classes",
+          "https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/my-classes",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -196,7 +196,7 @@ const TeacherHome = ({ teacherData }) => {
       }
 
       const response = await axios.put(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/update-class-hours/${selectedClassId}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/update-class-hours/${selectedClassId}`,
         { updatedHours: updateHoursInput },
         {
           headers: {

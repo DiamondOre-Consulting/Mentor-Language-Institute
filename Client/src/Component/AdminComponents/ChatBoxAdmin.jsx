@@ -17,7 +17,7 @@ const ChatBoxAdmin = ({
   const { decodedToken, isExpired } = useJwt(localStorage.getItem("token"));
   const userId = decodedToken ? decodedToken.userId : null;
   const socket = useMemo(
-    () => io("https://mentor-language-institute-backend-hbyk.onrender.com"),
+    () => io("https://mentor-backend-rbac6.ondigitalocean.app"),
     []
   );
   const [chatHistory, setChatHistory] = useState([]);
@@ -30,7 +30,7 @@ const ChatBoxAdmin = ({
     const fetchChatHistory = async (selectedTeacherId, selectedStudentId) => {
       try {
         const response = await axios.get(
-          `https://mentor-language-institute-backend-hbyk.onrender.com/api/chats/get-messages-admin/${selectedTeacherId}/${selectedStudentId}`,
+          `https://mentor-backend-rbac6.ondigitalocean.app/api/chats/get-messages-admin/${selectedTeacherId}/${selectedStudentId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -68,7 +68,7 @@ const ChatBoxAdmin = ({
 
         // Fetch associates data from the backend
         const response = await axios.get(
-          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-teachers/${selectedTeacherId}`,
+          `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-teachers/${selectedTeacherId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -93,7 +93,7 @@ const ChatBoxAdmin = ({
       try {
         // Fetch student details
         const studentResponse = await axios.get(
-          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-students/${selectedStudentId}`,
+          `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-students/${selectedStudentId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

@@ -21,7 +21,7 @@ const TeacherAllStudents = () => {
   const fetchStudentData = async () => {
     try {
       const response = await axios.get(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-students`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/my-students`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -53,7 +53,7 @@ const TeacherAllStudents = () => {
   const handleDeleteClick = async (id) => {
     try {
       const response = await axios.delete(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/delete-student/${id}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/delete-student/${id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -75,7 +75,7 @@ const TeacherAllStudents = () => {
       }
 
       const deactiveResponse = await axios.put(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/deactivate-account/${id}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/deactivate-account/${id}`,
         { status },
         {
           headers: {
@@ -101,7 +101,7 @@ const TeacherAllStudents = () => {
 
     try {
       const response = await axios.get(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/download-student-attendance/${studentId}?year=${year}&month=${month}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/download-student-attendance/${studentId}?year=${year}&month=${month}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

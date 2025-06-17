@@ -49,7 +49,7 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
 
     try {
       const response = await axios.put(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/student-edit/${studentData?._id}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/student-edit/${studentData?._id}`,
         {
           name,
           phone,

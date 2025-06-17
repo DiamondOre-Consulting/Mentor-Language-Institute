@@ -25,7 +25,7 @@ const DownloadAttendanceReport = () => {
       }
 
       const response = await axios.get(
-        "https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/all-classes",
+        "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-classes",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -58,7 +58,7 @@ const DownloadAttendanceReport = () => {
 
       console.log(token);
       const response = await axios.get(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/download-attendance-report?month=${selectedMonth}&year=${selectedYear}&courseId=${selectedCourseId}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/download-attendance-report?month=${selectedMonth}&year=${selectedYear}&courseId=${selectedCourseId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -169,7 +169,7 @@ const DownloadAttendanceReport = () => {
       }
 
       const response = await axios.get(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/download-attendance-report?month=${selectedMonth}&year=${selectedYear}&courseId=${selectedCourseId}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/download-attendance-report?month=${selectedMonth}&year=${selectedYear}&courseId=${selectedCourseId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

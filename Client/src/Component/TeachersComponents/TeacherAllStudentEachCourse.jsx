@@ -76,7 +76,7 @@ const TeacherAllStudentEachCourse = () => {
         }
 
         const response = await axios.get(
-          `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-classes/${selectedClassId}`,
+          `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/my-classes/${selectedClassId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -93,7 +93,7 @@ const TeacherAllStudentEachCourse = () => {
 
           for (const studentIds of enrolledStudents) {
             const studentResponse = await axios.get(
-              `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/student/${studentIds}`,
+              `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/student/${studentIds}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -129,7 +129,7 @@ const TeacherAllStudentEachCourse = () => {
       }
 
       const attendanceResponse = await axios.get(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/attendance/${selectedClassId}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/attendance/${selectedClassId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -156,7 +156,7 @@ const TeacherAllStudentEachCourse = () => {
         const studentData = [];
         for (const studentid of studentIds) {
           const studentResponse = await axios.get(
-            `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/student/${studentid}`,
+            `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/student/${studentid}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -217,7 +217,7 @@ const TeacherAllStudentEachCourse = () => {
       }
 
       const response = await axios.put(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/update-attendance/${selectedClassId}/${selectedstudentId}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/update-attendance/${selectedClassId}/${selectedstudentId}`,
         {
           attendanceDate: selectedDate,
           numberOfClassesTaken,
@@ -263,7 +263,7 @@ const TeacherAllStudentEachCourse = () => {
       // const commission = [];
 
       const monthlyCommissionReport = await axios.get(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/my-commission/${selectedClassId}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/my-commission/${selectedClassId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -303,7 +303,7 @@ const TeacherAllStudentEachCourse = () => {
       if (editingCommissionId) {
         // Update existing
         response = await axios.put(
-          `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/edit-monthly-classes/${editingCommissionId}`,
+          `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/edit-monthly-classes/${editingCommissionId}`,
           {
             monthName: selectedMonth,
             year: selectedYear,
@@ -316,7 +316,7 @@ const TeacherAllStudentEachCourse = () => {
       } else {
         // Add new
         response = await axios.post(
-          `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/add-monthly-classes/${selectedClassId}`,
+          `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/add-monthly-classes/${selectedClassId}`,
           {
             monthName: selectedMonth,
             year: selectedYear,
@@ -352,7 +352,7 @@ const TeacherAllStudentEachCourse = () => {
     const fetchStudentData = async () => {
       try {
         const studentList = await axios.get(
-          `https://mentor-language-institute-backend-hbyk.onrender.com/api/admin-confi/get-studentsListBySub/${selectedClassId}`
+          `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/get-studentsListBySub/${selectedClassId}`
         );
 
         if (studentList?.data?.success) {
@@ -379,7 +379,7 @@ const TeacherAllStudentEachCourse = () => {
       const token = localStorage.getItem("token");
 
       const response = await axios.delete(
-        `https://mentor-language-institute-backend-hbyk.onrender.com/api/teachers/delete-monthly-classes/${commissionId}`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/delete-monthly-classes/${commissionId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
