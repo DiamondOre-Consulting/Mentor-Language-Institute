@@ -73,13 +73,11 @@ const Eachcourse = () => {
 
           if (teacherResponse.status === 200) {
             const teacherData = teacherResponse.data;
-            console.log("Teacher details:", teacherData);
             courseData.teacher = teacherData;
           }
 
           // Fetch details of enrolled students
           const enrolledStudents = courseData.enrolledStudents;
-          console.log("enrolled students", enrolledStudents);
           const enrolledStudentsDetails = [];
 
           for (const studentId of enrolledStudents) {
@@ -94,11 +92,9 @@ const Eachcourse = () => {
 
             if (studentResponse.status === 200) {
               const studentData = studentResponse.data;
-              console.log("Enrolled student details:", studentData);
               enrolledStudentsDetails.push(studentData);
             }
           }
-          console.log(enrolledStudents);
           // Fetch details of applied students
           const applyStudents = courseData.appliedStudents;
           const appliedStudentsDetails = [];
@@ -115,7 +111,6 @@ const Eachcourse = () => {
 
             if (studentResponse.status === 200) {
               const studentData = studentResponse.data;
-              console.log("Applied student details:", studentData);
               appliedStudentsDetails.push(studentData);
             }
           }

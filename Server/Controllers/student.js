@@ -95,7 +95,6 @@ router.get("/my-profile", StudentAuthenticateToken, async (req, res) => {
     const { userName } = req.user;
 
     const student = await Students.findOne({ userName });
-    console.log(student);
 
     if (!student) {
       return res.status(404).json({ message: "Student not find" });
@@ -361,7 +360,6 @@ router.get("/chat-all-teachers", StudentAuthenticateToken, async (req, res) => {
     const objectIds = allTeachersIds.map(
       (id) => new mongoose.Types.ObjectId(id)
     );
-    console.log(objectIds);
 
     await Promise.all(
       objectIds.map(async (eachId) => {

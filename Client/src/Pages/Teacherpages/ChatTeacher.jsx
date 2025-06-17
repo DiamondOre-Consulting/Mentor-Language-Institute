@@ -52,7 +52,6 @@ const ChatTeacher = () => {
           }
         ); // Adjust the API endpoint
         if (response.status === 201) {
-          console.log(response.data);
           setStudents(response.data); // Assuming the API returns an array of student objects
         } else {
           setError(response.status, response.data);

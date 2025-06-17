@@ -22,7 +22,6 @@ const AllAdmin = () => {
       const response = await axios.get(
         "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-admin"
       );
-      console.log(response);
       setAllAdmin(response?.data);
     } catch (error) {
       console.log(error);
@@ -57,7 +56,6 @@ const AllAdmin = () => {
 
   const handleEditAdmin = async (e) => {
     e.preventDefault();
-    console.log(editData);
     try {
       const response = await axios.put(
         `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/edit-admin/${id}`,

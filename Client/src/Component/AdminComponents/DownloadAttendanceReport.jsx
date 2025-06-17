@@ -14,7 +14,6 @@ const DownloadAttendanceReport = () => {
   const [excelData, setExcelData] = useState([]);
   const [allCourses, setAllCourses] = useState([]);
   const [selectedCourseId, setSelectedCourseId] = useState("");
-  console.log(selectedCourseId);
   const fetchAllcourses = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -46,7 +45,6 @@ const DownloadAttendanceReport = () => {
     fetchAllcourses();
   }, [navigate]);
 
-  console.log("allCourses", allCourses);
 
   const getAttendanceReport = async () => {
     try {
@@ -56,7 +54,6 @@ const DownloadAttendanceReport = () => {
         return;
       }
 
-      console.log(token);
       const response = await axios.get(
         `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/download-attendance-report?month=${selectedMonth}&year=${selectedYear}&courseId=${selectedCourseId}`,
         {
@@ -67,7 +64,6 @@ const DownloadAttendanceReport = () => {
         }
       );
 
-      console.log(response);
 
       const data = new Uint8Array(response.data);
       const workbook = XLSX.read(data, { type: "array" });
@@ -79,7 +75,6 @@ const DownloadAttendanceReport = () => {
     }
   };
 
-  console.log(excelData);
 
   useEffect(() => {
     getAttendanceReport();
@@ -158,7 +153,6 @@ const DownloadAttendanceReport = () => {
 
   const sections = processData();
 
-  console.log(sections);
 
   const handleDownload = async () => {
     try {

@@ -51,25 +51,17 @@ router.post("/signup-admin", async (req, res) => {
 router.post("/login-admin", async (req, res) => {
   try {
     const { username, password } = req.body;
-    console.log(username, password);
     const user = await Admin.findOne({ username });
-    console.log(user);
     if (!user) {
-      console.log(1);
       return res.status(401).json({ message: "Invalid username" });
     }
 
-    console.log(2);
     // Compare the passwords
     const passwordMatch = await bcrypt.compare(password, user.password);
-    console.log(3);
-    console.log(passwordMatch);
     if (!passwordMatch) {
-      console.log(4);
       return res.status(401).json({ message: "Invalid password" });
     }
 
-    console.log(5);
     // Generate JWT token
     const token = jwt.sign(
       {
@@ -123,7 +115,6 @@ router.get("/my-profile", AdminAuthenticateToken, async (req, res) => {
 router.put("/student-edit/:id", AdminAuthenticateToken, async (req, res) => {
   const { id } = req.params;
   const { name, phone, password, branch, userName, dob, grade } = req.body;
-  console.log(name, phone, password, branch, userName, dob);
 
   try {
     // Validate input fields (optional, depending on your requirements)
@@ -136,7 +127,6 @@ router.put("/student-edit/:id", AdminAuthenticateToken, async (req, res) => {
 
     // Check if username already exists (excluding the current student)
     const existingUserName = await Students.findOne({ userName });
-    console.log(existingUserName);
     if (existingUserName && existingUserName._id.toString() !== id) {
       return res.status(400).json({
         message: "Username already taken. Please enter a unique username",
@@ -282,7 +272,6 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
         dob,
         password: hashedPassword,
       });
-      console.log(newTeacher);
 
       await newTeacher.save();
     }
@@ -320,7 +309,6 @@ router.put("/edit-admin/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { name, phone, password } = req.body;
-    console.log("this is password", password);
     const admin = await Admin.findById(id);
     if (!admin) {
       return res.status(404).json({ message: "Admin not found!" });
@@ -329,11 +317,8 @@ router.put("/edit-admin/:id", async (req, res) => {
     const updatedName = name || admin.name;
     const updatedPhone = phone || admin.phone;
 
-    console.log("updatedName:", updatedName);
-    console.log("updatedPhone:", updatedPhone);
 
     const username = `${updatedName}-${updatedPhone}`;
-    console.log(username);
     const isUserNameExist = await Admin.findOne({
       _id: { $ne: id },
       username,
@@ -585,7 +570,6 @@ router.put(
     try {
       const { id1, id2 } = req.params;
       const { feeMonth, paid, amountPaid } = req.body;
-      console.log(feeMonth, paid, amountPaid, "classid", id1, "studentid", id2);
       const fee = await Fee.findOneAndUpdate(
         { classId: id1, studentId: id2 },
         {
@@ -609,7 +593,6 @@ router.put(
         fee.totalFee = totalFee;
         await fee.save();
       }
-      console.log("feees", fee);
       res.json(200, {
         message: `Fee for ${feeMonth} is updated successfully.`,
         fee,
@@ -871,7 +854,6 @@ router.get(
 
   async (req, res) => {
     const { id } = req.params;
-    console.log("id", id);
 
     try {
       // Fetch the class and populate the enrolledStudents field with user details
@@ -879,7 +861,6 @@ router.get(
         path: "enrolledStudents",
         select: "name phone dob", // Specify fields to include (e.g., 'name', 'email')
       });
-      console.log(classDetails);
 
       if (!classDetails) {
         return res.status(404).json({ message: "Class not found" });

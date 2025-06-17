@@ -11,7 +11,6 @@ const StudentAuthenticateToken = (req, res, next) => {
   try {
     // Verify and decode the token
     const decoded = jwt.verify(token, process.env.STUDENT_JWT_SECRET);
-    console.log(decoded);
 
     // Attach the decoded token to the request object
     req.user = decoded;

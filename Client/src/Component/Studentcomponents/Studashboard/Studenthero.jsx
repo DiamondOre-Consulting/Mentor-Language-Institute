@@ -41,11 +41,9 @@ const Studenthero = () => {
           },
         }
       );
-      console.log("response.student", response);
 
       if (response.status === 200) {
         const studentData = response.data;
-        console.log(response.data);
         // Translate the "Welcome" text into the desired language
         const language = languages[index]; // Use the language at the current index
         const translatedWelcome = await translate("Welcome", {
@@ -66,7 +64,6 @@ const Studenthero = () => {
     }
   };
 
-  console.log("userName", userName);
   return (
     <>
       <>

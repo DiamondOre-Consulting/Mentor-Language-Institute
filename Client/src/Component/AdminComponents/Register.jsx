@@ -327,7 +327,6 @@ const Register = () => {
         }
       );
       if (response.status == 200) {
-        console.log(response?.data);
 
         setAllCourses(response?.data);
       }

@@ -45,24 +45,19 @@ const MarkAttendance = () => {
     fetchStudentData();
   }, []);
 
-  console.log(grade);
 
   const markOrEditAttendance = async () => {
     try {
       setMarking(true);
 
-      console.log(selectedStudent);
       const attendanceDetail = selectedStudent.attendanceDetail?.[0];
-      console.log(attendanceDetail, "detail");
       const todayRecord = attendanceDetail?.detailAttendance?.find(
         (a) => a.classDate === formatDate(selectedDate)
       );
 
-      console.log(todayRecord);
 
       const attendanceEntryId = todayRecord?._id;
 
-      console.log("attendenceId", attendanceEntryId);
 
       // If record exists → edit
       if (todayRecord && attendanceEntryId) {
@@ -79,7 +74,6 @@ const MarkAttendance = () => {
             },
           }
         );
-        console.log("Edited attendance");
       } else {
         await axios.post(
           `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/mark-attendance/${selectedStudent._id}`,
@@ -94,7 +88,6 @@ const MarkAttendance = () => {
             },
           }
         );
-        console.log("Marked attendance");
       }
 
       await fetchStudentData();
@@ -108,7 +101,6 @@ const MarkAttendance = () => {
     }
   };
 
-  console.log("student list ", studentList);
 
   return (
     <div className="p-4 max-w-7xl mx-auto">

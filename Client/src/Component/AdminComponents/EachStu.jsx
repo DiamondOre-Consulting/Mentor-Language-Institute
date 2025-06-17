@@ -103,7 +103,6 @@ const EachStu = () => {
     fetchStudentDetails();
   }, [id, token]);
 
-  console.log(classes);
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
@@ -113,7 +112,6 @@ const EachStu = () => {
     setSelectedCourseId(event.target.value);
   };
 
-  console.log("slected course Id", selectedCourseId);
 
   useEffect(() => {
     const fetchAttendanceDetails = async () => {
@@ -165,7 +163,6 @@ const EachStu = () => {
     const fetchFeeDetails = async () => {
       try {
         if (selectedCourseId) {
-          console.log("asdfghjkl", selectedCourseId, id);
           const FeeResponse = await axios.get(
             `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/fee/${selectedCourseId}/${id}`,
             {
@@ -176,7 +173,6 @@ const EachStu = () => {
           );
 
           if (FeeResponse.status === 200) {
-            console.log("Fee details:", FeeResponse.data);
             setTotalFee(FeeResponse.data.totalFee);
             const feeDetailsWithMonthNames = {
               ...FeeResponse.data,
@@ -221,7 +217,6 @@ const EachStu = () => {
         return;
       }
 
-      console.log(selectedMonth, amount, paidStatus);
       const response = await axios.put(
         `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/update-fee/${selectedCourseId}/${id}`,
         {
@@ -236,7 +231,6 @@ const EachStu = () => {
         }
       );
 
-      console.log("update fee details", response);
       if (response?.status === 200) {
         // console.log("Fee updated successfully");
         const updatedFeeDetails = [...(feedetails?.detailFee || [])];
@@ -252,7 +246,6 @@ const EachStu = () => {
     }
   };
 
-  console.log("fee detailsssssss", feedetails);
 
   return (
     <>

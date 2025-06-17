@@ -201,7 +201,6 @@ const LanguageCourses = () => {
     }
   };
 
-  console.log("allcourses", allCourses);
   return (
     <>
       <div className="px-10 " id="courses">

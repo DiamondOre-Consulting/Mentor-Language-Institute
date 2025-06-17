@@ -48,17 +48,14 @@ const Parentlog = () => {
       );
 
       if (response.status === 200) {
-        console.log("student added successfully");
         setPopupMessage("Student Registered Successfully");
         setName("");
         setPhone("");
         setPassword("");
         navigate("/student-login");
       } else if (response.status === 400) {
-        console.log("Please Enter a Unique UserName");
         setPopupMessage("Please Enter a Unique UserName");
       } else {
-        console.log("Error adding student:", response.status);
         setPopupMessage("Error Registering Student");
       }
     } catch (error) {

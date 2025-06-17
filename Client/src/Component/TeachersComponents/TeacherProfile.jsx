@@ -1,7 +1,6 @@
 import React from "react";
 
 const TeacherProfile = ({ teacherData }) => {
-  console.log("teacherdata in profile", teacherData);
   return (
     <>
       <div class="w-full h-40">

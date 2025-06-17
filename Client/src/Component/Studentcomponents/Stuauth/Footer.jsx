@@ -13,7 +13,6 @@ const Footer = () => {
     const navigate = useNavigate();
     const token = localStorage.getItem("token");
     const { decodedToken } = useJwt(token || "No decoded Token Found yet");
-    console.log(token)
 
     const handleSignup = () => {
         if (token && decodedToken && decodedToken.exp * 1000 > Date.now()) {

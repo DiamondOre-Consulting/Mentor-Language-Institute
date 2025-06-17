@@ -31,9 +31,7 @@ const TeacherAddStudent = () => {
     setShowPassword(!showPassword);
   };
 
-  console.log(grade);
 
-  console.log("hello");
 
   useEffect(() => {
     const fetchAllCourses = async () => {

@@ -3,7 +3,6 @@ import jwt from "jsonwebtoken";
 const TeacherAuthenticateToken = (req, res, next) => {
   // Get the JWT token from the request headers
   const token = req.headers.authorization?.split(" ")[1];
-  console.log("object", token);
   if (!token) {
     return res.status(401).json({ message: "Authorization token not found" });
   }
@@ -14,7 +13,6 @@ const TeacherAuthenticateToken = (req, res, next) => {
 
     // Attach the decoded token to the request object
     req.user = decoded;
-    console.log(decoded);
     // Proceed to the next middleware or route handler
     next();
   } catch (error) {

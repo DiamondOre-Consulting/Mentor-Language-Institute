@@ -183,7 +183,6 @@ router.get("/my-students", TeacherAuthenticateToken, async (req, res) => {
 router.put("/student-edit/:id", TeacherAuthenticateToken, async (req, res) => {
   const { id } = req.params;
   const { name, phone, password, branch, userName, dob, grade } = req.body;
-  console.log(name, phone, password, branch, userName, dob, grade);
 
   try {
     // Validate input fields (optional, depending on your requirements)
@@ -196,7 +195,6 @@ router.put("/student-edit/:id", TeacherAuthenticateToken, async (req, res) => {
 
     // Check if username already exists (excluding the current student)
     const existingUserName = await Students.findOne({ userName });
-    console.log(existingUserName);
     if (existingUserName && existingUserName._id.toString() !== id) {
       return res.status(400).json({
         message: "Username already taken. Please enter a unique username",
@@ -687,7 +685,6 @@ router.post("/mark-attendance/:studentId", async (req, res) => {
   try {
     const { studentId } = req.params;
     const { classDate, numberOfClassesTaken, grade } = req.body;
-    console.log("bodyyyyyyyyyyyyy", classDate, numberOfClassesTaken, grade);
     if (!classDate || !numberOfClassesTaken) {
       return res
         .status(400)

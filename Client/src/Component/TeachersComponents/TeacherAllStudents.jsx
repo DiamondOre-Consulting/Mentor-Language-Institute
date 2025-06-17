@@ -44,7 +44,6 @@ const TeacherAllStudents = () => {
   };
 
   const closeModal = () => {
-    console.log("clicked");
     setShowModal(false);
     setSelectedStudent(null);
     fetchStudentData();
@@ -60,13 +59,11 @@ const TeacherAllStudents = () => {
           },
         }
       );
-      console.log(response);
       fetchStudentData();
     } catch (error) {}
   };
 
   const handleActiveAndDeactivateStudent = async (status, id) => {
-    console.log("this is  a stutus and id ", status, id);
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -126,7 +123,6 @@ const TeacherAllStudents = () => {
     }
   };
 
-  console.log(studentList);
   return (
     <div className="px-4 py-8">
       <div className="  ">

@@ -16,7 +16,6 @@ const ChatBoxTeacher = ({
   const navigate = useNavigate();
   const { decodedToken, isExpired } = useJwt(localStorage.getItem("token"));
   const userId = decodedToken ? decodedToken.userId : null;
-  console.log(userId);
   const socket = useMemo(
     () => io("http://mentor-language-institute-backend-hbyk.onrender.com"),
     []

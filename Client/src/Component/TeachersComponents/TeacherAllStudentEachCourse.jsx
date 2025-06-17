@@ -110,7 +110,6 @@ const TeacherAllStudentEachCourse = () => {
           }
         }
       } catch (error) {
-        console.log("");
       } finally {
         setLoading(false);
       }
@@ -173,7 +172,6 @@ const TeacherAllStudentEachCourse = () => {
         setAttendanceDetailsMap({});
       }
     } catch (error) {
-      console.log("");
     }
   };
   useEffect(() => {
@@ -237,13 +235,11 @@ const TeacherAllStudentEachCourse = () => {
           ...prevAttendanceDetailsMap,
           [selectedstudentId]: numberOfClassesTaken,
         }));
-        console.log("response dataaaaaaaaaa", response?.data);
         await getMonthlyCommission();
         await fetchAttendanceDetails();
         // handleFetchStudentDetails()
       }
     } catch (error) {
-      console.log("");
     } finally {
       setLoading(false);
       setSelectedMonth("");

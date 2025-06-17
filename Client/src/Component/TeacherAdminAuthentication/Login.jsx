@@ -47,7 +47,6 @@ const Login = () => {
         // console.log("Logged in successfully as Admin");
         navigate("/admin-dashboard");
       } else {
-        console.log("Login failed");
         setError("Login Details Are Wrong!!");
         // Handle login error
       }
@@ -55,7 +54,6 @@ const Login = () => {
       if (error.response) {
         const status = error.response.status;
         if (status === 401) {
-          console.log("Invalid phone number");
           setError("Login Details Are Wrong!!");
         } else {
           console.error("Error logging in:", status);
@@ -91,7 +89,6 @@ const Login = () => {
         // console.log("Logged in successfully as Teacher");
         navigate("/teacher-dashboard");
       } else {
-        console.log("Login failed");
         setError("Login Details Are Wrong!!");
         // Handle login error
       }
@@ -99,10 +96,8 @@ const Login = () => {
       if (error.response) {
         const status = error.response.status;
         if (status === 401) {
-          console.log("invalid phone no");
           setError("Invalid Phone No");
         } else if (status === 402) {
-          console.log("invalid passward");
           setError("Invalid password");
         } else {
           console.error("Error login teacher:", status);
