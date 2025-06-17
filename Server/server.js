@@ -27,7 +27,7 @@ dotenv.config();
 app.use(express.json());
 app.use(cors());
 
-const PORT = 7000;
+const PORT = process.env.PORT|| 7000;
 app.use(morgan("dev"));
 
 // Socket.IO logic
