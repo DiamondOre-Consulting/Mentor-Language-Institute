@@ -13,7 +13,7 @@ const MarkAttendance = () => {
   const [marking, setMarking] = useState(false);
 
   const token = localStorage.getItem("token");
-
+const [teacherData , setTeacherData] = useState(null)
   const formatDate = (isoDate) => {
     const date = new Date(isoDate);
     const day = String(date?.getDate()).padStart(2, "0");
@@ -22,6 +22,27 @@ const MarkAttendance = () => {
     return `${day}-${month}-${year}`;
   };
 
+
+     const fetchTeacherProfile = async()=>{
+            const token = localStorage.getItem("token");
+
+      try {
+        const response = await axios.get('https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/my-profile' , 
+            {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+        )
+        console.log(response)
+        setTeacherData(response?.data)
+      } catch (error) {
+        console.log(error)
+      }
+     }
+
+
+  
   const fetchStudentData = async () => {
     try {
       setLoading(true);
@@ -33,6 +54,7 @@ const MarkAttendance = () => {
           },
         }
       );
+      console.log(response?.data)
       setStudentList(response.data);
     } catch (error) {
       console.error("Failed to fetch students:", error);
@@ -43,18 +65,22 @@ const MarkAttendance = () => {
 
   useEffect(() => {
     fetchStudentData();
+    fetchTeacherProfile()
   }, []);
 
+
+  console.log(1)
 
   const markOrEditAttendance = async () => {
     try {
       setMarking(true);
 
       const attendanceDetail = selectedStudent.attendanceDetail?.[0];
+      console.log(attendanceDetail)
       const todayRecord = attendanceDetail?.detailAttendance?.find(
         (a) => a.classDate === formatDate(selectedDate)
       );
-
+console.log(todayRecord)
 
       const attendanceEntryId = todayRecord?._id;
 
@@ -75,8 +101,8 @@ const MarkAttendance = () => {
           }
         );
       } else {
-        await axios.post(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/mark-attendance/${selectedStudent._id}`,
+      const response =  await axios.post(
+          `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/mark-attendance/${selectedStudent._id}/${teacherData?.myClasses[0]}`,
           {
             classDate: formatDate(selectedDate),
             numberOfClassesTaken: inputHours,
@@ -88,9 +114,12 @@ const MarkAttendance = () => {
             },
           }
         );
+        console.log("res" , response)
       }
 
-      await fetchStudentData();
+console.log(selectedStudent._id , inputHours , selectedDate , grade)
+    const res=  await fetchStudentData();
+    console.log(res)
     } catch (error) {
       console.error("Failed to mark/edit attendance:", error);
     } finally {
@@ -134,77 +163,83 @@ const MarkAttendance = () => {
               <th className="px-4 py-3">Action</th>
             </tr>
           </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan="4" className="py-4 text-center">
-                  Loading...
-                </td>
-              </tr>
-            ) : studentList.length > 0 ? (
-              studentList.map((student) => {
-                const attendance =
-                  student.attendanceDetail?.[0]?.detailAttendance || [];
-                const todayRecord = attendance.find(
-                  (a) => a.classDate === formatDate(selectedDate)
-                );
+     <tbody>
+  {loading ? (
+    <tr>
+      <td colSpan="5" className="py-4 text-center">
+        Loading...
+      </td>
+    </tr>
+  ) : studentList.length > 0 ? (
+    studentList.map((student) => {
+      // Step 1: Filter attendanceDetail entries that belong to teacher's class
+      const relevantAttendances = student.attendanceDetail?.filter((entry) =>
+        teacherData?.myClasses?.includes(entry.classId)
+      ) || [];
 
-                return (
-                  <tr
-                    key={student._id}
-                    className="bg-white border-b hover:bg-orange-50"
-                  >
-                    <td className="px-4 py-3">{student.name}</td>
-                    <td className="px-4 py-3">{student.phone}</td>
-                    <td className="px-4 py-3">
-                      {todayRecord ? (
-                        `${todayRecord.numberOfClassesTaken} hours`
-                      ) : (
-                        <span className="text-gray-400">No record</span>
-                      )}
-                    </td>
+      console.log("relavent",relevantAttendances)
+      // Step 2: From relevant entries, get detailAttendance for selected date
+      const todayRecords = relevantAttendances.flatMap((entry) =>
+        entry.detailAttendance?.filter(
+          (record) => record.classDate === formatDate(selectedDate)
+        ) || []
+      );
 
-                    <td className="px-4 py-3">{student?.grade}</td>
+      // Step 3: Render one row per todayRecord (if exists), else one row with "No Record"
+      if (todayRecords.length > 0) {
+        return todayRecords.map((record, index) => (
+          <tr key={`${student._id}-${index}`} className="bg-white border-b hover:bg-orange-50">
+            <td className="px-4 py-3">{student.name}</td>
+            <td className="px-4 py-3">{student.phone}</td>
+            <td className="px-4 py-3">{record.numberOfClassesTaken} hours</td>
+            <td className="px-4 py-3">{record.grade || "N/A"}</td>
+            <td className="px-4 py-3">
+              <button
+                className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-md text-sm"
+                onClick={() => {
+                  setSelectedStudent(student);
+                  setInputHours(record.numberOfClassesTaken);
+                  setGrade(record.grade || "");
+                }}
+              >
+                Edit Attendance
+              </button>
+            </td>
+          </tr>
+        ));
+      } else {
+        // No attendance for this student in teacher's classes on selected date
+        return (
+          <tr key={student._id} className="bg-white border-b hover:bg-orange-50">
+            <td className="px-4 py-3">{student.name}</td>
+            <td className="px-4 py-3">{student.phone}</td>
+            <td className="px-4 py-3 text-gray-400">No record</td>
+            <td className="px-4 py-3 text-gray-400">No record</td>
+            <td className="px-4 py-3">
+              <button
+                className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-md text-sm"
+                onClick={() => {
+                  setSelectedStudent(student);
+                  setInputHours("");
+                  setGrade("");
+                }}
+              >
+                Mark Attendance
+              </button>
+            </td>
+          </tr>
+        );
+      }
+    })
+  ) : (
+    <tr>
+      <td colSpan="5" className="py-4 text-center text-gray-500">
+        No students found
+      </td>
+    </tr>
+  )}
+</tbody>
 
-                    {/* <td className="px-4 py-3">
-                      {todayRecord ? (
-                        `${todayRecord.grade} `
-                      ) : (
-                        <span className="text-gray-400">No record</span>
-                      )}
-                    </td> */}
-                    <td className="px-4 py-3">
-                      <button
-                        className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-md text-sm"
-                        onClick={() => {
-                          setSelectedStudent(student);
-                          if (todayRecord) {
-                            setInputHours(todayRecord.numberOfClassesTaken);
-                            setGrade(todayRecord.grade);
-                          } else {
-                            setInputHours("");
-                            setGrade("");
-                          }
-                        }}
-                      >
-                        {todayRecord ? (
-                          <p>Edit Attendance</p>
-                        ) : (
-                          <p> Mark Attendance</p>
-                        )}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
-            ) : (
-              <tr>
-                <td colSpan="4" className="py-4 text-center text-gray-500">
-                  No students found
-                </td>
-              </tr>
-            )}
-          </tbody>
         </table>
       </div>
 

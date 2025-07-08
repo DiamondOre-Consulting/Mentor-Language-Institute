@@ -681,7 +681,7 @@ router.get("/chat-all-students", TeacherAuthenticateToken, async (req, res) => {
   }
 });
 
-router.post("/mark-attendance/:studentId", async (req, res) => {
+router.post("/mark-attendance/:studentId/:classId", async (req, res) => {
   try {
     const { studentId } = req.params;
     const { classDate, numberOfClassesTaken, grade } = req.body;
@@ -696,9 +696,14 @@ router.post("/mark-attendance/:studentId", async (req, res) => {
     if (!student) {
       return res.status(404).json({ message: "Student not found." });
     }
+    
 
-    const classId = student.classes?.[0]?._id || null;
-    // Find existing attendance
+    const classId = req?.params?.classId;
+
+    if(!classId){
+      return res.status(404).json({ message: "class not found." });
+    }
+   
     let attendance = await Attendance.findOne({ studentId, classId });
 
     if (!attendance) {
