@@ -744,14 +744,14 @@ router.post("/mark-attendance/:studentId/:classId", async (req, res) => {
 });
 
 router.put(
-  "/edit-attendance/:studentId/:attendanceEntryId",
+  "/edit-attendance/:studentId/:attendanceEntryId/:classId",
   async (req, res) => {
     try {
-      const { studentId, attendanceEntryId } = req.params;
+      const { studentId, attendanceEntryId , classId } = req.params;
       const { classDate, numberOfClassesTaken, grade } = req.body;
 
       // Find attendance doc by studentId (and other filters if you want)
-      const attendance = await Attendance.findOne({ studentId });
+      const attendance = await Attendance.findOne({ studentId , classId });
 
       if (!attendance) {
         return res
@@ -760,7 +760,10 @@ router.put(
       }
 
       // Find subdocument in detailAttendance array by its _id
+      console.log(attendanceEntryId)
+      console.log("stu attendance",attendance)
       const attendanceEntry = attendance.detailAttendance.id(attendanceEntryId);
+      console.log("asd",attendance.detailAttendance)
 
       if (!attendanceEntry) {
         return res.status(404).json({ message: "Attendance entry not found." });

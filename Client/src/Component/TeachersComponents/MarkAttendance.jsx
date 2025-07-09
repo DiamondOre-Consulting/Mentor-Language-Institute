@@ -13,36 +13,38 @@ const MarkAttendance = () => {
   const [marking, setMarking] = useState(false);
 
   const token = localStorage.getItem("token");
-const [teacherData , setTeacherData] = useState(null)
+  const [teacherData, setTeacherData] = useState(null);
+  console.log("data",teacherData)
   const formatDate = (isoDate) => {
     const date = new Date(isoDate);
     const day = String(date?.getDate()).padStart(2, "0");
     const month = String(date?.getMonth() + 1).padStart(2, "0");
     const year = date?.getFullYear();
+    // console.log("day",day)
+    // console.log("month",month)
+    // console.log("year",year)
     return `${day}-${month}-${year}`;
   };
 
+  const fetchTeacherProfile = async () => {
+    const token = localStorage.getItem("token");
 
-     const fetchTeacherProfile = async()=>{
-            const token = localStorage.getItem("token");
-
-      try {
-        const response = await axios.get('https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/my-profile' , 
-            {
+    try {
+      const response = await axios.get(
+        "https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/my-profile",
+        {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
-        )
-        console.log(response)
-        setTeacherData(response?.data)
-      } catch (error) {
-        console.log(error)
-      }
-     }
+      );
+      console.log(response);
+      setTeacherData(response?.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
-
-  
   const fetchStudentData = async () => {
     try {
       setLoading(true);
@@ -54,7 +56,7 @@ const [teacherData , setTeacherData] = useState(null)
           },
         }
       );
-      console.log(response?.data)
+      console.log(response?.data);
       setStudentList(response.data);
     } catch (error) {
       console.error("Failed to fetch students:", error);
@@ -65,30 +67,33 @@ const [teacherData , setTeacherData] = useState(null)
 
   useEffect(() => {
     fetchStudentData();
-    fetchTeacherProfile()
+    fetchTeacherProfile();
   }, []);
 
-
-  console.log(1)
+  console.log(1);
 
   const markOrEditAttendance = async () => {
     try {
       setMarking(true);
-
-      const attendanceDetail = selectedStudent.attendanceDetail?.[0];
-      console.log(attendanceDetail)
+console.log("selected stu",selectedStudent)
+console.log("selected date",formatDate(selectedDate))
+const isClassExist  =  teacherData?.myClasses[0]
+      const attendanceDetail = selectedStudent.attendanceDetail.find((a)=> a.classId === isClassExist );
+      console.log("AFD", attendanceDetail);
       const todayRecord = attendanceDetail?.detailAttendance?.find(
         (a) => a.classDate === formatDate(selectedDate)
-      );
-console.log(todayRecord)
+      );  
+      console.log("dfadf", todayRecord);
 
       const attendanceEntryId = todayRecord?._id;
+
+      console.log("sgdsd", attendanceEntryId);
 
 
       // If record exists → edit
       if (todayRecord && attendanceEntryId) {
         await axios.put(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/edit-attendance/${selectedStudent._id}/${attendanceEntryId}`,
+          `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/edit-attendance/${selectedStudent._id}/${attendanceEntryId}/${teacherData?.myClasses[0]}`,
           {
             classDate: formatDate(selectedDate),
             numberOfClassesTaken: inputHours,
@@ -101,7 +106,7 @@ console.log(todayRecord)
           }
         );
       } else {
-      const response =  await axios.post(
+        const response = await axios.post(
           `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/mark-attendance/${selectedStudent._id}/${teacherData?.myClasses[0]}`,
           {
             classDate: formatDate(selectedDate),
@@ -114,12 +119,12 @@ console.log(todayRecord)
             },
           }
         );
-        console.log("res" , response)
+        console.log("res", response);
       }
 
-console.log(selectedStudent._id , inputHours , selectedDate , grade)
-    const res=  await fetchStudentData();
-    console.log(res)
+      console.log(selectedStudent._id, inputHours, selectedDate, grade);
+      const res = await fetchStudentData();
+      console.log(res);
     } catch (error) {
       console.error("Failed to mark/edit attendance:", error);
     } finally {
@@ -129,7 +134,6 @@ console.log(selectedStudent._id , inputHours , selectedDate , grade)
       setMarking(false);
     }
   };
-
 
   return (
     <div className="p-4 max-w-7xl mx-auto">
@@ -163,83 +167,92 @@ console.log(selectedStudent._id , inputHours , selectedDate , grade)
               <th className="px-4 py-3">Action</th>
             </tr>
           </thead>
-     <tbody>
-  {loading ? (
-    <tr>
-      <td colSpan="5" className="py-4 text-center">
-        Loading...
-      </td>
-    </tr>
-  ) : studentList.length > 0 ? (
-    studentList.map((student) => {
-      // Step 1: Filter attendanceDetail entries that belong to teacher's class
-      const relevantAttendances = student.attendanceDetail?.filter((entry) =>
-        teacherData?.myClasses?.includes(entry.classId)
-      ) || [];
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan="5" className="py-4 text-center">
+                  Loading...
+                </td>
+              </tr>
+            ) : studentList.length > 0 ? (
+              studentList.map((student) => {
+                // Step 1: Filter attendanceDetail entries that belong to teacher's class
+                const relevantAttendances =
+                  student.attendanceDetail?.filter((entry) =>
+                    teacherData?.myClasses?.includes(entry.classId)
+                  ) || [];
 
-      console.log("relavent",relevantAttendances)
-      // Step 2: From relevant entries, get detailAttendance for selected date
-      const todayRecords = relevantAttendances.flatMap((entry) =>
-        entry.detailAttendance?.filter(
-          (record) => record.classDate === formatDate(selectedDate)
-        ) || []
-      );
+                // console.log("relavent", relevantAttendances);
+                // Step 2: From relevant entries, get detailAttendance for selected date
+                const todayRecords = relevantAttendances.flatMap(
+                  (entry) =>
+                    entry.detailAttendance?.filter(
+                      (record) => record.classDate === formatDate(selectedDate)
+                    ) || []
+                );
 
-      // Step 3: Render one row per todayRecord (if exists), else one row with "No Record"
-      if (todayRecords.length > 0) {
-        return todayRecords.map((record, index) => (
-          <tr key={`${student._id}-${index}`} className="bg-white border-b hover:bg-orange-50">
-            <td className="px-4 py-3">{student.name}</td>
-            <td className="px-4 py-3">{student.phone}</td>
-            <td className="px-4 py-3">{record.numberOfClassesTaken} hours</td>
-            <td className="px-4 py-3">{record.grade || "N/A"}</td>
-            <td className="px-4 py-3">
-              <button
-                className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-md text-sm"
-                onClick={() => {
-                  setSelectedStudent(student);
-                  setInputHours(record.numberOfClassesTaken);
-                  setGrade(record.grade || "");
-                }}
-              >
-                Edit Attendance
-              </button>
-            </td>
-          </tr>
-        ));
-      } else {
-        // No attendance for this student in teacher's classes on selected date
-        return (
-          <tr key={student._id} className="bg-white border-b hover:bg-orange-50">
-            <td className="px-4 py-3">{student.name}</td>
-            <td className="px-4 py-3">{student.phone}</td>
-            <td className="px-4 py-3 text-gray-400">No record</td>
-            <td className="px-4 py-3 text-gray-400">No record</td>
-            <td className="px-4 py-3">
-              <button
-                className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-md text-sm"
-                onClick={() => {
-                  setSelectedStudent(student);
-                  setInputHours("");
-                  setGrade("");
-                }}
-              >
-                Mark Attendance
-              </button>
-            </td>
-          </tr>
-        );
-      }
-    })
-  ) : (
-    <tr>
-      <td colSpan="5" className="py-4 text-center text-gray-500">
-        No students found
-      </td>
-    </tr>
-  )}
-</tbody>
-
+                // Step 3: Render one row per todayRecord (if exists), else one row with "No Record"
+                if (todayRecords.length > 0) {
+                  return todayRecords.map((record, index) => (
+                    <tr
+                      key={`${student._id}-${index}`}
+                      className="bg-white border-b hover:bg-orange-50"
+                    >
+                      <td className="px-4 py-3">{student.name}</td>
+                      <td className="px-4 py-3">{student.phone}</td>
+                      <td className="px-4 py-3">
+                        {record.numberOfClassesTaken} hours
+                      </td>
+                      <td className="px-4 py-3">{record.grade || "N/A"}</td>
+                      <td className="px-4 py-3">
+                        <button
+                          className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-md text-sm"
+                          onClick={() => {
+                            setSelectedStudent(student);
+                            setInputHours(record.numberOfClassesTaken);
+                            setGrade(record.grade || "");
+                          }}
+                        >
+                          Edit Attendance
+                        </button>
+                      </td>
+                    </tr>
+                  ));
+                } else {
+                  // No attendance for this student in teacher's classes on selected date
+                  return (
+                    <tr
+                      key={student._id}
+                      className="bg-white border-b hover:bg-orange-50"
+                    >
+                      <td className="px-4 py-3">{student.name}</td>
+                      <td className="px-4 py-3">{student.phone}</td>
+                      <td className="px-4 py-3 text-gray-400">No record</td>
+                      <td className="px-4 py-3 text-gray-400">No record</td>
+                      <td className="px-4 py-3">
+                        <button
+                          className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-md text-sm"
+                          onClick={() => {
+                            setSelectedStudent(student);
+                            setInputHours("");
+                            setGrade("");
+                          }}
+                        >
+                          Mark Attendance
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                }
+              })
+            ) : (
+              <tr>
+                <td colSpan="5" className="py-4 text-center text-gray-500">
+                  No students found
+                </td>
+              </tr>
+            )}
+          </tbody>
         </table>
       </div>
 
