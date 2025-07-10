@@ -21,7 +21,7 @@ const TeacherAllStudents = () => {
   const fetchStudentData = async () => {
     try {
       const response = await axios.get(
-        `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/my-students`,
+        `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/all-my-students`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

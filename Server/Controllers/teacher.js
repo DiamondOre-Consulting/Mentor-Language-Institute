@@ -142,6 +142,46 @@ router.post("/add-student", TeacherAuthenticateToken, async (req, res) => {
   }
 });
 
+router.get("/all-my-students", TeacherAuthenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.user;
+
+    const teacher = await Teachers.findById(userId).populate({
+      path: "myClasses",
+      populate: {
+        path: "enrolledStudents",
+        model: "Student",
+        // match: { deactivated: false },
+        select: "-password",
+        populate: {
+          path: "attendanceDetail",
+          model: "Attendance",
+          
+        },
+      },
+    });
+
+    if (!teacher) {
+      return res.status(404).json({ message: "Teacher not found." });
+    }
+
+    const allStudents = teacher.myClasses.flatMap(
+      (cls) => cls.enrolledStudents
+    );
+
+    if (!allStudents || allStudents.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No students are enrolled in your classes." });
+    }
+
+    res.status(200).json(allStudents);
+  } catch (error) {
+    console.error("Error fetching students:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+});
+
 router.get("/my-students", TeacherAuthenticateToken, async (req, res) => {
   try {
     const { userId } = req.user;
@@ -151,10 +191,12 @@ router.get("/my-students", TeacherAuthenticateToken, async (req, res) => {
       populate: {
         path: "enrolledStudents",
         model: "Student",
+        match: { deactivated: false },
         select: "-password",
         populate: {
           path: "attendanceDetail",
           model: "Attendance",
+          
         },
       },
     });
