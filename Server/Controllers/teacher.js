@@ -10,6 +10,9 @@ import Students from "../Models/Students.js";
 import Attendance from "../Models/Attendance.js";
 import Commission from "../Models/Commission.js";
 import ExcelJS from "exceljs";
+import crypto from 'crypto';
+
+
 
 dotenv.config();
 
@@ -51,6 +54,8 @@ router.post("/login-teacher", async (req, res) => {
     res.status(500).json(error);
   }
 });
+
+
 
 // MY PROFILE
 router.get("/my-profile", TeacherAuthenticateToken, async (req, res) => {
@@ -286,10 +291,7 @@ router.put("/student-edit/:id", TeacherAuthenticateToken, async (req, res) => {
   }
 });
 
-router.delete(
-  "/delete-student/:id",
-  TeacherAuthenticateToken,
-  async (req, res) => {
+router.delete("/delete-student/:id",TeacherAuthenticateToken,async (req, res) => {
     try {
       const { id } = req.params;
 
@@ -348,10 +350,7 @@ router.get("/my-classes/:id", TeacherAuthenticateToken, async (req, res) => {
 });
 
 // ADD-ATTENDANCE-CLASS
-router.post(
-  "/schedule-class/:id",
-  TeacherAuthenticateToken,
-  async (req, res) => {
+router.post("/schedule-class/:id",TeacherAuthenticateToken,async (req, res) => {
     try {
       const { id } = req.params;
       const { date, numberOfClasses } = req.body;
@@ -429,10 +428,7 @@ router.post(
 );
 
 // UPDATE TOTAL HOURS OF A CLASS
-router.put(
-  "/update-class-hours/:id",
-  TeacherAuthenticateToken,
-  async (req, res) => {
+router.put("/update-class-hours/:id",TeacherAuthenticateToken,async (req, res) => {
     try {
       const { id } = req.params;
       const { updatedHours } = req.body;
@@ -474,8 +470,7 @@ router.get("/attendance/:id", TeacherAuthenticateToken, async (req, res) => {
   }
 });
 
-router.put(
-  "/update-attendance/:id1/:id2",
+router.put("/update-attendance/:id1/:id2",
   TeacherAuthenticateToken,
   async (req, res) => {
     try {

@@ -12,6 +12,7 @@ import ClassAccessStatus from "../Models/ClassAccessStatus.js";
 import Attendance from "../Models/Attendance.js";
 import Commission from "../Models/Commission.js";
 import ExcelJS from "exceljs";
+import Teacher from "../Models/Teachers.js"
 dotenv.config();
 
 const secretKey = process.env.ADMIN_JWT_SECRET;
@@ -175,6 +176,63 @@ router.put("/student-edit/:id", AdminAuthenticateToken, async (req, res) => {
     res.status(500).json({ message: "Server error." });
   }
 });
+
+
+router.put("/teacher-edit/:id", AdminAuthenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { name, phone, password, branch, dob } = req.body;
+
+  try {
+    // Validate input fields (optional, depending on your requirements)
+
+    // Find the student by ID
+    const teacher = await Teacher.findById(id);
+    if (!teacher) {
+      return res.status(404).json({ message: "teacher not found." });
+    }
+
+    // Check if username already exists (excluding the current student)
+    const existingTeacher= await Teacher.findOne({ phone });
+    if (existingTeacher && existingTeacher._id.toString() !== id) {
+      return res.status(400).json({
+        message: "Teacher already taken. Please enter a unique phone number",
+      });
+    }
+
+
+    if (name) {
+      teacher.name = await name;
+    }
+    if (phone) {
+      teacher.phone = await phone;
+    }
+    if (branch) {
+      teacher.branch = await branch;
+    }
+   
+    if (dob) {
+      teacher.dob = await dob;
+    }
+
+
+    // If password is provided, hash it and update the password
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      teacher.password = await bcrypt.hash(password, salt);
+    }
+
+    // Save the updated student details
+    await teacher.save();
+
+    // Send a success response
+    res.status(200).json({ message: "teacher details updated successfully." });
+  } catch (error) {
+    console.error("Error updating teacher details:", error);
+    res.status(500).json({ message: "Server error." });
+  }
+});
+
+
 
 // ADD CLASS BY ADMIN
 router.post("/add-new-class", AdminAuthenticateToken, async (req, res) => {

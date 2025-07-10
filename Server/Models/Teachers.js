@@ -26,6 +26,7 @@ const teacherSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  
   jwtStore: {
     type: String,
   },
