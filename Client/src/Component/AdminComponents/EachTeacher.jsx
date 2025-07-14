@@ -5,6 +5,7 @@ import { useJwt } from "react-jwt";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 import userimage from "..//..//assets/userimg.jpg";
+import AdminEditTeacher from "./AdminEditTeacher";
 
 const override = css`
   display: block;
@@ -15,6 +16,8 @@ const override = css`
 const EachTeacher = () => {
   const navigate = useNavigate();
   const [teacherDetails, setTeacherDetails] = useState(null);
+    const [showModal, setShowModal] = useState(false);
+  
   const [classIds, setClassIds] = useState([]);
   const [classesData, setClassesData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -112,6 +115,18 @@ const EachTeacher = () => {
     navigate(`/admin-dashboard/${id}/${classId}`);
   };
 
+
+    const handleEditClick = () => {
+    setShowModal(true);
+  };
+
+
+    const closeModal = () => {
+    setShowModal(false);
+   
+  };
+
+  
   return (
     <>
       {loading && (
@@ -136,8 +151,9 @@ const EachTeacher = () => {
           src={userimage}
           className="w-40 border-4 border-white rounded-full"
         />
-        <div className="flex items-center mt-2 space-x-2">
-          <p className="text-2xl">{teacherDetails?.name}</p>
+        <div className="flex items-center  mt-2 space-x-2">
+          <p className="flex text-2xl ">{teacherDetails?.name} 
+          </p>
           <span className="p-1 bg-blue-500 rounded-full" title="Verified">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -156,6 +172,8 @@ const EachTeacher = () => {
           </span>
         </div>
         <p className="text-gray-700">Phone: {teacherDetails?.phone}</p>
+            <p   onClick={() => handleEditClick()} className="text-red-700 underline cursor-pointer">Edit Teacher</p>
+
       </div>
       {/* <div class="flex-1 flex flex-col items-center lg:items-end justify-end px-8 mt-2">
                 <div class="flex items-center space-x-4 mt-2">
@@ -240,6 +258,18 @@ const EachTeacher = () => {
             ))}
           </div>
         </div>
+
+           {showModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+                  <div className="bg-white p-4 rounded shadow-xl max-w-md w-full relative">
+                    <AdminEditTeacher
+                    id={id}
+                     teacherDetails={teacherDetails}
+                      closingModel={closeModal}
+                    />
+                  </div>
+                </div>
+              )}
       </div>
     </>
   );
