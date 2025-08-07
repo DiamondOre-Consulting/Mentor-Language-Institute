@@ -344,6 +344,8 @@ const Home = () => {
                   <option value="Noida-107">Noida-107</option>
                   <option value="Noida-51">Noida-51</option>
                   <option value="East Delhi">East Delhi</option>
+                  <option value="North Delhi">North Delhi</option>
+
                 </select>
               </div>
 

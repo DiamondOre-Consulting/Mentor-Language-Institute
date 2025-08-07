@@ -161,6 +161,7 @@ console.log(id , name , phone , password , dob)
                   <option value="Noida-107">Noida-107</option>
                   <option value="Noida-51">Noida-51</option>
                   <option value="East Delhi">East Delhi</option>
+                  <option value="North Delhi">North Delhi</option>
                 </select>
                 <div className="flex items-center justify-between w-full p-2 border border-gray-500 rounded-md">
                   <label
