@@ -23,8 +23,8 @@ router.post("/signup-admin", async (req, res) => {
   try {
     const { name, phone, password, branch } = req.body;
 
-    const adminuser = Admin.findOne({ phone });
-
+    const adminuser =await Admin.findOne({ phone });
+console.log(adminuser)
     if (adminuser) {
       return res.status(409).json({ message: "Admin user already exists" });
     }
