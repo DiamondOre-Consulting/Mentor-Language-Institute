@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import Navbar from "./Navbar";
-import Footer from "./Footer";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useApi } from "../../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 
@@ -14,6 +13,7 @@ const override = css`
 
 const StudentLogin = () => {
   const navigate = useNavigate();
+  const { post } = useApi();
   const [userName, setUserName] = useState("");
   const [password, SetPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -26,13 +26,13 @@ const StudentLogin = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        "https://mentor-backend-rbac6.ondigitalocean.app/api/students/login",
-        {
+      const response = await post({
+        url: "/students/login",
+        data: {
           userName,
           password,
-        }
-      );
+        },
+      }).unwrap();
 
       if (response.status === 200) {
         const token = response.data.token;
@@ -156,9 +156,10 @@ const StudentLogin = () => {
         </div>
       </div>
 
-      <Footer />
     </>
   );
 };
 
 export default StudentLogin;
+
+

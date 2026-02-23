@@ -1,13 +1,9 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
-import { Select } from "flowbite-react";
-import { decodeToken } from "react-jwt";
-import { useJwt } from "react-jwt";
+import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 import userimg2 from "..//..//assets/userimg2.png";
-import { toast } from "sonner";
 
 const override = css`
   display: block;
@@ -17,6 +13,7 @@ const override = css`
 
 const TeacherAllStudentEachCourse = () => {
   const navigate = useNavigate();
+  const { get, put } = useApi();
   const { selectedClassId } = useParams();
   const [allDetails, setAllDetails] = useState([]);
   const [courseDetails, setCourseDetails] = useState([]);
@@ -32,36 +29,7 @@ const TeacherAllStudentEachCourse = () => {
   const [myenrolledStudentDetails, setMyEnrolledStudentsDetails] = useState([]);
   const [attendanceDetails, setAttendanceDetails] = useState([]);
   const [monthCommissionDetails, setMonthlyCommissionDetails] = useState([]);
-  const [selectedMonth, setSelectedMonth] = useState("");
-  const [selectedYear, setSelectedYear] = useState("");
-  const [editingCommissionId, setEditingCommissionId] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [monthlyClassTaken, setMonthlyClassTaken] = useState("");
-  const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-  const years = [
-    "2024",
-    "2025",
-    "2026",
-    "2027",
-    "2028",
-    "2029",
-    "2030",
-    "2031",
-    "2032",
-  ];
 
   useEffect(() => {
     const fetchCourseDetails = async () => {
@@ -75,14 +43,12 @@ const TeacherAllStudentEachCourse = () => {
           return;
         }
 
-        const response = await axios.get(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/my-classes/${selectedClassId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await get({
+          url: `/teachers/my-classes/${selectedClassId}`,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
 
         if (response.status === 200) {
           const courseData = response.data;
@@ -92,14 +58,12 @@ const TeacherAllStudentEachCourse = () => {
           const enrolledStudentsDetails = [];
 
           for (const studentIds of enrolledStudents) {
-            const studentResponse = await axios.get(
-              `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/student/${studentIds}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
+            const studentResponse = await get({
+              url: `/teachers/student/${studentIds}`,
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }).unwrap();
 
             if (studentResponse.status === 200) {
               const studentData = studentResponse.data;
@@ -127,17 +91,15 @@ const TeacherAllStudentEachCourse = () => {
         return;
       }
 
-      const attendanceResponse = await axios.get(
-        `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/attendance/${selectedClassId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          params: {
-            attendanceDate: selectedDate, // Pass attendanceDate as a query parameter
-          },
-        }
-      );
+      const attendanceResponse = await get({
+        url: `/teachers/attendance/${selectedClassId}`,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          attendanceDate: selectedDate, // Pass attendanceDate as a query parameter
+        },
+      }).unwrap();
 
       if (attendanceResponse.status === 200) {
         const mapping = attendanceResponse.data
@@ -154,14 +116,12 @@ const TeacherAllStudentEachCourse = () => {
         );
         const studentData = [];
         for (const studentid of studentIds) {
-          const studentResponse = await axios.get(
-            `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/student/${studentid}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
+          const studentResponse = await get({
+            url: `/teachers/student/${studentid}`,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }).unwrap();
           if (studentResponse.status === 200) {
             const data = studentResponse.data;
             studentData.push(data);
@@ -214,42 +174,38 @@ const TeacherAllStudentEachCourse = () => {
         return;
       }
 
-      const response = await axios.put(
-        `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/update-attendance/${selectedClassId}/${selectedstudentId}`,
-        {
+      const response = await put({
+        url: `/teachers/update-attendance/${selectedClassId}/${selectedstudentId}`,
+        data: {
           attendanceDate: selectedDate,
           numberOfClassesTaken,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
 
       if (response.status === 200) {
         setShowPopup(false);
-        setSelectedMonth("");
-        setSelectedYear("");
         setAttendanceDetailsMap((prevAttendanceDetailsMap) => ({
           ...prevAttendanceDetailsMap,
           [selectedstudentId]: numberOfClassesTaken,
         }));
-        await getMonthlyCommission();
+        await getMonthlyCommission(true);
         await fetchAttendanceDetails();
         // handleFetchStudentDetails()
       }
     } catch (error) {
     } finally {
       setLoading(false);
-      setSelectedMonth("");
-      setSelectedYear("");
     }
   };
 
-  const getMonthlyCommission = async () => {
+  const getMonthlyCommission = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
       const token = localStorage.getItem("token");
       if (!token) {
         navigate("/login");
@@ -258,14 +214,12 @@ const TeacherAllStudentEachCourse = () => {
 
       // const commission = [];
 
-      const monthlyCommissionReport = await axios.get(
-        `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/my-commission/${selectedClassId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const monthlyCommissionReport = await get({
+        url: `/teachers/my-commission/${selectedClassId}`,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
 
       if (monthlyCommissionReport.status === 200) {
         setMonthlyCommissionDetails(monthlyCommissionReport.data);
@@ -273,83 +227,28 @@ const TeacherAllStudentEachCourse = () => {
     } catch (error) {
       console.log("");
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     getMonthlyCommission();
+    const intervalId = setInterval(() => {
+      getMonthlyCommission(true);
+    }, 30000);
+
+    return () => clearInterval(intervalId);
   }, [selectedClassId]);
-
-  // update monthly commission
-  const updateMonthlyCommission = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login");
-      }
-      if (!selectedMonth || !selectedYear) {
-        alert("Please fill in all fields.");
-        return;
-      }
-
-      let response;
-
-      if (editingCommissionId) {
-        // Update existing
-        response = await axios.put(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/edit-monthly-classes/${editingCommissionId}`,
-          {
-            monthName: selectedMonth,
-            year: selectedYear,
-            classesTaken: monthlyClassTaken,
-          },
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-      } else {
-        // Add new
-        response = await axios.post(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/add-monthly-classes/${selectedClassId}`,
-          {
-            monthName: selectedMonth,
-            year: selectedYear,
-            classesTaken: monthlyClassTaken,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-      }
-
-      if (response.status === 200) {
-        toast.success(
-          editingCommissionId ? "Commission updated." : "Commission added."
-        );
-        setSelectedMonth("");
-        setSelectedYear("");
-        setMonthlyClassTaken("");
-        setEditingCommissionId(null);
-        getMonthlyCommission(); // refresh
-      }
-    } catch (error) {
-      console.error("Error in updateMonthlyCommission", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const [studentList, setStudentList] = useState([]);
   useEffect(() => {
     const fetchStudentData = async () => {
       try {
-        const studentList = await axios.get(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/get-studentsListBySub/${selectedClassId}`
-        );
+        const studentList = await get({
+          url: `/admin-confi/get-studentsListBySub/${selectedClassId}`,
+        }).unwrap();
 
         if (studentList?.data?.success) {
           setStudentList(studentList?.data?.enrolledStudents);
@@ -360,35 +259,6 @@ const TeacherAllStudentEachCourse = () => {
     };
     fetchStudentData();
   }, []);
-
-  const handleEditCommission = (commission) => {
-    setSelectedMonth(commission.monthName);
-    setSelectedYear(commission.year);
-    setMonthlyClassTaken(commission.classesTaken);
-    setEditingCommissionId(commission._id);
-  };
-
-  const handleDeleteCommission = async (commissionId) => {
-    if (!window.confirm("Are you sure you want to delete this entry?")) return;
-
-    try {
-      const token = localStorage.getItem("token");
-
-      const response = await axios.delete(
-        `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/delete-monthly-classes/${commissionId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (response.status === 200) {
-        toast.success("Deleted successfully.");
-        getMonthlyCommission();
-      }
-    } catch (error) {
-      console.log("Error deleting commission", error);
-    }
-  };
 
   return (
     <div className="p-4">
@@ -569,7 +439,12 @@ const TeacherAllStudentEachCourse = () => {
             </tbody>
           </table>
 
-          <h1 className="mt-4 text-3xl ">Monthly Commission</h1>
+          <div className="mt-4">
+            <h1 className="text-3xl">Monthly Commission</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Commission is managed by admin. Teachers can only view.
+            </p>
+          </div>
 
           <table className="w-full text-sm text-center text-gray-500 rounded-md shadow-xl rtl:text-center">
             <thead className="text-xs text-gray-100 uppercase bg-orange-500 rounded-md ">
@@ -580,9 +455,9 @@ const TeacherAllStudentEachCourse = () => {
                 <th scope="col" className="px-6 py-3">
                   Year
                 </th>
-                {/* <th scope="col" className="px-6 py-3">
+                <th scope="col" className="px-6 py-3">
                   Classes Taken
-                </th> */}
+                </th>
                 <th scope="col" className="px-6 py-3">
                   commission
                 </th>
@@ -594,14 +469,6 @@ const TeacherAllStudentEachCourse = () => {
                 <th scope="col" className="px-6 py-3">
                   Remarks(if any)
                 </th>
-
-                <th scope="col" className="px-6 py-3">
-                  action
-                </th>
-
-                <th scope="col" className="px-6 py-3">
-                  submit
-                </th>
               </tr>
             </thead>
             <tbody>
@@ -612,42 +479,14 @@ const TeacherAllStudentEachCourse = () => {
                     className="bg-white border-b cursor-pointer hover:bg-gray-50"
                   >
                     <td className="px-6 py-4 text-center">
-                      {editingCommissionId === commission._id ? (
-                        <select
-                          className="border px-2 py-1 rounded"
-                          value={selectedMonth}
-                          onChange={(e) => setSelectedMonth(e.target.value)}
-                        >
-                          {months.map((month, idx) => (
-                            <option key={idx} value={month}>
-                              {month}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        commission.monthName
-                      )}
+                      {commission.monthName}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      {editingCommissionId === commission._id ? (
-                        <select
-                          className="border px-2 py-1 rounded"
-                          value={selectedYear}
-                          onChange={(e) => setSelectedYear(e.target.value)}
-                        >
-                          {years.map((year, idx) => (
-                            <option key={idx} value={year}>
-                              {year}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        commission.year
-                      )}
+                      {commission.year}
                     </td>
-                    {/* <td className="px-6 py-4 text-center">
+                    <td className="px-6 py-4 text-center">
                       {commission.classesTaken}
-                    </td> */}
+                    </td>
                     <td className="px-6 py-4 text-center">
                       {commission.commission}
                     </td>
@@ -663,109 +502,18 @@ const TeacherAllStudentEachCourse = () => {
                     <td className="px-6 py-4 text-sm text-center">
                       {commission.remarks}
                     </td>
-                    <td className="px-6 flex gap-x-2 items-center justify-center py-4 text-center underline text-red-500">
-                      <p
-                        onClick={() => handleEditCommission(commission)}
-                        className="cursor-pointer hover:text-orange-600"
-                      >
-                        Edit
-                      </p>
-
-                      <p
-                        onClick={() => handleDeleteCommission(commission._id)}
-                        className="cursor-pointer hover:text-orange-600"
-                      >
-                        Delete
-                      </p>
-                    </td>
-
-                    {editingCommissionId === commission._id && (
-                      <td className="px-2 py-4 text-center">
-                        <button
-                          onClick={updateMonthlyCommission}
-                          className="px-2 py-1 text-white bg-orange-500 rounded"
-                        >
-                          Save
-                        </button>
-                      </td>
-                    )}
-
-                    {/* <td className="px-6 py-4 text-center">
-                      {commission.classesTaken}
-                    </td> */}
                   </tr>
                 ))}
-
-              <tr className="bg-white border-b ">
-                <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                  <select
-                    className=""
-                    value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(e.target.value)}
-                  >
-                    <option>Select Month</option>
-                    {months.map((month, index) => (
-                      <option key={index} value={month}>
-                        {month}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-
-                <td className="px-2 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                  <select
-                    className=""
-                    value={selectedYear}
-                    s
-                    onChange={(e) => setSelectedYear(e.target.value)}
-                  >
-                    <option>Select Year</option>
-                    {years.map((year, index) => (
-                      <option key={index} value={year}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-
-                {/* <td className="px-2 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                  <input
-                    type="text"
-                    className=""
-                    placeholder="Monthly Classes"
-                    value={monthlyClassTaken}
-                    onChange={(e) => setMonthlyClassTaken(e.target.value)}
-                  ></input>
-                 
-                </td> */}
-
-                <td className="px-6 py-4 text-center">0</td>
-
-                <td className="px-6 py-4 text-center">Unpaid</td>
-                <td className="px-6 py-4 text-center"></td>
-                <td className="px-6 py-4 text-center"></td>
-
-                <td className="px-2 py-4 text-center">
-                  <button
-                    className="px-2 py-1 ml-2 text-gray-200 bg-green-600 rounded-md"
-                    onClick={updateMonthlyCommission}
-                  >
-                    Update
-                  </button>
-                </td>
-              </tr>
             </tbody>
           </table>
         </div>
       </div>
 
       {showPopup && (
-        <div className="fixed inset-0 flex items-center justify-center">
-          <div className="absolute inset-0 bg-gray-800 opacity-50"></div>
-
-          <div className="relative p-6 bg-white rounded-lg shadow-xl">
+        <div className="app-modal-overlay">
+          <div className="app-modal-card app-modal-card-sm relative">
             <svg
-              className="absolute top-0 right-0 w-5 h-5 p-1 m-2 -mb-1 text-2xl bg-red-600 rounded-full cursor-pointer text-gray-50"
+              className="absolute right-4 top-4 h-6 w-6 cursor-pointer rounded-full bg-red-600 p-1 text-gray-50"
               onClick={() => setShowPopup(false)}
               width="24"
               height="24"
@@ -781,18 +529,18 @@ const TeacherAllStudentEachCourse = () => {
               <line x1="18" y1="6" x2="6" y2="18" />{" "}
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
-            <p className="mb-4 text-xl font-bold">{selectedStudentName}</p>
-            <div className="flex items-center">
+            <p className="mb-4 text-xl font-bold text-slate-900">{selectedStudentName}</p>
+            <div className="flex items-center gap-2">
               <input
                 type="text"
                 value={numberOfClassesTaken}
                 onChange={(e) => setNumberOfClassesTaken(e.target.value)}
-                className="w-full "
+                className="w-full"
                 placeholder="Enter Number of Classes Taken"
               />
 
               <button
-                className="p-2 text-gray-100 bg-green-500 "
+                className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
                 onClick={updateAttendance}
               >
                 Update
@@ -845,3 +593,4 @@ const TeacherAllStudentEachCourse = () => {
 };
 
 export default TeacherAllStudentEachCourse;
+

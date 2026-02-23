@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from "react";
-import TextTransition, { presets } from "react-text-transition";
-import { useTranslation } from "react-i18next";
-import axios from "axios";
 import studenthero from "..//..//..//assets/studenthero.png";
 import translate from "translate"; // Import the translate package
+import { Button } from "../../../components/ui/button";
 
-const Studenthero = () => {
+const Studenthero = ({ naming }) => {
   const [index, setIndex] = useState(0);
   const [userName, setUserName] = useState("");
   const languages = ["en", "hi", "ko", "ar", "fr", "es", "de", "it"]; // Array of language codes
@@ -20,87 +18,65 @@ const Studenthero = () => {
   }, []);
 
   useEffect(() => {
-    // Fetch student data when the index (language) changes
-    fetchStudentData();
-  }, [index]);
+    const translateName = async () => {
+      const studentName = naming?.name || "Student";
+      const language = languages[index];
 
-  const fetchStudentData = async () => {
-    try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        console.error("No token found");
-        return;
-      }
-
-      const response = await axios.get(
-        "https://mentor-backend-rbac6.ondigitalocean.app/api/students/my-profile",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.status === 200) {
-        const studentData = response.data;
-        // Translate the "Welcome" text into the desired language
-        const language = languages[index]; // Use the language at the current index
+      try {
         const translatedWelcome = await translate("Welcome", {
           from: "en",
           to: language,
         });
-        const translatedName = await translate(studentData.name, {
+        const translatedName = await translate(studentName, {
           from: "en",
           to: language,
         });
-
-        setUserName(translatedWelcome + " " + translatedName);
-      } else {
-        // console.log(response.data);
+        setUserName(`${translatedWelcome} ${translatedName}`);
+      } catch (error) {
+        setUserName(`Welcome ${studentName}`);
       }
-    } catch (error) {
-      console.error("Error fetching student data:", error);
-    }
-  };
+    };
+
+    translateName();
+  }, [index, naming]);
 
   return (
-    <>
-      <>
-        <>
-          <section className="bg-white md:mb-20 ">
-            <div className="items-center px-5 md:px-4 py-8 mx-auto lg:grid lg:grid-cols-12 items-cetner">
-              <div className="lg:col-span-7 md:col-span-7 md:mx-4 items-center ">
-                {userName && (
-                  <h1 className="mb-2 md:mb-4 text-3xl font-extrabold tracking-tight leading-none md:text-5xl xl:text-6xl ">
-                    <TextTransition springConfig={presets.wobbly}>
-                      {userName}
-                    </TextTransition>
-                  </h1>
-                )}
-                <p className="mb-6 font-light text-gray-500 lg:mb-8 md:text-lg lg:text-md ">
-                  Mentor Institute: Your Pathway to Proficiency. Unlock fluency
-                  and broaden horizons with our expert guidance. Join us and
-                  embark on a journey of linguistic excellence
-                </p>
-                <a
-                  href="#courses"
-                  className="px-5 py-3 text-base font-medium text-center text-gray-900 bg-orange-500 text-white rounded-lg hover:bg-orange-500 focus:ring-4 hover:text-white focus:ring-gray-100    "
-                >
-                  Explore Courses
-                </a>
-              </div>
-              {/* Show the image on medium screens and larger */}
-              <div className="lg:col-span-5 md:col-span-5 hidden md:flex justify-center flex">
-                <img src={studenthero} className="w-64" alt="" />
-              </div>
-            </div>
-          </section>
-          <div className="h-1 w-64 mx-auto mt-10 md:mt-24 bg-orange-500"></div>
-        </>
-      </>
-    </>
+    <section className="relative mb-10 overflow-hidden rounded-3xl bg-gradient-to-br from-orange-100/80 via-white to-amber-100/60 p-5 shadow-lg sm:p-8 md:mb-14">
+      <div className="grid items-center gap-7 lg:grid-cols-12">
+        <div className="lg:col-span-7">
+          <span className="inline-flex w-fit items-center rounded-full border border-orange-200 bg-white/80 px-3 py-1 text-xs font-semibold text-orange-700">
+            Student Portal
+          </span>
+          {userName && (
+            <h1 className="min-h-[3.25rem] text-2xl font-extrabold leading-tight tracking-tight text-slate-900 sm:min-h-[4.5rem] sm:text-4xl lg:text-5xl">
+              {userName}
+            </h1>
+          )}
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
+            Mentor Institute: your pathway to proficiency. Unlock fluency and broaden horizons with expert guidance and
+            personalized support.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Button asChild size="lg" className="rounded-full">
+              <a href="#courses">Explore Courses</a>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="rounded-full">
+              <a href="#enrolledcourse">View Enrolled</a>
+            </Button>
+          </div>
+        </div>
+
+        <div className="hidden lg:col-span-5 lg:flex lg:justify-end">
+          <div className="relative">
+            <div className="absolute -inset-2 rounded-full bg-orange-300/20 blur-2xl" />
+            <img src={studenthero} className="relative z-10 w-72 max-w-full" alt="Student dashboard hero" />
+          </div>
+        </div>
+      </div>
+    </section>
   );
 };
 
 export default Studenthero;
+
+  

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 import userimg2 from "..//..//assets/userimg2.png";
@@ -13,6 +13,7 @@ const override = css`
 
 const EachTeacherClassStudentAttendance = () => {
   const navigate = useNavigate();
+  const { get, post } = useApi();
   const { id, selectedClassId } = useParams();
   const [studentList, setStudentList] = useState([]);
   const [allDetails, setAllDetails] = useState([]);
@@ -20,16 +21,12 @@ const EachTeacherClassStudentAttendance = () => {
   const [attendanceDetailsMap, setAttendanceDetailsMap] = useState({});
   const [studentId, setStudentId] = useState([]);
   const [myenrolledStudentDetails, setMyEnrolledStudentsDetails] = useState([]);
-  const [showPopup, setShowPopup] = useState(false);
   const [showPopupMonthly, setShowPopupMonthly] = useState(false);
-  const [selectedStudentName, setSelectedStudentName] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [numberOfClasses, setNumberOfClasses] = useState("");
-  const [selectedstudentId, setSelectedStudentId] = useState(null);
   const [numberOfClassesTaken, setNumberOfClassesTaken] = useState(0);
   const [studentDetails, setStudentsDetails] = useState([]);
   const [attendanceDetails, setAttendanceDetails] = useState([]);
-  const [commission, setCommission] = useState("");
   const [monthCommissionDetails, setMonthlyCommissionDetails] = useState([]);
   const [commissionId, setCommissionId] = useState(null);
   const [selectedMonthName, setSelectedMonthName] = useState(null);
@@ -52,14 +49,12 @@ const EachTeacherClassStudentAttendance = () => {
           return;
         }
 
-        const response = await axios.get(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-classes/${selectedClassId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await get({
+          url: `/admin-confi/all-classes/${selectedClassId}`,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
 
         if (response.status === 200) {
           const courseData = response.data;
@@ -70,14 +65,12 @@ const EachTeacherClassStudentAttendance = () => {
           const enrolledStudentsDetails = [];
 
           for (const studentIds of enrolledStudents) {
-            const studentResponse = await axios.get(
-              `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-students/${studentIds}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
+            const studentResponse = await get({
+              url: `/admin-confi/all-students/${studentIds}`,
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }).unwrap();
 
             if (studentResponse.status === 200) {
               const studentData = studentResponse.data;
@@ -107,17 +100,16 @@ const EachTeacherClassStudentAttendance = () => {
           return;
         }
 
-        const attendanceResponse = await axios.get(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/attendance/${selectedClassId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            params: {
-              attendanceDate: selectedDate, // Pass attendanceDate as a query parameter
-            },
-          }
-        );
+        const attendanceResponse = await get({
+          url: `/admin-confi/attendance/${selectedClassId}`,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          params: {
+            attendanceDate: selectedDate, // Pass attendanceDate as a query parameter
+            teacherId: id,
+          },
+        }).unwrap();
 
         if (attendanceResponse.status === 200) {
           // console.log("a det", attendanceResponse.data)
@@ -140,14 +132,12 @@ const EachTeacherClassStudentAttendance = () => {
           // console.log("student ids", studentIds)
           const studentData = [];
           for (const studentid of studentIds) {
-            const studentResponse = await axios.get(
-              `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-students/${studentid}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
+            const studentResponse = await get({
+              url: `/admin-confi/all-students/${studentid}`,
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }).unwrap();
             if (studentResponse.status === 200) {
               const data = studentResponse.data;
 
@@ -168,17 +158,6 @@ const EachTeacherClassStudentAttendance = () => {
     fetchAttendanceDetails();
   }, [selectedDate, selectedClassId]);
 
-  const handleFetchStudentDetails = (studentId, studentName) => {
-    // console.log('Student ID:', studentId);
-    // console.log('Student Name:', studentName);
-    setSelectedStudentName(studentName);
-    setSelectedStudentId(studentId);
-
-    setNumberOfClassesTaken(
-      attendanceDetailsMap[studentId]?.numberOfClassesTaken || 0
-    );
-    setShowPopup(true);
-  };
 
   const handleDateChange = (event) => {
     const selectedDate = event.target.value;
@@ -191,40 +170,24 @@ const EachTeacherClassStudentAttendance = () => {
     }
   };
 
-  // update commissionperday
 
-  const updateCommissionPerDay = async () => {
+  const fetchMonthlyCommission = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         navigate("/login");
-      }
-      if (!selectedDate) {
-        alert("Please select a date first.");
         return;
       }
 
-      const response = await axios.post(
-        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/update-commission/${selectedClassId}/${selectedstudentId}`,
-        {
-          classDate: selectedDate,
-          commission,
+      const monthlyCommissionReport = await get({
+        url: `/admin-confi/monthly-commission/${id}/${selectedClassId}`,
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      }).unwrap();
 
-      if (response.status === 200) {
-        // console.log(response.data);
-        // console.log("commission Updated")
-        setShowPopup(false);
-        // setAttendanceDetailsMap(prevAttendanceDetailsMap => ({
-        //     ...prevAttendanceDetailsMap,
-        //     [selectedstudentId]: numberOfClassesTaken
-        // }));
+      if (monthlyCommissionReport.status === 200) {
+        setMonthlyCommissionDetails(monthlyCommissionReport.data);
       }
     } catch (error) {
       console.log("");
@@ -233,47 +196,18 @@ const EachTeacherClassStudentAttendance = () => {
 
   //  get monthly commission
   useEffect(() => {
-    const getMonthlyCommission = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          navigate("/login");
-          return;
-        }
-
-        // const commission = [];
-
-        const monthlyCommissionReport = await axios.get(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/monthly-commission/${id}/${selectedClassId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (monthlyCommissionReport.status === 200) {
-          setMonthlyCommissionDetails(monthlyCommissionReport.data);
-        }
-      } catch (error) {
-        console.log("");
-      }
-    };
-
-    getMonthlyCommission();
-  }, [selectedClassId]);
+    fetchMonthlyCommission();
+  }, [selectedClassId, id]);
 
   useEffect(() => {
     const fetchStudentData = async () => {
       try {
-        const studentList = await axios.get(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/get-studentsListBySub/${selectedClassId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const studentList = await get({
+          url: `/admin-confi/get-studentsListBySub/${selectedClassId}`,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
 
         if (studentList?.data?.success) {
           setStudentList(studentList?.data?.enrolledStudents);
@@ -307,33 +241,28 @@ const EachTeacherClassStudentAttendance = () => {
         navigate("/login");
       }
 
-      const response = await axios.post(
-        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/update-monthly-commission/${commissionId}`,
-        {
-          commission,
+      const response = await post({
+        url: `/admin-confi/update-monthly-commission/${commissionId}`,
+        data: {
           paid,
           remarks,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
 
       if (response.status === 200) {
         setShowPopupMonthly(false);
-        window.location.reload();
-
-        // Clear the input fields
-        setCommission("");
         setPaid("");
         setRemarks("");
+        fetchMonthlyCommission();
       }
     } catch (error) {
       console.log("");
     }
   };
+
 
   return (
     <>
@@ -429,8 +358,6 @@ const EachTeacherClassStudentAttendance = () => {
                       )
                   : 0;
 
-                const showEditIcon = teachercommission === 0;
-
                 return (
                   <tr key={student?._id} className="bg-white border-b ">
                     <th
@@ -456,32 +383,7 @@ const EachTeacherClassStudentAttendance = () => {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center">
-                        {showEditIcon ? (
-                          <svg
-                            onClick={() =>
-                              handleFetchStudentDetails(
-                                student?._id,
-                                student?.name
-                              )
-                            }
-                            className="w-6 h-6 text-red-600"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            strokeWidth="2"
-                            stroke="currentColor"
-                            fill="none"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            {" "}
-                            <path stroke="none" d="M0 0h24v24H0z" />{" "}
-                            <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4" />{" "}
-                            <line x1="13.5" y1="6.5" x2="17.5" y2="10.5" />
-                          </svg>
-                        ) : (
-                          <div>{teachercommission}</div>
-                        )}
+                        {teachercommission}
                       </div>
                     </td>
                   </tr>
@@ -514,21 +416,15 @@ const EachTeacherClassStudentAttendance = () => {
                 <th scope="col" className="px-6 py-3">
                   Remarks(if any)
                 </th>
+                <th scope="col" className="px-6 py-3">
+                  Payment
+                </th>
               </tr>
             </thead>
             <tbody>
               {monthCommissionDetails &&
                 monthCommissionDetails.map((commission, index) => (
-                  <tr
-                    key={index}
-                    className="bg-white border-b cursor-pointer hover:bg-gray-50"
-                    onClick={() =>
-                      handleFetchMonthlyCommisssionDetails(
-                        commission._id,
-                        commission.monthName
-                      )
-                    }
-                  >
+                  <tr key={index} className="bg-white border-b hover:bg-gray-50">
                     <td className="px-6 py-4 text-center">
                       {commission.monthName}
                     </td>
@@ -552,6 +448,19 @@ const EachTeacherClassStudentAttendance = () => {
                     <td className="px-6 py-4 text-center">
                       {commission.remarks}
                     </td>
+                    <td className="px-6 py-4 text-center">
+                      <button
+                        className="px-2 py-1 text-white bg-blue-600 rounded"
+                        onClick={() =>
+                          handleFetchMonthlyCommisssionDetails(
+                            commission._id,
+                            commission.monthName
+                          )
+                        }
+                      >
+                        Update
+                      </button>
+                    </td>
                   </tr>
                 ))}
             </tbody>
@@ -559,56 +468,11 @@ const EachTeacherClassStudentAttendance = () => {
         </div>
       </div>
 
-      {showPopup && (
-        <div className="fixed inset-0 flex items-center justify-center">
-          <div className="absolute inset-0 bg-gray-800 opacity-50"></div>
-
-          <div className="relative p-6 bg-white rounded-lg shadow-xl">
-            <svg
-              className="absolute top-0 right-0 w-5 h-5 p-1 m-2 -mb-1 text-2xl bg-red-600 rounded-full cursor-pointer text-gray-50"
-              onClick={() => setShowPopup(false)}
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              strokeWidth="2"
-              stroke="currentColor"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              {" "}
-              <path stroke="none" d="M0 0h24v24H0z" />{" "}
-              <line x1="18" y1="6" x2="6" y2="18" />{" "}
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-            <p className="mb-4 text-xl font-bold">{selectedStudentName}</p>
-            <div className="flex items-center">
-              <input
-                type="number"
-                value={commission}
-                onChange={(e) => setCommission(e.target.value)}
-                className="w-full "
-                placeholder="Enter Commission Amount"
-              />
-
-              <button
-                className="p-2 text-gray-100 bg-green-500 "
-                onClick={updateCommissionPerDay}
-              >
-                Update
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {showPopupMonthly && (
-        <div className="fixed inset-0 flex items-center justify-center">
-          <div className="absolute inset-0 bg-gray-800 opacity-50"></div>
-
-          <div className="relative p-6 bg-white rounded-lg shadow-xl">
+        <div className="app-modal-overlay">
+          <div className="app-modal-card app-modal-card-sm relative">
             <svg
-              className="absolute top-0 right-0 w-5 h-5 p-1 m-2 -mb-1 text-2xl bg-red-600 rounded-full cursor-pointer text-gray-50"
+              className="absolute right-4 top-4 h-6 w-6 cursor-pointer rounded-full bg-red-600 p-1 text-gray-50"
               onClick={() => setShowPopupMonthly(false)}
               width="24"
               height="24"
@@ -624,15 +488,8 @@ const EachTeacherClassStudentAttendance = () => {
               <line x1="18" y1="6" x2="6" y2="18" />{" "}
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
-            <p className="mb-4 text-xl font-bold">{selectedMonthName}</p>
+            <p className="mb-4 text-xl font-bold text-slate-900">{selectedMonthName}</p>
             <div className="flex flex-col items-center">
-              <input
-                type="number"
-                value={commission}
-                onChange={(e) => setCommission(e.target.value)}
-                className="w-full mb-2"
-                placeholder="Enter Commission Amount"
-              />
               <select
                 className="w-full mb-2"
                 value={paid}
@@ -648,7 +505,7 @@ const EachTeacherClassStudentAttendance = () => {
                 placeholder="Enter remark..."
               ></textarea>
               <button
-                className="p-2 text-gray-100 bg-green-500"
+                className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
                 onClick={updateMonthlyCommission}
               >
                 Update
@@ -705,3 +562,5 @@ const EachTeacherClassStudentAttendance = () => {
 };
 
 export default EachTeacherClassStudentAttendance;
+
+

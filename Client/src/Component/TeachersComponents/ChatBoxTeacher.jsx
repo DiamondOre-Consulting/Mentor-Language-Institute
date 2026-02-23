@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import axios from "axios";
+﻿import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useApi } from "../../api/useApi";
 import io from "socket.io-client";
 import { useJwt } from "react-jwt";
 import { useNavigate } from "react-router-dom";
@@ -14,6 +14,7 @@ const ChatBoxTeacher = ({
   setIsTeacherSectionVisible,
 }) => {
   const navigate = useNavigate();
+  const { get } = useApi();
   const { decodedToken, isExpired } = useJwt(localStorage.getItem("token"));
   const userId = decodedToken ? decodedToken.userId : null;
   const socket = useMemo(
@@ -78,14 +79,12 @@ const ChatBoxTeacher = ({
 
   const fetchChatHistory = async (studentId) => {
     try {
-      const response = await axios.get(
-        `https://mentor-backend-rbac6.ondigitalocean.app/api/chats/get-messages-teacher/${studentId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await get({
+        url: `/chats/get-messages-teacher/${studentId}`,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
       // console.log(response.data);
       if (response.status === 200) {
         setChatHistory(response.data.messages);
@@ -229,3 +228,5 @@ const ChatBoxTeacher = ({
 };
 
 export default ChatBoxTeacher;
+
+

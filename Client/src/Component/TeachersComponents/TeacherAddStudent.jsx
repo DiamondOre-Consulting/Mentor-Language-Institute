@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 
@@ -13,14 +13,15 @@ const override = css`
 const TeacherAddStudent = () => {
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
+  const { get, post } = useApi();
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [dob, setDob] = useState("");
   const [userName, setUserName] = useState("");
+  const [email, setEmail] = useState("");
   const [grade, setGrade] = useState("");
-  const [branch, setBranch] = useState("");
   const [courseId, setCourseId] = useState(""); // Added courseId
   const [popupMessage, setPopupMessage] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -43,14 +44,12 @@ const TeacherAddStudent = () => {
           return;
         }
 
-        const response = await axios.get(
-          "https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/my-classes",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await get({
+          url: "/teachers/my-classes",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
 
         if (response.status === 200) {
           setClassesData(response.data);
@@ -71,23 +70,22 @@ const TeacherAddStudent = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        "https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/add-student",
-        {
+      const response = await post({
+        url: "/teachers/add-student",
+        data: {
           name,
           phone,
           password,
           userName,
+          email,
           dob,
           courseId,
           grade,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
 
       if (response.status === 200) {
         setPopupMessage("Student Added Successfully");
@@ -96,16 +94,19 @@ const TeacherAddStudent = () => {
         setPassword("");
         setDob("");
         setUserName("");
+        setEmail("");
         setCourseId("");
         setGrade("");
-      } else if (response.status === 400) {
-        setPopupMessage("Please Enter a Unique UserName");
+      } else if (response.status === 409 || response.status === 400) {
+        setPopupMessage(response?.data?.message || "Student already exists.");
       } else {
         setPopupMessage("Error in Adding Student");
       }
     } catch (error) {
-      if (error.response && error.response.status === 400) {
-        setPopupMessage("Please Enter a Unique UserName");
+      if (error.response) {
+        setPopupMessage(
+          error.response?.data?.message || "Student already exists."
+        );
       } else {
         setPopupMessage("Error in Adding Student");
       }
@@ -181,6 +182,20 @@ const TeacherAddStudent = () => {
 
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-900">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter email address"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-gray-900">
                     Date of Birth
                   </label>
                   <input
@@ -234,7 +249,7 @@ const TeacherAddStudent = () => {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
                     required
                   />
@@ -259,10 +274,10 @@ const TeacherAddStudent = () => {
               </form>
 
               {popupMessage && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 px-4">
-                  <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md relative">
+                <div className="app-modal-overlay">
+                  <div className="app-modal-card app-modal-card-md relative">
                     <svg
-                      className="h-6 w-6 text-red-500 absolute top-4 right-4 cursor-pointer"
+                      className="absolute right-4 top-4 h-6 w-6 cursor-pointer text-red-500"
                       onClick={() => setPopupMessage(null)}
                       viewBox="0 0 24 24"
                       strokeWidth="2"
@@ -275,7 +290,7 @@ const TeacherAddStudent = () => {
                       <line x1="18" y1="6" x2="6" y2="18" />
                       <line x1="6" y1="6" x2="18" y2="18" />
                     </svg>
-                    <p className="text-lg font-bold mt-4 text-green-700 text-center">
+                    <p className="mt-6 text-center text-lg font-bold text-emerald-600">
                       {popupMessage}
                     </p>
                   </div>
@@ -290,3 +305,4 @@ const TeacherAddStudent = () => {
 };
 
 export default TeacherAddStudent;
+

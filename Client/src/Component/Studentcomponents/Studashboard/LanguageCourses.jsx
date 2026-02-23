@@ -1,29 +1,84 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { useApi } from "../../../api/useApi";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import { Button } from "../../../components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../../components/ui/dialog";
+
+const toNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const formatDate = (value) => {
+  if (!value) return "TBA";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "TBA";
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const getScheduleSummary = (course) => {
+  const entries = course?.dailyClasses || [];
+  const totalSessions = entries.reduce(
+    (total, entry) => total + toNumber(entry.numberOfClasses),
+    0
+  );
+  const upcoming = entries
+    .map((entry) => {
+      const date = new Date(entry.classDate);
+      if (Number.isNaN(date.getTime())) return null;
+      return { ...entry, date };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.date - b.date)
+    .slice(0, 3)
+    .map((entry) => ({
+      label: formatDate(entry.classDate),
+      count: entry.numberOfClasses,
+    }));
+
+  return { totalSessions, upcoming };
+};
+
+const getMentorNames = (course) =>
+  (course?.teachers || [])
+    .map((teacher) => teacher?.teacherId?.name)
+    .filter(Boolean)
+    .join(", ");
 
 const LanguageCourses = () => {
   const navigate = useNavigate();
+  const { get, post } = useApi();
   const [showPopup, setShowPopup] = useState(false);
   const [showPopupEnroll, setShowPopupEnroll] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState(null);
   const [popupMessage, setPopupMessage] = useState(null);
-
-  const { id } = useParams();
-  const handleClose = () => {
-    setShowPopup(false);
-    setShowPopupEnroll(true);
-  };
 
   const handleEnrollClose = () => {
     setShowPopupEnroll(false);
   };
 
   const handleEnrollClick = (courseId) => {
-    // console.log("Clicked on Enroll Now for course ID:", courseId);
     setSelectedCourseId(courseId);
     setShowPopup(true);
     setPopupMessage(null);
@@ -45,7 +100,6 @@ const LanguageCourses = () => {
           slidesToShow: 4,
         },
       },
-
       {
         breakpoint: 992,
         settings: {
@@ -64,7 +118,6 @@ const LanguageCourses = () => {
           slidesToShow: 2,
         },
       },
-
       {
         breakpoint: 480,
         settings: {
@@ -77,15 +130,10 @@ const LanguageCourses = () => {
     ],
   };
 
-  // console.log("selected id ", selectedCourseId);
-
-  // each course
   const [Eachcourse, setEachCourse] = useState(null);
   useEffect(() => {
-    // console.log("Selected Course ID:", selectedCourseId);
     const fetchEachCourse = async () => {
       try {
-        // Check if selectedCourseId is not null
         if (selectedCourseId) {
           const token = localStorage.getItem("token");
           if (!token) {
@@ -93,19 +141,14 @@ const LanguageCourses = () => {
             navigate("/login");
             return;
           }
-          const response = await axios.get(
-            `https://mentor-backend-rbac6.ondigitalocean.app/api/students/all-courses/${selectedCourseId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
+          const response = await get({
+            url: `/students/all-courses/${selectedCourseId}`,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }).unwrap();
           if (response.status === 200) {
-            // console.log(response.data);
-            const eachcourses = response.data;
-            // console.log(eachcourses);
-            setEachCourse(eachcourses);
+            setEachCourse(response.data);
           }
         }
       } catch (error) {
@@ -129,19 +172,14 @@ const LanguageCourses = () => {
           return;
         }
 
-        const response = await axios.get(
-          "https://mentor-backend-rbac6.ondigitalocean.app/api/students/all-courses",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await get({
+          url: "/students/all-courses",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
         if (response.status == 200) {
-          // console.log(response.data);
-          const allcourses = response.data;
-          // console.log(allcourses);
-          setAllCourses(allcourses);
+          setAllCourses(response.data);
         }
       } catch (error) {
         console.error("Error fetching courses:", error);
@@ -151,10 +189,10 @@ const LanguageCourses = () => {
     fetchAllcourses();
   }, []);
 
-  // apply course
-  // console.log("courseid", selectedCourseId)
+  const scheduleSummary = getScheduleSummary(Eachcourse);
+  const mentorNames = getMentorNames(Eachcourse);
 
-  const handleApplyCourse = async (selectedCourseId) => {
+  const handleApplyCourse = async (courseId) => {
     try {
       setPopupMessage(null);
       setShowPopup(false);
@@ -164,20 +202,16 @@ const LanguageCourses = () => {
         console.error("No token found");
         return;
       }
-      // console.log("after try block applied course ", selectedCourseId)
 
-      const response = await axios.post(
-        `https://mentor-backend-rbac6.ondigitalocean.app/api/students/apply-course/${selectedCourseId}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await post({
+        url: `/students/apply-course/${courseId}`,
+        data: {},
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
 
       if (response.status === 200) {
-        // console.log('Successfully applied for course');
         setShowPopup(false);
         setShowPopupEnroll(true);
         setSelectedCourseId(null);
@@ -189,11 +223,9 @@ const LanguageCourses = () => {
       if (error.response) {
         const status = error.response.status;
         if (status === 409) {
-          // console.log("Student has already applied in this course!!!")
           setPopupMessage("You Have Already Applied For This Course!!!");
           setShowPopup(false);
         } else if (status === 408) {
-          // console.log('Student is already enrolled in this course!!!');
           setPopupMessage("You Are Already Enrolled In This Course!!!");
           setShowPopup(false);
         }
@@ -201,202 +233,254 @@ const LanguageCourses = () => {
     }
   };
 
+  const CourseCard = ({ course }) => {
+    const schedule = getScheduleSummary(course);
+    const mentorNames = getMentorNames(course);
+    const nextSession = schedule.upcoming?.[0];
+
+    return (
+      <Card className="group relative flex h-full min-h-[18rem] flex-col overflow-hidden rounded-2xl border border-orange-100/70 bg-white/95 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-lg">
+        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-200" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(251,146,60,0.14),_transparent_45%)] opacity-0 transition group-hover:opacity-100" />
+        <CardHeader className="relative z-10 pb-2 pt-4">
+          <CardTitle className="text-base font-semibold leading-snug text-slate-900 sm:text-lg md:text-xl line-clamp-2">
+            {course.classTitle}
+          </CardTitle>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+            <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 font-semibold text-amber-800">
+              {course.grade || "All levels"}
+            </span>
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 font-semibold text-slate-600">
+              {schedule.totalSessions
+                ? `${schedule.totalSessions} sessions`
+                : "Schedule TBA"}
+            </span>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Mentor: {mentorNames || "To be assigned"}
+          </p>
+        </CardHeader>
+        <CardContent className="relative z-10 mt-auto flex flex-1 flex-col gap-3 pt-0">
+          <div className="flex-1 space-y-2 text-xs text-muted-foreground">
+            <div className="flex items-center justify-between rounded-lg border border-border/80 bg-white/70 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide">Hours</p>
+              <p className="font-semibold text-slate-700">
+                {course.totalHours ? `${course.totalHours} hrs` : "TBA"}
+              </p>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-border/80 bg-white/70 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide">Next</p>
+              <p className="font-semibold text-slate-700">
+                {nextSession?.label || "TBA"}
+              </p>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-border/80 bg-white/70 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide">Added</p>
+              <p className="font-semibold text-slate-700">
+                {formatDate(course.createdAt)}
+              </p>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-border/80 bg-white/70 px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide">Branch</p>
+              <p className="font-semibold text-slate-700">
+                {course.branch || "Main"}
+              </p>
+            </div>
+          </div>
+          <Button
+            className="mt-auto w-full"
+            onClick={() => handleEnrollClick(course._id)}
+          >
+            View Details
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <>
-      <div className="px-10 " id="courses">
-        <h1 className="text-3xl md:text-4xl font-bold mb-10 md:mb-24 text-gray-900">
-          Language Courses
-        </h1>
-
-        <div className="slider-container py-10 h-auto">
-          {allCourses.length > 3 ? (
-            <Slider {...settings}>
-              {allCourses.map((course) => (
-                <div
-                  key={course._id}
-                  className="relative bg-white border border-gray-200 rounded-lg overflow-hidden shadow-md transform hover:scale-105 h-56 transition duration-"
-                >
-                  <div className="px-4 py-8 grid grid-cols-1 h-auto gap-4 content-between">
-                    <div>
-                      <h1 className="text-lg font-bold mb-2">
-                        {course.classTitle}
-                      </h1>
-                      <p className="text-gray-600 uppercase">
-                        Mentor Institute
-                      </p>
+      <section className="mt-8" id="courses">
+        <Card className="border-orange-100/80 bg-white/90 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-2xl sm:text-3xl">Available Programs</CardTitle>
+            <CardDescription>Browse current course offerings and apply instantly.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="slider-container py-8">
+              {allCourses.length > 3 ? (
+                <Slider {...settings}>
+                  {allCourses.map((course) => (
+                    <div key={course._id} className="px-2 h-full">
+                      <CourseCard course={course} />
                     </div>
-                    <button
-                      className="block w-full px-4 py-2 cursor-pointer hover:bg-orange-500 bg-orange-400 text-sm font-semibold text-white rounded-lg shadow-md focus:outline-none hover:bg-orange-600 transition duration-300"
-                      onClick={() => handleEnrollClick(course._id)}
-                    >
-                      Apply
-                    </button>
+                  ))}
+                </Slider>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-stretch">
+                  {allCourses.map((course) => (
+                    <CourseCard key={course._id} course={course} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      <Dialog open={showPopup} onOpenChange={setShowPopup}>
+        <DialogContent className="max-w-2xl p-0">
+          <div className="grid overflow-hidden rounded-lg md:grid-cols-2">
+            <img
+              src="https://t4.ftcdn.net/jpg/06/23/40/73/360_F_623407391_wtq6RVJUq2RGb2e3D0ykn5zJOqfJhOSc.jpg"
+              className="hidden h-full w-full object-cover md:block"
+              alt="Course preview"
+            />
+            <div className="p-6">
+              <DialogHeader>
+                <DialogTitle className="text-xl">{Eachcourse?.classTitle}</DialogTitle>
+                <DialogDescription>
+                  Review the course plan before submitting your application.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="mt-4 space-y-4 text-sm text-muted-foreground">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg border border-border bg-white/70 p-3">
+                    <p className="text-[11px] uppercase tracking-wide">Grade</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-800">
+                      {Eachcourse?.grade || "All levels"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-white/70 p-3">
+                    <p className="text-[11px] uppercase tracking-wide">Total Hours</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-800">
+                      {Eachcourse?.totalHours ? `${Eachcourse.totalHours} hrs` : "TBA"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-white/70 p-3">
+                    <p className="text-[11px] uppercase tracking-wide">Total Sessions</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-800">
+                      {scheduleSummary.totalSessions || "TBA"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-white/70 p-3">
+                    <p className="text-[11px] uppercase tracking-wide">Branch</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-800">
+                      {Eachcourse?.branch || "Main"}
+                    </p>
                   </div>
                 </div>
-              ))}
-            </Slider>
-          ) : (
-            <div
-              className={`grid gap-4 ${
-                allCourses.length <= 3 ? "grid-cols-1 md:grid-cols-4" : ""
-              }`}
-            >
-              {allCourses.map((course) => (
-                <div
-                  key={course._id}
-                  className="relative bg-white border border-gray-200 rounded-lg overflow-hidden shadow-md transform hover:scale-105 h-auto transition duration-"
-                >
-                  <div className="px-4 py-8 grid grid-cols-1 gap-4 content-between">
-                    <div>
-                      <h1 className="text-xl font-bold mb-2">
-                        {course.classTitle}
-                      </h1>
-                      <p className="text-gray-600 uppercase">
-                        Mentor Institute
-                      </p>
+
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide">Mentors</p>
+                  <p className="mt-1 text-sm text-slate-700">
+                    {mentorNames || "To be assigned"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide">Schedule Preview</p>
+                  {scheduleSummary.upcoming.length > 0 ? (
+                    <div className="mt-2 space-y-2">
+                      {scheduleSummary.upcoming.map((entry, index) => (
+                        <div
+                          key={`${entry.label}-${index}`}
+                          className="flex items-center justify-between rounded-md border border-border bg-white/70 px-3 py-2 text-xs text-slate-700"
+                        >
+                          <span>{entry.label}</span>
+                          <span className="font-semibold">
+                            {entry.count ? `${entry.count} class(es)` : "Session"}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                    <button
-                      className="block w-full px-4 py-2 cursor-pointer hover:bg-orange-500 bg-orange-400 text-sm font-semibold text-white rounded-lg shadow-md focus:outline-none hover:bg-orange-600 transition duration-300"
-                      onClick={() => handleEnrollClick(course._id)}
-                    >
-                      Apply
-                    </button>
-                  </div>
+                  ) : (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Schedule will be shared once enrollment is confirmed.
+                    </p>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
 
-          {showPopup && (
-            <div className="fixed inset-0 flex items-center justify-center">
-              <section className="rounded-lg shadow-xl bg-white w-4/5 sm:w-3/5 lg:w-1/3  grid grid-cols-2">
-                <img
-                  src="https://t4.ftcdn.net/jpg/06/23/40/73/360_F_623407391_wtq6RVJUq2RGb2e3D0ykn5zJOqfJhOSc.jpg"
-                  className="h-full"
-                  alt=""
-                />
-
-                <div className="p-4 md:p-6 text-left">
-                  <svg
-                    class="h-6 w-6 text-gray-400 float-right -mt-4 -mr-4 cursor-pointer"
-                    onClick={() => setShowPopup(false)}
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    stroke-width="2"
-                    stroke="currentColor"
-                    fill="none"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    {" "}
-                    <path stroke="none" d="M0 0h24v24H0z" />{" "}
-                    <line x1="18" y1="6" x2="6" y2="18" />{" "}
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                  <h2 className="text-xl font-bold text-teal-green-900 mb-1 md:mb-4">
-                    {Eachcourse?.classTitle}
-                  </h2>
-                  {/* <p className="text-sm text-gray-600 ">Schedule :-  <span>{Eachcourse?.classSchedule}</span></p> */}
-                  <p className="text-sm text-gray-600 mb-1 md:mb-6">
-                    Total Hours :- <span>{Eachcourse?.totalHours}</span>
-                  </p>
-                  <button
-                    className="block w-full z-10 px-4 py-2 bg-orange-500 text-sm font-semibold text-white rounded-lg shadow-md  focus:outline-none "
-                    onClick={() => handleApplyCourse(selectedCourseId)}
-                  >
-                    Apply Now
-                  </button>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Added on</span>
+                  <span className="font-semibold text-slate-700">
+                    {formatDate(Eachcourse?.createdAt)}
+                  </span>
                 </div>
-              </section>
-            </div>
-          )}
-
-          {showPopupEnroll && (
-            <div className="fixed inset-0 flex items-center justify-center">
-              <section className="rounded-lg shadow-xl bg-white w-4/5 sm:w-3/5 lg:w-1/3">
-                <div className="p-6 text-left">
-                  <h2 className="text-xl font-bold text-teal-green-900 mb-4">
-                    Thankyou For Applying!!
-                  </h2>
-                  <p className="text-sm text-gray-600 mb-6">
-                    We Will connect you soon
-                  </p>
-                  <button
-                    className="block w-full px-4 py-2 bg-orange-500 text-sm font-semibold text-white rounded-lg shadow-md  focus:outline-none "
-                    onClick={handleEnrollClose}
-                  >
-                    close
-                  </button>
-                </div>
-              </section>
-            </div>
-          )}
-
-          {popupMessage && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-              <div className="bg-white p-4 rounded-lg shadow-md w-4/5 sm:w-3/5 lg:w-1/3">
-                <svg
-                  class="h-6 w-6 text-red-500 float-right -mt-2 cursor-pointer"
-                  onClick={() => setPopupMessage(null)}
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  stroke-width="2"
-                  stroke="currentColor"
-                  fill="none"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  {" "}
-                  <path stroke="none" d="M0 0h24v24H0z" />{" "}
-                  <line x1="18" y1="6" x2="6" y2="18" />{" "}
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-                <p className="text-lg font-bold mt-4 text-green-700">
-                  {popupMessage}
-                </p>
-                {/* <button className="bg-orange-500 text-white py-2 px-4 rounded-md" onClick={() => setPopupMessage(null)}>Close</button> */}
               </div>
+              <DialogFooter className="mt-6">
+                <Button className="w-full" onClick={() => handleApplyCourse(selectedCourseId)}>
+                  Apply Now
+                </Button>
+              </DialogFooter>
             </div>
-          )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
-          <style jsx global>{`
-            .slick-prev,
-            .slick-next {
-              width: 50px;
-              height: 50px;
-              background-color: rgb(249 115 22);
-              border: 1px solid rgb(249 115 22);
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-size: 0px;
-              position: absolute;
-              top: 50%;
-              transform: translateY(-50%);
-              cursor: pointer;
-              z-index: 1; /* Ensure the buttons are above the slider */
-            }
+      <Dialog open={showPopupEnroll} onOpenChange={setShowPopupEnroll}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Thank you for applying!</DialogTitle>
+            <DialogDescription>We will connect you soon.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button onClick={handleEnrollClose}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-            .slick-prev:hover,
-            .slick-next:hover {
-              background-color: rgb(
-                249 115 22
-              ); /* Darken the background color on hover */
-            }
+      <Dialog
+        open={Boolean(popupMessage)}
+        onOpenChange={(open) => {
+          if (!open) setPopupMessage(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Heads up</DialogTitle>
+            <DialogDescription className="text-sm">{popupMessage}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button variant="secondary" onClick={() => setPopupMessage(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-            .slick-prev {
-              left: 10px;
-            }
+      <style>{`
+        .slick-prev,
+        .slick-next {
+          width: 42px;
+          height: 42px;
+          background-color: rgb(249 115 22);
+          border: 1px solid rgb(249 115 22);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0px;
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          cursor: pointer;
+          z-index: 1;
+        }
 
-            .slick-next {
-              right: 10px;
-            }
-          `}</style>
-        </div>
-      </div>
+        .slick-prev:hover,
+        .slick-next:hover {
+          background-color: rgb(249 115 22);
+        }
+
+        .slick-prev {
+          left: 0px;
+        }
+
+        .slick-next {
+          right: 0px;
+        }
+      `}</style>
     </>
   );
 };

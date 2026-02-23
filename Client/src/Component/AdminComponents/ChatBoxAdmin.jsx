@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import axios from "axios";
+﻿import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useApi } from "../../api/useApi";
 import io from "socket.io-client";
 import { useJwt } from "react-jwt";
 import { useNavigate } from "react-router-dom";
@@ -14,10 +14,11 @@ const ChatBoxAdmin = ({
   setIsTeacherSectionVisible,
 }) => {
   const navigate = useNavigate();
+  const { get } = useApi();
   const { decodedToken, isExpired } = useJwt(localStorage.getItem("token"));
   const userId = decodedToken ? decodedToken.userId : null;
   const socket = useMemo(
-    () => io("https://mentor-backend-rbac6.ondigitalocean.app"),
+    () => io("http://localhost:7000"),
     []
   );
   const [chatHistory, setChatHistory] = useState([]);
@@ -29,14 +30,12 @@ const ChatBoxAdmin = ({
   useEffect(() => {
     const fetchChatHistory = async (selectedTeacherId, selectedStudentId) => {
       try {
-        const response = await axios.get(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/chats/get-messages-admin/${selectedTeacherId}/${selectedStudentId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await get({
+          url: `/chats/get-messages-admin/${selectedTeacherId}/${selectedStudentId}`,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
         // console.log(response.data);
         if (response.status === 200) {
           setChatHistory(response.data.messages);
@@ -67,14 +66,12 @@ const ChatBoxAdmin = ({
         }
 
         // Fetch associates data from the backend
-        const response = await axios.get(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-teachers/${selectedTeacherId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await get({
+          url: `/admin-confi/all-teachers/${selectedTeacherId}`,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
         if (response.status == 200) {
           const oneteacher = response.data;
           setTeacher(oneteacher);
@@ -92,14 +89,12 @@ const ChatBoxAdmin = ({
     const fetchStudentDetails = async () => {
       try {
         // Fetch student details
-        const studentResponse = await axios.get(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-students/${selectedStudentId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const studentResponse = await get({
+          url: `/admin-confi/all-students/${selectedStudentId}`,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
         if (studentResponse.status === 200) {
           const studentData = studentResponse.data;
           setStudent(studentData);
@@ -206,3 +201,6 @@ const ChatBoxAdmin = ({
 };
 
 export default ChatBoxAdmin;
+
+
+

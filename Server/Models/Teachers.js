@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const teacherSchema = new mongoose.Schema({
   branch: {
     type: String,
-    required: true,
+    default: "Main",
   },
   role: {
     type: String,
@@ -30,15 +30,6 @@ const teacherSchema = new mongoose.Schema({
   
   jwtStore: {
     type: String,
-  },
-  myClasses: {
-    type: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Classes",
-      },
-    ],
-    default: [],
   },
   myStudents: {
     type: [

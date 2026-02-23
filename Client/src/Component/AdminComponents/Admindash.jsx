@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
-import Home from "..//AdminComponents//Home";
-import Register from "..//AdminComponents/Register";
-import logo from "..//..//assets/logo.png";
+import React, { useEffect } from "react";
+import { Route, Routes, useNavigate } from "react-router-dom";
+import Home from "../AdminComponents/Home";
+import Register from "../AdminComponents/Register";
 import Allstudents from "./Allstudents";
 import AllTeachers from "./AllTeachers";
 import Allcourses from "./Allcourses";
@@ -11,78 +10,73 @@ import EachStu from "./EachStu";
 import Message from "./Message";
 import Eachcourse from "./Eachcourse";
 import { useJwt } from "react-jwt";
-import { useNavigate } from "react-router-dom";
 import EachTeacherClassStudentAttendance from "./EachTeacherClassStudentAttendance";
-import Error from "..//Studentcomponents/Stuauth/Error";
+import Error from "../Studentcomponents/Stuauth/Error";
 import ChatAdmin from "../../Pages/Adminpages/ChatAdmin";
 import EditStudent from "./EditStudent";
 import DownloadAttendanceReport from "./DownloadAttendanceReport";
 import AllAdmin from "./AllAdmin";
+import EditTeacher from "./EditTeacher";
+import EditCourse from "./EditCourse";
+import PendingPayments from "./PendingPayments";
 
 const Admindash = () => {
   const navigate = useNavigate();
 
   const { decodedToken } = useJwt(localStorage.getItem("token"));
   const token = localStorage.getItem("token");
-  // console.log("this is admin dashboar token",token)
+
   if (!token) {
-    navigate("/login"); // Redirect to login page if not authenticated
+    navigate("/login");
     return;
   }
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    // console.log(token)
-    if (!token) {
-      // No token found, redirect to login page
+    const currentToken = localStorage.getItem("token");
+    if (!currentToken) {
       navigate("/login");
     } else {
-      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
-
+      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0;
       if (tokenExpiration && tokenExpiration < Date.now()) {
-        // Token expired, remove from local storage and redirect to login page
         localStorage.removeItem("token");
         navigate("/login");
       }
     }
-  }, [decodedToken]);
+  }, [decodedToken, navigate]);
 
   return (
-    <>
-      <div className="p-2 md:p-4 sm:ml-64">
-        <div className="py-4 md:px-4 md:py-4 md:border-2 border-gray-200 border-dashed rounded-lg ">
-          <div className="flex-grow md:px-4 md:py-4 px-2">
-            <Routes>
-              <Route path="/">
-                <Route index element={<Home />} />
-                <Route path="/allstudents" element={<Allstudents />} />
-                <Route path="/allteachers" element={<AllTeachers />} />
-                <Route path="/allteacher/:id" element={<EachTeacher />} />
-                <Route
-                  path="/:id/:selectedClassId"
-                  element={<EachTeacherClassStudentAttendance />}
-                />
-                <Route path="/allstudents/:id" element={<EachStu />} />
-                <Route path="/student/:id" element={<EditStudent />} />
-                <Route path="/messages" element={<Message />} />
-                <Route path="/allcourses" element={<Allcourses />} />
-                <Route path="/allcourses/:id" element={<Eachcourse />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/admin/chat/*" element={<ChatAdmin />} />
-                <Route path="/all-admin" element={<AllAdmin />} />
-                <Route
-                  path="/attendance-report"
-                  element={<DownloadAttendanceReport />}
-                />
-                <Route path="*" element={<Error />} />
-              </Route>
-              {/* <Route path='/Chat' element={<Chat/>}/> */}
-              {/* Add more routes for additional components */}
-            </Routes>
-          </div>
-        </div>
+    <div className="admin-theme min-h-screen bg-gradient-to-br from-orange-50 via-slate-50 to-white pb-6 pt-16 sm:ml-72 sm:pt-6">
+      <div className="mx-2 rounded-2xl border border-orange-100/70 bg-white/80 p-3 shadow-sm backdrop-blur-sm sm:mx-4 sm:p-5">
+        <Routes>
+          <Route path="/">
+            <Route index element={<Home />} />
+            <Route path="/allstudents" element={<Allstudents />} />
+            <Route path="/allteachers" element={<AllTeachers />} />
+            <Route path="/allteacher/:id" element={<EachTeacher />} />
+            <Route
+              path="/:id/:selectedClassId"
+              element={<EachTeacherClassStudentAttendance />}
+            />
+            <Route path="/allstudents/:id" element={<EachStu />} />
+            <Route path="/student/:id" element={<EditStudent />} />
+            <Route path="/teacher-edit/:id" element={<EditTeacher />} />
+            <Route path="/course-edit/:id" element={<EditCourse />} />
+            <Route path="/messages" element={<Message />} />
+            <Route path="/allcourses" element={<Allcourses />} />
+            <Route path="/allcourses/:id" element={<Eachcourse />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/admin/chat/*" element={<ChatAdmin />} />
+            <Route path="/all-admin" element={<AllAdmin />} />
+            <Route path="/pending-payments" element={<PendingPayments />} />
+            <Route
+              path="/attendance-report"
+              element={<DownloadAttendanceReport />}
+            />
+            <Route path="*" element={<Error />} />
+          </Route>
+        </Routes>
       </div>
-    </>
+    </div>
   );
 };
 

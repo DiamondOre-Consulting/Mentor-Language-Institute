@@ -13,8 +13,19 @@
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
     "@mui/material": "^5.15.15",
+    "@radix-ui/react-avatar": "^1.1.2",
+    "@radix-ui/react-dialog": "^1.1.4",
+    "@radix-ui/react-dropdown-menu": "^2.1.4",
+    "@radix-ui/react-label": "^2.1.0",
+    "@radix-ui/react-scroll-area": "^1.2.2",
+    "@radix-ui/react-separator": "^1.1.0",
+    "@radix-ui/react-slot": "^1.1.0",
+    "@radix-ui/react-tooltip": "^1.1.6",
     "@react-hook/media-query": "^1.1.1",
+    "@reduxjs/toolkit": "^2.6.1",
     "axios": "^1.6.8",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
     "emoji-mart": "^5.6.0",
     "flowbite": "^2.3.0",
     "flowbite-react": "^0.8.0",
@@ -26,6 +37,7 @@
     "react-icons": "^5.5.0",
     "react-jwt": "^1.2.1",
     "react-loader-spinner": "^6.1.6",
+    "react-redux": "^9.2.0",
     "react-responsive": "^10.0.0",
     "react-router-dom": "^6.23.0",
     "react-slick": "^0.30.2",
@@ -34,6 +46,7 @@
     "slick-carousel": "^1.8.1",
     "socket.io-client": "^4.7.5",
     "sonner": "^2.0.5",
+    "tailwind-merge": "^2.6.0",
     "translate": "^3.0.0",
     "xlsx": "^0.18.5"
   },
@@ -48,6 +61,7 @@
     "eslint-plugin-react-refresh": "^0.4.6",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.3",
+    "tailwindcss-animate": "^1.0.7",
     "vite": "^5.2.0"
   }
 }

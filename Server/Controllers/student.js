@@ -11,6 +11,18 @@ import ClassAccessStatus from "../Models/ClassAccessStatus.js";
 import Teachers from "../Models/Teachers.js";
 import Attendance from "../Models/Attendance.js";
 import Fee from "../Models/Fee.js";
+import ClassTeachers from "../Models/ClassTeachers.js";
+import { normalizeFeeMonth, normalizePaidStatus, parseFeeAmount } from "../utils/fee.js";
+import {
+  isGradeMatch,
+  normalizeGradeValue,
+  resolveCourseGrade,
+} from "../utils/grade.js";
+import {
+  findStudentUniquenessConflict,
+  isValidEmail,
+  normalizeEmail,
+} from "../utils/studentValidation.js";
 
 dotenv.config();
 
@@ -18,25 +30,39 @@ const secretKey = process.env.STUDENT_JWT_SECRET;
 
 const router = express.Router();
 
+
 router.post("/signup", async (req, res) => {
   try {
-    const { name, phone, password, branch, userName, dob } = req.body;
+    const { name, phone, password, userName, dob, email } = req.body;
 
-    const studentUser = await Students.findOne({ userName });
+    if (!name || !phone || !password || !userName || !email) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
 
-    if (studentUser) {
-      return res
-        .status(400)
-        .json({ message: "Student with this username already exist!!!" });
+    const normalizedEmail = normalizeEmail(email);
+    const normalizedUserName = userName.trim();
+    const normalizedPhone = phone.trim();
+    if (!isValidEmail(normalizedEmail)) {
+      return res.status(400).json({ message: "Please enter a valid email." });
+    }
+
+    const conflictMessage = await findStudentUniquenessConflict({
+      userName: normalizedUserName,
+      phone: normalizedPhone,
+      email: normalizedEmail,
+    });
+    if (conflictMessage) {
+      return res.status(409).json({ message: conflictMessage });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newStudent = new Students({
-      branch,
+      branch: "Main",
       name,
-      phone,
-      userName,
+      phone: normalizedPhone,
+      email: normalizedEmail,
+      userName: normalizedUserName,
       dob,
       password: hashedPassword,
     });
@@ -47,6 +73,11 @@ router.post("/signup", async (req, res) => {
       .status(200)
       .json({ message: `New student has been registered successfully!!!` });
   } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(409).json({
+        message: "Username, phone number, or email already exists.",
+      });
+    }
     console.log("Something went wrong!!! ");
     res.status(500).json(error);
   }
@@ -74,7 +105,6 @@ router.post("/login", async (req, res) => {
         userId: user._id,
         name: user.name,
         phone: user.phone,
-        branch: user.branch,
         userName: user.userName,
       },
       secretKey,
@@ -92,9 +122,9 @@ router.post("/login", async (req, res) => {
 
 router.get("/my-profile", StudentAuthenticateToken, async (req, res) => {
   try {
-    const { userName } = req.user;
+    const { userId } = req.user;
 
-    const student = await Students.findOne({ userName });
+    const student = await Students.findById(userId, { password: 0 });
 
     if (!student) {
       return res.status(404).json({ message: "Student not find" });
@@ -107,12 +137,88 @@ router.get("/my-profile", StudentAuthenticateToken, async (req, res) => {
   }
 });
 
+router.put("/update-profile", StudentAuthenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const { name, userName, dob } = req.body;
+
+    const student = await Students.findById(userId);
+    if (!student) {
+      return res.status(404).json({ message: "Student not found." });
+    }
+
+    const normalizedUserName = userName ? userName.trim() : null;
+
+    const conflictMessage = await findStudentUniquenessConflict({
+      userName: normalizedUserName,
+      excludeId: userId,
+    });
+    if (conflictMessage) {
+      return res.status(409).json({ message: conflictMessage });
+    }
+
+    if (name) student.name = name;
+    if (userName) student.userName = normalizedUserName;
+    if (dob) student.dob = dob;
+
+    await student.save();
+
+    const updated = await Students.findById(userId, { password: 0 });
+    return res
+      .status(200)
+      .json({ message: "Profile updated successfully.", student: updated });
+  } catch (error) {
+    console.log("Something went wrong!!! ");
+    if (error?.code === 11000) {
+      return res.status(409).json({
+        message: "Username already exists.",
+      });
+    }
+    res.status(500).json(error);
+  }
+});
+
 router.get("/all-courses", StudentAuthenticateToken, async (req, res) => {
   try {
-    const { branch } = req.user;
-    const allCourses = await Classes.find({ branch });
+    const student = await Students.findById(req.user.userId).select("grade");
+    const studentGrade = normalizeGradeValue(student?.grade);
+    console.log("=== STUDENT ALL-COURSES DEBUG ===");
+    console.log("Student userId:", req.user.userId);
+    const allCourses = await Classes.find({}).lean();
+    const gradeBackfills = [];
+    const normalizedCourses = allCourses.map((course) => {
+      if (course?.grade) return course;
+      const inferred = resolveCourseGrade(course);
+      if (inferred) {
+        gradeBackfills.push({ id: course._id, grade: inferred });
+        return { ...course, grade: inferred };
+      }
+      return course;
+    });
+    if (gradeBackfills.length > 0) {
+      await Promise.all(
+        gradeBackfills.map((item) =>
+          Classes.findByIdAndUpdate(
+            item.id,
+            { $set: { grade: item.grade } },
+            { new: false }
+          )
+        )
+      );
+    }
 
-    res.status(200).json(allCourses);
+    const filteredCourses = normalizedCourses.filter((course) => {
+      const courseGrade = normalizeGradeValue(course?.grade);
+      if (!courseGrade) return true;
+      if (!studentGrade) return false;
+      return courseGrade === studentGrade;
+    });
+    console.log("Courses found for student:", allCourses.length);
+    console.log("Student grade:", JSON.stringify(student?.grade));
+    console.log("Filtered courses for grade:", filteredCourses.length);
+    console.log("================================");
+
+    res.status(200).json(filteredCourses);
   } catch (error) {
     console.log("Something went wrong!!! ");
     res.status(500).json(error);
@@ -122,10 +228,34 @@ router.get("/all-courses", StudentAuthenticateToken, async (req, res) => {
 router.get("/all-courses/:id", StudentAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    const student = await Students.findById(req.user.userId).select("grade classes");
+    const singleCourse = await Classes.findById(id);
+    if (!singleCourse) {
+      return res.status(404).json({ message: "Course not found." });
+    }
+    if (!singleCourse.grade) {
+      const inferred = resolveCourseGrade(singleCourse);
+      if (inferred) {
+        singleCourse.grade = inferred;
+        await singleCourse.save();
+      }
+    }
+    if (!isGradeMatch(singleCourse?.grade, student?.grade)) {
+      const isEnrolled = (student?.classes || []).some(
+        (classId) => String(classId) === String(id)
+      );
+      if (!isEnrolled) {
+        return res
+          .status(404)
+          .json({ message: "Course not found for this grade." });
+      }
+    }
+    const teachers = await ClassTeachers.find({
+      classId: singleCourse._id,
+      active: true,
+    }).populate({ path: "teacherId", select: "-password" });
 
-    const singleCourse = await Classes.findById({ _id: id });
-
-    res.status(200).json(singleCourse);
+    res.status(200).json({ ...singleCourse.toObject(), teachers });
   } catch (error) {
     console.log("Something went wrong!!! ");
     res.status(500).json(error);
@@ -136,7 +266,7 @@ router.get("/teacher/:id", StudentAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const myTeacher = await Teachers.findById({ _id: id });
+    const myTeacher = await Teachers.findById({ _id: id }, { password: 0 });
 
     if (!myTeacher) {
       return res.status(409).json({ message: "Teacher not found" });
@@ -153,6 +283,21 @@ router.post("/apply-course/:id", StudentAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { userId } = req.user;
+    const student = await Students.findById(userId).select("grade");
+    const classExists = await Classes.findById(id);
+    if (!classExists) {
+      return res.status(404).json({ message: "Class not found." });
+    }
+    const resolvedCourseGrade = resolveCourseGrade(classExists);
+    if (resolvedCourseGrade && !classExists.grade) {
+      classExists.grade = resolvedCourseGrade;
+      await classExists.save();
+    }
+    if (!isGradeMatch(resolvedCourseGrade, student?.grade)) {
+      return res
+        .status(403)
+        .json({ message: "Student grade does not match this course." });
+    }
 
     const userApplied = await Classes.findOne({
       _id: id,
@@ -177,7 +322,7 @@ router.post("/apply-course/:id", StudentAuthenticateToken, async (req, res) => {
     const classUpdate = await Classes.findOneAndUpdate(
       { _id: id },
       {
-        $push: { appliedStudents: userId },
+        $addToSet: { appliedStudents: userId },
       },
       { new: true }
     );
@@ -185,7 +330,7 @@ router.post("/apply-course/:id", StudentAuthenticateToken, async (req, res) => {
     const studentUpdate = await Students.findOneAndUpdate(
       { _id: userId },
       {
-        $push: { appliedClasses: id },
+        $addToSet: { appliedClasses: id },
       }
     );
 
@@ -207,7 +352,66 @@ router.post(
       const { userId } = req.user;
       const { totalFee, feeMonth, paid, amountPaid } = req.body;
 
+      const normalizedPaid = normalizePaidStatus(paid);
+      if (normalizedPaid === null) {
+        return res.status(400).json({
+          message: "Invalid payment status. Use paid or pending.",
+        });
+      }
+
+      const normalizedTotalFee = parseFeeAmount(totalFee);
+      if (normalizedTotalFee === null || normalizedTotalFee < 0) {
+        return res.status(400).json({
+          message: "Total fee must be a valid number.",
+        });
+      }
+
+      const normalizedFeeMonth = normalizeFeeMonth(feeMonth);
+      if (!normalizedFeeMonth) {
+        return res.status(400).json({
+          message: "Fee month must be a valid month number (1-12).",
+        });
+      }
+
+      const normalizedAmountPaid = normalizedPaid
+        ? parseFeeAmount(amountPaid)
+        : 0;
+      if (
+        normalizedPaid &&
+        (normalizedAmountPaid === null || normalizedAmountPaid <= 0)
+      ) {
+        return res.status(400).json({
+          message: "Amount paid must be a valid number when payment is marked paid.",
+        });
+      }
+      if (
+        normalizedPaid &&
+        normalizedAmountPaid !== null &&
+        normalizedAmountPaid > normalizedTotalFee
+      ) {
+        return res.status(400).json({
+          message: "Amount paid cannot exceed total fee.",
+        });
+      }
+
+      const classExists = await Classes.findById(id);
+      if (!classExists) {
+        return res.status(404).json({ message: "Class not found." });
+      }
+      const student = await Students.findById(userId).select("grade");
+      const resolvedCourseGrade = resolveCourseGrade(classExists);
+      if (resolvedCourseGrade && !classExists.grade) {
+        classExists.grade = resolvedCourseGrade;
+        await classExists.save();
+      }
+      if (!isGradeMatch(resolvedCourseGrade, student?.grade)) {
+        return res
+          .status(403)
+          .json({ message: "Student grade does not match this course." });
+      }
+
       const userRegistered = await Classes.findOne({
+        _id: id,
         enrolledStudents: userId,
       });
       if (userRegistered) {
@@ -219,7 +423,7 @@ router.post(
       const updateClass = await Classes.findByIdAndUpdate(
         { _id: id },
         {
-          $push: { enrolledStudents: userId },
+          $addToSet: { enrolledStudents: userId },
         },
         { new: true }
       );
@@ -239,12 +443,12 @@ router.post(
         const feeUpdate = new Fee({
           classId: id,
           studentId: userId,
-          totalFee,
+          totalFee: normalizedTotalFee,
           detailFee: [
             {
-              feeMonth,
-              paid,
-              amountPaid,
+              feeMonth: normalizedFeeMonth,
+              paid: normalizedPaid,
+              amountPaid: normalizedAmountPaid ?? 0,
             },
           ],
         });
@@ -255,7 +459,7 @@ router.post(
         const updateStudent = await Students.findByIdAndUpdate(
           { _id: userId },
           {
-            $push: { classes: id, feeDetail: feeUpdate._id },
+            $addToSet: { classes: id, feeDetail: feeUpdate._id },
           },
           { new: true }
         );
@@ -345,14 +549,18 @@ router.get("/chat-all-teachers", StudentAuthenticateToken, async (req, res) => {
 
     await Promise.all(
       myClasses.map(async (eachClass) => {
-        const currentClass = await Classes.findById({ _id: eachClass });
-        let teacherId = currentClass.teachBy;
-        if (typeof teacherId !== "string") {
-          // Ensure it's a string
-          teacherId = String(teacherId);
-        }
-        teacherId = teacherId.trim().toLowerCase(); // Normalize ID
-        allTeachersIds.push(teacherId);
+        const assignments = await ClassTeachers.find({
+          classId: eachClass,
+          active: true,
+        }).select("teacherId");
+        assignments.forEach((assignment) => {
+          let teacherId = assignment.teacherId;
+          if (typeof teacherId !== "string") {
+            teacherId = String(teacherId);
+          }
+          teacherId = teacherId.trim().toLowerCase();
+          allTeachersIds.push(teacherId);
+        });
       })
     );
     allTeachersIds = [...new Set(allTeachersIds)];
@@ -363,7 +571,7 @@ router.get("/chat-all-teachers", StudentAuthenticateToken, async (req, res) => {
 
     await Promise.all(
       objectIds.map(async (eachId) => {
-        const eachTeacher = await Teachers.findById({ _id: eachId });
+        const eachTeacher = await Teachers.findById({ _id: eachId }, { password: 0 });
         allTeachers.push(eachTeacher);
       })
     );

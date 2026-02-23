@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+﻿import React, { useState, useEffect } from "react";
+import { useApi } from "../../api/useApi";
 import { Link, useNavigate } from "react-router-dom";
 import { useMediaQuery } from "@react-hook/media-query";
 import { useJwt } from "react-jwt";
@@ -9,6 +9,7 @@ import userimg2 from "..//..//assets/userimg2.png";
 
 const ChatAdmin = () => {
   const navigate = useNavigate();
+  const { get } = useApi();
   const { decodedToken } = useJwt(localStorage.getItem("token"));
   const userName = decodedToken ? decodedToken.name : "No Name Found";
   const [allTeachers, setAllTeachers] = useState([]);
@@ -54,14 +55,12 @@ const ChatAdmin = () => {
           return;
         }
 
-        const response = await axios.get(
-          "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-teachers",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await get({
+          url: "/admin-confi/all-teachers",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
         if (response.status == 200) {
           const allteachers = response.data;
           setAllTeachers(allteachers);
@@ -87,14 +86,12 @@ const ChatAdmin = () => {
           return;
         }
 
-        const response = await axios.get(
-          "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-students",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await get({
+          url: "/admin-confi/all-students",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
         if (response.status == 200) {
           const allstudents = response.data;
           setAllStudents(allstudents);
@@ -342,7 +339,7 @@ const ChatAdmin = () => {
                                                 Russell Crowe
                                             </p>
                                             <p class="text-sm mt-1">
-                                                Is Andrés coming for this one?
+                                                Is AndrÃ©s coming for this one?
                                             </p>
                                             <p class="text-right text-xs text-grey-dark mt-1">
                                                 12:45 pm
@@ -392,7 +389,7 @@ const ChatAdmin = () => {
                                                 Tom Cruise
                                             </p>
                                             <p class="text-sm mt-1">
-                                                Get Andrés on this movie ASAP!
+                                                Get AndrÃ©s on this movie ASAP!
                                             </p>
                                             <p class="text-right text-xs text-grey-dark mt-1">
                                                 12:45 pm
@@ -424,3 +421,4 @@ const ChatAdmin = () => {
 };
 
 export default ChatAdmin;
+

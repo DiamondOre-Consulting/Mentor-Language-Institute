@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import TeacherSidebar from "../../Component/TeachersComponents/TeacherSidebar";
 import TeacherDashboard from "../../Component/TeachersComponents/TeacherDashboard";
-import axios from "axios";
+import { useApi } from "../../api/useApi";
 import { useJwt } from "react-jwt";
 import { useNavigate } from "react-router-dom";
 
 const Teachermain = () => {
   const navigate = useNavigate();
   const [teacherData, setTeacherData] = useState();
+  const { get } = useApi();
   const { decodedToken } = useJwt(localStorage.getItem("token"));
   const token = localStorage.getItem("token");
   // console.log(token )
@@ -46,14 +47,12 @@ const Teachermain = () => {
         }
 
         // Fetch associates data from the backend
-        const response = await axios.get(
-          "https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/my-profile",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await get({
+          url: "/teachers/my-profile",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
 
         if (response?.status == 200) {
           setTeacherData(response?.data);
@@ -67,13 +66,14 @@ const Teachermain = () => {
   }, []);
 
   return (
-    <>
+    <div className="teacher-shell">
       <TeacherSidebar />
       <div className="admin-content">
         <TeacherDashboard teacherData={teacherData} />
       </div>
-    </>
+    </div>
   );
 };
 
 export default Teachermain;
+

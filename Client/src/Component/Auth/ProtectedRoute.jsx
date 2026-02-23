@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useApi } from "../../api/useApi";
 
 const UserVerify = ({ routeName }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { get } = useApi();
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -18,12 +19,10 @@ const UserVerify = ({ routeName }) => {
         return;
       }
       try {
-        const response = await axios.get(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/${routeName}/my-profile`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        await get({
+          url: `/${routeName}/my-profile`,
+          headers: { Authorization: `Bearer ${token}` },
+        }).unwrap();
         setLoading(false);
       } catch (error) {
         if (routeName === "admin-confi" || routeName === "teachers") {
@@ -53,3 +52,4 @@ const UserVerify = ({ routeName }) => {
 };
 
 export default UserVerify;
+

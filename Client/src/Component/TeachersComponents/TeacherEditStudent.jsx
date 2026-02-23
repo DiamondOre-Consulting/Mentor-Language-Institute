@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 import { IoClose } from "react-icons/io5";
@@ -14,16 +14,17 @@ const override = css`
 const TeacherEditStudent = ({ studentData, closingModel }) => {
   // console.log("close model",closeModel)
   const navigate = useNavigate();
+  const { put } = useApi();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [userName, setUserName] = useState("");
+  const [email, setEmail] = useState("");
   const [dob, setdob] = useState("");
   const [grade, setGrade] = useState("");
   const [studentDetails, setStudentsDetails] = useState(null);
   const [popupMessage, setPopupMessage] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [branch, setBranch] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleShowPassword = () => setShowPassword((prev) => !prev);
@@ -35,9 +36,9 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
       setName(studentData.name || "");
       setPhone(studentData.phone || "");
       setUserName(studentData.userName || "");
-      setBranch(studentData.branch || "");
+      setEmail(studentData.email || "");
       setdob(studentData.dob || "");
-      setPassword(studentData.password || "");
+      setPassword("");
       setGrade(studentData?.grade || "");
     }
   }, [studentData]);
@@ -48,30 +49,27 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
     setPopupMessage(null);
 
     try {
-      const response = await axios.put(
-        `https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/student-edit/${studentData?._id}`,
-        {
+      const response = await put({
+        url: `/teachers/student-edit/${studentData?._id}`,
+        data: {
           name,
           phone,
           password,
-          branch,
           userName,
+          email,
           grade,
           dob,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
 
       if (response.status === 200) {
         setPopupMessage("Student Edited Successfully");
         setName("");
         setPhone("");
         setPassword("");
-        setBranch("");
         setUserName("");
       } else if (response.status === 400) {
         setPopupMessage(response.data.message);
@@ -152,6 +150,19 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
 
                 <div>
                   <input
+                    type="email"
+                    name="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter email address"
+                    className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
+                    required=""
+                  />
+                </div>
+
+                <div>
+                  <input
                     type="text"
                     name="grade"
                     id="grade"
@@ -175,20 +186,6 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
                   />
                 </div>
 
-                <select
-                  id="branch"
-                  name="branch"
-                  value={branch}
-                  onChange={(e) => setBranch(e.target.value)}
-                  className="w-full p-2 border border-gray-500 rounded-md"
-                >
-                  <option>Select Branch</option>
-                  <option value="Noida-107">Noida-107</option>
-                  <option value="Noida-51">Noida-51</option>
-                  <option value="East Delhi">East Delhi</option>
-                  <option value="North Delhi">North Delhi</option>
-
-                </select>
                 <div className="flex items-center justify-between w-full p-2 border border-gray-500 rounded-md">
                   <label
                     className="block mb-2 text-sm font-medium text-gray-900 "
@@ -212,7 +209,6 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter New Password"
                     className="bg-gray-50 border border-gray-900 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-600 focus:border-gray-600 block w-full p-2.5      "
-                    required=""
                   />
                 </div>
 
@@ -237,10 +233,10 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
                 </div>
               </form>
               {popupMessage && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                  <div className="p-4 bg-white rounded-lg shadow-md">
+                <div className="app-modal-overlay">
+                  <div className="app-modal-card app-modal-card-sm relative">
                     <svg
-                      className="float-right w-6 h-6 -mt-2 text-red-500 cursor-pointer"
+                      className="absolute right-4 top-4 h-6 w-6 cursor-pointer text-red-500"
                       onClick={() => setPopupMessage(null)}
                       width="24"
                       height="24"
@@ -256,7 +252,7 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
                       <line x1="18" y1="6" x2="6" y2="18" />{" "}
                       <line x1="6" y1="6" x2="18" y2="18" />
                     </svg>
-                    <p className="mt-4 text-lg font-bold text-green-700">
+                    <p className="mt-6 text-lg font-bold text-emerald-600">
                       {popupMessage}
                     </p>
                     {/* <button className="px-4 py-2 text-white bg-orange-500 rounded-md" onClick={() => setPopupMessage(null)}>Close</button> */}
@@ -272,3 +268,4 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
 };
 
 export default TeacherEditStudent;
+

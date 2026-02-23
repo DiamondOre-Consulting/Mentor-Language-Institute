@@ -37,6 +37,9 @@ const Navbar = () => {
               <div className="py-1">
                 <a href="#" className="text-sm hover:bg-gray-100 text-gray-700 text-wrap block px-4 py-2">mentor.languageclasses@gmail.com</a>
               </div>
+              <div className="py-1">
+                <a href="#" className="text-sm hover:bg-gray-100 text-gray-700 text-wrap block px-4 py-2">F-4/1, Golf Course Rd, Block F, DLF Phase 1, Sector 26A, Gurugram, Haryana-122002</a>
+              </div>
             </div>
           )}
         </li>

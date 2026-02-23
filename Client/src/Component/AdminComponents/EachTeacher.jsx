@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import { useApi } from "../../api/useApi";
 import { useJwt } from "react-jwt";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
@@ -15,10 +15,10 @@ const override = css`
 
 const EachTeacher = () => {
   const navigate = useNavigate();
+  const { get } = useApi();
   const [teacherDetails, setTeacherDetails] = useState(null);
-    const [showModal, setShowModal] = useState(false);
-  
-  const [classIds, setClassIds] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+
   const [classesData, setClassesData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedClassId, setSelectedClassId] = useState("");
@@ -28,87 +28,56 @@ const EachTeacher = () => {
 
   const token = localStorage.getItem("token");
 
-  useEffect(() => {
+  const fetchTeacherDetails = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      // No token found, redirect to login page
       navigate("/login");
+      return;
     }
 
-    const fetchTeacherDetails = async () => {
-      try {
-        const token = localStorage.getItem("token");
+    const response = await get({
+      url: `/admin-confi/all-teachers/${id}`,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }).unwrap();
+    if (response.status === 200) {
+      setTeacherDetails(response.data);
+    }
+  };
 
-        if (!token) {
-          // Token not found in local storage, handle the error or redirect to the login page
-          console.error("No token found");
-          navigate("/login");
-          return;
-        }
+  const fetchTeacherClasses = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
 
-        // Fetch associates data from the backend
-        const response = await axios.get(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-teachers/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (response.status == 200) {
-          const oneteacher = response.data;
-          // console.log(oneteacher);
-          const allclassIds = response.data.myClasses;
+    const response = await get({
+      url: `/admin-confi/teacher-classes/${id}`,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }).unwrap();
+    if (response.status === 200) {
+      setClassesData(response.data);
+    }
+  };
 
-          // console.log(classIds);
+  const refreshTeacher = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([fetchTeacherDetails(), fetchTeacherClasses()]);
+    } catch (error) {
+      console.log("");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-          setTeacherDetails(response.data);
-          setClassIds(allclassIds);
-        }
-      } catch (error) {
-        console.log("");
-      }
-    };
-
-    fetchTeacherDetails();
-  }, []);
-
-  //   teacher courses
   useEffect(() => {
-    const fetchAllTeachersCourses = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          // No token found, redirect to login page
-          navigate("/login");
-          return;
-        }
-
-        const classesData = [];
-        for (const classId of classIds) {
-          const classResponse = await axios.get(
-            `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-classes/${classId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          if (classResponse.status === 200) {
-            // console.log("classdata", classResponse.data);
-            classesData.push(classResponse.data);
-          }
-        }
-        setClassesData(classesData);
-      } catch (error) {
-        console.error("Error fetching teachers' classes:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAllTeachersCourses();
-  }, [teacherDetails]);
+    refreshTeacher();
+  }, [id, navigate]);
 
   const handleViewClass = (classId) => {
     setSelectedClassId(classId);
@@ -116,17 +85,17 @@ const EachTeacher = () => {
   };
 
 
-    const handleEditClick = () => {
+  const handleEditClick = () => {
     setShowModal(true);
   };
 
 
-    const closeModal = () => {
+  const closeModal = () => {
     setShowModal(false);
-   
+
   };
 
-  
+
   return (
     <>
       {loading && (
@@ -152,7 +121,7 @@ const EachTeacher = () => {
           className="w-40 border-4 border-white rounded-full"
         />
         <div className="flex items-center  mt-2 space-x-2">
-          <p className="flex text-2xl ">{teacherDetails?.name} 
+          <p className="flex text-2xl ">{teacherDetails?.name}
           </p>
           <span className="p-1 bg-blue-500 rounded-full" title="Verified">
             <svg
@@ -172,7 +141,7 @@ const EachTeacher = () => {
           </span>
         </div>
         <p className="text-gray-700">Phone: {teacherDetails?.phone}</p>
-            <p   onClick={() => handleEditClick()} className="text-red-700 underline cursor-pointer">Edit Teacher</p>
+        <p onClick={() => handleEditClick()} className="text-red-700 underline cursor-pointer">Edit Teacher</p>
 
       </div>
       {/* <div class="flex-1 flex flex-col items-center lg:items-end justify-end px-8 mt-2">
@@ -212,13 +181,13 @@ const EachTeacher = () => {
             <h1 className="text-3xl font-bold text-gray-700 ">All Courses </h1>
             <div className="w-20 h-1 bg-orange-500"></div>
           </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 ">
+          <div className="grid grid-cols-1 gap-x-8 gap-y-8 md:grid-cols-3">
             {classesData.map((course) => (
               <div
-                className="border border-0 min-w-80 rounded-md shadow-xl cursor-pointer hover:shadow-none"
+                className="rounded-md shadow-xl cursor-pointer hover:shadow-none p-2"
                 key={course?._id}
               >
-                <div className="col-span-1 px-2 py-3 bg-orange-500 rounded-md">
+                <div className="col-span-1 px-2 py-3 bg-orange-500 rounded-md h-full">
                   <span className="text-sm text-white">Course</span>
                   <p className="text-xl font-bold text-white">
                     {course?.classTitle}
@@ -259,20 +228,23 @@ const EachTeacher = () => {
           </div>
         </div>
 
-           {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-                  <div className="bg-white p-4 rounded shadow-xl max-w-md w-full relative">
-                    <AdminEditTeacher
-                    id={id}
-                     teacherDetails={teacherDetails}
-                      closingModel={closeModal}
-                    />
-                  </div>
-                </div>
-              )}
+        {showModal && (
+          <div className="app-modal-overlay app-modal-overlay--top app-modal-overlay--scroll">
+            <div className="app-modal-card app-modal-card-md relative">
+              <AdminEditTeacher
+                id={id}
+                teacherDetails={teacherDetails}
+                onUpdated={refreshTeacher}
+                closingModel={closeModal}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
 };
 
 export default EachTeacher;
+
+

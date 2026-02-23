@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
-import axios from "axios";
+﻿import React, { useState, useEffect, useMemo } from "react";
+import { useApi } from "../../api/useApi";
 import ChatBox from "../../Component/Studentcomponents/Studashboard/ChatBox";
 import { useMediaQuery } from "@react-hook/media-query";
 import { useJwt } from "react-jwt";
@@ -8,12 +8,13 @@ import userimg2 from "..//..//assets/userimg2.png";
 
 const ChatStudent = () => {
   const navigate = useNavigate();
+  const { get } = useApi();
   const [error, setError] = useState("");
   // const sendMessage = async (e) => {
   //   e.preventDefault();
   //   socket.emit('message', {room, message});
   //   try {
-  //     const response = await axios.post("https://mentor-backend-rbac6.ondigitalocean.app/api/chats/send-message",
+  //     const response = await axios.post("/chats/send-message",
   //       {
   //         senderId: userId,
   //         receiverId: '66321e9acf8d31d7e3316ec1',
@@ -91,14 +92,12 @@ const ChatStudent = () => {
     // Fetch teachers when the component mounts
     const fetchTeachers = async () => {
       try {
-        const response = await axios.get(
-          "https://mentor-backend-rbac6.ondigitalocean.app/api/students/chat-all-teachers",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        ); // Adjust the API endpoint
+        const response = await get({
+          url: "/students/chat-all-teachers",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap(); // Adjust the API endpoint
         if (response.status === 201) {
           // console.log(response.data);
           setTeachers(response.data); // Assuming the API returns an array of teacher objects
@@ -239,3 +238,5 @@ const ChatStudent = () => {
 };
 
 export default ChatStudent;
+
+

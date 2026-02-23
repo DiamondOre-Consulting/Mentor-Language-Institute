@@ -1,88 +1,95 @@
-import React, { useState } from 'react'
-import ielts from '..//..//..//assets/ielts.jpg'
-import sat from '..//..//..//assets/sat.jpg'
-import toefl from '..//..//..//assets/toefl.jpg'
-import ap from '..//..//..//assets/ap.jpg'
-import english from '..//..//..//assets/english.webp'
-import personality from '..//..//..//assets/persnality.webp'
-import cuet from '..//..//..//assets/cuet1.jpg'
+import React, { useState } from "react";
+import ielts from "..//..//..//assets/ielts.jpg";
+import sat from "..//..//..//assets/sat.jpg";
+import toefl from "..//..//..//assets/toefl.jpg";
+import ap from "..//..//..//assets/ap.jpg";
+import english from "..//..//..//assets/english.webp";
+import personality from "..//..//..//assets/persnality.webp";
+import cuet from "..//..//..//assets/cuet1.jpg";
+import { Badge } from "../../../components/ui/badge";
+import { Button } from "../../../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../../components/ui/dialog";
+
+const specialCourseImages = [
+  { src: ielts, title: "IELTS", style: "bg-cover bg-center" },
+  { src: sat, title: "SAT", style: "bg-cover bg-center" },
+  { src: toefl, title: "TOEFL", style: "bg-cover bg-center" },
+  { src: ap, title: "AP", style: "bg-cover bg-center" },
+  { src: cuet, title: "CUET", style: "bg-contain bg-center bg-no-repeat" },
+  { src: english, title: "Spoken English", style: "bg-cover bg-top md:bg-center" },
+  {
+    src: personality,
+    title: "Personality Development",
+    style: "bg-contain bg-center bg-no-repeat md:col-span-2 lg:col-span-3",
+  },
+];
 
 const SpecialCourses = () => {
-    const [popup, setPopUp] = useState(false)
+  const [popup, setPopUp] = useState(false);
 
-    return (
-        <>
-            <div>
-                <div className='mt-24'>
-                    <div className="bg-white py-4 sm:py-6">
-                        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                            <div className="mx-auto w-full lg:mx-0">
-                                <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-                                    Special Courses
-                                </h2>
-                            </div>
-
-                            <div className='grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-2 gap-y-4 mt-10 mb-0 cursor-pointer' onClick={() => setPopUp(true)}>
-                                <div className='border border-1 h-60 rounded-md ' style={{ backgroundImage: `url(${ielts})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
-                                <div className='border border-1 h-60 rounded-md' style={{ backgroundImage: `url(${sat})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
-                                <div className='border border-1 h-60 rounded-md' style={{ backgroundImage: `url(${toefl})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
-                                <div className='border border-1 h-60 rounded-md' style={{ backgroundImage: `url(${ap})`, backgroundSize: "cover", backgroundPosition: "center" }}></div>
-                                <div className='border border-1 h-60 rounded-md' style={{ backgroundImage: `url(${cuet})`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat" }}></div>
-                                <div className='border border-1 h-60 rounded-md bg-top md:bg-center' style={{ backgroundImage: `url(${english})`, backgroundSize: "cover" }}></div>
-                                <div className='border border-1 h-60 rounded-md md:col-span-3 bg-no-repeat' style={{ backgroundImage: `url(${personality})`, backgroundSize: "contain", backgroundPosition: "center" }}></div>
-                            </div>
-                        </div>
-                    </div>
+  return (
+    <>
+      <section className="mt-8">
+        <Card className="border-orange-100/80 bg-white/90 shadow-sm">
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <CardTitle className="text-2xl sm:text-3xl">Special Courses</CardTitle>
+            <Badge variant="secondary" className="w-fit">
+              Contact to enroll
+            </Badge>
+          </CardHeader>
+          <CardContent>
+            <div
+              className="grid cursor-pointer grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5"
+              onClick={() => setPopUp(true)}
+            >
+              {specialCourseImages.map((item) => (
+                <div
+                  key={item.title}
+                  className={`group relative h-44 overflow-hidden rounded-xl border border-border shadow-sm md:h-52 ${item.style}`}
+                  style={{ backgroundImage: `url(${item.src})` }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/25 to-transparent opacity-80 transition group-hover:opacity-100" />
+                  <p className="absolute bottom-3 left-3 text-sm font-semibold text-white">
+                    {item.title}
+                  </p>
                 </div>
+              ))}
             </div>
+          </CardContent>
+        </Card>
+      </section>
 
-            {popup && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-
-                    <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle mx-6 md:mx-0 md:w-1/3  sm:p-6"
-                        role="dialog" aria-modal="true" aria-labelledby="modal-headline">
-                        <div class="hidden sm:block absolute top-0 right-0 pt-4 pr-4">
-                            <button type="button" onClick={()=> setPopUp(false)} data-behavior="cancel" class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                <span class="sr-only">Close</span>
-                                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="sm:flex sm:items-start">
-                            <div
-                                class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-orange-100 sm:mx-0 sm:h-10 sm:w-10">
-                                <svg class="h-6 w-6 text-orange-400" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
-                            </div>
-                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                                <h3 class="text-lg leading-6 font-medium text-gray-900 pr-2" id="modal-headline">
-                                   Please Contact To The Institute Directly !!
-                                </h3>
-                                <div class="mt-2">
-                                    <p class="text-sm text-gray-500">
-                                        Call us : +91 9999466159
-                                    </p>
-                                    <p class="text-sm text-gray-500">
-                                       Email : mentor.languageclasses@gmail.com
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-                            <button type="button" onClick={()=> setPopUp(false)} data-behavior="commit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-orange-400 text-base font-medium text-white  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
-                                Close
-                            </button>
-                           
-                        </div>
-                    </div>
-                </div>
-            )}
-        </>
-    );
-}
+      <Dialog open={popup} onOpenChange={setPopUp}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Please contact the institute directly.</DialogTitle>
+            <DialogDescription>
+              These premium tracks are scheduled with a counselor.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1 text-sm text-muted-foreground">
+            <p>Call us: +91 9999466159</p>
+            <p>Email: mentor.languageclasses@gmail.com</p>
+            <p>
+              F-4/1, Golf Course Rd, Block F, DLF Phase 1, Sector 26A, Gurugram,
+              Haryana-122002
+            </p>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button onClick={() => setPopUp(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
 
 export default SpecialCourses;

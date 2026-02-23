@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "..//..//..//assets/logo.png";
 import Navbar from "./Navbar";
-import axios from "axios";
-import Footer from "./Footer";
+import { useApi } from "../../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 
@@ -15,14 +14,15 @@ const override = css`
 
 const Parentlog = () => {
   const navigate = useNavigate();
+  const { post } = useApi();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [dob, setdob] = useState();
   const [userName, setUserName] = useState("");
+  const [email, setEmail] = useState("");
   const [popupMessage, setPopupMessage] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [branch, setBranch] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleShowPassword = () => {
@@ -35,35 +35,37 @@ const Parentlog = () => {
     setPopupMessage(null);
 
     try {
-      const response = await axios.post(
-        "https://mentor-backend-rbac6.ondigitalocean.app/api/students/signup",
-        {
+      const response = await post({
+        url: "/students/signup",
+        data: {
           name,
           phone,
           password,
-          branch,
           userName,
           dob,
-        }
-      );
+          email,
+        },
+      }).unwrap();
 
       if (response.status === 200) {
         setPopupMessage("Student Registered Successfully");
         setName("");
         setPhone("");
         setPassword("");
+        setEmail("");
         navigate("/student-login");
-      } else if (response.status === 400) {
-        setPopupMessage("Please Enter a Unique UserName");
+      } else if (response.status === 409) {
+        setPopupMessage("Username, phone, or email already exists.");
       } else {
         setPopupMessage("Error Registering Student");
       }
     } catch (error) {
       if (error.response) {
         const status = error.response.status;
-        if (status === 400) {
-          console.log("Student already registered");
-          setPopupMessage("Please Enter a Unique UserName");
+        if (status === 409 || status === 400) {
+          setPopupMessage(
+            error.response?.data?.message || "Student already registered."
+          );
         } else {
           console.error("Error adding Student:", status);
           setPopupMessage("Error Registering Student");
@@ -133,6 +135,19 @@ const Parentlog = () => {
 
                 <div>
                   <input
+                    type="email"
+                    name="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email address"
+                    class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
+                    required=""
+                  />
+                </div>
+
+                <div>
+                  <input
                     type="phone"
                     name="phone"
                     id="phone"
@@ -144,20 +159,6 @@ const Parentlog = () => {
                   />
                 </div>
 
-                <select
-                  id="branch"
-                  name="branch"
-                  value={branch}
-                  onChange={(e) => setBranch(e.target.value)}
-                  className="w-full p-2 border border-gray-500 rounded-md"
-                >
-                  <option>Select Branch</option>
-                  <option value="Noida-107">Noida-107</option>
-                  <option value="Noida-51">Noida-51</option>
-                  <option value="East Delhi">East Delhi</option>
-                  <option value="North Delhi">North Delhi</option>
-
-                </select>
                 <div className="flex items-center justify-between w-full p-2 border border-gray-500 rounded-md">
                   <label
                     className="block mb-2 text-sm font-medium text-gray-900 "
@@ -181,7 +182,7 @@ const Parentlog = () => {
                     name="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                     class="bg-gray-50 border border-gray-900 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-600 focus:border-gray-600 block w-full p-2.5      "
                     required=""
                   />
@@ -216,26 +217,26 @@ const Parentlog = () => {
                 </a>
               </form>
               {popupMessage && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                  <div className="bg-white p-4 rounded-lg shadow-md">
+                <div className="app-modal-overlay">
+                  <div className="app-modal-card app-modal-card-sm relative">
                     <svg
-                      class="h-6 w-6 text-red-500 float-right -mt-2 cursor-pointer"
+                      className="absolute right-4 top-4 h-6 w-6 cursor-pointer text-red-500"
                       onClick={() => setPopupMessage(null)}
                       width="24"
                       height="24"
                       viewBox="0 0 24 24"
-                      stroke-width="2"
+                      strokeWidth="2"
                       stroke="currentColor"
                       fill="none"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     >
                       {" "}
                       <path stroke="none" d="M0 0h24v24H0z" />{" "}
                       <line x1="18" y1="6" x2="6" y2="18" />{" "}
                       <line x1="6" y1="6" x2="18" y2="18" />
                     </svg>
-                    <p className="text-lg font-bold mt-4 text-green-700">
+                    <p className="mt-6 text-lg font-bold text-emerald-600">
                       {popupMessage}
                     </p>
                     {/* <button className="bg-orange-500 text-white py-2 px-4 rounded-md" onClick={() => setPopupMessage(null)}>Close</button> */}
@@ -246,9 +247,10 @@ const Parentlog = () => {
           </div>
         </div>
       </section>
-      <Footer />
     </>
   );
 };
 
 export default Parentlog;
+
+

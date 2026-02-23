@@ -3,18 +3,17 @@ import mongoose from "mongoose";
 const classSchema = new mongoose.Schema({
   branch: {
     type: String,
-    required: true,
+    default: "Main",
   },
   classTitle: {
     type: String,
     required: true,
   },
-
-  teachBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    default: null,
+  grade: {
+    type: String,
+    default: "",
   },
+
   totalHours: {
     type: Number,
   },

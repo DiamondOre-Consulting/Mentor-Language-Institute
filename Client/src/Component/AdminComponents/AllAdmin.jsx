@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+﻿import React, { useEffect, useState } from "react";
+import { useApi } from "../../api/useApi";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { toast } from "sonner";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const AllAdmin = () => {
   const [allAdmin, setAllAdmin] = useState([]);
+  const { get, put, del } = useApi();
   const [id, setId] = useState();
   const [editPopupForm, setEditPopupForm] = useState(false);
   const [deletePopup, setDeletePopup] = useState(false);
@@ -19,9 +20,9 @@ const AllAdmin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const handleGetAllAdmin = async () => {
     try {
-      const response = await axios.get(
-        "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-admin"
-      );
+      const response = await get({
+        url: "/admin-confi/all-admin",
+      }).unwrap();
       setAllAdmin(response?.data);
     } catch (error) {
       console.log(error);
@@ -32,9 +33,9 @@ const AllAdmin = () => {
     const toastId = toast.loading("Deleting admin...");
 
     try {
-      const res = await axios.delete(
-        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/delete-admin/${id}`
-      );
+      await del({
+        url: `/admin-confi/delete-admin/${id}`,
+      }).unwrap();
 
       toast.success("Admin deleted!", { id: toastId });
       await handleGetAllAdmin();
@@ -57,10 +58,10 @@ const AllAdmin = () => {
   const handleEditAdmin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.put(
-        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/edit-admin/${id}`,
-        editData
-      );
+      await put({
+        url: `/admin-confi/edit-admin/${id}`,
+        data: editData,
+      }).unwrap();
       await handleGetAllAdmin();
       toast.success("Admin Updated successfully");
     } catch (error) {
@@ -87,7 +88,7 @@ const AllAdmin = () => {
             <div className="space-y-4">
               <div>
                 <h2 className="text-xl font-semibold text-gray-800">
-                  Branch: {item.branch}
+                  Admin
                 </h2>
                 <p className="text-sm text-gray-600">Phone: {item.phone}</p>
                 <p className="text-sm text-gray-600">Name: {item.name}</p>
@@ -118,8 +119,8 @@ const AllAdmin = () => {
       </div>
 
       {editPopupForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm">
+        <div className="app-modal-overlay app-modal-overlay--top app-modal-overlay--scroll">
+          <div className="app-modal-card app-modal-card-sm">
             <h3 className="text-lg font-semibold mb-4">Edit Admin</h3>
             <form onSubmit={handleEditAdmin} className="space-y-4">
               <input
@@ -175,8 +176,8 @@ const AllAdmin = () => {
       )}
 
       {deletePopup && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+        <div className="app-modal-overlay app-modal-overlay--top app-modal-overlay--scroll">
+          <div className="app-modal-card app-modal-card-md">
             <h2 className="text-xl font-semibold mb-4 text-gray-800">
               Confirm Deletion
             </h2>
@@ -208,3 +209,5 @@ const AllAdmin = () => {
 };
 
 export default AllAdmin;
+
+

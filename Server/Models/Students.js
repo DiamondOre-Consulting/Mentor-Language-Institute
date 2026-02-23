@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const studentSchema = new mongoose.Schema({
   branch: {
     type: String,
-    required: true,
+    default: "Main",
   },
   name: {
     type: String,
@@ -18,11 +18,22 @@ const studentSchema = new mongoose.Schema({
   phone: {
     type: String,
     required: true,
+    unique: true,
+    trim: true,
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    lowercase: true,
+    match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address."],
   },
   userName: {
     type: String,
     required: true,
     unique: true,
+    trim: true,
   },
   password: {
     type: String,

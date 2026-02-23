@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import axios from "axios";
+﻿import React, { useEffect, useState } from "react";
+import ReactDOM from "react-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 
@@ -11,6 +12,8 @@ const override = css`
 `;
 
 const Allstudents = () => {
+  const navigate = useNavigate();
+  const { get, put, del } = useApi();
   const [allStudents, setAllStudents] = useState([]);
   const [allCourses, setAllCourses] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -23,7 +26,9 @@ const Allstudents = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [setuId, setStuId] = useState(null);
   const [stuname, setStuName] = useState("");
-  const [isEditableFormOpen, setIsEditableFormOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const [showDeletePopup, setShowDeletePopup] = useState(false);
+
   const months = [
     "January",
     "February",
@@ -38,13 +43,13 @@ const Allstudents = () => {
     "November",
     "December",
   ];
+
   const [formData, setFormData] = useState({
     totalFee: "",
     feeMonth: "",
-    paid: "",
-    amountPaid: "",
+    paid: "pending",
+    amountPaid: "0",
   });
-  // all students
 
   useEffect(() => {
     const fetchAllStudents = async () => {
@@ -53,36 +58,30 @@ const Allstudents = () => {
         const token = localStorage.getItem("token");
 
         if (!token) {
-          console.error("No token found");
           navigate("/admin-login");
           return;
         }
 
-        const response = await axios.get(
-          "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-students",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (response.status == 200) {
-          // console.log("all students",response.data);
-          const allstudents = response.data;
-          // console.log(allstudents);
-          setAllStudents(allstudents);
+        const response = await get({
+          url: "/admin-confi/all-students",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
+
+        if (response.status === 200) {
+          setAllStudents(response.data);
         }
       } catch (error) {
-        console.error("Error fetching associates:", error);
+        console.error("Error fetching students:", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchAllStudents();
-  }, []);
+  }, [navigate]);
 
-  // all courses
   useEffect(() => {
     const fetchAllcourses = async () => {
       try {
@@ -90,24 +89,19 @@ const Allstudents = () => {
         const token = localStorage.getItem("token");
 
         if (!token) {
-          console.error("No token found");
           navigate("/login");
           return;
         }
 
-        const response = await axios.get(
-          "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-classes",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (response.status == 200) {
-          // console.log(response.data);
-          const allcourses = response.data;
-          // console.log(allcourses);
-          setAllCourses(allcourses);
+        const response = await get({
+          url: "/admin-confi/all-classes",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
+
+        if (response.status === 200) {
+          setAllCourses(response.data);
         }
       } catch (error) {
         console.error("Error fetching courses:", error);
@@ -117,20 +111,25 @@ const Allstudents = () => {
     };
 
     fetchAllcourses();
-  }, []);
+  }, [navigate]);
 
-  // Filter students based on search query
+  useEffect(() => {
+    const hasOpenModal = isFormOpen || showPopup || !!popupMessage || loading || showDeletePopup;
+    document.body.style.overflow = hasOpenModal ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isFormOpen, showPopup, popupMessage, loading, showDeletePopup]);
+
   const filteredStudents = allStudents.filter((student) =>
-    student.name.toLowerCase().startsWith(searchQuery.toLowerCase())
+    student.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Handle search input change
   const handleSearchInputChange = (e) => {
     setSearchQuery(e.target.value);
   };
 
   const openForm = (studentId) => {
-    // console.log("Clicked Accept for student ID:", studentId);
     setSelectedStudentId(studentId);
     setIsFormOpen(true);
   };
@@ -143,6 +142,14 @@ const Allstudents = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handlePaidChange = (value) => {
+    setFormData((prev) => ({
+      ...prev,
+      paid: value,
+      amountPaid: value === "pending" ? "0" : prev.amountPaid,
+    }));
   };
 
   const monthNameToNumber = {
@@ -166,50 +173,57 @@ const Allstudents = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
       if (!token) {
-        // console.error("No token found");
         return;
       }
 
       const { totalFee, feeMonth, paid, amountPaid } = formData;
-      // const lowerCaseFeeMonth = feeMonth.toLowerCase();
       const monthNumber = monthNameToNumber[feeMonth];
+      const isPaid = paid === "yes";
+      const normalizedAmountPaid = isPaid ? Number(amountPaid) : 0;
 
-      const response = await axios.put(
-        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/enroll-student/${selectedCourseId}/${selectedStudentId}`,
-        {
-          totalFee,
+      const response = await put({
+        url: `/admin-confi/enroll-student/${selectedCourseId}/${selectedStudentId}`,
+        data: {
+          totalFee: Number(totalFee),
           feeMonth: monthNumber,
-          paid,
-          amountPaid,
+          paid: isPaid,
+          amountPaid: normalizedAmountPaid,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
 
       if (response.status === 200) {
-        // console.log(response.data.message);
-        setPopupMessage("Successfully Enrolled!");
-        setIsFormOpen(false);
+        if (isPaid) {
+          setPopupMessage("Student enrolled and invoice sent.");
+        } else {
+          setPopupMessage("Student enrolled.");
+        }
+        setAllStudents((prevStudents) =>
+          prevStudents.map((student) =>
+            student._id === selectedStudentId
+              ? {
+                ...student,
+                classes: Array.from(
+                  new Set([...(student.classes || []), selectedCourseId])
+                ),
+              }
+              : student
+          )
+        );
+        closeForm();
       } else if (response.status === 409) {
-        // console.log("Student already registered!");
         setPopupMessage("Student already Enrolled!");
         setIsFormOpen(false);
       }
     } catch (error) {
-      if (error.response) {
-        const status = error.response.status;
-        if (status === 409) {
-          // console.log("Student already registered!");
-          setPopupMessage("Student already Enrolled!");
-          setIsFormOpen(false);
-        } else {
-          console.error("Error login teacher:", status);
-          setError("Login Details Are Wrong!!");
-        }
+      if (error.response && error.response.status === 409) {
+        setPopupMessage("Student already Enrolled!");
+      } else {
+        setPopupMessage("Unable to enroll student right now.");
       }
+      setIsFormOpen(false);
     } finally {
       setLoading(false);
     }
@@ -217,35 +231,42 @@ const Allstudents = () => {
 
   const closeForm = () => {
     setSelectedStudentId("");
-    setIsFormOpen(false);
+    setSelectedCourseId("");
+      setFormData({
+        totalFee: "",
+        feeMonth: "",
+        paid: "pending",
+        amountPaid: "0",
+      });
+      setIsFormOpen(false);
   };
 
-  //  DETATIVE STUDENT ACCOUNT BY ADMIN
-  // console.log(setuId)
-  // console.log(status)
   const detailsctiveaccount = async (e) => {
     e.preventDefault();
 
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        // console.error("No token found");
         navigate("/login");
         return;
       }
 
-      const deactiveResponse = await axios.put(
-        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/deactivate-account/${setuId}`,
-        { status },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const deactiveResponse = await put({
+        url: `/admin-confi/deactivate-account/${setuId}`,
+        data: { status },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
+
       if (deactiveResponse.status === 201) {
-        // console.log("Account has been deactivated");
-        window.location.reload();
+        setAllStudents((prevStudents) =>
+          prevStudents.map((student) =>
+            student._id === setuId
+              ? { ...student, deactivated: status === "true" }
+              : student
+          )
+        );
         setShowPopup(false);
       }
     } catch (error) {
@@ -253,154 +274,161 @@ const Allstudents = () => {
     }
   };
 
-  // const deleteSudentId = (studentId) => {
-  //   setStuId(studentId);
-  //   deleteStudent();
-  // };
-
-  const deleteStudent = async (id) => {
-    // e.preventDefault();
+  const deleteStudent = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.delete(
-        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/delete-student/${id}`,
+      const response = await del({
+        url: `/admin-confi/delete-student/${deleteId}`,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
 
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
       if (response.status === 200) {
-        alert("Student Deleted Successfully");
-        window.location.reload();
+        setPopupMessage("Student Deleted Successfully");
+        setAllStudents(allStudents.filter((s) => s._id !== deleteId));
+        setShowDeletePopup(false);
       }
     } catch (error) {
       console.log("");
     }
   };
+
+  const openDeletePopup = (id) => {
+    setDeleteId(id);
+    setShowDeletePopup(true);
+  };
+
   return (
     <>
-      <h1 className="mb-1 text-4xl font-semibold text-center">All Students</h1>
-      <div className="h-1 mx-auto mb-8 text-center bg-orange-500 rounded w-44"></div>
-      {loading && (
-        <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-black bg-opacity-50">
-          <ClipLoader
-            color={"#FFA500"}
-            loading={loading}
-            css={override}
-            size={70}
-          />
-        </div>
-      )}
+      <div className="space-y-6">
+        <div className="rounded-2xl border border-orange-100 bg-gradient-to-r from-white to-orange-50 p-5 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-800">All Students</h1>
+              <p className="mt-1 text-sm text-slate-600">
+                Manage enrollments, profile actions, and account status in one place.
+              </p>
+            </div>
 
-      {/* Search bar */}
-      <div className="flex justify-end mb-4 mr-4">
-        <input
-          type="text"
-          placeholder="Search student..."
-          className="w-full px-2 py-2 border border-gray-400 rounded"
-          value={searchQuery}
-          onChange={handleSearchInputChange}
-        />
-      </div>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 shadow-3xl">
-        {filteredStudents.map((student) => (
-          <>
+            <div className="w-full max-w-md">
+              <div className="relative">
+                <svg
+                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+
+                <input
+                  type="text"
+                  placeholder="Search student by name..."
+                  className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-12 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100"
+                  style={{ paddingLeft: "3rem" }}
+                  value={searchQuery}
+                  onChange={handleSearchInputChange}
+                />
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {filteredStudents.map((student) => (
             <div
-              className={`block w-full p-4 ${
-                student.deactivated
-                  ? "bg-red-300 text-red-300 hover:text-red-400 hover:bg-red-400"
-                  : "bg-white hover:bg-gray-100"
-              }border border-gray-200 rounded-lg shadow     cursor-pointer`}
+              key={student._id}
+              className={`rounded-2xl border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${student.deactivated
+                ? "border-rose-200 bg-rose-50"
+                : "border-slate-200 bg-white"
+                }`}
             >
-              <div className="flex justify-between items-cetner">
-                {" "}
-                <h5 className="text-xl font-bold tracking-tight text-gray-900 ">
-                  {student.name}
-                </h5>{" "}
-                <span className="text-xs text-sm text-gray-100 rounded-md">
-                  <svg
-                    onClick={() => openPopup(student._id, student.name)}
-                    className="w-6 h-6 text-red-500"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    strokeWidth="2"
-                    stroke="currentColor"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    {" "}
-                    <path stroke="none" d="M0 0h24v24H0z" />{" "}
-                    <line x1="4" y1="7" x2="20" y2="7" />{" "}
-                    <line x1="10" y1="11" x2="10" y2="17" />{" "}
-                    <line x1="14" y1="11" x2="14" y2="17" />{" "}
-                    <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />{" "}
-                    <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
-                  </svg>
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <h5 className="text-lg font-semibold text-slate-800">{student.name}</h5>
+                  <p className="text-sm text-slate-600">Phone: {student.phone}</p>
+                </div>
+
+                <button
+                  onClick={() => openPopup(student._id, student.name)}
+                  className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-medium text-rose-600 hover:bg-rose-100"
+                >
+                  Status
+                </button>
+              </div>
+
+              <div className="mb-4">
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${student.deactivated
+                    ? "bg-rose-100 text-rose-700"
+                    : "bg-emerald-100 text-emerald-700"
+                    }`}
+                >
+                  {student.deactivated ? "Deactivated" : "Active"}
                 </span>
               </div>
 
-              <p className="text-sm font-normal text-gray-700 ">
-                phone :- <span>{student.phone}</span>
-              </p>
-              <div className="flex justify-between  items-center mt-4">
-                <span
-                  className="px-2 py-1 text-sm text-gray-100 bg-green-400 rounded-md"
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  className="rounded-lg bg-orange-500 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-600"
                   onClick={() => openForm(student._id)}
                 >
-                  Enroll{" "}
-                </span>
+                  Enroll
+                </button>
 
-                <span
-                  className="bg-red-500 p-2 text-[12px] text-gray-100 rounded-md"
-                  onClick={() => {
-                    deleteStudent(student?._id);
-                  }}
+                <button
+                  className="rounded-lg bg-rose-500 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-600"
+                  onClick={() => openDeletePopup(student._id)}
                 >
-                  Delete Student
-                </span>
+                  Delete
+                </button>
+
                 <Link
-                  key={student._id}
-                  to={`/admin-dashboard/student/${student?._id}`}
-                  className="px-2 py-1 text-sm text-blue-500 underline rounded-md "
+                  to={`/admin-dashboard/student/${student._id}`}
+                  className="rounded-lg bg-blue-500 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-blue-600"
                 >
-                  <button className="bg-blue-500 p-2 text-[12px] text-gray-100 rounded-md">
-                    Edit Student
-                  </button>
+                  Edit
                 </Link>
+
                 <Link
-                  key={student._id}
-                  to={`/admin-dashboard/allstudents/${student?._id}`}
-                  className="px-2 py-1 text-sm text-blue-500 underline rounded-md "
+                  to={`/admin-dashboard/allstudents/${student._id}`}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-center text-xs font-semibold text-slate-700 hover:bg-slate-100"
                 >
                   View
                 </Link>
               </div>
-              {/* <span className='flex justify-center justify-end px-1 py-1 mt-4 mb-1 text-center text-gray-100 bg-orange-500 rounded-full'>
-              Deactivate Account
-            </span> */}
             </div>
-          </>
-        ))}
+          ))}
+        </div>
+
+        {!loading && filteredStudents.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
+            No students found for this search.
+          </div>
+        )}
       </div>
 
-      {isFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="w-3/4 max-w-md p-6 bg-white rounded-md shadow-md">
-            <h2 className="mb-4 text-lg font-semibold">Enroll Student</h2>
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <ClipLoader color="#FFA500" loading={loading} css={override} size={70} />
+        </div>
+      )}
+
+      {isFormOpen && ReactDOM.createPortal(
+        <div className="app-modal-overlay app-modal-overlay--top app-modal-overlay--scroll">
+          <div className="app-modal-card app-modal-card-md max-h-[90vh] overflow-y-auto">
+            <h2 className="mb-4 text-lg font-semibold text-slate-800">Enroll Student</h2>
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
-                <label
-                  htmlFor="courses"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="courses" className="block text-sm font-medium text-slate-700">
                   All Courses
                 </label>
                 <select
-                  className="w-full"
+                  className="mt-1 w-full"
                   onChange={(e) => setSelectedCourseId(e.target.value)}
                   value={selectedCourseId}
                   required
@@ -413,12 +441,10 @@ const Allstudents = () => {
                   ))}
                 </select>
               </div>
+
               <div className="mb-4">
-                <label
-                  htmlFor="totalFee"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Total Fee:
+                <label htmlFor="totalFee" className="block text-sm font-medium text-slate-700">
+                  Total Fee
                 </label>
                 <input
                   type="text"
@@ -426,23 +452,19 @@ const Allstudents = () => {
                   name="totalFee"
                   value={formData.totalFee}
                   onChange={handleChange}
-                  className="w-full p-2 mt-1 border border-gray-500 rounded-md"
+                  className="mt-1"
                   required
                 />
               </div>
+
               <div className="mb-4">
-                <label
-                  htmlFor="feeMonth"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Fee Month:
+                <label htmlFor="feeMonth" className="block text-sm font-medium text-slate-700">
+                  Fee Month
                 </label>
                 <select
-                  className="w-full"
-                  onChange={(e) =>
-                    setFormData({ ...formData, feeMonth: e.target.value })
-                  } // Update the formData state
-                  value={formData.feeMonth} // Set the selected value to the formData state
+                  className="mt-1 w-full"
+                  onChange={(e) => setFormData({ ...formData, feeMonth: e.target.value })}
+                  value={formData.feeMonth}
                   required
                 >
                   <option value="">Select Month</option>
@@ -455,29 +477,36 @@ const Allstudents = () => {
               </div>
 
               <div className="mb-4">
-                <label
-                  htmlFor="paid"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Paid:
+                <label className="block text-sm font-medium text-slate-700">
+                  Payment Status
                 </label>
-                <select
-                  value={formData.paid}
-                  onChange={(e) =>
-                    setFormData({ ...formData, paid: e.target.value })
-                  }
-                  className="w-full"
-                >
-                  <option>Select Status</option>
-                  <option value="true">Yes</option>
-                </select>
+                <div className="mt-2 flex items-center gap-4 text-sm text-slate-700">
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="paid"
+                      value="pending"
+                      checked={formData.paid === "pending"}
+                      onChange={() => handlePaidChange("pending")}
+                    />
+                    <span>Pending</span>
+                  </label>
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="paid"
+                      value="yes"
+                      checked={formData.paid === "yes"}
+                      onChange={() => handlePaidChange("yes")}
+                    />
+                    <span>Yes</span>
+                  </label>
+                </div>
               </div>
-              <div className="mb-4">
-                <label
-                  htmlFor="amountPaid"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Amount Paid:
+
+              <div className="mb-5">
+                <label htmlFor="amountPaid" className="block text-sm font-medium text-slate-700">
+                  Amount Paid
                 </label>
                 <input
                   type="text"
@@ -485,34 +514,37 @@ const Allstudents = () => {
                   name="amountPaid"
                   value={formData.amountPaid}
                   onChange={handleChange}
-                  className="w-full p-2 mt-1 border border-gray-500 rounded-md"
-                  required
+                  className="mt-1"
+                  required={formData.paid === "yes"}
+                  disabled={formData.paid === "pending"}
                 />
               </div>
-              <div className="flex justify-end">
+
+              <div className="flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={closeForm}
-                  className="px-4 py-2 mr-2 text-white bg-gray-500 rounded-md hover:bg-gray-600"
+                  className="rounded-lg bg-slate-500 px-4 py-2 text-white hover:bg-slate-600"
                 >
                   Close
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-white bg-orange-400 rounded-md hover:bg-orange-500"
+                  className="rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600"
                 >
                   Submit
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {showPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="w-3/4 max-w-md p-6 bg-white rounded-md shadow-md">
-            <h2 className="mb-4 text-lg font-semibold">{stuname}</h2>
+      {showPopup && ReactDOM.createPortal(
+        <div className="app-modal-overlay app-modal-overlay--top app-modal-overlay--scroll">
+          <div className="app-modal-card app-modal-card-md max-h-[90vh] overflow-y-auto">
+            <h2 className="mb-4 text-lg font-semibold text-slate-800">{stuname}</h2>
             <form onSubmit={detailsctiveaccount}>
               <div className="mb-4">
                 <select
@@ -526,41 +558,89 @@ const Allstudents = () => {
                 </select>
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowPopup(false)}
-                  className="px-4 py-2 mr-2 text-white bg-gray-500 rounded-md hover:bg-gray-600"
+                  className="rounded-lg bg-slate-500 px-4 py-2 text-white hover:bg-slate-600"
                 >
                   Close
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-white bg-orange-400 rounded-md hover:bg-orange-500"
+                  className="rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600"
                 >
                   Submit
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {popupMessage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-75">
-          <div className="p-6 bg-white rounded-md shadow-md">
-            <p className="text-lg font-semibold">{popupMessage}</p>
+      {popupMessage && ReactDOM.createPortal(
+        <div className="app-modal-overlay app-modal-overlay--top">
+          <div className="app-modal-card app-modal-card-sm">
+            <p className="text-lg font-semibold text-slate-800">{popupMessage}</p>
             <button
               onClick={() => setPopupMessage("")}
-              className="px-4 py-2 mt-4 text-white bg-orange-400 rounded-md hover:bg-orange-500"
+              className="mt-4 rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600"
             >
               Close
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {showDeletePopup && ReactDOM.createPortal(
+        <div className="app-modal-overlay app-modal-overlay--top app-modal-overlay--scroll">
+          <div className="app-modal-card app-modal-card-md text-center">
+            <div className="mb-4 flex justify-end">
+              <button
+                onClick={() => setShowDeletePopup(false)}
+                className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:bg-slate-200"
+              >
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rose-100">
+              <svg className="h-10 w-10 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+
+            <h3 className="mb-2 text-xl font-bold text-slate-800">Confirm Deletion</h3>
+            <p className="mb-8 text-slate-600">
+              Are you sure you want to delete this student record? This action cannot be undone.
+            </p>
+
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={deleteStudent}
+                className="rounded-lg bg-rose-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-rose-700 transition"
+              >
+                Yes, Delete
+              </button>
+              <button
+                onClick={() => setShowDeletePopup(false)}
+                className="rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </>
   );
 };
 
 export default Allstudents;
+
+

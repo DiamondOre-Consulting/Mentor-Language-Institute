@@ -3,7 +3,6 @@ import Courseheropage from '../../Component/Studentcomponents/Eachcourses/Course
 import Coursedet from '../../Component/Studentcomponents/Eachcourses/Coursedet'
 import { useJwt } from 'react-jwt'
 import { useNavigate } from 'react-router-dom'
-import StuFooter from '../../Component/Studentcomponents/Studashboard/StuFooter'
 
 
 const StudentEachcourses = () => {
@@ -38,7 +37,6 @@ const StudentEachcourses = () => {
     <>
       <Courseheropage />
       <Coursedet />
-      <StuFooter />
 
     </>
   )

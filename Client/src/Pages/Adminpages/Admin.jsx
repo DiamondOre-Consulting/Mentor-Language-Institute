@@ -1,12 +1,13 @@
-import React, { useEffect } from "react";
+﻿import React, { useEffect } from "react";
 import Admindash from "../../Component/AdminComponents/Admindash";
 import AdminSidebar from "../../Component/AdminComponents/AdminSidebar";
-import axios from "axios";
+import { useApi } from "../../api/useApi";
 import { useJwt } from "react-jwt";
 import { useNavigate } from "react-router-dom";
 
 const Admin = () => {
   const navigate = useNavigate();
+  const { get } = useApi();
   // const [adminData , setAdminData] =useState([])
   const { decodedToken } = useJwt(localStorage.getItem("token"));
   const token = localStorage.getItem("token");
@@ -44,14 +45,12 @@ const Admin = () => {
         }
 
         // Fetch associates data from the backend
-        const response = await axios.get(
-          "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/my-profile",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await get({
+          url: "/admin-confi/my-profile",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
         if (response.status == 200) {
           // console.log(response.data);
           // setUserData(response.data);
@@ -69,13 +68,14 @@ const Admin = () => {
   }, [navigate, decodedToken]);
 
   return (
-    <>
+    <div className="admin-shell">
       <AdminSidebar />
       <div className="admin-content">
         <Admindash />
       </div>
-    </>
+    </div>
   );
 };
 
 export default Admin;
+

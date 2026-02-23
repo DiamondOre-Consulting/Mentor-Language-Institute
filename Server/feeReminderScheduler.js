@@ -3,6 +3,7 @@ import twilio from "twilio";
 import Students from "./Models/Students.js";
 import Classes from "./Models/Classes.js";
 import Fee from "./Models/Fee.js";
+import { normalizeFeeMonth } from "./utils/fee.js";
 
 const accountSid = "ACb5f88acc0551052e9301d3334b6dffc8";
 const authToken = "5f266d8cfdab46c27bc43ce71256f1ff";
@@ -23,10 +24,7 @@ const feeReminderScheduler = () => {
           const oneFeeDetail = await Fee.findById({ _id: fee });
           if (oneFeeDetail.detailFee && Array.isArray(oneFeeDetail.detailFee)) {
             const detailFeeForCurrentMonth = oneFeeDetail.detailFee.find(
-              (detail) => {
-                const feeMonth = detail.feeMonth;
-                return feeMonth === currentMonth;
-              }
+              (detail) => normalizeFeeMonth(detail.feeMonth) === currentMonth
             );
 
             if (!detailFeeForCurrentMonth || !detailFeeForCurrentMonth.paid) {

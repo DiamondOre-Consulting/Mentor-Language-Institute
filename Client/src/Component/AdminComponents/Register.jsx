@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { Tabs } from "flowbite-react";
 import { MdDashboard } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useApi } from "../../api/useApi";
 import { useJwt } from "react-jwt";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
@@ -19,6 +19,9 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [allCourses, setAllCourses] = useState([]);
   const [courseId, setCourseId] = useState("");
+  const [teacherCourseId, setTeacherCourseId] = useState("");
+  const [teacherCommissionRate, setTeacherCommissionRate] = useState("");
+  const { get, post, put } = useApi();
 
   const handleTabClick = (index) => {
     setActiveTab(index);
@@ -30,8 +33,8 @@ const Register = () => {
   const [formValues, setFormValues] = useState({
     classTitle: "",
     // classSchedule: "",
-    teachBy: "",
     totalHours: "",
+    grade: "",
   });
 
   // const [selectedDays, setSelectedDays] = useState({
@@ -74,28 +77,26 @@ const Register = () => {
 
       const formData = {
         classTitle: formValues.classTitle,
-        teachBy: formValues.teachBy,
         totalHours: formValues.totalHours,
+        grade: formValues.grade,
         // classSchedule: classScheduleString.trim(), // Ensure the schedule is trimmed
       };
 
-      const response = await axios.post(
-        "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/add-new-class",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await post({
+        url: "/admin-confi/add-new-class",
+        data: formData,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
 
       if (response.status === 200) {
         // console.log("New course has been added");
         setPopupMessage("New Course Has Been Added");
         setFormValues({
           classTitle: "",
-          teachBy: "",
           totalHours: "",
+          grade: "",
         });
         // setSelectedDays({
         //     Mon: false,
@@ -131,42 +132,6 @@ const Register = () => {
     }
   };
 
-  // fetch teacher data
-  const [allTeachers, setAllTeachers] = useState([]);
-
-  useEffect(() => {
-    const fetchAllTeachers = async () => {
-      try {
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-          console.error("No token found");
-          navigate("/admin-login");
-          return;
-        }
-
-        const response = await axios.get(
-          "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-teachers",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (response.status == 200) {
-          // console.log(response.data);
-          const allteachers = response.data;
-          // console.log(allteachers);
-          setAllTeachers(allteachers);
-        }
-      } catch (error) {
-        console.error("Error fetching associates:", error);
-      }
-    };
-
-    fetchAllTeachers();
-  }, []);
-
   //teacher
 
   const [name, setName] = useState("");
@@ -174,8 +139,29 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [dob, setdob] = useState();
   const [userName, setUserName] = useState("");
+  const [email, setEmail] = useState("");
   const [grade, setGrade] = useState("");
   const [popupMessage, setPopupMessage] = useState(null);
+  const [studentPayment, setStudentPayment] = useState({
+    totalFee: "",
+    feeMonth: "",
+    paid: "pending",
+    amountPaid: "0",
+  });
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
 
   const handleteacherRegister = async (e) => {
     setLoading(true);
@@ -196,27 +182,32 @@ const Register = () => {
         return;
       }
 
-      const response = await axios.post(
-        "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/add-teacher",
-        {
-          name,
-          phone,
-          password,
-          dob,
-        },
+      const payload = {
+        name,
+        phone,
+        password,
+        dob,
+        courseId: teacherCourseId || "",
+        commissionRate:
+          teacherCommissionRate === "" ? 0 : Number(teacherCommissionRate),
+      };
 
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await post({
+        url: "/admin-confi/add-teacher",
+        data: payload,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
 
       if (response.status === 200) {
         setPopupMessage("Teacher registered successfully");
         setName("");
         setPhone("");
         setPassword("");
+        setdob("");
+        setTeacherCourseId("");
+        setTeacherCommissionRate("");
       } else if (response.status === 409) {
         setPopupMessage("Teacher already registered");
       } else {
@@ -256,47 +247,130 @@ const Register = () => {
       if (!token) {
         console.error("No token found");
         navigate("/login");
+        setLoading(false);
         return;
       }
-      if (!name || !phone || !password || !dob || !userName) {
+      if (!name || !phone || !password || !dob || !userName || !email) {
         setPopupMessage("All field are required");
+        setLoading(false);
         return;
       }
 
-      const response = await axios.post(
-        "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/add-student",
-        {
+      if (courseId) {
+        if (!studentPayment.totalFee || !studentPayment.feeMonth) {
+          setPopupMessage("Please enter fee amount and month for enrollment.");
+          setLoading(false);
+          return;
+        }
+        if (
+          studentPayment.paid === "yes" &&
+          (!studentPayment.amountPaid ||
+            Number(studentPayment.amountPaid) <= 0)
+        ) {
+          setPopupMessage("Amount paid is required when payment is marked yes.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      const response = await post({
+        url: "/admin-confi/add-student",
+        data: {
           name,
           phone,
           password,
           userName,
+          email,
           dob,
           grade,
-          courseId,
+          courseId: courseId || "",
         },
-
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
 
       if (response.status === 200) {
-        setPopupMessage("Student Registered Successfully");
+        const newStudentId = response?.data?.studentId;
+        if (courseId && newStudentId) {
+          const monthMap = {
+            January: 1,
+            February: 2,
+            March: 3,
+            April: 4,
+            May: 5,
+            June: 6,
+            July: 7,
+            August: 8,
+            September: 9,
+            October: 10,
+            November: 11,
+            December: 12,
+          };
+          const feeMonthNumber = monthMap[studentPayment.feeMonth];
+          const normalizedAmountPaid =
+            studentPayment.paid === "yes"
+              ? Number(studentPayment.amountPaid)
+              : 0;
+
+          try {
+            const enrollResponse = await put({
+              url: `/admin-confi/enroll-student/${courseId}/${newStudentId}`,
+              data: {
+                totalFee: Number(studentPayment.totalFee),
+                feeMonth: feeMonthNumber,
+                paid: studentPayment.paid,
+                amountPaid: normalizedAmountPaid,
+              },
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }).unwrap();
+
+            if (enrollResponse.status === 200) {
+              if (studentPayment.paid === "yes") {
+                setPopupMessage("Student registered and enrolled. Invoice sent.");
+              } else {
+                setPopupMessage("Student registered and enrolled.");
+              }
+            } else {
+              setPopupMessage("Student registered, but enrollment failed.");
+            }
+          } catch (enrollError) {
+            const enrollMessage =
+              enrollError?.response?.data?.message ||
+              "Student registered, but enrollment failed.";
+            setPopupMessage(enrollMessage);
+          }
+        } else {
+          setPopupMessage("Student Registered Successfully");
+        }
         setName("");
         setPhone("");
         setPassword("");
+        setUserName("");
+        setEmail("");
+        setdob("");
+        setGrade("");
+        setCourseId("");
+        setStudentPayment({
+          totalFee: "",
+          feeMonth: "",
+          paid: "pending",
+          amountPaid: "0",
+        });
       } else if (response.status === 409) {
-        setPopupMessage("Student Already Registered");
+        setPopupMessage(response?.data?.message || "Student Already Registered");
       } else {
         setPopupMessage("Error Registering Student");
       }
     } catch (error) {
       if (error.response) {
         const status = error.response.status;
-        if (status === 409) {
-          setPopupMessage("Student Already Registered");
+        if (status === 409 || status === 400) {
+          setPopupMessage(
+            error.response?.data?.message || "Student Already Registered"
+          );
         } else {
           setPopupMessage("Error Registering Student");
         }
@@ -306,6 +380,19 @@ const Register = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleStudentPaymentChange = (e) => {
+    const { name, value } = e.target;
+    setStudentPayment((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleStudentPaidChange = (value) => {
+    setStudentPayment((prev) => ({
+      ...prev,
+      paid: value,
+      amountPaid: value === "pending" ? "0" : prev.amountPaid,
+    }));
   };
 
   const fetchAllcourses = async () => {
@@ -318,14 +405,12 @@ const Register = () => {
         return;
       }
 
-      const response = await axios.get(
-        "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-classes",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await get({
+        url: "/admin-confi/all-classes",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
       if (response.status == 200) {
 
         setAllCourses(response?.data);
@@ -353,37 +438,38 @@ const Register = () => {
           />
         </div>
       )}
-      <div className="flex flex-col items-center justify-center">
-        <div className="flex space-x-2 md:space-x-4">
-          <button
-            className={`py-2 px-0 md:px-4 border-b-2 ${
-              activeTab === 0 ? "border-orange-500" : "border-transparent"
-            } focus:outline-none`}
-            onClick={() => handleTabClick(0)}
-          >
-            Register Student
-          </button>
-          <button
-            className={`py-2 px-0 md:px-4 border-b-2 ${
-              activeTab === 1 ? "border-orange-500" : "border-transparent"
-            } focus:outline-none`}
-            onClick={() => handleTabClick(1)}
-          >
-            Register Teacher
-          </button>
-          <button
-            className={`py-2 px-0 md:px-4 border-b-2 ${
-              activeTab === 2 ? "border-orange-500" : "border-transparent"
-            } focus:outline-none`}
-            onClick={() => handleTabClick(2)}
-          >
-            Add New Courses
-          </button>
+      <div className="flex flex-col items-center w-full">
+        <div className="sticky top-[-1px] z-20 w-full bg-white/90 backdrop-blur-md border-b border-orange-100 py-2 flex justify-center shadow-sm">
+          <div className="flex space-x-2 md:space-x-4">
+            <button
+              className={`py-2 px-0 md:px-4 border-b-2 ${activeTab === 0 ? "border-orange-500" : "border-transparent"
+                } focus:outline-none`}
+              onClick={() => handleTabClick(0)}
+            >
+              Register Student
+            </button>
+            <button
+              className={`py-2 px-0 md:px-4 border-b-2 ${activeTab === 1 ? "border-orange-500" : "border-transparent"
+                } focus:outline-none`}
+              onClick={() => handleTabClick(1)}
+            >
+              Register Teacher
+            </button>
+            <button
+              className={`py-2 px-0 md:px-4 border-b-2 ${activeTab === 2 ? "border-orange-500" : "border-transparent"
+                } focus:outline-none`}
+              onClick={() => {
+                handleTabClick(2);
+              }}
+            >
+              Add New Courses
+            </button>
+          </div>
         </div>
-        <div className="py-4">
+        <div className="w-full">
           {activeTab === 0 && (
             <section className="w-full">
-              <div className="flex flex-col items-center justify-center w-full px-6 py-8">
+              <div className="flex flex-col items-center w-full px-6 py-2">
                 <div className="w-full max-w-screen-xl bg-white rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0 ">
                   <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
                     <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl md:mx-20">
@@ -440,6 +526,21 @@ const Register = () => {
                       </div>
 
                       <div>
+                        <label className="block w-full mb-2 text-sm font-medium text-gray-900">
+                          Email
+                        </label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className=" bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                          placeholder="Enter email address"
+                          required=""
+                        />
+                      </div>
+
+                      <div>
                         <label className="block mb-2 text-sm font-medium text-gray-900 ">
                           Phone
                         </label>
@@ -469,7 +570,6 @@ const Register = () => {
                           required
                         />
                       </div>
-
                       <div>
                         <label className="block mb-2 text-sm font-medium text-gray-900">
                           Select Course
@@ -479,9 +579,7 @@ const Register = () => {
                           onChange={(e) => setCourseId(e.target.value)}
                           className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
                         >
-                          <option value="" disabled>
-                            -- Select a Course --
-                          </option>
+                          <option value="">-- No Course --</option>
                           {allCourses?.map((course) => (
                             <option key={course?._id} value={course?._id}>
                               {course?.classTitle}
@@ -489,6 +587,85 @@ const Register = () => {
                           ))}
                         </select>
                       </div>
+                      {courseId && (
+                        <>
+                          <div>
+                            <label className="block mb-2 text-sm font-medium text-gray-900">
+                              Total Fee
+                            </label>
+                            <input
+                              type="text"
+                              name="totalFee"
+                              value={studentPayment.totalFee}
+                              onChange={handleStudentPaymentChange}
+                              className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg w-full p-2.5"
+                              placeholder="Enter total fee"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block mb-2 text-sm font-medium text-gray-900">
+                              Fee Month
+                            </label>
+                            <select
+                              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
+                              name="feeMonth"
+                              value={studentPayment.feeMonth}
+                              onChange={handleStudentPaymentChange}
+                              required
+                            >
+                              <option value="">Select Month</option>
+                              {months.map((month) => (
+                                <option key={month} value={month}>
+                                  {month}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block mb-2 text-sm font-medium text-gray-900">
+                              Payment Status
+                            </label>
+                            <div className="flex items-center gap-4 text-sm text-gray-700">
+                              <label className="inline-flex items-center gap-2">
+                                <input
+                                  type="radio"
+                                  name="paid"
+                                  value="pending"
+                                  checked={studentPayment.paid === "pending"}
+                                  onChange={() => handleStudentPaidChange("pending")}
+                                />
+                                <span>Pending</span>
+                              </label>
+                              <label className="inline-flex items-center gap-2">
+                                <input
+                                  type="radio"
+                                  name="paid"
+                                  value="yes"
+                                  checked={studentPayment.paid === "yes"}
+                                  onChange={() => handleStudentPaidChange("yes")}
+                                />
+                                <span>Yes</span>
+                              </label>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block mb-2 text-sm font-medium text-gray-900">
+                              Amount Paid
+                            </label>
+                            <input
+                              type="text"
+                              name="amountPaid"
+                              value={studentPayment.amountPaid}
+                              onChange={handleStudentPaymentChange}
+                              className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg w-full p-2.5"
+                              placeholder="Enter amount paid"
+                              required={studentPayment.paid === "yes"}
+                              disabled={studentPayment.paid === "pending"}
+                            />
+                          </div>
+                        </>
+                      )}
                       <div>
                         <label className="block mb-2 text-sm font-medium text-gray-900 ">
                           Password
@@ -498,7 +675,7 @@ const Register = () => {
                           name="password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder="••••••••"
+                          placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                           className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      "
                           required=""
                         />
@@ -528,7 +705,7 @@ const Register = () => {
           )}
           {activeTab === 1 && (
             <section className="w-full">
-              <div className="flex flex-col items-center justify-center w-full px-6 py-8">
+              <div className="flex flex-col items-center w-full px-6 py-2">
                 <div className="w-full max-w-screen-xl bg-white rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0 ">
                   <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
                     <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl md:mx-20">
@@ -585,6 +762,35 @@ const Register = () => {
                         />
                       </div>
                       <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-900">
+                          Assign Course (Optional)
+                        </label>
+                        <select
+                          value={teacherCourseId}
+                          onChange={(e) => setTeacherCourseId(e.target.value)}
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
+                        >
+                          <option value="">-- Select a Course --</option>
+                          {allCourses?.map((course) => (
+                            <option key={course?._id} value={course?._id}>
+                              {course?.classTitle}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-900">
+                          Commission (Optional)
+                        </label>
+                        <input
+                          type="number"
+                          value={teacherCommissionRate}
+                          onChange={(e) => setTeacherCommissionRate(e.target.value)}
+                          placeholder="Enter commission rate"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg w-full p-2.5"
+                        />
+                      </div>
+                      <div>
                         <label className="block mb-2 text-sm font-medium text-gray-900 ">
                           Password
                         </label>
@@ -593,7 +799,7 @@ const Register = () => {
                           name="password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder="••••••••"
+                          placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                           className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      "
                           required=""
                         />
@@ -623,7 +829,7 @@ const Register = () => {
           )}
           {activeTab === 2 && (
             <section className="w-full">
-              <div className="flex flex-col items-center justify-center w-full px-6 py-8">
+              <div className="flex flex-col items-center w-full px-6 py-2">
                 <div className="w-full max-w-screen-xl bg-white rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0 ">
                   <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
                     <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl md:mx-20">
@@ -654,6 +860,27 @@ const Register = () => {
                       </div>
                       <div>
                         <label className="block mb-2 text-sm font-medium text-gray-900 ">
+                          Grade
+                        </label>
+                        <select
+                          name="grade"
+                          value={formValues.grade}
+                          onChange={handleInputChange}
+                          className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full p-2.5"
+                          required=""
+                        >
+                          <option value="">Select Grade</option>
+                          <option value="6th">6th</option>
+                          <option value="7th">7th</option>
+                          <option value="8th">8th</option>
+                          <option value="9th">9th</option>
+                          <option value="10th">10th</option>
+                          <option value="11th">11th</option>
+                          <option value="12th">12th</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-900 ">
                           Total Hours
                         </label>
                         <input
@@ -665,32 +892,6 @@ const Register = () => {
                           className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full p-2.5      "
                           required=""
                         />
-                      </div>
-                      <div>
-                        <label className="block mb-2 text-sm font-medium text-gray-900 ">
-                          Teach By
-                        </label>
-                        <select
-                          id="teachBy"
-                          name="teachBy"
-                          value={formValues.teachBy}
-                          onChange={(e) =>
-                            setFormValues({
-                              ...formValues,
-                              teachBy: e.target.value,
-                            })
-                          }
-                          className="w-full px-3 py-2 text-gray-800 transition duration-100 border rounded outline-none ring-gray-700 focus:ring"
-                        >
-                          <option value="">Select Teacher</option>
-                          {allTeachers.map((teacher) => (
-                            <option key={teacher._id} value={teacher._id}>
-                              {teacher.UniqueCode
-                                ? `${teacher.UniqueCode}`
-                                : `${teacher.name}`}
-                            </option>
-                          ))}
-                        </select>
                       </div>
                       {/* <div>
                                                 <label class="block mb-2 text-sm font-medium text-gray-900 ">Schedule</label>
@@ -735,10 +936,10 @@ const Register = () => {
       </div>
 
       {popupMessage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="p-4 bg-white rounded-lg shadow-md">
+        <div className="app-modal-overlay">
+          <div className="app-modal-card app-modal-card-sm">
             <svg
-              className="float-right w-6 h-6 -mt-2 text-red-500 cursor-pointer"
+              className="absolute right-5 top-5 h-6 w-6 cursor-pointer text-red-500"
               onClick={() => setPopupMessage(null)}
               width="24"
               height="24"
@@ -754,7 +955,7 @@ const Register = () => {
               <line x1="18" y1="6" x2="6" y2="18" />{" "}
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
-            <p className="mt-4 text-lg font-bold text-green-700">
+            <p className="mt-6 text-lg font-bold text-emerald-600">
               {popupMessage}
             </p>
             {/* <button className="px-4 py-2 text-white bg-orange-500 rounded-md" onClick={() => setPopupMessage(null)}>Close</button> */}
@@ -766,3 +967,6 @@ const Register = () => {
 };
 
 export default Register;
+
+
+

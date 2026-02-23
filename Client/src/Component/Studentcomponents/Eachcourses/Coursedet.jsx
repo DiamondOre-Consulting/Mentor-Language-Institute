@@ -1,4 +1,4 @@
-import axios from "axios";
+﻿import { useApi } from "../../../api/useApi";
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Footer, Tabs } from "flowbite-react";
@@ -15,8 +15,46 @@ const override = css`
   border-color: red;
 `;
 
+const toNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const formatDate = (value) => {
+  if (!value) return "TBA";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "TBA";
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const getNextSessionLabel = (entries) => {
+  if (!entries || entries.length === 0) return "TBA";
+  const sessions = entries
+    .map((entry) => {
+      const date = new Date(entry.classDate);
+      if (Number.isNaN(date.getTime())) return null;
+      return { ...entry, date };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.date - b.date);
+
+  if (sessions.length === 0) return "TBA";
+
+  const today = new Date();
+  const nextSession =
+    sessions.find((session) => session.date >= today) ||
+    sessions[sessions.length - 1];
+
+  return formatDate(nextSession.classDate);
+};
+
 const Coursedet = () => {
   const navigate = useNavigate();
+  const { get } = useApi();
   const { id } = useParams();
   const [studentData, setStudentData] = useState("");
   const [classData, setClassData] = useState("");
@@ -24,6 +62,12 @@ const Coursedet = () => {
   const [feedetails, setFeeDetails] = useState(null);
   const [myenroll, setEnroll] = useState("");
   const [loading, setLoading] = useState(false);
+  const scheduleEntries = classData?.dailyClasses || [];
+  const totalScheduledClasses = scheduleEntries.reduce(
+    (total, entry) => total + toNumber(entry.numberOfClasses),
+    0
+  );
+  const nextSessionLabel = getNextSessionLabel(scheduleEntries);
   const fetchStudentData = async () => {
     setLoading(true);
     try {
@@ -37,14 +81,12 @@ const Coursedet = () => {
       }
 
       // Fetch associates data from the backend
-      const response = await axios.get(
-        "https://mentor-backend-rbac6.ondigitalocean.app/api/students/my-profile",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await get({
+        url: "/students/my-profile",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
       if (response.status == 200) {
         // console.log("studetails", response.data);
         const studentdetails = response.data;
@@ -55,14 +97,12 @@ const Coursedet = () => {
 
         const allEnrClassData = [];
         for (const ids of classes) {
-          const AllEnrollResponse = await axios.get(
-            `https://mentor-backend-rbac6.ondigitalocean.app/api/students/all-courses/${ids}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
+          const AllEnrollResponse = await get({
+            url: `/students/all-courses/${ids}`,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }).unwrap();
 
           if (AllEnrollResponse.status === 200) {
             // console.log("allenrollids", AllEnrollResponse.data)
@@ -74,34 +114,22 @@ const Coursedet = () => {
         }
 
         const allEnrollClassData = [];
-        const classResponse = await axios.get(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/students/all-courses/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const classResponse = await get({
+          url: `/students/all-courses/${id}`,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
 
         if (classResponse.status === 200) {
           const classData = classResponse.data;
-          // console.log("Enrolled class details:", classData);
-          setClassData(classData);
-          allEnrollClassData.push(classData);
-
-          const teacherId = classResponse.data.teachBy;
-          const teacherResponse = await axios.get(
-            `https://mentor-backend-rbac6.ondigitalocean.app/api/students/teacher/${teacherId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          if (teacherResponse.status === 200) {
-            // Add teacher information to class data
-            classResponse.data.teacher = teacherResponse.data;
-          }
+          const primaryTeacher = classData?.teachers?.[0]?.teacherId;
+          const normalizedClass = primaryTeacher
+            ? { ...classData, teacher: primaryTeacher }
+            : classData;
+          // console.log("Enrolled class details:", normalizedClass);
+          setClassData(normalizedClass);
+          allEnrollClassData.push(normalizedClass);
         }
 
         setAllClassData(allEnrollClassData);
@@ -136,14 +164,12 @@ const Coursedet = () => {
           return;
         }
 
-        const attendanceResponse = await axios.get(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/students/my-attendance/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const attendanceResponse = await get({
+          url: `/students/my-attendance/${id}`,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
         if (attendanceResponse.status === 200) {
           // console.log("Attendance details:", attendanceResponse.data);
           setAttendenceDetails(attendanceResponse.data);
@@ -175,6 +201,24 @@ const Coursedet = () => {
     12: "December",
   };
 
+  const normalizeMonthLabel = (value) => {
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return "";
+      }
+      const numeric = Number(trimmed);
+      if (Number.isInteger(numeric)) {
+        return numberToMonthName[numeric] || "";
+      }
+      return trimmed;
+    }
+    if (Number.isInteger(value)) {
+      return numberToMonthName[value] || "";
+    }
+    return "";
+  };
+
   useEffect(() => {
     const fetchFeeDetails = async () => {
       try {
@@ -188,21 +232,19 @@ const Coursedet = () => {
           return;
         }
 
-        const FeeResponse = await axios.get(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/students/my-fee-details/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const FeeResponse = await get({
+          url: `/students/my-fee-details/${id}`,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
         if (FeeResponse.status === 200) {
           // console.log("Fee details:", FeeResponse.data);
           const feeDetailsWithMonthNames = {
             ...FeeResponse.data,
             detailFee: FeeResponse.data.detailFee.map((fee) => ({
               ...fee,
-              feeMonth: numberToMonthName[fee.feeMonth], // Convert month number to name
+              feeMonth: normalizeMonthLabel(fee.feeMonth),
             })),
           };
           setFeeDetails(feeDetailsWithMonthNames);
@@ -305,10 +347,61 @@ const Coursedet = () => {
                                 scope="row"
                                 class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
                               >
+                                Branch
+                              </th>
+                              <td class="px-6 py-4">{classData?.branch || "Main"}</td>
+                            </tr>
+                            <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                              <th
+                                scope="row"
+                                class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                              >
+                                Grade
+                              </th>
+                              <td class="px-6 py-4">{classData?.grade || "All levels"}</td>
+                            </tr>
+                            <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                              <th
+                                scope="row"
+                                class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                              >
                                 Total Hours
                               </th>
                               <td class="px-6 py-4">
-                                {classData?.totalHours} hours
+                                {classData?.totalHours
+                                  ? `${classData.totalHours} hours`
+                                  : "TBA"}
+                              </td>
+                            </tr>
+                            <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                              <th
+                                scope="row"
+                                class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                              >
+                                Total Scheduled Classes
+                              </th>
+                              <td class="px-6 py-4">
+                                {totalScheduledClasses || "TBA"}
+                              </td>
+                            </tr>
+                            <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                              <th
+                                scope="row"
+                                class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                              >
+                                Next Session
+                              </th>
+                              <td class="px-6 py-4">{nextSessionLabel}</td>
+                            </tr>
+                            <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                              <th
+                                scope="row"
+                                class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                              >
+                                Added On
+                              </th>
+                              <td class="px-6 py-4">
+                                {formatDate(classData?.createdAt)}
                               </td>
                             </tr>
                             <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
@@ -319,7 +412,7 @@ const Coursedet = () => {
                                 Course Price
                               </th>
                               <td class="px-6 py-4">
-                                ₹ {feedetails?.totalFee}
+                                INR {feedetails?.totalFee}
                               </td>
                             </tr>
                             {/* <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
@@ -488,3 +581,5 @@ const Coursedet = () => {
 };
 
 export default Coursedet;
+
+

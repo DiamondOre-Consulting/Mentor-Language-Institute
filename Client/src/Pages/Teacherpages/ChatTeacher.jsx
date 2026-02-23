@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+﻿import React, { useState, useEffect } from "react";
+import { useApi } from "../../api/useApi";
 import ChatBoxTeacher from "../../Component/TeachersComponents/ChatBoxTeacher";
 import { Link, useNavigate } from "react-router-dom";
 import { useMediaQuery } from "@react-hook/media-query";
@@ -8,6 +8,7 @@ import userimg2 from "..//..//assets/userimg2.png";
 
 const ChatTeacher = () => {
   const navigate = useNavigate();
+  const { get } = useApi();
   const { decodedToken } = useJwt(localStorage.getItem("token"));
   const userName = decodedToken ? decodedToken.name : "No Name Found";
   const [error, setError] = useState("");
@@ -43,14 +44,12 @@ const ChatTeacher = () => {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        const response = await axios.get(
-          "https://mentor-backend-rbac6.ondigitalocean.app/api/teachers/chat-all-students",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        ); // Adjust the API endpoint
+        const response = await get({
+          url: "/teachers/chat-all-students",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap(); // Adjust the API endpoint
         if (response.status === 201) {
           setStudents(response.data); // Assuming the API returns an array of student objects
         } else {
@@ -171,3 +170,5 @@ const ChatTeacher = () => {
 };
 
 export default ChatTeacher;
+
+

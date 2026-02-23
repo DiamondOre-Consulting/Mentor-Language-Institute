@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import { useApi } from "../../api/useApi";
 import { useJwt } from "react-jwt";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
@@ -13,6 +13,7 @@ const override = css`
 
 const Eachcourse = () => {
   const navigate = useNavigate();
+  const { get } = useApi();
   const [courseDetails, setCourseDetails] = useState(null);
   const [activeTab, setActiveTab] = useState("enrolled");
   const [loading, setLoading] = useState(false);
@@ -29,99 +30,80 @@ const Eachcourse = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
-      // No token found, redirect to login page
       navigate("/login");
+      return;
     }
 
     const fetchCourseDetails = async () => {
       try {
         setLoading(true);
 
-        const token = localStorage.getItem("token");
+        const response = await get({
+          url: `/admin-confi/all-classes/${id}`,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
 
-        if (!token) {
-          // Token not found in local storage, handle the error or redirect to the login page
-          console.error("No token found");
-          navigate("/login");
+        if (response.status !== 200 || !response.data) {
           return;
         }
 
-        // Fetch course details
-        const response = await axios.get(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-classes/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const courseData = response.data;
+        setCourseDetails(courseData);
 
-        if (response.status === 200) {
-          const courseData = response.data;
-          // console.log("Course details:", courseData);
-
-          // Fetch teacher details
-          const teacherId = courseData.teachBy;
-          const teacherResponse = await axios.get(
-            `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-teachers/${teacherId}`,
-            {
+        const enrolledPromises = (courseData?.enrolledStudents || []).map(
+          (studentId) =>
+            get({
+              url: `/admin-confi/all-students/${studentId}`,
               headers: {
                 Authorization: `Bearer ${token}`,
               },
-            }
-          );
+            }).unwrap()
+        );
 
-          if (teacherResponse.status === 200) {
-            const teacherData = teacherResponse.data;
-            courseData.teacher = teacherData;
-          }
+        const appliedPromises = (courseData?.appliedStudents || []).map(
+          (studentId) =>
+            get({
+              url: `/admin-confi/all-students/${studentId}`,
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }).unwrap()
+        );
 
-          // Fetch details of enrolled students
-          const enrolledStudents = courseData.enrolledStudents;
-          const enrolledStudentsDetails = [];
+        const [enrolledResults, appliedResults] = await Promise.all([
+          Promise.allSettled(enrolledPromises),
+          Promise.allSettled(appliedPromises),
+        ]);
 
-          for (const studentId of enrolledStudents) {
-            const studentResponse = await axios.get(
-              `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-students/${studentId}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
+        const enrolledStudentsDetails = enrolledResults
+          .filter((result) => result.status === "fulfilled")
+          .map((result) =>
+            result.value?.status === 200 ? result.value.data : null
+          )
+          .filter(Boolean);
 
-            if (studentResponse.status === 200) {
-              const studentData = studentResponse.data;
-              enrolledStudentsDetails.push(studentData);
-            }
-          }
-          // Fetch details of applied students
-          const applyStudents = courseData.appliedStudents;
-          const appliedStudentsDetails = [];
+        const appliedStudentsDetails = appliedResults
+          .filter((result) => result.status === "fulfilled")
+          .map((result) =>
+            result.value?.status === 200 ? result.value.data : null
+          )
+          .filter(Boolean);
 
-          for (const studentId of applyStudents) {
-            const studentResponse = await axios.get(
-              `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-students/${studentId}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-
-            if (studentResponse.status === 200) {
-              const studentData = studentResponse.data;
-              appliedStudentsDetails.push(studentData);
-            }
-          }
-
-          // Set course details including teacher, enrolled students, and applied students
-          setCourseDetails({
-            ...courseData,
-            enrolledStudents: enrolledStudentsDetails.filter(Boolean),
-            appliedStudents: appliedStudentsDetails,
-          });
-        }
+        setCourseDetails((prev) => ({
+          ...prev,
+          ...courseData,
+          teachers: courseData?.teachers || prev?.teachers || [],
+          enrolledStudents:
+            enrolledStudentsDetails.length > 0
+              ? enrolledStudentsDetails
+              : prev?.enrolledStudents || courseData?.enrolledStudents || [],
+          appliedStudents:
+            appliedStudentsDetails.length > 0
+              ? appliedStudentsDetails
+              : prev?.appliedStudents || courseData?.appliedStudents || [],
+        }));
       } catch (error) {
         console.log("");
       } finally {
@@ -130,7 +112,7 @@ const Eachcourse = () => {
     };
 
     fetchCourseDetails();
-  }, []);
+  }, [id, navigate]);
 
   // console.log("coursedetails", courseDetails.enrolledStudents)
   return (
@@ -168,42 +150,40 @@ const Eachcourse = () => {
               <li className="flex border-b py-2">
                 <span className="font-bold w-32">Created At:</span>
                 <span className="text-gray-700">
-                  {new Date(courseDetails?.createdAt).toLocaleDateString(
-                    "en-US",
-                    { day: "numeric", month: "short", year: "numeric" }
-                  )}
+                  {courseDetails?.createdAt
+                    ? new Date(courseDetails.createdAt).toLocaleDateString(
+                        "en-US",
+                        { day: "numeric", month: "short", year: "numeric" }
+                      )
+                    : "N/A"}
                 </span>
               </li>
             </ul>
           </div>
           <div className="flex-1  bg-white rounded-lg shadow-xl p-8">
             <h4 className="text-xl text-gray-900 font-bold">Teacher Details</h4>
-            <ul className="mt-2 text-gray-700">
-              <li className="flex border-y py-2">
-                <span className="font-bold w-32">Teach By:</span>
-                <span className="text-gray-700">
-                  {courseDetails?.teacher?.name}
-                </span>
-              </li>
-              <li className="flex border-b py-2">
-                <span className="font-bold w-32">Phone:</span>
-                <span className="text-gray-700">
-                  {courseDetails?.teacher.phone}
-                </span>
-              </li>
-              <li className="flex border-b py-2">
-                <span className="font-bold w-32">Joined At:</span>
-                <span className="text-gray-700">
-                  {new Date(
-                    courseDetails?.teacher.createdAt
-                  ).toLocaleDateString("en-US", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })}
-                </span>
-              </li>
-            </ul>
+            {courseDetails?.teachers && courseDetails.teachers.length > 0 ? (
+              <ul className="mt-2 space-y-3 text-gray-700">
+                {courseDetails.teachers.map((assignment) => (
+                  <li key={assignment?._id} className="rounded-md border border-slate-200 p-3">
+                    <p>
+                      <span className="font-bold">Teach By:</span>{" "}
+                      <span>{assignment?.teacherId?.name || "N/A"}</span>
+                    </p>
+                    <p>
+                      <span className="font-bold">Phone:</span>{" "}
+                      <span>{assignment?.teacherId?.phone || "N/A"}</span>
+                    </p>
+                    <p>
+                      <span className="font-bold">Commission:</span>{" "}
+                      <span>{assignment?.commissionRate ?? 0}</span>
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-sm text-slate-500">No teachers assigned.</p>
+            )}
           </div>
         </div>
 
@@ -268,3 +248,5 @@ const Eachcourse = () => {
 };
 
 export default Eachcourse;
+
+

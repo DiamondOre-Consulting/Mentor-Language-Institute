@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import TeacherHome from "./TeacherHome";
 import TeacherProfile from "./TeacherProfile";
 import TeacherAllStudentEachCourse from "./TeacherAllStudentEachCourse";
@@ -8,12 +8,12 @@ import { useNavigate } from "react-router-dom";
 import ChatTeacher from "../../Pages/Teacherpages/ChatTeacher";
 import Error from "..//Studentcomponents/Stuauth/Error";
 import TeacherAddStudent from "./TeacherAddStudent";
-import Allstudents from "../AdminComponents/Allstudents";
 import TeacherAllStudents from "./TeacherAllStudents";
 import TeacherEditStudent from "./TeacherEditStudent";
 import MarkAttendance from "./MarkAttendance";
 
 const TeacherDashboard = ({ teacherData }) => {
+  const navigate = useNavigate();
   const { decodedToken } = useJwt(localStorage.getItem("token"));
   const token = localStorage.getItem("token");
   if (!token) {
@@ -40,7 +40,7 @@ const TeacherDashboard = ({ teacherData }) => {
 
   return (
     <>
-      <div className="p-0  sm:ml-64">
+      <div className="p-0 pt-16 sm:ml-72 sm:pt-6">
         <div className="flex-grow ">
           <Routes>
             <Route path="/">

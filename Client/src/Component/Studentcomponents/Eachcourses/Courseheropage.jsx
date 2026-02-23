@@ -1,9 +1,10 @@
-import axios from "axios";
+﻿import { useApi } from "../../../api/useApi";
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 const Courseheropage = () => {
   const { id } = useParams();
+  const { get } = useApi();
   const [studentData, setStudentData] = useState(null);
   const [classData, setClassData] = useState(null);
 
@@ -26,14 +27,12 @@ const Courseheropage = () => {
         }
 
         // Fetch associates data from the backend
-        const response = await axios.get(
-          "https://mentor-backend-rbac6.ondigitalocean.app/api/students/my-profile",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await get({
+          url: "/students/my-profile",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
         if (response.status == 200) {
           // console.log("studetails", response.data);
           const studentdetails = response.data;
@@ -42,14 +41,12 @@ const Courseheropage = () => {
           const classes = response.data.classes;
           // console.log("classes", classes)
 
-          const classResponse = await axios.get(
-            `https://mentor-backend-rbac6.ondigitalocean.app/api/students/all-courses/${id}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
+          const classResponse = await get({
+            url: `/students/all-courses/${id}`,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }).unwrap();
 
           if (classResponse.status === 200) {
             const classData = classResponse.data;
@@ -86,7 +83,7 @@ const Courseheropage = () => {
         </div>
 
         <div className="flex justify-end items-center">
-          <li className="relative group z-50 flex items-center float-right mr-1 p-4 cursor-pointer">
+          <li className="relative group z-50 hidden flex items-center float-right mr-1 p-4 cursor-pointer">
             <Link
               to={"/student/chat"}
               className="block py-2 px-3 text-gray-200  rounded md:px-2 md:py-1 rounded-full bg-orange-400 "
@@ -249,3 +246,5 @@ const Courseheropage = () => {
 };
 
 export default Courseheropage;
+
+

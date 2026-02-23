@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useEffect, useMemo, useState } from "react";
+import ReactDOM from "react-dom";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
-import userimg2 from "..//..//assets/userimg2.png";
+import { useApi } from "../../api/useApi";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
 
 const override = css`
   display: block;
@@ -10,10 +12,46 @@ const override = css`
   border-color: red;
 `;
 
+const formatDate = (value) => {
+  if (!value) return "N/A";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "N/A";
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const getMentorNames = (course) =>
+  (course?.teachers || [])
+    .map((teacher) => teacher?.teacherId?.name)
+    .filter(Boolean)
+    .join(", ");
+
+const getShortId = (value) => {
+  if (!value) return "N/A";
+  const str = String(value);
+  if (str.length <= 10) return str;
+  return `${str.slice(0, 6)}...${str.slice(-4)}`;
+};
+
 const Message = () => {
-  const [allStudents, setAllStudents] = useState([]);
+  const { get, put } = useApi();
+  const [requests, setRequests] = useState([]);
+  const [query, setQuery] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [stuDetails, setStuDetails] = useState([]);
+  const [formData, setFormData] = useState({
+    totalFee: "",
+    feeMonth: "",
+    paid: "pending",
+    amountPaid: "0",
+  });
+  const [popupMessage, setPopupMessage] = useState("");
+  const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [selectedClassId, setSelectedClassId] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const months = [
     "January",
     "February",
@@ -28,17 +66,6 @@ const Message = () => {
     "November",
     "December",
   ];
-  const [appliedCourseDetails, setAppliedCourseDetails] = useState([]);
-  const [formData, setFormData] = useState({
-    totalFee: "",
-    feeMonth: "",
-    paid: "",
-    amountPaid: "",
-  });
-  const [popupMessage, setPopupMessage] = useState("");
-  const [selectedStudentId, setSelectedStudentId] = useState("");
-  const [selectedClassId, setSelectedClassId] = useState("");
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchAllStudents = async () => {
@@ -50,53 +77,69 @@ const Message = () => {
           return;
         }
 
-        const response = await axios.get(
-          "https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-students",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await get({
+          url: "/admin-confi/all-students",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
 
         if (response.status === 200) {
-          setAllStudents(response.data);
+          const students = response.data || [];
+          const studentById = students.reduce((acc, student) => {
+            acc[student._id] = student;
+            return acc;
+          }, {});
 
-          // Filter students who have applied for any course
-          const studentsWithCourses = response.data.filter(
-            (student) => student.appliedClasses.length > 0
+          const appliedCourses = students.flatMap((student) =>
+            (student.appliedClasses || []).map((classId) => ({
+              studentId: student._id,
+              classId,
+            }))
           );
-          setStuDetails(studentsWithCourses);
 
-          const appliedCourses = studentsWithCourses
-            .map((student) =>
-              student.appliedClasses.map((classId) => {
-                return {
-                  studentId: student._id,
-                  classId: classId,
-                };
-              })
-            )
-            .flat();
+          if (appliedCourses.length === 0) {
+            setRequests([]);
+            return;
+          }
 
-          const courseDetails = await Promise.all(
-            appliedCourses.map(async (course) => {
-              const classDetails = await axios.get(
-                `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-classes/${course.classId}`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                }
-              );
+          const courseResults = await Promise.allSettled(
+            appliedCourses.map(async ({ studentId, classId }) => {
+              const classDetails = await get({
+                url: `/admin-confi/all-classes/${classId}`,
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }).unwrap();
               return {
-                ...classDetails.data,
-                studentId: course.studentId,
+                studentId,
+                classId,
+                course: classDetails.data,
               };
             })
           );
 
-          setAppliedCourseDetails(courseDetails);
+          const nextRequests = courseResults
+            .filter(
+              (result) =>
+                result.status === "fulfilled" &&
+                result.value?.course &&
+                studentById[result.value.studentId]
+            )
+            .map((result) => {
+              const { studentId, classId, course } = result.value;
+              const student = studentById[studentId];
+              return {
+                id: `${studentId}-${classId}`,
+                studentId,
+                classId,
+                student,
+                course,
+                mentors: getMentorNames(course),
+              };
+            });
+
+          setRequests(nextRequests);
         }
       } catch (error) {
         console.error("Error fetching students:", error);
@@ -108,9 +151,38 @@ const Message = () => {
     fetchAllStudents();
   }, []);
 
+  useEffect(() => {
+    const hasOpenModal = isFormOpen || !!popupMessage || loading;
+    document.body.style.overflow = hasOpenModal ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isFormOpen, popupMessage, loading]);
+
+  const filteredRequests = useMemo(() => {
+    const trimmed = query.trim().toLowerCase();
+    if (!trimmed) return requests;
+
+    return requests.filter((request) => {
+      const student = request.student || {};
+      const course = request.course || {};
+      return [
+        student.name,
+        student.email,
+        student.phone,
+        student.userName,
+        student.grade,
+        student.branch,
+        course.classTitle,
+        course.grade,
+        course.branch,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(trimmed));
+    });
+  }, [requests, query]);
+
   const openForm = (studentId, classId) => {
-    // console.log("Clicked Accept for student ID:", studentId);
-    // console.log("Clicked Accept for course ID:", classId); // Console log the course ID
     setSelectedStudentId(studentId);
     setSelectedClassId(classId);
     setIsFormOpen(true);
@@ -119,6 +191,12 @@ const Message = () => {
   const closeForm = () => {
     setSelectedStudentId("");
     setSelectedClassId("");
+    setFormData({
+      totalFee: "",
+      feeMonth: "",
+      paid: "pending",
+      amountPaid: "0",
+    });
     setIsFormOpen(false);
     setPopupMessage("");
   };
@@ -127,7 +205,13 @@ const Message = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  //  hendling feemonth
+  const handlePaidChange = (value) => {
+    setFormData((prev) => ({
+      ...prev,
+      paid: value,
+      amountPaid: value === "pending" ? "0" : prev.amountPaid,
+    }));
+  };
 
   const monthNameToNumber = {
     January: 1,
@@ -155,30 +239,48 @@ const Message = () => {
       }
 
       const { totalFee, feeMonth, paid, amountPaid } = formData;
-      // const lowerCaseFeeMonth = feeMonth.toLowerCase();
       const monthNumber = monthNameToNumber[feeMonth];
+      const isPaid = paid === "yes";
+      const normalizedAmountPaid = isPaid ? Number(amountPaid) : 0;
 
-      const response = await axios.put(
-        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/enroll-student/${selectedClassId}/${selectedStudentId}`,
-        {
-          totalFee,
+      const response = await put({
+        url: `/admin-confi/enroll-student/${selectedClassId}/${selectedStudentId}`,
+        data: {
+          totalFee: Number(totalFee),
           feeMonth: monthNumber,
-          paid,
-          amountPaid,
+          paid: isPaid,
+          amountPaid: normalizedAmountPaid,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
 
       if (response.status === 200) {
-        // console.log(response.data.message);
-        setPopupMessage("Successfully Enrolled!");
+        if (isPaid) {
+          setPopupMessage("Student enrolled and invoice sent.");
+        } else {
+          setPopupMessage("Student enrolled.");
+        }
+        setRequests((prev) =>
+          prev.filter(
+            (request) =>
+              !(
+                request.studentId === selectedStudentId &&
+                request.classId === selectedClassId
+              )
+          )
+        );
+        setFormData({
+          totalFee: "",
+          feeMonth: "",
+          paid: "pending",
+          amountPaid: "0",
+        });
+        setSelectedStudentId("");
+        setSelectedClassId("");
         setIsFormOpen(false);
       } else if (response.status === 409) {
-        // console.log("Student already registered!");
         setPopupMessage("Student already Enrolled!");
         setIsFormOpen(false);
       }
@@ -186,12 +288,10 @@ const Message = () => {
       if (error.response) {
         const status = error.response.status;
         if (status === 409) {
-          // console.log("Student already registered!");
           setPopupMessage("Student already Enrolled!");
           setIsFormOpen(false);
         } else {
-          // console.error("Error login teacher:", status);
-          setError("Login Details Are Wrong!!");
+          setPopupMessage("Unable to enroll student right now.");
         }
       }
     } finally {
@@ -199,186 +299,265 @@ const Message = () => {
     }
   };
 
-  // console.log(appliedCourseDetails.length)
-
   return (
     <>
       {loading && (
         <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
-          <ClipLoader
-            color={"#FFA500"}
-            loading={loading}
-            css={override}
-            size={70}
-          />
+          <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
         </div>
       )}
 
-      <h1 className="text-4xl mb-1 font-semibold text-center">
-        All Applied Students
-      </h1>
-      <div className="w-44 rounded h-1 bg-orange-500 text-center mb-12 mx-auto"></div>
-      <div className="grid md:px-0 px-8 grid-cols-1 md:grid-cols-3 md:mt-0 mt-4 gap-4">
-        {stuDetails.map((student, index) => (
-          <div className="flex items-start gap-2.5" key={index}>
-            <div className="flex flex-col gap-1 w-full max-w-[320px]">
-              <div className="leading-1.5 p-4 border-gray-200 bg-orange-500 shadow-md backdrop-filter backdrop-blur-md bg-opacity-20 rounded-e-xl rounded-es-xl ">
-                <div>
-                  <div className="flex items-center">
-                    <img
-                      className="w-8 h-8 rounded-full"
-                      src={userimg2}
-                      alt="Jese image"
-                    />
-                    <div className="flex flex-col ml-2">
-                      <span className="text-sm font-bold text-black ">
-                        {student.name}
-                      </span>
-                      <span className="text-sm font-semibold text-gray-800 ">
-                        {student.phone}
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-semibold text-slate-900">
+              Enrollment Requests
+            </h1>
+            <p className="text-sm text-slate-500">
+              Review student applications and enroll them into courses.
+            </p>
+          </div>
+          <div className="w-full sm:w-72">
+            <label className="text-xs font-semibold text-slate-500">
+              Search
+            </label>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search student or course..."
+              className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-200"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+          <span>{filteredRequests.length} pending request(s)</span>
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              className="text-orange-600 hover:text-orange-700"
+            >
+              Clear search
+            </button>
+          )}
+        </div>
+
+        {filteredRequests.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-orange-200 bg-orange-50/60 p-8 text-center text-sm text-slate-600">
+            No enrollment requests right now.
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {filteredRequests.map((request) => (
+              <div
+                key={request.id}
+                className="rounded-2xl border border-orange-100/70 bg-white p-4 shadow-sm sm:p-5"
+              >
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-lg font-semibold text-slate-900">
+                        {request.course?.classTitle}
+                      </h3>
+                      <Badge variant="secondary">Pending</Badge>
+                      <span className="text-xs text-slate-500">
+                        Course ID: {getShortId(request.classId)}
                       </span>
                     </div>
+                    <p className="text-sm text-slate-600">
+                      Grade: {request.course?.grade || "N/A"} · Hours:{" "}
+                      {request.course?.totalHours || "TBA"} · Branch:{" "}
+                      {request.course?.branch || "Main"}
+                    </p>
+                    <p className="text-sm text-slate-600">
+                      Mentors: {request.mentors || "Not assigned"}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Added on {formatDate(request.course?.createdAt)}
+                    </p>
                   </div>
-                  <div className="mt-4 h-20 overflow-y-auto">
-                    {appliedCourseDetails.map((course, i) => {
-                      if (course.studentId === student._id) {
-                        return (
-                          <div
-                            key={i}
-                            className="flex items-center justify-between mb-2"
-                          >
-                            <div>
-                              <p className="text-sm font-normal text-gray-900">
-                                Apply for <b>{course.classTitle}</b>
-                              </p>
-                            </div>
-                            <button
-                              className="text-ssm px-4 py-1 bg-gray-50 rounded-full"
-                              onClick={() => openForm(student._id, course._id)}
-                            >
-                              Accept
-                            </button>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })}
+                  <Button
+                    size="sm"
+                    className="self-start"
+                    onClick={() =>
+                      openForm(request.studentId, request.classId)
+                    }
+                  >
+                    Enroll Now
+                  </Button>
+                </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-sm">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">
+                      Student
+                    </p>
+                    <p className="mt-1 font-semibold text-slate-800">
+                      {request.student?.name}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Username: {request.student?.userName || "N/A"}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Student ID: {getShortId(request.studentId)}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-sm">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">
+                      Contact
+                    </p>
+                    <p className="mt-1 text-sm text-slate-700">
+                      {request.student?.email || "No email"}
+                    </p>
+                    <p className="text-sm text-slate-700">
+                      {request.student?.phone || "No phone"}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-sm">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">
+                      Profile
+                    </p>
+                    <p className="mt-1 text-sm text-slate-700">
+                      Grade: {request.student?.grade || "Not set"}
+                    </p>
+                    <p className="text-sm text-slate-700">
+                      Branch: {request.student?.branch || "Main"}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Joined {formatDate(request.student?.createdAt)}
+                    </p>
                   </div>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
 
-      {isFormOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="bg-white shadow-md rounded-md p-6 w-3/4 max-w-md">
-            <h2 className="text-lg font-semibold mb-4">Enroll Student</h2>
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label
-                  htmlFor="totalFee"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Total Fee:
-                </label>
-                <input
-                  type="text"
-                  id="totalFee"
-                  name="totalFee"
-                  value={formData.totalFee}
-                  onChange={handleChange}
-                  className="mt-1 p-2 border border-gray-500 rounded-md w-full"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label
-                  htmlFor="feeMonth"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Fee Month:
-                </label>
-                <select
-                  className="w-full"
-                  onChange={(e) =>
-                    setFormData({ ...formData, feeMonth: e.target.value })
-                  } // Update the formData state
-                  value={formData.feeMonth} // Set the selected value to the formData state
-                  required
-                >
-                  <option value="">Select Month</option>
-                  {months.map((month, index) => (
-                    <option key={index} value={month}>
-                      {month}
-                    </option>
-                  ))}
-                </select>
-              </div>
+      {isFormOpen &&
+        ReactDOM.createPortal(
+          <div className="app-modal-overlay app-modal-overlay--top app-modal-overlay--scroll">
+            <div className="app-modal-card app-modal-card-md max-h-[90vh] overflow-y-auto">
+              <h2 className="mb-4 text-lg font-semibold text-slate-800">
+                Enroll Student
+              </h2>
+              <form onSubmit={handleSubmit}>
+                <div className="mb-4">
+                  <label
+                    htmlFor="totalFee"
+                    className="block text-sm font-medium text-slate-700"
+                  >
+                    Total Fee
+                  </label>
+                  <input
+                    type="text"
+                    id="totalFee"
+                    name="totalFee"
+                    value={formData.totalFee}
+                    onChange={handleChange}
+                    className="mt-1"
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label
+                    htmlFor="feeMonth"
+                    className="block text-sm font-medium text-slate-700"
+                  >
+                    Fee Month
+                  </label>
+                  <select
+                    className="mt-1 w-full"
+                    onChange={(e) =>
+                      setFormData({ ...formData, feeMonth: e.target.value })
+                    }
+                    value={formData.feeMonth}
+                    required
+                  >
+                    <option value="">Select Month</option>
+                    {months.map((month, index) => (
+                      <option key={index} value={month}>
+                        {month}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              <div className="mb-4">
-                <label
-                  htmlFor="paid"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Paid:
-                </label>
-                <select
-                  value={formData.paid}
-                  onChange={(e) =>
-                    setFormData({ ...formData, paid: e.target.value })
-                  }
-                  className="w-full"
-                >
-                  <option>Select Status</option>
-                  <option value="true">Yes</option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label
-                  htmlFor="amountPaid"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Amount Paid:
-                </label>
-                <input
-                  type="text"
-                  id="amountPaid"
-                  name="amountPaid"
-                  value={formData.amountPaid}
-                  onChange={handleChange}
-                  className="mt-1 p-2 border border-gray-500 rounded-md w-full"
-                  required
-                />
-              </div>
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={closeForm}
-                  className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 mr-2"
-                >
-                  Close
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-orange-400 text-white rounded-md hover:bg-orange-500"
-                >
-                  Submit
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700">
+                    Payment Status
+                  </label>
+                  <div className="mt-2 flex items-center gap-4 text-sm text-slate-700">
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="paid"
+                        value="pending"
+                        checked={formData.paid === "pending"}
+                        onChange={() => handlePaidChange("pending")}
+                      />
+                      <span>Pending</span>
+                    </label>
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="paid"
+                        value="yes"
+                        checked={formData.paid === "yes"}
+                        onChange={() => handlePaidChange("yes")}
+                      />
+                      <span>Yes</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="mb-5">
+                  <label
+                    htmlFor="amountPaid"
+                    className="block text-sm font-medium text-slate-700"
+                  >
+                    Amount Paid
+                  </label>
+                  <input
+                    type="text"
+                    id="amountPaid"
+                    name="amountPaid"
+                    value={formData.amountPaid}
+                    onChange={handleChange}
+                    className="mt-1"
+                    required={formData.paid === "yes"}
+                    disabled={formData.paid === "pending"}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={closeForm}
+                    className="rounded-lg bg-slate-500 px-4 py-2 text-white hover:bg-slate-600"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="submit"
+                    className="rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600"
+                  >
+                    Submit
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {popupMessage && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-800 bg-opacity-75">
-          <div className="bg-white shadow-md rounded-md p-6">
-            <p className="text-lg font-semibold">{popupMessage}</p>
+        <div className="app-modal-overlay app-modal-overlay--top">
+          <div className="app-modal-card app-modal-card-sm text-center">
+            <p className="text-lg font-semibold text-slate-800">{popupMessage}</p>
             <button
               onClick={() => setPopupMessage("")}
-              className="px-4 py-2 bg-orange-400 text-white rounded-md hover:bg-orange-500 mt-4"
+              className="mt-4 rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600"
             >
               Close
             </button>

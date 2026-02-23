@@ -9,8 +9,17 @@ import Classes from "../Models/Classes.js";
 import Students from "../Models/Students.js";
 import Attendance from "../Models/Attendance.js";
 import Commission from "../Models/Commission.js";
+import ClassTeachers from "../Models/ClassTeachers.js";
 import ExcelJS from "exceljs";
 import crypto from 'crypto';
+import { calculateMonthlyCommission, sortCommissions } from "../utils/commission.js";
+import { isGradeMatch, resolveCourseGrade, toGradeLabel } from "../utils/grade.js";
+import { getAssignmentForTeacher } from "../utils/classTeachers.js";
+import {
+  findStudentUniquenessConflict,
+  isValidEmail,
+  normalizeEmail,
+} from "../utils/studentValidation.js";
 
 
 
@@ -40,7 +49,6 @@ router.post("/login-teacher", async (req, res) => {
         role: user.role,
         name: user.name,
         phone: user.phone,
-        branch: user.branch,
       },
       secretKey,
       {
@@ -68,7 +76,12 @@ router.get("/my-profile", TeacherAuthenticateToken, async (req, res) => {
       return res.status(404).json({ message: "Teacher not found" });
     }
 
-    const { myClasses, myScheduledClasses } = myProfile;
+    const assignments = await ClassTeachers.find({
+      teacherId: userId,
+      active: true,
+    }).select("classId");
+    const myClasses = assignments.map((a) => a.classId);
+    const { myScheduledClasses } = myProfile;
     res.status(200).json({
       userId,
       role,
@@ -85,26 +98,59 @@ router.get("/my-profile", TeacherAuthenticateToken, async (req, res) => {
 
 router.post("/add-student", TeacherAuthenticateToken, async (req, res) => {
   try {
-    const { userId, branch } = req.user;
-    const { name, phone, password, userName, dob, courseId, grade } = req.body;
+    const { userId } = req.user;
+    const { name, phone, password, userName, dob, courseId, grade, email } = req.body;
+    const gradeLabel = toGradeLabel(grade);
 
-    // Check if the username is already taken
-    const existingStudent = await Students.findOne({ userName });
-    if (existingStudent) {
-      return res.status(400).json({
-        message: "Student with this username already exists!",
-      });
+    if (!name || !phone || !password || !userName || !email) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    const normalizedEmail = normalizeEmail(email);
+    const normalizedUserName = userName.trim();
+    const normalizedPhone = phone.trim();
+    if (!isValidEmail(normalizedEmail)) {
+      return res.status(400).json({ message: "Please enter a valid email." });
+    }
+
+    const conflictMessage = await findStudentUniquenessConflict({
+      userName: normalizedUserName,
+      phone: normalizedPhone,
+      email: normalizedEmail,
+    });
+    if (conflictMessage) {
+      return res.status(409).json({ message: conflictMessage });
     }
 
     let classData = null;
 
     // If courseId is provided, validate the class
     if (courseId) {
-      classData = await Classes.findOne({ _id: courseId, teachBy: userId });
+      classData = await Classes.findOne({ _id: courseId });
       if (!classData) {
         return res
           .status(404)
           .json({ message: "Class not found or unauthorized." });
+      }
+      const assignment = await ClassTeachers.findOne({
+        classId: courseId,
+        teacherId: userId,
+        active: true,
+      });
+      if (!assignment) {
+        return res
+          .status(403)
+          .json({ message: "You are not assigned to this class." });
+      }
+      const resolvedCourseGrade = resolveCourseGrade(classData);
+      if (resolvedCourseGrade && !classData.grade) {
+        classData.grade = resolvedCourseGrade;
+        await classData.save();
+      }
+      if (resolvedCourseGrade && !isGradeMatch(resolvedCourseGrade, gradeLabel)) {
+        return res.status(400).json({
+          message: "Student grade does not match the selected course grade.",
+        });
       }
     }
 
@@ -113,24 +159,23 @@ router.post("/add-student", TeacherAuthenticateToken, async (req, res) => {
 
     // Create student
     const newStudent = new Students({
-      branch,
-      teachBy: userId,
-      userName,
+      branch: "Main",
+      userName: normalizedUserName,
       dob,
       name,
-      phone,
+      phone: normalizedPhone,
+      email: normalizedEmail,
       password: hashedPassword,
-      grade,
+      grade: gradeLabel,
       classes: courseId ? [courseId] : [],
     });
 
     await newStudent.save();
 
     // Add student to teacher's list
-    await Teachers.updateMany(
-      { branch },
-      { $addToSet: { myStudents: newStudent._id } }
-    );
+    await Teachers.findByIdAndUpdate(userId, {
+      $addToSet: { myStudents: newStudent._id },
+    });
 
     // Add to class if courseId exists
     if (classData) {
@@ -142,6 +187,11 @@ router.post("/add-student", TeacherAuthenticateToken, async (req, res) => {
       message: "New student has been registered successfully!",
     });
   } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(409).json({
+        message: "Username, phone number, or email already exists.",
+      });
+    }
     console.error("Something went wrong:", error.message);
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -151,28 +201,23 @@ router.get("/all-my-students", TeacherAuthenticateToken, async (req, res) => {
   try {
     const { userId } = req.user;
 
-    const teacher = await Teachers.findById(userId).populate({
-      path: "myClasses",
+    const assignments = await ClassTeachers.find({
+      teacherId: userId,
+      active: true,
+    }).select("classId");
+    const classIds = assignments.map((a) => a.classId);
+
+    const classes = await Classes.find({ _id: { $in: classIds } }).populate({
+      path: "enrolledStudents",
+      model: "Student",
+      select: "-password",
       populate: {
-        path: "enrolledStudents",
-        model: "Student",
-        // match: { deactivated: false },
-        select: "-password",
-        populate: {
-          path: "attendanceDetail",
-          model: "Attendance",
-          
-        },
+        path: "attendanceDetail",
+        model: "Attendance",
       },
     });
 
-    if (!teacher) {
-      return res.status(404).json({ message: "Teacher not found." });
-    }
-
-    const allStudents = teacher.myClasses.flatMap(
-      (cls) => cls.enrolledStudents
-    );
+    const allStudents = classes.flatMap((cls) => cls.enrolledStudents || []);
 
     if (!allStudents || allStudents.length === 0) {
       return res
@@ -191,28 +236,24 @@ router.get("/my-students", TeacherAuthenticateToken, async (req, res) => {
   try {
     const { userId } = req.user;
 
-    const teacher = await Teachers.findById(userId).populate({
-      path: "myClasses",
+    const assignments = await ClassTeachers.find({
+      teacherId: userId,
+      active: true,
+    }).select("classId");
+    const classIds = assignments.map((a) => a.classId);
+
+    const classes = await Classes.find({ _id: { $in: classIds } }).populate({
+      path: "enrolledStudents",
+      model: "Student",
+      match: { deactivated: false },
+      select: "-password",
       populate: {
-        path: "enrolledStudents",
-        model: "Student",
-        match: { deactivated: false },
-        select: "-password",
-        populate: {
-          path: "attendanceDetail",
-          model: "Attendance",
-          
-        },
+        path: "attendanceDetail",
+        model: "Attendance",
       },
     });
 
-    if (!teacher) {
-      return res.status(404).json({ message: "Teacher not found." });
-    }
-
-    const allStudents = teacher.myClasses.flatMap(
-      (cls) => cls.enrolledStudents
-    );
+    const allStudents = classes.flatMap((cls) => cls.enrolledStudents || []);
 
     if (!allStudents || allStudents.length === 0) {
       return res
@@ -229,7 +270,7 @@ router.get("/my-students", TeacherAuthenticateToken, async (req, res) => {
 
 router.put("/student-edit/:id", TeacherAuthenticateToken, async (req, res) => {
   const { id } = req.params;
-  const { name, phone, password, branch, userName, dob, grade } = req.body;
+  const { name, phone, password, userName, dob, grade, email } = req.body;
 
   try {
     // Validate input fields (optional, depending on your requirements)
@@ -240,12 +281,21 @@ router.put("/student-edit/:id", TeacherAuthenticateToken, async (req, res) => {
       return res.status(404).json({ message: "Student not found." });
     }
 
-    // Check if username already exists (excluding the current student)
-    const existingUserName = await Students.findOne({ userName });
-    if (existingUserName && existingUserName._id.toString() !== id) {
-      return res.status(400).json({
-        message: "Username already taken. Please enter a unique username",
-      });
+    const normalizedEmail = email ? normalizeEmail(email) : null;
+    const normalizedUserName = userName ? userName.trim() : null;
+    const normalizedPhone = phone ? phone.trim() : null;
+    if (email && !isValidEmail(normalizedEmail)) {
+      return res.status(400).json({ message: "Please enter a valid email." });
+    }
+
+    const conflictMessage = await findStudentUniquenessConflict({
+      userName: normalizedUserName,
+      phone: normalizedPhone,
+      email: normalizedEmail,
+      excludeId: id,
+    });
+    if (conflictMessage) {
+      return res.status(400).json({ message: conflictMessage });
     }
 
     // Update student details
@@ -255,23 +305,23 @@ router.put("/student-edit/:id", TeacherAuthenticateToken, async (req, res) => {
     // student.userName = userName || student.userName;
     // student.dob = dob || student.dob;
     if (name) {
-      student.name = await name;
+      student.name = name;
     }
     if (phone) {
-      student.phone = await phone;
-    }
-    if (branch) {
-      student.branch = await branch;
+      student.phone = normalizedPhone;
     }
     if (userName) {
-      student.userName = await userName;
+      student.userName = normalizedUserName;
+    }
+    if (email) {
+      student.email = normalizedEmail;
     }
     if (dob) {
-      student.dob = await dob;
+      student.dob = dob;
     }
 
     if (grade) {
-      student.grade = await grade;
+      student.grade = await toGradeLabel(grade);
     }
 
     // If password is provided, hash it and update the password
@@ -287,6 +337,11 @@ router.put("/student-edit/:id", TeacherAuthenticateToken, async (req, res) => {
     res.status(200).json({ message: "Student details updated successfully." });
   } catch (error) {
     console.error("Error updating student details:", error);
+    if (error?.code === 11000) {
+      return res.status(409).json({
+        message: "Username, phone number, or email already exists.",
+      });
+    }
     res.status(500).json({ message: "Server error." });
   }
 });
@@ -312,11 +367,16 @@ router.delete("/delete-student/:id",TeacherAuthenticateToken,async (req, res) =>
 
 router.get("/my-classes", TeacherAuthenticateToken, async (req, res) => {
   try {
-    const { userId, branch } = req.user;
+    const { userId } = req.user;
+
+    const assignments = await ClassTeachers.find({
+      teacherId: userId,
+      active: true,
+    }).select("classId");
+    const classIds = assignments.map((a) => a.classId);
 
     const allMyClasses = await Classes.find({
-      teachBy: userId,
-      branch: branch,
+      _id: { $in: classIds },
     });
 
     if (!allMyClasses) {
@@ -336,6 +396,15 @@ router.get("/my-classes/:id", TeacherAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
+    const assignment = await ClassTeachers.findOne({
+      classId: id,
+      teacherId: req.user.userId,
+      active: true,
+    });
+    if (!assignment) {
+      return res.status(403).json({ message: "Unauthorized." });
+    }
+
     const getClassById = await Classes.findById({ _id: id });
 
     if (!getClassById) {
@@ -354,7 +423,15 @@ router.post("/schedule-class/:id",TeacherAuthenticateToken,async (req, res) => {
     try {
       const { id } = req.params;
       const { date, numberOfClasses } = req.body;
-      const { branch } = req.user;
+
+      const assignment = await ClassTeachers.findOne({
+        classId: id,
+        teacherId: req.user.userId,
+        active: true,
+      });
+      if (!assignment) {
+        return res.status(403).json({ message: "Unauthorized." });
+      }
 
       const addNewClass = await Classes.findByIdAndUpdate(
         { _id: id },
@@ -366,10 +443,7 @@ router.post("/schedule-class/:id",TeacherAuthenticateToken,async (req, res) => {
         { new: true }
       );
 
-      // Get all student ids
-      const allStudents = await Students.find({ branch: branch }, { _id: 1 });
-
-      const studentIds = allStudents.map((student) => student._id);
+      const studentIds = addNewClass?.enrolledStudents || [];
 
       // Check if there's an existing document in Attendance collection for each student
       for (const studentId of studentIds) {
@@ -383,7 +457,7 @@ router.post("/schedule-class/:id",TeacherAuthenticateToken,async (req, res) => {
           await Attendance.findByIdAndUpdate(
             existingAttendance._id,
             {
-              $push: { detailAttendance: { classDate: date } },
+              $push: { detailAttendance: { classDate: date, teacherId: req.user.userId } },
             },
             { new: true }
           );
@@ -391,20 +465,10 @@ router.post("/schedule-class/:id",TeacherAuthenticateToken,async (req, res) => {
           // MY SCHEDULED CLASSES DATES IS LEFT
         } else {
           // If no existing document found, create a new one
-          const studentExist = await Classes.findOne({
-            _id: id,
-            enrolledStudents: studentId,
-          });
-          if (!studentExist) {
-            console.log(
-              `Student with ID ${studentId} is not enrolled in this course. Skipping...`
-            );
-            continue;
-          }
           const newAttendance = new Attendance({
             classId: id,
             studentId,
-            detailAttendance: [{ classDate: date }],
+            detailAttendance: [{ classDate: date, teacherId: req.user.userId }],
           });
 
           await newAttendance.save();
@@ -432,6 +496,15 @@ router.put("/update-class-hours/:id",TeacherAuthenticateToken,async (req, res) =
     try {
       const { id } = req.params;
       const { updatedHours } = req.body;
+
+      const assignment = await ClassTeachers.findOne({
+        classId: id,
+        teacherId: req.user.userId,
+        active: true,
+      });
+      if (!assignment) {
+        return res.status(403).json({ message: "Unauthorized." });
+      }
 
       const singleClass = await Classes.findByIdAndUpdate(
         { _id: id },
@@ -463,7 +536,19 @@ router.get("/attendance/:id", TeacherAuthenticateToken, async (req, res) => {
       return res.status(403).json({ message: "No record found!!!" });
     }
 
-    res.status(200).json(attendances);
+    const filtered = attendances.map((doc) => {
+      const detailAttendance = (doc.detailAttendance || []).filter(
+        (entry) =>
+          entry.classDate === attendanceDate &&
+          String(entry.teacherId) === String(req.user.userId)
+      );
+      return {
+        ...doc.toObject(),
+        detailAttendance,
+      };
+    });
+
+    res.status(200).json(filtered);
   } catch (error) {
     console.log("Something went wrong!!! ");
     res.status(500).json(error);
@@ -477,15 +562,29 @@ router.put("/update-attendance/:id1/:id2",
       const { id1, id2 } = req.params;
       const { attendanceDate, numberOfClassesTaken } = req.body;
 
+      const assignment = await getAssignmentForTeacher(id1, req.user.userId);
+      if (!assignment) {
+        return res.status(403).json({ message: "Unauthorized." });
+      }
+      const rate = Number.isFinite(Number(assignment?.commissionRate))
+        ? Number(assignment.commissionRate)
+        : Number(process.env.DEFAULT_COMMISSION_RATE || 1);
+      const units = Number(numberOfClassesTaken || 0);
+      const computedCommission = Number.isFinite(units)
+        ? Number((units * rate).toFixed(2))
+        : 0;
+
       const updatedAttendance = await Attendance.findOneAndUpdate(
         {
           classId: id1,
           studentId: id2,
           "detailAttendance.classDate": attendanceDate,
+          "detailAttendance.teacherId": req.user.userId,
         },
         {
           $set: {
             "detailAttendance.$.numberOfClassesTaken": numberOfClassesTaken,
+            "detailAttendance.$.commission": computedCommission,
           },
         },
         { new: true }
@@ -498,6 +597,125 @@ router.put("/update-attendance/:id1/:id2",
       }
 
       res.status(200).json(updatedAttendance);
+    } catch (error) {
+      console.log("Something went wrong!!! ", error);
+      res.status(500).json(error);
+    }
+  }
+);
+
+// BULK MARK ATTENDANCE FOR A CLASS DATE
+router.post(
+  "/attendance/bulk/:classId",
+  TeacherAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { classId } = req.params;
+      const { classDate, numberOfClasses, presentStudentIds = [] } = req.body;
+
+      if (!classDate || numberOfClasses === undefined) {
+        return res
+          .status(400)
+          .json({ message: "classDate and numberOfClasses are required." });
+      }
+
+      const classDoc = await Classes.findById(classId).select(
+        "dailyClasses enrolledStudents"
+      );
+
+      if (!classDoc) {
+        return res.status(404).json({ message: "Class not found." });
+      }
+
+      const assignment = await getAssignmentForTeacher(classId, req.user.userId);
+      if (!assignment) {
+        return res.status(403).json({ message: "Unauthorized." });
+      }
+
+      const normalizedHours = Number(numberOfClasses) || 0;
+      const presentSet = new Set(
+        (presentStudentIds || []).map((id) => String(id))
+      );
+
+      const rate = Number.isFinite(Number(assignment?.commissionRate))
+        ? Number(assignment.commissionRate)
+        : Number(process.env.DEFAULT_COMMISSION_RATE || 1);
+
+      const existingSessionIndex = (classDoc.dailyClasses || []).findIndex(
+        (d) => d.classDate === classDate
+      );
+
+      if (existingSessionIndex >= 0) {
+        classDoc.dailyClasses[existingSessionIndex].numberOfClasses =
+          String(normalizedHours);
+      } else {
+        classDoc.dailyClasses.push({
+          classDate,
+          numberOfClasses: String(normalizedHours),
+        });
+      }
+
+      await classDoc.save();
+
+      const enrolledStudents = classDoc.enrolledStudents || [];
+
+      for (const studentId of enrolledStudents) {
+        const isPresent = presentSet.has(String(studentId));
+        const units = isPresent ? normalizedHours : 0;
+        const computedCommission = Number((units * rate).toFixed(2));
+
+        const attendanceDoc = await Attendance.findOne({
+          classId,
+          studentId,
+        });
+
+        if (!attendanceDoc) {
+          const newAttendance = new Attendance({
+            classId,
+            studentId,
+            detailAttendance: [
+              {
+                classDate,
+                numberOfClassesTaken: units,
+                commission: computedCommission,
+                teacherId: req.user.userId,
+              },
+            ],
+          });
+          await newAttendance.save();
+          await Students.findByIdAndUpdate(studentId, {
+            $addToSet: { attendanceDetail: newAttendance._id },
+          });
+          continue;
+        }
+
+        const detail = attendanceDoc.detailAttendance?.find(
+          (entry) =>
+            entry.classDate === classDate &&
+            String(entry.teacherId) === String(req.user.userId)
+        );
+
+        if (detail) {
+          detail.numberOfClassesTaken = units;
+          detail.commission = computedCommission;
+        } else {
+          attendanceDoc.detailAttendance.push({
+            classDate,
+            numberOfClassesTaken: units,
+            commission: computedCommission,
+            teacherId: req.user.userId,
+          });
+        }
+
+        await attendanceDoc.save();
+      }
+
+      res.status(200).json({
+        message: "Attendance updated successfully.",
+        totalStudents: enrolledStudents.length,
+        presentCount: presentSet.size,
+        absentCount: enrolledStudents.length - presentSet.size,
+      });
     } catch (error) {
       console.log("Something went wrong!!! ", error);
       res.status(500).json(error);
@@ -553,54 +771,27 @@ router.get("/my-commission/:id", TeacherAuthenticateToken, async (req, res) => {
     const { userId } = req.user;
     const { id } = req.params;
 
-    const myCommission = await Commission.find({
-      teacherId: userId,
-      classId: id,
-    });
+    const { classDoc, commissions } = await calculateMonthlyCommission(id, userId);
 
-    if (!myCommission) {
-      return res.status(403).json({ message: "No record found!!!" });
+    if (!classDoc) {
+      return res.status(404).json({ message: "Class not found." });
     }
 
-    res.status(200).json(myCommission);
+    res.status(200).json(sortCommissions(commissions));
   } catch (error) {
     console.log("Something went wrong!!! ");
     res.status(500).json(error);
   }
 });
 
-// ADD MONTHLY COMMISSION
+// ADD MONTHLY COMMISSION (disabled for teachers)
 router.post(
   "/add-monthly-classes/:id",
   TeacherAuthenticateToken,
   async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { userId } = req.user;
-      const { monthName, year, classesTaken } = req.body;
-
-      const addClassesTaken = new Commission({
-        teacherId: userId,
-        classId: id,
-        monthName,
-        year,
-        classesTaken,
-      });
-
-      await addClassesTaken.save();
-
-      if (!addClassesTaken) {
-        return res.status(403).json({ message: "Error in adding classes" });
-      }
-
-      res.status(200).json({
-        message: "Monthly classes taken added successfully!!!",
-        addClassesTaken,
-      });
-    } catch (error) {
-      console.log("Something went wrong!!! ", error);
-      res.status(500).json(error);
-    }
+    return res.status(403).json({
+      message: "Commission is managed by admin. Teachers can only view commission.",
+    });
   }
 );
 
@@ -610,36 +801,9 @@ router.put(
   "/edit-monthly-classes/:commissionId",
   TeacherAuthenticateToken,
   async (req, res) => {
-    try {
-      const { commissionId } = req.params;
-      const { monthName, year, classesTaken } = req.body;
-
-      const commission = await Commission.findById(commissionId);
-
-      if (!commission) {
-        return res.status(404).json({ message: "Commission record not found" });
-      }
-
-      if (commission.paid === true) {
-        return res
-          .status(403)
-          .json({ message: "Cannot edit. Commission already marked as paid." });
-      }
-
-      const updatedCommission = await Commission.findByIdAndUpdate(
-        commissionId,
-        { monthName, year, classesTaken },
-        { new: true }
-      );
-
-      res.status(200).json({
-        message: "Monthly classes updated successfully!",
-        updatedCommission,
-      });
-    } catch (error) {
-      console.error("Error updating monthly classes:", error);
-      res.status(500).json({ message: "Server error", error });
-    }
+    return res.status(403).json({
+      message: "Commission is managed by admin. Teachers can only view commission.",
+    });
   }
 );
 
@@ -647,35 +811,9 @@ router.delete(
   "/delete-monthly-classes/:commissionId",
   TeacherAuthenticateToken,
   async (req, res) => {
-    try {
-      const { commissionId } = req.params;
-
-      const commission = await Commission.findById(commissionId);
-
-      if (!commission) {
-        return res.status(404).json({ message: "Commission record not found" });
-      }
-
-      if (commission.paid === true) {
-        return res
-          .status(403)
-          .json({
-            message: "Cannot delete. Commission already marked as paid.",
-          });
-      }
-
-      const deletedCommission = await Commission.findByIdAndDelete(
-        commissionId
-      );
-
-      res.status(200).json({
-        message: "Monthly classes deleted successfully!",
-        deletedCommission,
-      });
-    } catch (error) {
-      console.error("Error deleting monthly classes:", error);
-      res.status(500).json({ message: "Server error", error });
-    }
+    return res.status(403).json({
+      message: "Commission is managed by admin. Teachers can only view commission.",
+    });
   }
 );
 
@@ -684,8 +822,11 @@ router.get("/chat-all-students", TeacherAuthenticateToken, async (req, res) => {
   try {
     const { userId } = req.user;
 
-    const currentUser = await Teachers.findById(userId);
-    const myClasses = currentUser.myClasses;
+    const assignments = await ClassTeachers.find({
+      teacherId: userId,
+      active: true,
+    }).select("classId");
+    const myClasses = assignments.map((a) => a.classId);
 
     let allStudentIds = [];
 
@@ -706,7 +847,7 @@ router.get("/chat-all-students", TeacherAuthenticateToken, async (req, res) => {
     );
 
     const students = await Promise.all(
-      objectIds.map((id) => Students.findById(id))
+      objectIds.map((id) => Students.findById(id, { password: 0 }))
     );
 
     const filteredStudents = students.filter((student) => student !== null);
@@ -718,7 +859,10 @@ router.get("/chat-all-students", TeacherAuthenticateToken, async (req, res) => {
   }
 });
 
-router.post("/mark-attendance/:studentId/:classId", async (req, res) => {
+router.post(
+  "/mark-attendance/:studentId/:classId",
+  TeacherAuthenticateToken,
+  async (req, res) => {
   try {
     const { studentId } = req.params;
     const { classDate, numberOfClassesTaken, grade } = req.body;
@@ -740,7 +884,19 @@ router.post("/mark-attendance/:studentId/:classId", async (req, res) => {
     if(!classId){
       return res.status(404).json({ message: "class not found." });
     }
-   
+
+    const assignment = await getAssignmentForTeacher(classId, req.user.userId);
+    if (!assignment) {
+      return res.status(403).json({ message: "Unauthorized." });
+    }
+    const rate = Number.isFinite(Number(assignment?.commissionRate))
+      ? Number(assignment.commissionRate)
+      : Number(process.env.DEFAULT_COMMISSION_RATE || 1);
+    const units = Number(numberOfClassesTaken || 0);
+    const computedCommission = Number.isFinite(units)
+      ? Number((units * rate).toFixed(2))
+      : 0;
+
     let attendance = await Attendance.findOne({ studentId, classId });
 
     if (!attendance) {
@@ -753,6 +909,8 @@ router.post("/mark-attendance/:studentId/:classId", async (req, res) => {
             classDate,
             numberOfClassesTaken,
             grade,
+            commission: computedCommission,
+            teacherId: req.user.userId,
           },
         ],
       });
@@ -761,6 +919,8 @@ router.post("/mark-attendance/:studentId/:classId", async (req, res) => {
         classDate,
         numberOfClassesTaken,
         grade,
+        commission: computedCommission,
+        teacherId: req.user.userId,
       });
     }
 
@@ -782,6 +942,7 @@ router.post("/mark-attendance/:studentId/:classId", async (req, res) => {
 
 router.put(
   "/edit-attendance/:studentId/:attendanceEntryId/:classId",
+  TeacherAuthenticateToken,
   async (req, res) => {
     try {
       const { studentId, attendanceEntryId , classId } = req.params;
@@ -806,10 +967,27 @@ router.put(
         return res.status(404).json({ message: "Attendance entry not found." });
       }
 
+      const assignment = await getAssignmentForTeacher(classId, req.user.userId);
+      if (!assignment) {
+        return res.status(403).json({ message: "Unauthorized." });
+      }
+      const rate = Number.isFinite(Number(assignment?.commissionRate))
+        ? Number(assignment.commissionRate)
+        : Number(process.env.DEFAULT_COMMISSION_RATE || 1);
+      const units = Number(numberOfClassesTaken || 0);
+      const computedCommission = Number.isFinite(units)
+        ? Number((units * rate).toFixed(2))
+        : 0;
+
       // Update fields
+      if (String(attendanceEntry.teacherId) !== String(req.user.userId)) {
+        return res.status(403).json({ message: "Unauthorized." });
+      }
+
       attendanceEntry.classDate = classDate; // optional, if you want to update date
       attendanceEntry.numberOfClassesTaken = numberOfClassesTaken;
       attendanceEntry.grade = grade;
+      attendanceEntry.commission = computedCommission;
 
       await attendance.save();
 
@@ -824,7 +1002,10 @@ router.put(
   }
 );
 
-router.get("/download-student-attendance/:studentId", async (req, res) => {
+router.get(
+  "/download-student-attendance/:studentId",
+  TeacherAuthenticateToken,
+  async (req, res) => {
   try {
     const { studentId } = req.params;
     const { year, month } = req.query;
@@ -844,7 +1025,9 @@ router.get("/download-student-attendance/:studentId", async (req, res) => {
       return res.status(404).json({ message: "Attendance record not found." });
     }
 
-    const detailAttendance = attendanceRecord.detailAttendance || [];
+    const detailAttendance = (attendanceRecord.detailAttendance || []).filter(
+      (entry) => String(entry.teacherId) === String(req.user.userId)
+    );
 
     const filteredAttendance = detailAttendance.filter((entry) => {
       const [day, entryMonth, entryYear] = entry.classDate.split("-");

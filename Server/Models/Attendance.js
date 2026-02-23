@@ -25,6 +25,10 @@ const attendanceSchema = new mongoose.Schema({
           type: String,
           default: "0",
         },
+        teacherId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Teacher",
+        },
         grade: {
           type: String,
           // required: true,

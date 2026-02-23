@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 import { IoClose } from "react-icons/io5";
@@ -11,20 +11,21 @@ const override = css`
   border-color: red;
 `;
 
-const AdminEditTeacher = ({ teacherDetails, closingModel  , id}) => {
-    console.log(teacherDetails)
+const AdminEditTeacher = ({ teacherDetails, closingModel, id, onUpdated }) => {
   const navigate = useNavigate();
+  const { get, put } = useApi();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-//   const [userName, setUserName] = useState("");
+  //   const [userName, setUserName] = useState("");
   const [dob, setdob] = useState("");
 
   const [studentDetails, setStudentsDetails] = useState(null);
   const [popupMessage, setPopupMessage] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [branch, setBranch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [allCourses, setAllCourses] = useState([]);
+  const [teacherCourseId, setTeacherCourseId] = useState("");
 
   const handleShowPassword = () => setShowPassword((prev) => !prev);
 
@@ -34,42 +35,66 @@ const AdminEditTeacher = ({ teacherDetails, closingModel  , id}) => {
     if (teacherDetails) {
       setName(teacherDetails.name || "");
       setPhone(teacherDetails.phone || "");
-    //   setUserName(teacherDetails.userName || "");
-      setBranch(teacherDetails.branch || "");
+      //   setUserName(teacherDetails.userName || "");
       setdob(teacherDetails.dob || "");
-      setPassword(teacherDetails.password || "");
+      setPassword("");
 
     }
   }, [teacherDetails]);
+
+  useEffect(() => {
+    const fetchAllCourses = async () => {
+      try {
+        const response = await get({
+          url: "/admin-confi/all-classes",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
+        if (response.status === 200) {
+          setAllCourses(response.data || []);
+        }
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      }
+    };
+
+    if (token) {
+      fetchAllCourses();
+    }
+  }, [token, get]);
 
   const handleTeacherEdit = async (e) => {
     setLoading(true);
     e.preventDefault();
     setPopupMessage(null);
-console.log(id , name , phone , password , dob)
+    console.log(id, name, phone, password, dob)
     try {
-      const response = await axios.put(
-        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/teacher-edit/${id}`,
-        {
-          name,
-          phone,
-          password,
-          dob,
+      const payload = {
+        name,
+        phone,
+        password,
+        dob,
+      };
+      if (teacherCourseId) {
+        payload.courseId = teacherCourseId;
+      }
+
+      const response = await put({
+        url: `/admin-confi/teacher-edit/${id}`,
+        data: payload,
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      }).unwrap();
 
       if (response.status === 200) {
         setPopupMessage("Teacher Edited Successfully");
         setName("");
         setPhone("");
         setPassword("");
-        setBranch("");
-        setUserName("");
+        setTeacherCourseId("");
+        await onUpdated?.();
       } else if (response.status === 400) {
         setPopupMessage(response.data.message);
       } else {
@@ -122,7 +147,7 @@ console.log(id , name , phone , password , dob)
                 className="space-y-4 md:space-y-6"
                 onSubmit={handleTeacherEdit}
               >
-             
+
                 <div>
                   <input
                     type="text"
@@ -136,7 +161,7 @@ console.log(id , name , phone , password , dob)
                   />
                 </div>
 
-             
+
                 <div>
                   <input
                     type="phone"
@@ -151,17 +176,18 @@ console.log(id , name , phone , password , dob)
                 </div>
 
                 <select
-                  id="branch"
-                  name="branch"
-                  value={branch}
-                  onChange={(e) => setBranch(e.target.value)}
+                  id="teacherCourseId"
+                  name="teacherCourseId"
+                  value={teacherCourseId}
+                  onChange={(e) => setTeacherCourseId(e.target.value)}
                   className="w-full p-2 border border-gray-500 rounded-md"
                 >
-                  <option>Select Branch</option>
-                  <option value="Noida-107">Noida-107</option>
-                  <option value="Noida-51">Noida-51</option>
-                  <option value="East Delhi">East Delhi</option>
-                  <option value="North Delhi">North Delhi</option>
+                  <option value="">Assign Course (Optional)</option>
+                  {allCourses.map((course) => (
+                    <option key={course?._id} value={course?._id}>
+                      {course?.classTitle}
+                    </option>
+                  ))}
                 </select>
                 <div className="flex items-center justify-between w-full p-2 border border-gray-500 rounded-md">
                   <label
@@ -175,7 +201,7 @@ console.log(id , name , phone , password , dob)
                     id="dob"
                     value={dob}
                     className="h-8 rounded-lg outline-none focus:ring-0"
-                    onChange={(e) => setdob(e.target.value)} 
+                    onChange={(e) => setdob(e.target.value)}
                     placeholder="Data of Birth"
                   />
                 </div>
@@ -211,10 +237,10 @@ console.log(id , name , phone , password , dob)
                 </div>
               </form>
               {popupMessage && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                  <div className="p-4 bg-white rounded-lg shadow-md">
+                <div className="app-modal-overlay app-modal-overlay--top">
+                  <div className="app-modal-card app-modal-card-sm relative">
                     <svg
-                      className="float-right w-6 h-6 -mt-2 text-red-500 cursor-pointer"
+                      className="absolute right-4 top-4 h-6 w-6 cursor-pointer text-red-500"
                       onClick={() => setPopupMessage(null)}
                       width="24"
                       height="24"
@@ -230,7 +256,7 @@ console.log(id , name , phone , password , dob)
                       <line x1="18" y1="6" x2="6" y2="18" />{" "}
                       <line x1="6" y1="6" x2="18" y2="18" />
                     </svg>
-                    <p className="mt-4 text-lg font-bold text-green-700">
+                    <p className="mt-6 text-lg font-bold text-emerald-600">
                       {popupMessage}
                     </p>
                     {/* <button className="px-4 py-2 text-white bg-orange-500 rounded-md" onClick={() => setPopupMessage(null)}>Close</button> */}
@@ -246,3 +272,5 @@ console.log(id , name , phone , password , dob)
 };
 
 export default AdminEditTeacher;
+
+

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import { useApi } from "../../api/useApi";
 import { useJwt } from "react-jwt";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
@@ -15,6 +15,7 @@ const EachStu = () => {
   const [activeTab, setActiveTab] = useState("personal");
   const [classes, setAllClasses] = useState([]);
   const navigate = useNavigate();
+  const { get, put } = useApi();
   const [studentsDetails, setStudentsDetails] = useState(null);
   const { id } = useParams();
   const { decodedToken } = useJwt(localStorage.getItem("token"));
@@ -24,7 +25,7 @@ const EachStu = () => {
   const [selectedCourseId, setSelectedCourseId] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState("");
   const [amount, setAmount] = useState("");
-  const [paidStatus, setPaidStatus] = useState("");
+  const [paidStatus, setPaidStatus] = useState("pending");
   const [totafee, setTotalFee] = useState("");
   const [loading, setLoading] = useState(false);
   const months = [
@@ -47,54 +48,47 @@ const EachStu = () => {
       try {
         setLoading(true);
         // Fetch student details
-        const studentResponse = await axios.get(
-          `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-students/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const studentResponse = await get({
+          url: `/admin-confi/all-students/${id}`,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
         if (studentResponse.status === 200) {
           // Set student details
           setStudentsDetails(studentResponse.data);
 
           // Fetch classes associated with the student
-          const classIds = studentResponse.data.classes;
-          const classesData = [];
-          for (const classId of classIds) {
-            const classResponse = await axios.get(
-              `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-classes/${classId}`,
-              {
+          const classIds = studentResponse.data.classes || [];
+          const classResponses = await Promise.allSettled(
+            classIds.map((classId) =>
+              get({
+                url: `/admin-confi/all-classes/${classId}`,
                 headers: {
                   Authorization: `Bearer ${token}`,
                 },
-              }
-            );
-            if (classResponse.status === 200) {
-              classesData.push(classResponse.data);
+              }).unwrap()
+            )
+          );
 
-              // Fetch teacher associated with this class
-              const teacherId = classResponse.data.teachBy;
-              const teacherResponse = await axios.get(
-                `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/all-teachers/${teacherId}`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                }
-              );
-              if (teacherResponse.status === 200) {
-                // Add teacher information to class data
-                classResponse.data.teacher = teacherResponse.data;
-              }
-            }
-          }
-          // Set classes
-          setAllClasses(classesData);
+          const classesData = classResponses
+            .filter(
+              (result) =>
+                result.status === "fulfilled" &&
+                result.value.status === 200 &&
+                result.value.data
+            )
+            .map((result) => result.value.data);
+
+          const classesWithTeacher = classesData.map((course) => {
+            const primaryTeacher = course?.teachers?.[0]?.teacherId || null;
+            return { ...course, teacher: primaryTeacher };
+          });
+
+          setAllClasses(classesWithTeacher);
         }
       } catch (error) {
-        // console.log(error);
+        console.error("Error fetching student details:", error);
       } finally {
         setLoading(false);
       }
@@ -118,14 +112,12 @@ const EachStu = () => {
       setLoading(true);
       try {
         if (selectedCourseId) {
-          const attendanceResponse = await axios.get(
-            `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/attendance/${selectedCourseId}/${id}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
+          const attendanceResponse = await get({
+            url: `/admin-confi/attendance/${selectedCourseId}/${id}`,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }).unwrap();
           if (attendanceResponse.status === 200) {
             // console.log("Attendance details:", attendanceResponse.data);
             setAttendenceDetails(attendanceResponse.data);
@@ -159,18 +151,34 @@ const EachStu = () => {
     12: "December",
   };
 
+  const normalizeMonthLabel = (value) => {
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return "";
+      }
+      const numeric = Number(trimmed);
+      if (Number.isInteger(numeric)) {
+        return numberToMonthName[numeric] || "";
+      }
+      return trimmed;
+    }
+    if (Number.isInteger(value)) {
+      return numberToMonthName[value] || "";
+    }
+    return "";
+  };
+
   useEffect(() => {
     const fetchFeeDetails = async () => {
       try {
         if (selectedCourseId) {
-          const FeeResponse = await axios.get(
-            `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/fee/${selectedCourseId}/${id}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
+          const FeeResponse = await get({
+            url: `/admin-confi/fee/${selectedCourseId}/${id}`,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }).unwrap();
 
           if (FeeResponse.status === 200) {
             setTotalFee(FeeResponse.data.totalFee);
@@ -178,7 +186,7 @@ const EachStu = () => {
               ...FeeResponse.data,
               detailFee: FeeResponse?.data?.detailFee?.map((fee) => ({
                 ...fee,
-                feeMonth: numberToMonthName[fee.feeMonth],
+                feeMonth: normalizeMonthLabel(fee.feeMonth),
               })),
             };
             setFeeDetails(feeDetailsWithMonthNames);
@@ -212,34 +220,53 @@ const EachStu = () => {
 
   const handleFeeUpdate = async () => {
     try {
-      if (!selectedMonth || !amount || !paidStatus) {
+      if (!selectedMonth || !paidStatus) {
         alert("Please fill in all fields.");
         return;
       }
+      const isPaid = paidStatus === "yes";
+      const normalizedAmount = isPaid ? Number(amount) : 0;
+      if (isPaid && (!amount || Number.isNaN(normalizedAmount) || normalizedAmount <= 0)) {
+        alert("Please enter a valid amount.");
+        return;
+      }
 
-      const response = await axios.put(
-        `https://mentor-backend-rbac6.ondigitalocean.app/api/admin-confi/update-fee/${selectedCourseId}/${id}`,
-        {
+      const response = await put({
+        url: `/admin-confi/update-fee/${selectedCourseId}/${id}`,
+        data: {
           feeMonth: monthNameToNumber[selectedMonth],
-          paid: paidStatus === "true",
-          amountPaid: amount,
+          paid: isPaid,
+          amountPaid: normalizedAmount,
+          totalFee: totalFee,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
 
       if (response?.status === 200) {
         // console.log("Fee updated successfully");
         const updatedFeeDetails = [...(feedetails?.detailFee || [])];
-        updatedFeeDetails.push({
-          feeMonth: selectedMonth,
-          amountPaid: amount,
-          paid: paidStatus === "true",
-        });
+        const existingIndex = updatedFeeDetails.findIndex(
+          (fee) => fee.feeMonth === selectedMonth
+        );
+        if (existingIndex >= 0) {
+          updatedFeeDetails[existingIndex] = {
+            ...updatedFeeDetails[existingIndex],
+            feeMonth: selectedMonth,
+            amountPaid: normalizedAmount,
+            paid: isPaid,
+          };
+        } else {
+          updatedFeeDetails.push({
+            feeMonth: selectedMonth,
+            amountPaid: normalizedAmount,
+            paid: isPaid,
+          });
+        }
         setFeeDetails({ ...feedetails, detailFee: updatedFeeDetails });
+        setAmount("");
+        setPaidStatus("pending");
       }
     } catch (error) {
       console.error("Error updating fee:", error);
@@ -265,7 +292,7 @@ const EachStu = () => {
         </h1>
         <p class="text-gray-500">{studentsDetails?.phone}</p>
       </div>
-      <main>
+      <main className="overflow-x-hidden">
         <div class="mt-4 md:mt-32 md:max-w-7xl py-0 ">
           <div class="flex flex-wrap  md:-mx-2  ">
             <div class="w-full mx-2 md:block lg:block md:-mt-24 sm:mt-0">
@@ -353,9 +380,10 @@ const EachStu = () => {
               )}
 
               {activeTab === "FeeDetails" && (
-                <div className="bg-white pt-10">
-                  <select
-                    className="p-2 border rounded"
+                <div className="max-w-full overflow-hidden bg-white pt-6">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <select
+                    className="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm text-slate-700 sm:w-72"
                     onChange={handleCourseSelection}
                     value={selectedCourseId || ""}
                   >
@@ -368,21 +396,22 @@ const EachStu = () => {
                       </option>
                     ))}
                   </select>
+                    <span className="inline-flex w-fit rounded-md bg-orange-100 px-3 py-1 text-sm font-semibold text-orange-700">
+                      Total Fee: {totafee || 0}
+                    </span>
+                  </div>
                   <div>
-                    <div class="relative overflow-x-auto mt-8">
-                      <span className=" mb-1 float-right rounded-md  mr-3">
-                        Total Fee:- {totafee}
-                      </span>
-                      <table class="w-full text-sm text-left rtl:text-right text-gray-500 ">
-                        <thead class="text-xs text-gray-700 uppercase bg-gray-50  ">
+                    <div className="relative mt-6 max-w-full overflow-x-auto rounded-lg border border-slate-200">
+                      <table className="min-w-[640px] w-full text-sm text-left text-gray-500">
+                        <thead className="bg-slate-100 text-xs uppercase text-gray-700">
                           <tr>
-                            <th scope="col" class="px-6 py-3">
+                            <th scope="col" className="px-6 py-3">
                               Month
                             </th>
-                            <th scope="col" class="px-6 py-3">
+                            <th scope="col" className="px-6 py-3">
                               Amount
                             </th>
-                            <th scope="col" class="px-6 py-3">
+                            <th scope="col" className="px-6 py-3">
                               Status
                             </th>
                           </tr>
@@ -390,17 +419,17 @@ const EachStu = () => {
                         <tbody>
                           {feedetails &&
                             feedetails?.detailFee?.map((fee) => (
-                              <tr class="bg-white border-b  ">
+                              <tr className="border-b bg-white">
                                 <th
                                   scope="row"
-                                  class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                                  className="whitespace-nowrap px-6 py-4 font-medium text-gray-900"
                                 >
                                   {fee.feeMonth}
                                 </th>
 
                                 <th
                                   scope="row"
-                                  class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                                  className="whitespace-nowrap px-6 py-4 font-medium text-gray-900"
                                 >
                                   {fee.amountPaid.toLocaleString("en-IN", {
                                     style: "currency",
@@ -419,9 +448,9 @@ const EachStu = () => {
                             ))}
 
                           <tr className="bg-white border-b  ">
-                            <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
+                            <td className="px-6 py-4 font-medium text-gray-900">
                               <select
-                                className=""
+                                className="rounded-md border border-slate-300 bg-white px-2 py-1"
                                 onChange={(e) =>
                                   setSelectedMonth(e.target.value)
                                 }
@@ -435,30 +464,48 @@ const EachStu = () => {
                               </select>
                             </td>
 
-                            <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
+                            <td className="px-6 py-4 font-medium text-gray-900">
                               <input
                                 type="text"
-                                className=""
+                                className="w-full rounded-md border border-slate-300 bg-white px-2 py-1 sm:w-auto"
                                 placeholder="Enter Amount"
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
+                                disabled={paidStatus === "pending"}
                               ></input>
                             </td>
 
-                            <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
-                              <select
-                                value={paidStatus}
-                                onChange={(e) => setPaidStatus(e.target.value)}
-                              >
-                                <option>Select Status</option>
-                                <option value="true">True</option>
-                              </select>
-                              <button
-                                className="bg-green-600 text-gray-200 py-2 px-4 ml-2 rounded-md"
-                                onClick={handleFeeUpdate}
-                              >
-                                Update Fee
-                              </button>
+                            <td className="px-6 py-4 font-medium text-gray-900">
+                              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                  <label className="inline-flex items-center gap-2 text-sm text-slate-600">
+                                    <input
+                                      type="radio"
+                                      name="paidStatus"
+                                      value="pending"
+                                      checked={paidStatus === "pending"}
+                                      onChange={() => setPaidStatus("pending")}
+                                    />
+                                    Pending
+                                  </label>
+                                  <label className="inline-flex items-center gap-2 text-sm text-slate-600">
+                                    <input
+                                      type="radio"
+                                      name="paidStatus"
+                                      value="yes"
+                                      checked={paidStatus === "yes"}
+                                      onChange={() => setPaidStatus("yes")}
+                                    />
+                                    Yes
+                                  </label>
+                                </div>
+                                <button
+                                  className="rounded-md bg-green-600 px-4 py-2 text-gray-200"
+                                  onClick={handleFeeUpdate}
+                                >
+                                  Update Fee
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         </tbody>
@@ -531,3 +578,5 @@ const EachStu = () => {
 };
 
 export default EachStu;
+
+
