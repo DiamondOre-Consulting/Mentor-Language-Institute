@@ -3,10 +3,12 @@ import mongoose from "mongoose";
 const commissionSchema = new mongoose.Schema({
     teacherId: {
         type: mongoose.Schema.Types.ObjectId,
+        ref: "Teacher",
         required: true
     },
     classId: {
         type: mongoose.Schema.Types.ObjectId,
+        ref: "Classes",
         required: true
     },
     monthName: {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ReactDOM from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
 import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
@@ -508,46 +509,47 @@ const TeacherAllStudentEachCourse = () => {
         </div>
       </div>
 
-      {showPopup && (
-        <div className="app-modal-overlay">
-          <div className="app-modal-card app-modal-card-sm relative">
-            <svg
-              className="absolute right-4 top-4 h-6 w-6 cursor-pointer rounded-full bg-red-600 p-1 text-gray-50"
-              onClick={() => setShowPopup(false)}
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              strokeWidth="2"
-              stroke="currentColor"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              {" "}
-              <path stroke="none" d="M0 0h24v24H0z" />{" "}
-              <line x1="18" y1="6" x2="6" y2="18" />{" "}
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-            <p className="mb-4 text-xl font-bold text-slate-900">{selectedStudentName}</p>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={numberOfClassesTaken}
-                onChange={(e) => setNumberOfClassesTaken(e.target.value)}
-                className="w-full"
-                placeholder="Enter Number of Classes Taken"
-              />
-
-              <button
-                className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-                onClick={updateAttendance}
+      {showPopup &&
+        ReactDOM.createPortal(
+          <div className="app-modal-overlay">
+            <div className="app-modal-card app-modal-card-sm relative">
+              <svg
+                className="absolute right-4 top-4 h-6 w-6 cursor-pointer rounded-full bg-red-600 p-1 text-gray-50"
+                onClick={() => setShowPopup(false)}
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                strokeWidth="2"
+                stroke="currentColor"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                Update
-              </button>
+                <path stroke="none" d="M0 0h24v24H0z" />
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+              <p className="mb-4 text-xl font-bold text-slate-900">{selectedStudentName}</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={numberOfClassesTaken}
+                  onChange={(e) => setNumberOfClassesTaken(e.target.value)}
+                  className="w-full"
+                  placeholder="Enter Number of Classes Taken"
+                />
+
+                <button
+                  className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                  onClick={updateAttendance}
+                >
+                  Update
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
       <div>
         <div className="mt-8 text-3xl">Student List</div>
         <table className="w-full text-sm text-center text-gray-500 shadow-xl rtl:text-right">

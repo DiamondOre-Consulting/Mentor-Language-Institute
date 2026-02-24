@@ -29,6 +29,7 @@ const Allstudents = () => {
   const [stuname, setStuName] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
+  const [showDeleteAllPopup, setShowDeleteAllPopup] = useState(false);
   const toastVariant = getToastVariant(popupMessage);
 
   const months = [
@@ -116,12 +117,18 @@ const Allstudents = () => {
   }, [navigate]);
 
   useEffect(() => {
-    const hasOpenModal = isFormOpen || showPopup || !!popupMessage || loading || showDeletePopup;
+    const hasOpenModal =
+      isFormOpen ||
+      showPopup ||
+      !!popupMessage ||
+      loading ||
+      showDeletePopup ||
+      showDeleteAllPopup;
     document.body.style.overflow = hasOpenModal ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [isFormOpen, showPopup, popupMessage, loading, showDeletePopup]);
+  }, [isFormOpen, showPopup, popupMessage, loading, showDeletePopup, showDeleteAllPopup]);
 
   const filteredStudents = allStudents.filter((student) =>
     student.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -301,6 +308,42 @@ const Allstudents = () => {
     setShowDeletePopup(true);
   };
 
+  const openDeleteAllPopup = () => {
+    setShowDeleteAllPopup(true);
+  };
+
+  const closeDeleteAllPopup = () => {
+    setShowDeleteAllPopup(false);
+  };
+
+  const deleteAllStudents = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const response = await del({
+        url: "/admin-confi/delete-all-students?confirm=true",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
+
+      if (response.status === 200) {
+        setAllStudents([]);
+        setPopupMessage(response.data?.message || "All students deleted.");
+        setShowDeleteAllPopup(false);
+      }
+    } catch (error) {
+      setPopupMessage("Failed to delete all students.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <div className="space-y-6">
@@ -313,8 +356,8 @@ const Allstudents = () => {
               </p>
             </div>
 
-            <div className="w-full max-w-md">
-              <div className="relative">
+            <div className="flex w-full max-w-md flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+              <div className="relative w-full">
                 <svg
                   className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
                   viewBox="0 0 24 24"
@@ -335,6 +378,13 @@ const Allstudents = () => {
                   onChange={handleSearchInputChange}
                 />
               </div>
+              <button
+                type="button"
+                onClick={openDeleteAllPopup}
+                className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-600 hover:bg-rose-100"
+              >
+                Delete All
+              </button>
             </div>
 
           </div>
@@ -644,6 +694,67 @@ const Allstudents = () => {
               </button>
               <button
                 onClick={() => setShowDeletePopup(false)}
+                className="rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {showDeleteAllPopup && ReactDOM.createPortal(
+        <div className="app-modal-overlay">
+          <div className="app-modal-card app-modal-card-md text-center">
+            <div className="mb-4 flex justify-end">
+              <button
+                onClick={closeDeleteAllPopup}
+                className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:bg-slate-200"
+              >
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rose-100">
+              <svg
+                className="h-10 w-10 text-rose-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+
+            <h3 className="mb-2 text-xl font-bold text-slate-800">
+              Delete All Students
+            </h3>
+            <p className="mb-8 text-slate-600">
+              This will permanently remove every student and all related records.
+              This action cannot be undone.
+            </p>
+
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={deleteAllStudents}
+                className="rounded-lg bg-rose-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-rose-700 transition"
+              >
+                Yes, Delete All
+              </button>
+              <button
+                onClick={closeDeleteAllPopup}
                 className="rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
               >
                 Cancel

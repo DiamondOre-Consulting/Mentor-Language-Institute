@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import ReactDOM from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
@@ -16,6 +17,7 @@ const Allcourses = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [gradeFilter, setGradeFilter] = useState("");
   const [popup, setPopUp] = useState(false);
+  const [showDeleteAllPopup, setShowDeleteAllPopup] = useState(false);
   const [courseid, setCourseId] = useState("");
   const navigate = useNavigate();
   const { get, del } = useApi();
@@ -52,12 +54,12 @@ const Allcourses = () => {
   }, [navigate]);
 
   useEffect(() => {
-    const hasOpenModal = popup || loading;
+    const hasOpenModal = popup || loading || showDeleteAllPopup;
     document.body.style.overflow = hasOpenModal ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [popup, loading]);
+  }, [popup, loading, showDeleteAllPopup]);
 
   const normalizeGradeValue = (value) => {
     if (value === null || value === undefined) return "";
@@ -128,6 +130,41 @@ const Allcourses = () => {
 
   const closePopup = () => {
     setPopUp(false);
+  };
+
+  const openDeleteAllPopup = () => {
+    setShowDeleteAllPopup(true);
+  };
+
+  const closeDeleteAllPopup = () => {
+    setShowDeleteAllPopup(false);
+  };
+
+  const deleteAllCourses = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const response = await del({
+        url: "/admin-confi/delete-all-courses?confirm=true",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
+
+      if (response.status === 200) {
+        setAllCourses([]);
+        setShowDeleteAllPopup(false);
+      }
+    } catch (error) {
+      console.error("Error deleting all courses:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const deleteCourse = async (e) => {
@@ -232,10 +269,18 @@ const Allcourses = () => {
                 </select>
               </div>
             </div>
-
-            <span className="inline-flex w-fit rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-              Showing {filteredCourses.length} of {allCourses.length}
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex w-fit rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                Showing {filteredCourses.length} of {allCourses.length}
+              </span>
+              <button
+                type="button"
+                onClick={openDeleteAllPopup}
+                className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-100"
+              >
+                Delete All
+              </button>
+            </div>
           </div>
         </div>
 
@@ -322,47 +367,99 @@ const Allcourses = () => {
         </div>
       )}
 
-      {popup && (
-        <div className="app-modal-overlay app-modal-overlay--top app-modal-overlay--scroll">
-          <div className="app-modal-card app-modal-card-md text-center">
-            <div className="mb-4 flex justify-end">
-              <button
-                onClick={closePopup}
-                type="button"
-                className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:bg-slate-200 hover:text-slate-700"
-              >
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    fillRule="evenodd"
-                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
-            </div>
+      {popup &&
+        ReactDOM.createPortal(
+          <div className="app-modal-overlay">
+            <div className="app-modal-card app-modal-card-md text-center">
+              <div className="mb-4 flex justify-end">
+                <button
+                  onClick={closePopup}
+                  type="button"
+                  className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+                >
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      fillRule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </div>
 
-            <svg className="mx-auto h-16 w-16 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h3 className="mb-6 mt-4 text-lg font-semibold text-slate-700">Are you sure you want to delete this course?</h3>
+              <svg className="mx-auto h-16 w-16 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h3 className="mb-6 mt-4 text-lg font-semibold text-slate-700">Are you sure you want to delete this course?</h3>
 
-            <div className="flex justify-center gap-2">
-              <button
-                onClick={deleteCourse}
-                className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700"
-              >
-                Yes, Delete
-              </button>
-              <button
-                onClick={closePopup}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
-              >
-                Cancel
-              </button>
+              <div className="flex justify-center gap-2">
+                <button
+                  onClick={deleteCourse}
+                  className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700"
+                >
+                  Yes, Delete
+                </button>
+                <button
+                  onClick={closePopup}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
+
+      {showDeleteAllPopup &&
+        ReactDOM.createPortal(
+          <div className="app-modal-overlay">
+            <div className="app-modal-card app-modal-card-md text-center">
+              <div className="mb-4 flex justify-end">
+                <button
+                  onClick={closeDeleteAllPopup}
+                  type="button"
+                  className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:bg-slate-200"
+                >
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <svg className="mx-auto h-16 w-16 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h3 className="mb-2 mt-4 text-lg font-semibold text-slate-700">
+                Delete All Courses
+              </h3>
+              <p className="mb-6 text-sm text-slate-600">
+                This will permanently remove every course and all related data.
+                This action cannot be undone.
+              </p>
+
+              <div className="flex justify-center gap-2">
+                <button
+                  onClick={deleteAllCourses}
+                  className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700"
+                >
+                  Yes, Delete All
+                </button>
+                <button
+                  onClick={closeDeleteAllPopup}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </>
   );
 };

@@ -18,6 +18,7 @@ import AllAdmin from "./AllAdmin";
 import EditTeacher from "./EditTeacher";
 import EditCourse from "./EditCourse";
 import PendingPayments from "./PendingPayments";
+import PendingCommissions from "./PendingCommissions";
 
 const Admindash = () => {
   const navigate = useNavigate();
@@ -51,6 +52,7 @@ const Admindash = () => {
           <Route path="admin/chat/*" element={<ChatAdmin />} />
           <Route path="all-admin" element={<AllAdmin />} />
           <Route path="pending-payments" element={<PendingPayments />} />
+          <Route path="pending-commissions" element={<PendingCommissions />} />
           <Route path="attendance-report" element={<DownloadAttendanceReport />} />
           <Route path="*" element={<Error />} />
         </Routes>

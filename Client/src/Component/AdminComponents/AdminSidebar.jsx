@@ -30,6 +30,11 @@ const navItems = [
     icon: "payment",
   },
   {
+    label: "Pending Commissions",
+    to: "/admin-dashboard/pending-commissions",
+    icon: "payment",
+  },
+  {
     label: "Chats",
     to: "/admin-dashboard/admin/chat/",
     icon: "users",

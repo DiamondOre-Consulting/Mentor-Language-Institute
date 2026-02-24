@@ -18,7 +18,8 @@ import { normalizeCommissionRateValue } from "../utils/classTeachers.js";
 import { generateInvoiceNumber, generateInvoicePdfBuffer } from "../services/invoiceService.js";
 import { sendEmail } from "../services/emailService.js";
 import { createRefreshTokenRecord, setRefreshCookie, signAccessToken } from "../utils/authTokens.js";
-import { deleteStudentCascade } from "../utils/deleteStudentCascade.js";
+import { deleteAllCoursesCascade } from "../utils/deleteCourseCascade.js";
+import { deleteAllStudentsCascade, deleteStudentCascade } from "../utils/deleteStudentCascade.js";
 import {
   normalizeFeeMonth,
   normalizePaidStatus,
@@ -1505,6 +1506,87 @@ router.get(
   }
 );
 
+router.get(
+  "/pending-commissions",
+  AdminAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { teacherId, classId, refresh } = req.query;
+      const query = { paid: { $nin: [true, "true"] } };
+      if (teacherId) query.teacherId = teacherId;
+      if (classId) query.classId = classId;
+
+      if (String(refresh || "").toLowerCase() === "true") {
+        const assignmentQuery = { active: true };
+        if (teacherId) assignmentQuery.teacherId = teacherId;
+        if (classId) assignmentQuery.classId = classId;
+
+        const assignments = await ClassTeachers.find(assignmentQuery).select(
+          "classId teacherId"
+        );
+        for (const assignment of assignments) {
+          await calculateMonthlyCommission(assignment.classId, assignment.teacherId);
+        }
+      }
+
+      const commissions = await Commission.find(query)
+        .populate({ path: "teacherId", select: "name phone" })
+        .populate({ path: "classId", select: "classTitle" });
+
+      const monthOrder = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
+      const monthIndex = (name) => monthOrder.indexOf(name);
+
+      const sorted = [...commissions].sort((a, b) => {
+        const yearDiff = Number(a.year) - Number(b.year);
+        if (yearDiff !== 0) return yearDiff;
+        return monthIndex(a.monthName) - monthIndex(b.monthName);
+      });
+
+      res.status(200).json(sorted);
+    } catch (error) {
+      console.log("Something went wrong!!! ", error);
+      res.status(500).json({ message: "Failed to fetch pending commissions." });
+    }
+  }
+);
+
+router.delete(
+  "/delete-all-commissions",
+  AdminAuthenticateToken,
+  async (req, res) => {
+    try {
+      const confirm = String(req.query.confirm || "").toLowerCase();
+      if (confirm !== "true") {
+        return res.status(400).json({
+          message: "Confirmation required. Use confirm=true to proceed.",
+        });
+      }
+
+      const result = await Commission.deleteMany({});
+      return res.status(200).json({
+        message: `Deleted ${result.deletedCount || 0} commissions.`,
+        deletedCount: result.deletedCount || 0,
+      });
+    } catch (error) {
+      console.log("Something went wrong!!!", error);
+      res.status(500).json({ message: "Failed to delete all commissions." });
+    }
+  }
+);
+
 // ADD MONTHLY COMMISSION (admin only)
 router.post("/add-monthly-commission", AdminAuthenticateToken, async (req, res) => {
   try {
@@ -1866,6 +1948,54 @@ router.delete(
     } catch (error) {
       console.log(error.message);
       res.status(500).json({ message: "Something went wrong!!!", error });
+    }
+  }
+);
+
+router.delete(
+  "/delete-all-students",
+  AdminAuthenticateToken,
+  async (req, res) => {
+    try {
+      const confirm = String(req.query.confirm || "").toLowerCase();
+      if (confirm !== "true") {
+        return res.status(400).json({
+          message: "Confirmation required. Use confirm=true to proceed.",
+        });
+      }
+
+      const result = await deleteAllStudentsCascade();
+      return res.status(200).json({
+        message: `Deleted ${result.deletedCount} students.`,
+        deletedCount: result.deletedCount,
+      });
+    } catch (error) {
+      console.log("Something went wrong!!!", error);
+      res.status(500).json({ message: "Failed to delete all students." });
+    }
+  }
+);
+
+router.delete(
+  "/delete-all-courses",
+  AdminAuthenticateToken,
+  async (req, res) => {
+    try {
+      const confirm = String(req.query.confirm || "").toLowerCase();
+      if (confirm !== "true") {
+        return res.status(400).json({
+          message: "Confirmation required. Use confirm=true to proceed.",
+        });
+      }
+
+      const result = await deleteAllCoursesCascade();
+      return res.status(200).json({
+        message: `Deleted ${result.deletedCount} courses.`,
+        deletedCount: result.deletedCount,
+      });
+    } catch (error) {
+      console.log("Something went wrong!!!", error);
+      res.status(500).json({ message: "Failed to delete all courses." });
     }
   }
 );

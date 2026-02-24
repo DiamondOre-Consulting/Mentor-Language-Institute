@@ -204,7 +204,7 @@ body {
   }
 
   .app-modal-overlay--top {
-    @apply items-start;
+    @apply items-center;
   }
 
   .app-modal-card {

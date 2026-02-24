@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import ReactDOM from "react-dom";
 import { useApi } from "../../api/useApi";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { toast } from "sonner";
@@ -118,92 +119,96 @@ const AllAdmin = () => {
         ))}
       </div>
 
-      {editPopupForm && (
-        <div className="app-modal-overlay app-modal-overlay--top app-modal-overlay--scroll">
-          <div className="app-modal-card app-modal-card-sm">
-            <h3 className="text-lg font-semibold mb-4">Edit Admin</h3>
-            <form onSubmit={handleEditAdmin} className="space-y-4">
-              <input
-                type="text"
-                name="name"
-                value={editData.name}
-                onChange={handleInputChange}
-                placeholder="Username"
-                className="w-full p-2 border rounded"
-              />
-              <input
-                type="text"
-                name="phone"
-                value={editData.phone}
-                onChange={handleInputChange}
-                placeholder="Phone"
-                className="w-full p-2 border rounded"
-              />
-              <div className="relative">
+      {editPopupForm &&
+        ReactDOM.createPortal(
+          <div className="app-modal-overlay">
+            <div className="app-modal-card app-modal-card-sm">
+              <h3 className="text-lg font-semibold mb-4">Edit Admin</h3>
+              <form onSubmit={handleEditAdmin} className="space-y-4">
                 <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={editData.password}
+                  type="text"
+                  name="name"
+                  value={editData.name}
                   onChange={handleInputChange}
-                  placeholder="Password"
-                  className="w-full p-2 border rounded pr-10"
+                  placeholder="Username"
+                  className="w-full p-2 border rounded"
                 />
-                <span
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 cursor-pointer"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <FaEyeSlash /> : <FaEye />}
-                </span>
-              </div>
-              <div className="flex justify-end space-x-2">
+                <input
+                  type="text"
+                  name="phone"
+                  value={editData.phone}
+                  onChange={handleInputChange}
+                  placeholder="Phone"
+                  className="w-full p-2 border rounded"
+                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={editData.password}
+                    onChange={handleInputChange}
+                    placeholder="Password"
+                    className="w-full p-2 border rounded pr-10"
+                  />
+                  <span
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 cursor-pointer"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  </span>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditPopupForm(false)}
+                    className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Save
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {deletePopup &&
+        ReactDOM.createPortal(
+          <div className="app-modal-overlay">
+            <div className="app-modal-card app-modal-card-md">
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">
+                Confirm Deletion
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete this admin?
+              </p>
+              <div className="flex justify-end space-x-4">
                 <button
-                  type="button"
-                  onClick={() => setEditPopupForm(false)}
+                  onClick={() => setDeletePopup(false)}
                   className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
                 >
                   Cancel
                 </button>
                 <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  onClick={() => {
+                    handleDeleteAdmin(deleteId);
+                    setDeletePopup(false);
+                  }}
+                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
                 >
-                  Save
+                  Delete
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {deletePopup && (
-        <div className="app-modal-overlay app-modal-overlay--top app-modal-overlay--scroll">
-          <div className="app-modal-card app-modal-card-md">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">
-              Confirm Deletion
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete this admin?
-            </p>
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={() => setDeletePopup(false)}
-                className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  handleDeleteAdmin(deleteId);
-                  setDeletePopup(false);
-                }}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-              >
-                Delete
-              </button>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

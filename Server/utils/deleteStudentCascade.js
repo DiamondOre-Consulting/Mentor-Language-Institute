@@ -39,3 +39,45 @@ export const deleteStudentCascade = async (studentId) => {
 
   return student;
 };
+
+export const deleteAllStudentsCascade = async () => {
+  const students = await Students.find({}, "_id");
+  if (!students.length) {
+    return { deletedCount: 0 };
+  }
+
+  const ids = students.map((student) => student._id);
+
+  await Classes.updateMany(
+    {
+      $or: [
+        { enrolledStudents: { $in: ids } },
+        { appliedStudents: { $in: ids } },
+      ],
+    },
+    {
+      $pull: {
+        enrolledStudents: { $in: ids },
+        appliedStudents: { $in: ids },
+      },
+    }
+  );
+
+  await Teachers.updateMany(
+    { myStudents: { $in: ids } },
+    { $pull: { myStudents: { $in: ids } } }
+  );
+
+  await Attendance.deleteMany({ studentId: { $in: ids } });
+  await Fee.deleteMany({ studentId: { $in: ids } });
+  await Invoice.deleteMany({ studentId: { $in: ids } });
+  await ClassAccessStatus.deleteMany({ studentId: { $in: ids } });
+  await RefreshToken.deleteMany({ userId: { $in: ids }, role: "student" });
+  await Messages.deleteMany({
+    $or: [{ senderId: { $in: ids } }, { receiverId: { $in: ids } }],
+  });
+
+  await Students.deleteMany({ _id: { $in: ids } });
+
+  return { deletedCount: ids.length };
+};

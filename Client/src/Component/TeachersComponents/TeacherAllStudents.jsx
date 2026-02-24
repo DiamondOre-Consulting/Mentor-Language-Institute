@@ -786,7 +786,7 @@ const TeacherAllStudents = () => {
 
       {showDeletePopup &&
         ReactDOM.createPortal(
-          <div className="app-modal-overlay app-modal-overlay--top app-modal-overlay--scroll">
+          <div className="app-modal-overlay">
             <div className="app-modal-card app-modal-card-md text-center">
               <div className="mb-4 flex justify-end">
                 <button

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import ReactDOM from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { useApi } from "../../api/useApi";
 import userimage from "..//..//assets/userimg.jpg";
@@ -336,47 +337,49 @@ const AllTeachers = () => {
         )}
       </div>
 
-      {popup && (
-        <div className="app-modal-overlay app-modal-overlay--top app-modal-overlay--scroll">
-          <div className="app-modal-card app-modal-card-md text-center">
-            <div className="mb-4 flex justify-end">
-              <button
-                onClick={closePopup}
-                type="button"
-                className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:bg-slate-200 hover:text-slate-700"
-              >
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    fillRule="evenodd"
-                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
+      {popup &&
+        ReactDOM.createPortal(
+          <div className="app-modal-overlay">
+            <div className="app-modal-card app-modal-card-md text-center">
+              <div className="mb-4 flex justify-end">
+                <button
+                  onClick={closePopup}
+                  type="button"
+                  className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+                >
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      fillRule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <svg className="mx-auto h-16 w-16 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h3 className="mb-6 mt-4 text-lg font-semibold text-slate-700">
+                Are you sure you want to delete this teacher?
+              </h3>
+              <div className="flex justify-center gap-2">
+                <button
+                  onClick={deleteTeacher}
+                  className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700"
+                >
+                  Yes, Delete
+                </button>
+                <button
+                  onClick={closePopup}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
-            <svg className="mx-auto h-16 w-16 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h3 className="mb-6 mt-4 text-lg font-semibold text-slate-700">
-              Are you sure you want to delete this teacher?
-            </h3>
-            <div className="flex justify-center gap-2">
-              <button
-                onClick={deleteTeacher}
-                className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700"
-              >
-                Yes, Delete
-              </button>
-              <button
-                onClick={closePopup}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </>
   );
 };
