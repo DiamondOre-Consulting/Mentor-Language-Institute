@@ -5,6 +5,7 @@ import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 import { useApi } from "../../api/useApi";
 import TeacherEditStudent from "./TeacherEditStudent";
+import { getToastVariant } from "../../utils/toastVariant";
 
 const override = css`
   display: block;
@@ -33,6 +34,7 @@ const TeacherAllStudents = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewStudent, setViewStudent] = useState(null);
+  const toastVariant = getToastVariant(popupMessage);
 
   const [filterMode, setFilterMode] = useState("all");
   const [selectedMyCourseId, setSelectedMyCourseId] = useState("");
@@ -752,17 +754,31 @@ const TeacherAllStudents = () => {
 
       {popupMessage &&
         ReactDOM.createPortal(
-          <div className="app-modal-overlay app-modal-overlay--top">
-            <div className="app-modal-card app-modal-card-sm">
-              <p className="text-lg font-semibold text-slate-800">
+          <div className="app-toast-overlay">
+            <div className={`app-toast-card app-toast-${toastVariant} relative`}>
+              <button
+                type="button"
+                className="app-toast-close"
+                onClick={() => setPopupMessage("")}
+                aria-label="Close notification"
+              >
+                <svg
+                  className="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                  stroke="currentColor"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path stroke="none" d="M0 0h24v24H0z" />
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+              <p className="pt-2 text-sm font-semibold">
                 {popupMessage}
               </p>
-              <button
-                onClick={() => setPopupMessage("")}
-                className="mt-4 rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600"
-              >
-                Close
-              </button>
             </div>
           </div>,
           document.body

@@ -227,6 +227,30 @@ body {
     @apply max-w-4xl;
   }
 
+  .app-toast-overlay {
+    @apply fixed inset-x-0 top-0 z-50 flex items-start justify-center px-4 py-4 pointer-events-none;
+  }
+
+  .app-toast-card {
+    @apply pointer-events-auto w-full max-w-md rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl;
+  }
+
+  .app-toast-card.app-toast-success {
+    @apply border-emerald-200 bg-emerald-50 text-emerald-900;
+  }
+
+  .app-toast-card.app-toast-error {
+    @apply border-rose-200 bg-rose-50 text-rose-900;
+  }
+
+  .app-toast-card.app-toast-info {
+    @apply border-sky-200 bg-sky-50 text-sky-900;
+  }
+
+  .app-toast-close {
+    @apply absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full text-slate-600/70 hover:bg-black/5;
+  }
+
   .admin-theme {
     --admin-surface: #ffffff;
     --admin-surface-soft: #fff7ed;

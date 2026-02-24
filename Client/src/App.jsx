@@ -1,4 +1,5 @@
 import './App.css'
+import { useEffect } from 'react'
 import Parentsignup from './Component/Studentcomponents/Stuauth/Parentsignup'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import Admin from './Pages/Adminpages/Admin'
@@ -19,6 +20,16 @@ import SiteFooter from './Component/Common/SiteFooter'
 
 
 function App() {
+  useEffect(() => {
+    const handleSubmit = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
+    }
+
+    document.addEventListener('submit', handleSubmit)
+    return () => {
+      document.removeEventListener('submit', handleSubmit)
+    }
+  }, [])
 
   return (
     <div className="premium-edu">

@@ -5,6 +5,7 @@ import { css } from "@emotion/react";
 import { useApi } from "../../api/useApi";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
+import { getToastVariant } from "../../utils/toastVariant";
 
 const override = css`
   display: block;
@@ -51,6 +52,7 @@ const Message = () => {
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [selectedClassId, setSelectedClassId] = useState("");
   const [loading, setLoading] = useState(false);
+  const toastVariant = getToastVariant(popupMessage);
 
   const months = [
     "January",
@@ -552,15 +554,29 @@ const Message = () => {
         )}
 
       {popupMessage && (
-        <div className="app-modal-overlay app-modal-overlay--top">
-          <div className="app-modal-card app-modal-card-sm text-center">
-            <p className="text-lg font-semibold text-slate-800">{popupMessage}</p>
+        <div className="app-toast-overlay">
+          <div className={`app-toast-card app-toast-${toastVariant} relative`}>
             <button
+              type="button"
+              className="app-toast-close"
               onClick={() => setPopupMessage("")}
-              className="mt-4 rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600"
+              aria-label="Close notification"
             >
-              Close
+              <svg
+                className="h-4 w-4"
+                viewBox="0 0 24 24"
+                strokeWidth="2"
+                stroke="currentColor"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path stroke="none" d="M0 0h24v24H0z" />
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             </button>
+            <p className="pt-2 text-sm font-semibold">{popupMessage}</p>
           </div>
         </div>
       )}

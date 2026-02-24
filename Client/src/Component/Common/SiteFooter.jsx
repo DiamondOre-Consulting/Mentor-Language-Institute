@@ -35,15 +35,6 @@ const SiteFooter = () => {
         </div>
 
         <div>
-          <h3 className="text-sm font-bold uppercase tracking-wide text-slate-700">Quick Links</h3>
-          <div className="mt-3 flex flex-col gap-2 text-sm text-slate-600">
-            <Link to="/" className="hover:text-orange-600">
-              Home
-            </Link>
-          </div>
-        </div>
-
-        <div>
           <h3 className="text-sm font-bold uppercase tracking-wide text-slate-700">Contact</h3>
           <div className="mt-3 space-y-1 text-sm text-slate-600">
             <p>+91 9999466159</p>

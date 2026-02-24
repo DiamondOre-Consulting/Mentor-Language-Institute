@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
+import { getToastVariant } from "../../utils/toastVariant";
 
 const override = css`
   display: block;
@@ -59,6 +60,7 @@ const EditCourse = () => {
   const [loading, setLoading] = useState(false);
   const [popupMessage, setPopupMessage] = useState(null);
   const [allTeachers, setAllTeachers] = useState([]);
+  const toastVariant = getToastVariant(popupMessage);
 
   const [formValues, setFormValues] = useState({
     classTitle: "",
@@ -469,16 +471,29 @@ const EditCourse = () => {
       </section>
 
       {popupMessage && (
-        <div className="app-modal-overlay app-modal-overlay--top">
-          <div className="app-modal-card app-modal-card-sm relative">
+        <div className="app-toast-overlay">
+          <div className={`app-toast-card app-toast-${toastVariant} relative`}>
             <button
-              className="absolute right-4 top-4 h-6 w-6 rounded-md text-red-500 hover:bg-red-50"
+              type="button"
+              className="app-toast-close"
               onClick={() => setPopupMessage(null)}
-              aria-label="Close popup"
+              aria-label="Close notification"
             >
-              x
+              <svg
+                className="h-4 w-4"
+                viewBox="0 0 24 24"
+                strokeWidth="2"
+                stroke="currentColor"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path stroke="none" d="M0 0h24v24H0z" />
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             </button>
-            <p className="mt-4 text-lg font-semibold text-slate-800">{popupMessage}</p>
+            <p className="pt-2 text-sm font-semibold">{popupMessage}</p>
           </div>
         </div>
       )}

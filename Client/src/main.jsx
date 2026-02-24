@@ -9,7 +9,12 @@ import "./api/axiosInstance";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <Provider store={store}>
-    <Toaster richColors position="top-right" />
+    <Toaster
+      richColors
+      position="top-center"
+      closeButton
+      toastOptions={{ closeButton: true }}
+    />
     <App />
   </Provider>
 );

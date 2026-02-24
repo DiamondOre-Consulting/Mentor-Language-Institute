@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
+import { getToastVariant } from "../../utils/toastVariant";
 
 const override = css`
   display: block;
@@ -156,6 +157,7 @@ const Register = () => {
     "November",
     "December",
   ];
+  const toastVariant = getToastVariant(popupMessage);
 
   const handleteacherRegister = async (e) => {
     setLoading(true);
@@ -930,29 +932,31 @@ const Register = () => {
       </div>
 
       {popupMessage && (
-        <div className="app-modal-overlay">
-          <div className="app-modal-card app-modal-card-sm">
-            <svg
-              className="absolute right-5 top-5 h-6 w-6 cursor-pointer text-red-500"
+        <div className="app-toast-overlay">
+          <div className={`app-toast-card app-toast-${toastVariant} relative`}>
+            <button
+              type="button"
+              className="app-toast-close"
               onClick={() => setPopupMessage(null)}
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              strokeWidth="2"
-              stroke="currentColor"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              aria-label="Close notification"
             >
-              {" "}
-              <path stroke="none" d="M0 0h24v24H0z" />{" "}
-              <line x1="18" y1="6" x2="6" y2="18" />{" "}
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-            <p className="mt-6 text-lg font-bold text-emerald-600">
+              <svg
+                className="h-4 w-4"
+                viewBox="0 0 24 24"
+                strokeWidth="2"
+                stroke="currentColor"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path stroke="none" d="M0 0h24v24H0z" />
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+            <p className="pt-2 text-sm font-semibold">
               {popupMessage}
             </p>
-            {/* <button className="px-4 py-2 text-white bg-orange-500 rounded-md" onClick={() => setPopupMessage(null)}>Close</button> */}
           </div>
         </div>
       )}

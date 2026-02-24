@@ -31,16 +31,22 @@ const formatDate = (date) => {
   });
 };
 
+const getCurrencySymbol = (currency = "INR") => {
+  if (currency === "INR") return "Rs";
+  return currency;
+};
+
 const formatCurrency = (amount, currency = "INR") => {
   const safeAmount = Number.isFinite(amount) ? amount : 0;
+  const symbol = getCurrencySymbol(currency);
   try {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency,
+    const formatted = new Intl.NumberFormat("en-IN", {
       minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(safeAmount);
+    return `${symbol} ${formatted}`;
   } catch (error) {
-    return `${currency} ${safeAmount.toFixed(2)}`;
+    return `${symbol} ${safeAmount.toFixed(2)}`;
   }
 };
 
@@ -87,7 +93,6 @@ export const generateInvoicePdfBuffer = ({
     const safeAmountPaid = Number.isFinite(Number(amountPaid))
       ? Number(amountPaid)
       : 0;
-    const balance = Math.max(safeTotalFee - safeAmountPaid, 0);
     const paymentStatus =
       safeTotalFee > 0 && safeAmountPaid >= safeTotalFee
         ? "Paid"
@@ -159,7 +164,7 @@ export const generateInvoicePdfBuffer = ({
     document.text(`Fee Month: ${formatMonth(feeMonth)}`, rightColumnX, document.y + 2, {
       width: columnWidth,
     });
-    document.text(`Currency: ${currency}`, rightColumnX, document.y + 2, {
+    document.text(`Currency: ${getCurrencySymbol(currency)}`, rightColumnX, document.y + 2, {
       width: columnWidth,
     });
     const rightEndY = document.y;
@@ -167,14 +172,28 @@ export const generateInvoicePdfBuffer = ({
     document.y = Math.max(leftEndY, rightEndY) + 16;
 
     const tableTop = document.y;
-    const rowHeight = 24;
-    const colRatios = [0.45, 0.2, 0.08, 0.13, 0.14];
+    const rowHeight = 26;
+    const tableColumns = ["Description", "Fee Month", "Amount"];
+    const colRatios = [0.6, 0.2, 0.2];
     const colWidths = colRatios.map((ratio) => ratio * pageWidth);
     const colX = colWidths.reduce((positions, width, index) => {
       const nextX = index === 0 ? left : positions[index - 1] + colWidths[index - 1];
       positions.push(nextX);
       return positions;
     }, []);
+
+    const trimTextToWidth = (text, width) => {
+      if (!text) return "";
+      if (document.widthOfString(text) <= width) {
+        return text;
+      }
+      const ellipsis = "...";
+      let trimmed = text;
+      while (trimmed.length > 0 && document.widthOfString(trimmed + ellipsis) > width) {
+        trimmed = trimmed.slice(0, -1);
+      }
+      return trimmed.length ? `${trimmed}${ellipsis}` : ellipsis;
+    };
 
     const drawRow = (y, values, options = {}) => {
       const isHeader = options.isHeader;
@@ -191,24 +210,24 @@ export const generateInvoicePdfBuffer = ({
         .font(isHeader ? "Helvetica-Bold" : "Helvetica")
         .fontSize(10);
 
-      values.forEach((value, index) => {
+      const cells = colWidths.map((_, index) => values[index] ?? "");
+      cells.forEach((value, index) => {
         const align = index >= 2 ? "right" : "left";
         const padding = 6;
-        document.text(String(value ?? ""), colX[index] + padding, y + 7, {
-          width: colWidths[index] - padding * 2,
+        const cellWidth = colWidths[index] - padding * 2;
+        const textValue = trimTextToWidth(String(value ?? ""), cellWidth);
+        document.text(textValue, colX[index] + padding, y + 7, {
+          width: cellWidth,
           align,
+          lineBreak: false,
         });
       });
     };
 
-    drawRow(tableTop, ["Description", "Fee Month", "Qty", "Unit Price", "Amount"], {
-      isHeader: true,
-    });
+    drawRow(tableTop, tableColumns, { isHeader: true });
     drawRow(tableTop + rowHeight, [
       classTitle || "Course Fee",
       formatMonth(feeMonth),
-      "1",
-      formatCurrency(safeTotalFee, currency),
       formatCurrency(safeTotalFee, currency),
     ]);
 
@@ -239,12 +258,6 @@ export const generateInvoicePdfBuffer = ({
       "Amount Paid",
       formatCurrency(safeAmountPaid, currency),
       summaryY + summaryRowHeight
-    );
-    drawSummaryRow(
-      "Balance",
-      formatCurrency(balance, currency),
-      summaryY + summaryRowHeight * 2,
-      true
     );
     drawSummaryRow(
       "Status",
