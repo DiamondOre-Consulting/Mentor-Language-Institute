@@ -1,7 +1,6 @@
-﻿import React, { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useApi } from "../../api/useApi";
-import { useJwt } from "react-jwt";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 
@@ -24,8 +23,6 @@ const Eachcourse = () => {
 
   const { id } = useParams();
   // console.log(id);
-
-  const token = localStorage.getItem("token");
 
   useEffect(() => {
     const token = localStorage.getItem("token");

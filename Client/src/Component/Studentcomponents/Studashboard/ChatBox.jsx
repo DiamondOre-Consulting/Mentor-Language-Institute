@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useApi } from "../../../api/useApi";
 import io from "socket.io-client";
 import { useJwt } from "react-jwt";
@@ -16,46 +16,48 @@ const ChatBox = ({
 }) => {
   const navigate = useNavigate();
   const { get } = useApi();
-  const { decodedToken, isExpired } = useJwt(localStorage.getItem("token"));
+  const { decodedToken } = useJwt(localStorage.getItem("token"));
   const userId = decodedToken ? decodedToken.userId : null;
+  const token = localStorage.getItem("token");
+  const socketUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:7000";
   const socket = useMemo(
-    () => io("http://localhost:7000"),
-    []
+    () =>
+      io(socketUrl, {
+        auth: {
+          token,
+        },
+      }),
+    [socketUrl, token]
   );
   const [chatHistory, setChatHistory] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const chatContainerRef = useRef(null);
   const [isUserAtBottom, setIsUserAtBottom] = useState(true);
 
-  const token = localStorage.getItem("token");
-
   useEffect(() => {
-    if (!token || isExpired) {
+    if (!localStorage.getItem("token")) {
       navigate("/student-login");
     }
-  }, [token, isExpired, navigate]);
-
-  if (!token) {
-    navigate("/student-login");
-    return;
-  }
+  }, [navigate]);
 
   useEffect(() => {
     // Fetch chat history for the selected teacher
+    if (!teacher?._id) return;
     fetchChatHistory(teacher._id);
 
     // Listen for incoming messages
-    socket.on("receive-message", (message) => {
+    const handleReceive = (message) => {
       // Add the new message to the chat history
       // console.log("This is msg: ", message);
-      setChatHistory((chatHistory) => [...chatHistory, message]);
-    });
+      setChatHistory((prev) => [...prev, message]);
+    };
+    socket.on("receive-message", handleReceive);
 
     // Clean up the socket listener when the component unmounts
     return () => {
-      socket.off("receive-message");
+      socket.off("receive-message", handleReceive);
     };
-  }, [teacher, chatHistory]);
+  }, [teacher?._id, socket]);
 
   useEffect(() => {
     if (isUserAtBottom && chatContainerRef.current) {
@@ -87,8 +89,8 @@ const ChatBox = ({
       // Emit the new message to the server
       // console.log(newMessage);
       socket.emit("send-message", {
-        senderId: userId,
         receiverId: teacher._id,
+        receiverRole: "teacher",
         message: newMessage,
       });
       // Clear the input field

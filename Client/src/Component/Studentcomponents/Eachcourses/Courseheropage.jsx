@@ -1,11 +1,12 @@
-﻿import { useApi } from "../../../api/useApi";
-import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useApi } from "../../../api/useApi";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { logout } from "../../../api/auth";
 
 const Courseheropage = () => {
+  const navigate = useNavigate();
   const { id } = useParams();
   const { get } = useApi();
-  const [studentData, setStudentData] = useState(null);
   const [classData, setClassData] = useState(null);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -35,10 +36,7 @@ const Courseheropage = () => {
         }).unwrap();
         if (response.status == 200) {
           // console.log("studetails", response.data);
-          const studentdetails = response.data;
-          setStudentData(studentdetails);
-
-          const classes = response.data.classes;
+          // const classes = response.data.classes;
           // console.log("classes", classes)
 
           const classResponse = await get({
@@ -65,21 +63,19 @@ const Courseheropage = () => {
   }, [id]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    window.location.href = "/student-login";
-    // console.log("Logging out");
+    logout("/student-login");
   };
 
   return (
     <>
-      <div class="relative bg-gradient-to-r from-purple-600 to-blue-600 h-lg text-white overflow-hidden">
-        <div class="absolute inset-0">
+      <div className="relative bg-gradient-to-r from-purple-600 to-blue-600 h-lg text-white overflow-hidden">
+        <div className="absolute inset-0">
           <img
             src="https://images.unsplash.com/photo-1522252234503-e356532cafd5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NzEyNjZ8MHwxfHNlYXJjaHw2fHxjb2RlfGVufDB8MHx8fDE2OTQwOTg0MTZ8MA&ixlib=rb-4.0.3&q=80&w=1080"
             alt="Background Image"
-            class="object-cover object-center w-full h-full"
+            className="object-cover object-center w-full h-full"
           />
-          <div class="absolute inset-0 bg-black opacity-50"></div>
+          <div className="absolute inset-0 bg-black opacity-50"></div>
         </div>
 
         <div className="flex justify-end items-center">
@@ -149,13 +145,13 @@ const Courseheropage = () => {
               Logout
             </Link>
             <svg
-              class="h-6 w-6 text-gray-200 mx-1"
+              className="h-6 w-6 text-gray-200 mx-1"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
               {" "}
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />{" "}
@@ -165,7 +161,7 @@ const Courseheropage = () => {
           </li>
         </div>
 
-        <div class="relative z-10 flex flex-col justify-start py-10 px-10 h-full text-center">
+        <div className="relative z-10 flex flex-col justify-start py-10 px-10 h-full text-center">
           <div className="flex items-center">
             <div className="bg-orange-500 h-20 w-1"></div>
             <div className="flex flex-col mx-2">
@@ -175,15 +171,15 @@ const Courseheropage = () => {
         </div>
       </div>
 
-      <nav class="flex px-10 py-2" aria-label="Breadcrumb">
-        <ol class="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
-          <li class="inline-flex items-center">
+      <nav className="flex px-10 py-2" aria-label="Breadcrumb">
+        <ol className="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
+          <li className="inline-flex items-center">
             <Link
               to={"/main-dashboard"}
-              class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-orange-500  "
+              className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-orange-500  "
             >
               <svg
-                class="w-3 h-3 me-2.5"
+                className="w-3 h-3 me-2.5"
                 aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="currentColor"
@@ -195,9 +191,9 @@ const Courseheropage = () => {
             </Link>
           </li>
           <li>
-            <div class="flex items-center">
+            <div className="flex items-center">
               <svg
-                class="rtl:rotate-180 w-3 h-3 text-gray-400 mx-1"
+                className="rtl:rotate-180 w-3 h-3 text-gray-400 mx-1"
                 aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -205,24 +201,24 @@ const Courseheropage = () => {
               >
                 <path
                   stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
                   d="m1 9 4-4-4-4"
                 />
               </svg>
               <a
                 href="#"
-                class="ms-1 text-sm font-medium text-gray-700 hover:text-orange-500 md:ms-2  "
+                className="ms-1 text-sm font-medium text-gray-700 hover:text-orange-500 md:ms-2  "
               >
                 Course
               </a>
             </div>
           </li>
           <li aria-current="page">
-            <div class="flex items-center">
+            <div className="flex items-center">
               <svg
-                class="rtl:rotate-180 w-3 h-3 text-gray-400 mx-1"
+                className="rtl:rotate-180 w-3 h-3 text-gray-400 mx-1"
                 aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -230,13 +226,13 @@ const Courseheropage = () => {
               >
                 <path
                   stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
                   d="m1 9 4-4-4-4"
                 />
               </svg>
-              <span class="ms-1 text-sm font-medium text-gray-500 md:ms-2 "></span>
+              <span className="ms-1 text-sm font-medium text-gray-500 md:ms-2 "></span>
             </div>
           </li>
         </ol>
@@ -246,5 +242,6 @@ const Courseheropage = () => {
 };
 
 export default Courseheropage;
+
 
 

@@ -1,6 +1,5 @@
-﻿import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import logo from "..//..//..//assets/logo.png";
 import Navbar from "./Navbar";
 import { useApi } from "../../../api/useApi";
 import { ClipLoader } from "react-spinners";
@@ -21,13 +20,11 @@ const Parentlog = () => {
   const [dob, setdob] = useState();
   const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
+  const [grade, setGrade] = useState("");
   const [popupMessage, setPopupMessage] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  const handleShowPassword = () => {
-    return setShowPass(!showPass);
-  };
+  const gradeOptions = ["6th", "7th", "8th", "9th", "10th", "11th", "12th"];
 
   const handleStudentRegister = async (e) => {
     setLoading(true);
@@ -44,6 +41,7 @@ const Parentlog = () => {
           userName,
           dob,
           email,
+          grade,
         },
       }).unwrap();
 
@@ -83,7 +81,7 @@ const Parentlog = () => {
     <>
       <Navbar />
 
-      <section class="relative mt-10 md:-mt-12">
+      <section className="relative mt-10 md:-mt-12">
         {loading && (
           <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-50 z-50">
             <ClipLoader
@@ -94,18 +92,18 @@ const Parentlog = () => {
             />
           </div>
         )}
-        <div class="flex flex-col items-center justify-center mt-16 lg:py-0 ">
-          <div class="md:w-full sm:w-1/2 bg-white rounded-lg shadow border-t-4 border-orange-400 md:mt-0 sm:max-w-md xl:p-0">
-            <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
+        <div className="flex flex-col items-center justify-center mt-16 lg:py-0 px-4">
+          <div className="w-full bg-white rounded-lg shadow border-t-4 border-orange-400 md:mt-0 sm:max-w-md xl:p-0">
+            <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
               <div className="flex justify-between items-center">
-                <h1 class="text-xl  font-bold leading-tight tracking-tight text-gray-900 md:text-2xl ">
+                <h1 className="text-xl  font-bold leading-tight tracking-tight text-gray-900 md:text-2xl ">
                   Student Registration Form
                 </h1>
                 {/* <img src={logo} alt="" className='w-24' /> */}
               </div>
 
               <form
-                class="space-y-4 md:space-y-6"
+                className="space-y-4 md:space-y-6"
                 onSubmit={handleStudentRegister}
               >
                 <div>
@@ -116,7 +114,7 @@ const Parentlog = () => {
                     value={userName}
                     onChange={(e) => setUserName(e.target.value)}
                     placeholder="Please Enter a unique userName"
-                    class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
+                    className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                     required=""
                   />
                 </div>
@@ -128,7 +126,7 @@ const Parentlog = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter Your Name"
-                    class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
+                    className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                     required=""
                   />
                 </div>
@@ -141,22 +139,40 @@ const Parentlog = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email address"
-                    class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
+                    className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                     required=""
                   />
                 </div>
 
                 <div>
                   <input
-                    type="phone"
+                    type="tel"
                     name="phone"
                     id="phone"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="Enter Your Phone Number"
-                    class="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
+                    className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                     required=""
                   />
+                </div>
+
+                <div>
+                  <select
+                    name="grade"
+                    id="grade"
+                    value={grade}
+                    onChange={(e) => setGrade(e.target.value)}
+                    className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
+                    required
+                  >
+                    <option value="">Select Grade</option>
+                    {gradeOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="flex items-center justify-between w-full p-2 border border-gray-500 rounded-md">
@@ -182,20 +198,20 @@ const Parentlog = () => {
                     name="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
-                    class="bg-gray-50 border border-gray-900 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-600 focus:border-gray-600 block w-full p-2.5      "
+                    placeholder="********"
+                    className="bg-gray-50 border border-gray-900 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-600 focus:border-gray-600 block w-full p-2.5      "
                     required=""
                   />
                 </div>
 
-                <div class="flex items-center mt-2">
+                <div className="flex items-center mt-2">
                   <input
                     type="checkbox"
-                    class="mr-2"
+                    className="mr-2"
                     onChange={() => setShowPassword(!showPassword)}
                   />
                   <label
-                    class="text-sm font-medium text-gray-900  cursor-pointer"
+                    className="text-sm font-medium text-gray-900  cursor-pointer"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     Show Password
@@ -208,7 +224,7 @@ const Parentlog = () => {
                   </button>
                 </div>
 
-                <a class="text-center flex items-center justify-center text-sm font-medium text-primary-600 ">
+                <a className="text-center flex items-center justify-center text-sm font-medium text-primary-600 ">
                   Already Have Account?{" "}
                   <Link to={"/student-login"} className="underline ml-1">
                     {" "}
@@ -252,5 +268,7 @@ const Parentlog = () => {
 };
 
 export default Parentlog;
+
+
 
 

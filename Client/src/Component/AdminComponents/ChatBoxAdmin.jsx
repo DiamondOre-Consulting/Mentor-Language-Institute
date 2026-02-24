@@ -1,7 +1,5 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useApi } from "../../api/useApi";
-import io from "socket.io-client";
-import { useJwt } from "react-jwt";
 import { useNavigate } from "react-router-dom";
 import userimg2 from "..//..//assets/userimg2.png";
 
@@ -15,12 +13,6 @@ const ChatBoxAdmin = ({
 }) => {
   const navigate = useNavigate();
   const { get } = useApi();
-  const { decodedToken, isExpired } = useJwt(localStorage.getItem("token"));
-  const userId = decodedToken ? decodedToken.userId : null;
-  const socket = useMemo(
-    () => io("http://localhost:7000"),
-    []
-  );
   const [chatHistory, setChatHistory] = useState([]);
   const [teacher, setTeacher] = useState("");
   const [student, setStudent] = useState("");
@@ -201,6 +193,7 @@ const ChatBoxAdmin = ({
 };
 
 export default ChatBoxAdmin;
+
 
 
 

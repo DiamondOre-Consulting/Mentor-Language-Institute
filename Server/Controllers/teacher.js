@@ -1,7 +1,6 @@
 import express from "express";
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import Teachers from "../Models/Teachers.js";
 import TeacherAuthenticateToken from "../Middlewares/TeacherAuthenticateToken.js";
@@ -10,22 +9,32 @@ import Students from "../Models/Students.js";
 import Attendance from "../Models/Attendance.js";
 import Commission from "../Models/Commission.js";
 import ClassTeachers from "../Models/ClassTeachers.js";
+import Fee from "../Models/Fee.js";
+import Invoice from "../Models/Invoice.js";
+import ClassAccessStatus from "../Models/ClassAccessStatus.js";
 import ExcelJS from "exceljs";
-import crypto from 'crypto';
 import { calculateMonthlyCommission, sortCommissions } from "../utils/commission.js";
 import { isGradeMatch, resolveCourseGrade, toGradeLabel } from "../utils/grade.js";
 import { getAssignmentForTeacher } from "../utils/classTeachers.js";
+import { generateInvoiceNumber, generateInvoicePdfBuffer } from "../services/invoiceService.js";
+import { sendEmail } from "../services/emailService.js";
+import {
+  normalizeFeeMonth,
+  normalizePaidStatus,
+  parseFeeAmount,
+  formatFeeMonthLabel,
+} from "../utils/fee.js";
 import {
   findStudentUniquenessConflict,
   isValidEmail,
   normalizeEmail,
 } from "../utils/studentValidation.js";
+import { createRefreshTokenRecord, setRefreshCookie, signAccessToken } from "../utils/authTokens.js";
+import { deleteStudentCascade } from "../utils/deleteStudentCascade.js";
 
 
 
 dotenv.config();
-
-const secretKey = process.env.TEACHER_JWT_SECRET;
 
 const router = express.Router();
 
@@ -43,18 +52,18 @@ router.post("/login-teacher", async (req, res) => {
       return res.status(402).json({ message: "Invalid password" });
     }
 
-    const token = jwt.sign(
-      {
-        userId: user._id,
-        role: user.role,
-        name: user.name,
-        phone: user.phone,
-      },
-      secretKey,
-      {
-        expiresIn: "1h",
-      }
-    );
+    const accessPayload = {
+      userId: user._id,
+      role: user.role || "teacher",
+      name: user.name,
+      phone: user.phone,
+    };
+    const token = signAccessToken(accessPayload, "teacher");
+    const refreshToken = await createRefreshTokenRecord({
+      userId: user._id,
+      role: "teacher",
+    });
+    setRefreshCookie(res, refreshToken);
 
     return res.status(200).json({ token });
   } catch (error) {
@@ -62,6 +71,313 @@ router.post("/login-teacher", async (req, res) => {
     res.status(500).json(error);
   }
 });
+
+// GET ALL STUDENTS (teacher access)
+router.get("/all-students", TeacherAuthenticateToken, async (req, res) => {
+  try {
+    const assignments = await ClassTeachers.find({
+      teacherId: req.user.userId,
+      active: true,
+    }).select("classId");
+    const classIds = assignments.map((a) => a.classId);
+
+    const classes = await Classes.find({ _id: { $in: classIds } }).populate({
+      path: "enrolledStudents",
+      model: "Student",
+      select: "-password",
+      populate: {
+        path: "attendanceDetail",
+        model: "Attendance",
+      },
+    });
+
+    const allStudents = classes.flatMap((cls) => cls.enrolledStudents || []);
+    return res.status(200).json(allStudents);
+  } catch (error) {
+    console.log("Something went wrong!!! ");
+    res.status(500).json(error);
+  }
+});
+
+// GET ALL CLASSES (teacher access)
+router.get("/all-classes", TeacherAuthenticateToken, async (req, res) => {
+  try {
+    const assignments = await ClassTeachers.find({
+      teacherId: req.user.userId,
+      active: true,
+    }).select("classId");
+    const classIds = assignments.map((a) => a.classId);
+
+    const allClasses = await Classes.find({ _id: { $in: classIds } });
+    return res.status(200).json(allClasses);
+  } catch (error) {
+    console.log("Something went wrong!!! ");
+    res.status(500).json(error);
+  }
+});
+
+// ENROLL STUDENT IN A COURSE (teacher access)
+router.put(
+  "/enroll-student/:id1/:id2",
+  TeacherAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { id1, id2 } = req.params;
+      const { totalFee, feeMonth, paid, amountPaid } = req.body;
+      const normalizedPaid = normalizePaidStatus(paid);
+      if (normalizedPaid === null) {
+        return res.status(400).json({
+          message: "Invalid payment status. Use paid or pending.",
+        });
+      }
+
+      const normalizedTotalFee = parseFeeAmount(totalFee);
+      if (normalizedTotalFee === null || normalizedTotalFee < 0) {
+        return res.status(400).json({
+          message: "Total fee must be a valid number.",
+        });
+      }
+
+      const normalizedFeeMonth = normalizeFeeMonth(feeMonth);
+      if (!normalizedFeeMonth) {
+        return res.status(400).json({
+          message: "Fee month must be a valid month number (1-12).",
+        });
+      }
+
+      const normalizedAmountPaid = normalizedPaid
+        ? parseFeeAmount(amountPaid)
+        : 0;
+      if (normalizedPaid && (normalizedAmountPaid === null || normalizedAmountPaid <= 0)) {
+        return res.status(400).json({
+          message: "Amount paid must be a valid number when payment is marked paid.",
+        });
+      }
+      if (
+        normalizedPaid &&
+        normalizedAmountPaid !== null &&
+        normalizedAmountPaid > normalizedTotalFee
+      ) {
+        return res.status(400).json({
+          message: "Amount paid cannot exceed total fee.",
+        });
+      }
+
+      const classExists = await Classes.findById(id1);
+      if (!classExists) {
+        return res.status(404).json({ message: "Class not found." });
+      }
+      const assignment = await getAssignmentForTeacher(id1, req.user?.userId);
+      if (!assignment) {
+        return res.status(403).json({
+          message: "You can only enroll students in your assigned courses.",
+        });
+      }
+
+      const studentExists = await Students.findById(id2);
+      if (!studentExists) {
+        return res.status(404).json({ message: "Student not found." });
+      }
+      const resolvedCourseGrade = resolveCourseGrade(classExists);
+      if (resolvedCourseGrade && !classExists.grade) {
+        classExists.grade = resolvedCourseGrade;
+        await classExists.save();
+      }
+      if (resolvedCourseGrade && !isGradeMatch(resolvedCourseGrade, studentExists?.grade)) {
+        return res.status(400).json({
+          message: "Student grade does not match the course grade.",
+        });
+      }
+
+      if (normalizedPaid && !studentExists.email) {
+        return res.status(400).json({
+          message: "Student email is required to send the invoice.",
+        });
+      }
+
+      const studentExist = await Classes.findOne({
+        _id: id1,
+        enrolledStudents: id2,
+      });
+
+      if (studentExist) {
+        return res
+          .status(409)
+          .json({ message: `Student already exists in this class!!!` });
+      }
+
+      const updateClass = await Classes.findByIdAndUpdate(
+        { _id: id1 },
+        {
+          $addToSet: { enrolledStudents: id2 },
+        },
+        { new: true }
+      );
+
+      if (updateClass) {
+        await ClassAccessStatus.findOneAndUpdate(
+          { classId: id1, studentId: id2 },
+          { classAccessStatus: true },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+
+        let feeRecord = await Fee.findOne({ classId: id1, studentId: id2 });
+        if (!feeRecord) {
+          feeRecord = new Fee({
+            classId: id1,
+            studentId: id2,
+            totalFee: normalizedTotalFee,
+            detailFee: [],
+          });
+        }
+
+        const existingDetail = feeRecord.detailFee.find(
+          (detail) => normalizeFeeMonth(detail.feeMonth) === normalizedFeeMonth
+        );
+        const wasPaid = existingDetail?.paid === true;
+
+        if (existingDetail) {
+          existingDetail.paid = normalizedPaid;
+          existingDetail.amountPaid = normalizedAmountPaid ?? 0;
+        } else {
+          feeRecord.detailFee.push({
+            feeMonth: normalizedFeeMonth,
+            paid: normalizedPaid,
+            amountPaid: normalizedAmountPaid ?? 0,
+          });
+        }
+
+        feeRecord.totalFee = normalizedTotalFee;
+        await feeRecord.save();
+
+        await Students.findByIdAndUpdate(
+          { _id: id2 },
+          {
+            $addToSet: { classes: id1, feeDetail: feeRecord._id },
+            $pull: { appliedClasses: id1 },
+          },
+          { new: true }
+        );
+
+        await Classes.findByIdAndUpdate(
+          { _id: id1 },
+          {
+            $pull: { appliedStudents: id2 },
+          },
+          { new: true }
+        );
+
+        if (normalizedPaid) {
+          const studentEmail = studentExists.email;
+          const issuedAt = new Date();
+          let invoiceRecord = await Invoice.findOne({
+            feeId: feeRecord._id,
+            feeMonth: normalizedFeeMonth,
+            studentId: id2,
+          });
+
+          if (!(invoiceRecord?.emailStatus === "sent" && wasPaid)) {
+            let invoiceNumber = invoiceRecord?.invoiceNumber;
+            if (!invoiceRecord) {
+              invoiceNumber = generateInvoiceNumber(issuedAt);
+              try {
+                invoiceRecord = await Invoice.create({
+                  invoiceNumber,
+                  classId: id1,
+                  studentId: id2,
+                  feeId: feeRecord._id,
+                  feeMonth: normalizedFeeMonth,
+                  totalFee: normalizedTotalFee,
+                  amountPaid: normalizedAmountPaid ?? 0,
+                  sentToEmail: studentEmail,
+                });
+              } catch (error) {
+                if (error?.code === 11000) {
+                  invoiceNumber = generateInvoiceNumber(new Date());
+                  invoiceRecord = await Invoice.create({
+                    invoiceNumber,
+                    classId: id1,
+                    studentId: id2,
+                    feeId: feeRecord._id,
+                    feeMonth: normalizedFeeMonth,
+                    totalFee: normalizedTotalFee,
+                    amountPaid: normalizedAmountPaid ?? 0,
+                    sentToEmail: studentEmail,
+                  });
+                } else {
+                  throw error;
+                }
+              }
+            }
+
+            if (invoiceRecord && invoiceRecord.emailStatus !== "sent") {
+              try {
+                const pdfBuffer = await generateInvoicePdfBuffer({
+                  invoiceNumber: invoiceRecord.invoiceNumber,
+                  issuedAt,
+                  studentName: studentExists.name,
+                  studentEmail,
+                  classTitle: classExists.classTitle,
+                  feeMonth: normalizedFeeMonth,
+                  totalFee: normalizedTotalFee,
+                  amountPaid: normalizedAmountPaid ?? 0,
+                  currency: process.env.INVOICE_CURRENCY || "INR",
+                });
+
+                const feeMonthLabel = formatFeeMonthLabel(normalizedFeeMonth);
+                const subject = `Invoice ${invoiceRecord.invoiceNumber} for ${classExists.classTitle}`;
+                const text = `Hi ${studentExists.name},\n\nThank you for your payment. Please find your invoice (${invoiceRecord.invoiceNumber}) attached.\n\nCourse: ${classExists.classTitle}\nFee Month: ${feeMonthLabel}\nTotal Fee: ${normalizedTotalFee}\nAmount Paid: ${normalizedAmountPaid}\n\nRegards,\nMentor Language Institute`;
+                const html = `
+              <div style="font-family:Arial, sans-serif; line-height:1.6; color:#111;">
+                <p>Hi ${studentExists.name},</p>
+                <p>Thank you for your payment. Please find your invoice attached.</p>
+                <p><strong>Invoice:</strong> ${invoiceRecord.invoiceNumber}</p>
+                <p><strong>Course:</strong> ${classExists.classTitle}<br/>
+                <strong>Fee Month:</strong> ${feeMonthLabel}<br/>
+                <strong>Total Fee:</strong> ${normalizedTotalFee}<br/>
+                <strong>Amount Paid:</strong> ${normalizedAmountPaid}</p>
+                <p>Regards,<br/>Mentor Language Institute</p>
+              </div>
+            `;
+
+                await sendEmail({
+                  to: studentEmail,
+                  subject,
+                  text,
+                  html,
+                  attachments: [
+                    {
+                      filename: `Invoice-${invoiceRecord.invoiceNumber}.pdf`,
+                      content: pdfBuffer,
+                      contentType: "application/pdf",
+                    },
+                  ],
+                });
+
+                await Invoice.findByIdAndUpdate(invoiceRecord._id, {
+                  emailStatus: "sent",
+                });
+              } catch (emailError) {
+                console.error("Invoice email failed:", emailError);
+                await Invoice.findByIdAndUpdate(invoiceRecord._id, {
+                  emailStatus: "failed",
+                  emailError: emailError?.message || "Email delivery failed.",
+                });
+              }
+            }
+          }
+        }
+      }
+
+      return res.status(200).json({
+        message: `${studentExists.name} enrolled in ${classExists.classTitle} successfully.`,
+      });
+    } catch (error) {
+      console.log("Something went wrong!!! ", error);
+      res.status(500).json(error);
+    }
+  }
+);
 
 
 
@@ -99,12 +415,15 @@ router.get("/my-profile", TeacherAuthenticateToken, async (req, res) => {
 router.post("/add-student", TeacherAuthenticateToken, async (req, res) => {
   try {
     const { userId } = req.user;
-    const { name, phone, password, userName, dob, courseId, grade, email } = req.body;
-    const gradeLabel = toGradeLabel(grade);
+  const { name, phone, password, userName, dob, courseId, grade, email } = req.body;
+  const gradeLabel = toGradeLabel(grade);
 
-    if (!name || !phone || !password || !userName || !email) {
-      return res.status(400).json({ message: "All fields are required." });
-    }
+  if (!name || !phone || !password || !userName || !email) {
+    return res.status(400).json({ message: "All fields are required." });
+  }
+  if (!gradeLabel) {
+    return res.status(400).json({ message: "Grade is required." });
+  }
 
     const normalizedEmail = normalizeEmail(email);
     const normalizedUserName = userName.trim();
@@ -179,8 +498,32 @@ router.post("/add-student", TeacherAuthenticateToken, async (req, res) => {
 
     // Add to class if courseId exists
     if (classData) {
-      classData.enrolledStudents.push(newStudent._id);
-      await classData.save();
+      await Classes.findByIdAndUpdate(classData._id, {
+        $addToSet: { enrolledStudents: newStudent._id },
+      });
+
+      await ClassAccessStatus.findOneAndUpdate(
+        { classId: classData._id, studentId: newStudent._id },
+        { classAccessStatus: true },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+
+      let feeRecord = await Fee.findOne({
+        classId: classData._id,
+        studentId: newStudent._id,
+      });
+      if (!feeRecord) {
+        feeRecord = await Fee.create({
+          classId: classData._id,
+          studentId: newStudent._id,
+          totalFee: 0,
+          detailFee: [],
+        });
+      }
+
+      await Students.findByIdAndUpdate(newStudent._id, {
+        $addToSet: { feeDetail: feeRecord._id },
+      });
     }
 
     return res.status(200).json({
@@ -350,8 +693,8 @@ router.delete("/delete-student/:id",TeacherAuthenticateToken,async (req, res) =>
     try {
       const { id } = req.params;
 
-      const deleteStudent = await Students.findByIdAndDelete({ _id: id });
-      if (!deleteStudent) {
+      const deletedStudent = await deleteStudentCascade(id);
+      if (!deletedStudent) {
         return res
           .status(403)
           .json({ message: "No student Found with this id" });
@@ -731,6 +1074,11 @@ router.get(
     try {
       const { id } = req.params;
 
+      const assignment = await getAssignmentForTeacher(id, req.user.userId);
+      if (!assignment) {
+        return res.status(403).json({ message: "Unauthorized." });
+      }
+
       const allStudents = await Students.find({ classes: id }, { password: 0 });
 
       if (!allStudents) {
@@ -752,10 +1100,19 @@ router.get("/student/:id", TeacherAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const student = await Students.findById({ _id: id }, { password: 0 });
+    const assignments = await ClassTeachers.find({
+      teacherId: req.user.userId,
+      active: true,
+    }).select("classId");
+    const classIds = assignments.map((a) => a.classId);
+
+    const student = await Students.findOne(
+      { _id: id, classes: { $in: classIds } },
+      { password: 0 }
+    );
 
     if (!student) {
-      return res.status(404).json({ message: "Student not found" });
+      return res.status(403).json({ message: "Unauthorized." });
     }
 
     res.status(200).json(student);
@@ -1019,17 +1376,38 @@ router.get(
       return res.status(404).json({ message: "Student not found." });
     }
 
-    const attendanceRecord = student.attendanceDetail?.[0];
+    const classIds = (student.classes || []).map((cls) => cls?._id ?? cls);
+    if (classIds.length === 0) {
+      return res.status(404).json({ message: "Student has no classes assigned." });
+    }
 
-    if (!attendanceRecord) {
+    const assignment = await ClassTeachers.findOne({
+      teacherId: req.user.userId,
+      classId: { $in: classIds },
+      active: true,
+    });
+    if (!assignment) {
+      return res.status(403).json({ message: "Unauthorized." });
+    }
+
+    const attendanceRecords = student.attendanceDetail || [];
+    if (attendanceRecords.length === 0) {
       return res.status(404).json({ message: "Attendance record not found." });
     }
 
-    const detailAttendance = (attendanceRecord.detailAttendance || []).filter(
-      (entry) => String(entry.teacherId) === String(req.user.userId)
+    const detailAttendance = attendanceRecords.flatMap((record) =>
+      (record?.detailAttendance || []).map((entry) => {
+        const normalizedEntry = entry?.toObject ? entry.toObject() : entry;
+        return {
+          ...normalizedEntry,
+          classId: record.classId,
+        };
+      })
     );
 
-    const filteredAttendance = detailAttendance.filter((entry) => {
+    const filteredAttendance = detailAttendance
+      .filter((entry) => String(entry.teacherId) === String(req.user.userId))
+      .filter((entry) => {
       const [day, entryMonth, entryYear] = entry.classDate.split("-");
       if (year && entryYear !== year) return false;
       if (month && entryMonth !== month) return false;

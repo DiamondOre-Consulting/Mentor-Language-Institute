@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
@@ -16,15 +16,10 @@ const EachTeacherClassStudentAttendance = () => {
   const { get, post } = useApi();
   const { id, selectedClassId } = useParams();
   const [studentList, setStudentList] = useState([]);
-  const [allDetails, setAllDetails] = useState([]);
   const [courseDetails, setCourseDetails] = useState([]);
-  const [attendanceDetailsMap, setAttendanceDetailsMap] = useState({});
-  const [studentId, setStudentId] = useState([]);
-  const [myenrolledStudentDetails, setMyEnrolledStudentsDetails] = useState([]);
   const [showPopupMonthly, setShowPopupMonthly] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
   const [numberOfClasses, setNumberOfClasses] = useState("");
-  const [numberOfClassesTaken, setNumberOfClassesTaken] = useState(0);
   const [studentDetails, setStudentsDetails] = useState([]);
   const [attendanceDetails, setAttendanceDetails] = useState([]);
   const [monthCommissionDetails, setMonthlyCommissionDetails] = useState([]);
@@ -57,28 +52,8 @@ const EachTeacherClassStudentAttendance = () => {
         }).unwrap();
 
         if (response.status === 200) {
-          const courseData = response.data;
           setCourseDetails(response.data);
-          setStudentId(courseData.enrolledStudents);
           // console.log("course details", response.data)
-          const enrolledStudents = courseData.enrolledStudents;
-          const enrolledStudentsDetails = [];
-
-          for (const studentIds of enrolledStudents) {
-            const studentResponse = await get({
-              url: `/admin-confi/all-students/${studentIds}`,
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }).unwrap();
-
-            if (studentResponse.status === 200) {
-              const studentData = studentResponse.data;
-              // console.log("Enrolled student details:", studentData);
-              enrolledStudentsDetails.push(studentData);
-              setMyEnrolledStudentsDetails(enrolledStudentsDetails);
-            }
-          }
         }
       } catch (error) {
         console.log("");
@@ -114,13 +89,6 @@ const EachTeacherClassStudentAttendance = () => {
         if (attendanceResponse.status === 200) {
           // console.log("a det", attendanceResponse.data)
           // const filteredData = attendanceResponse?.data?.filter
-          const mapping = attendanceResponse.data
-            .filter((item) => item.detailAttendance)
-            .map((item) => item.detailAttendance);
-
-          const numberOfClassesTakenValues = mapping.map((detailAttendance) =>
-            detailAttendance.map((detail) => detail.numberOfClassesTaken)
-          );
           setAttendanceDetails(attendanceResponse.data);
 
           // console.log("mapping", mapping)
@@ -281,19 +249,19 @@ const EachTeacherClassStudentAttendance = () => {
       </h1>
 
       <div className="relative mt-8 overflow-x-auto">
-        {/* <div class="flex items-center justify-between flex-column flex-wrap md:flex-row space-y-4 md:space-y-0 pb-4 bg-white ">
+        {/* <div className="flex items-center justify-between flex-column flex-wrap md:flex-row space-y-4 md:space-y-0 pb-4 bg-white ">
 
-                    <label for="table-search" class="sr-only">Search</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 rtl:inset-r-0 start-0 flex items-center ps-3 pointer-events-none">
-                            <svg class="w-4 h-4 text-gray-500 " aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+                    <label for="table-search" className="sr-only">Search</label>
+                    <div className="relative">
+                        <div className="absolute inset-y-0 rtl:inset-r-0 start-0 flex items-center ps-3 pointer-events-none">
+                            <svg className="w-4 h-4 text-gray-500 " aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
                             </svg>
                         </div>
-                        <input type="text" id="table-search-users" class="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500      " placeholder="Search for users" />
+                        <input type="text" id="table-search-users" className="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500      " placeholder="Search for users" />
                     </div>
                 </div> */}
-        <div className="flex items-center ">
+        <div className="flex flex-wrap items-center gap-4">
           <div>
             <select onChange={handleDateChange}>
               <option>Select Date</option>
@@ -303,11 +271,11 @@ const EachTeacherClassStudentAttendance = () => {
                 })}
             </select>
           </div>
-          <div className="ml-6">
+          <div>
             {selectedDate && (
-              <div className="ml-4">
+              <div>
                 <div
-                  className="px-12 py-2 bg-gray-100 border border-2 rounded-md"
+                  className="px-6 sm:px-12 py-2 bg-gray-100 border border-2 rounded-md"
                   value={numberOfClasses}
                 >
                   <span>{numberOfClasses}</span>
@@ -333,7 +301,7 @@ const EachTeacherClassStudentAttendance = () => {
               </tr>
             </thead>
             <tbody>
-              {studentDetails.map((student, index) => {
+              {studentDetails.map((student) => {
                 // Find the attendance details for the current student
                 const studentAttendanceDetails = attendanceDetails.find(
                   (attendance) => attendance.studentId === student?._id
@@ -423,8 +391,11 @@ const EachTeacherClassStudentAttendance = () => {
             </thead>
             <tbody>
               {monthCommissionDetails &&
-                monthCommissionDetails.map((commission, index) => (
-                  <tr key={index} className="bg-white border-b hover:bg-gray-50">
+                monthCommissionDetails.map((commission) => (
+                  <tr
+                    key={commission?._id || `${commission?.monthName}-${commission?.year}`}
+                    className="bg-white border-b hover:bg-gray-50"
+                  >
                     <td className="px-6 py-4 text-center">
                       {commission.monthName}
                     </td>

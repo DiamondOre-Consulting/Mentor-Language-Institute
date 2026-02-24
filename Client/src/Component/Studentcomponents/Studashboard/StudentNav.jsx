@@ -11,13 +11,13 @@ import {
 } from "../../../components/ui/dropdown-menu";
 import { Dialog, DialogContent } from "../../../components/ui/dialog";
 import StudentProfile from "./StudentProfile";
+import { logout } from "../../../api/auth";
 
 const StudentNav = ({ student, onProfileUpdated }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    window.location.href = "/student-login";
+    logout("/student-login");
   };
 
   return (

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import StudentNav from "../../Component/Studentcomponents/Studashboard/StudentNav";
 import Studenthero from "../../Component/Studentcomponents/Studashboard/Studenthero";
 import StudentOverview from "../../Component/Studentcomponents/Studashboard/StudentOverview";
@@ -7,35 +7,18 @@ import LanguageCourses from "../../Component/Studentcomponents/Studashboard/Lang
 import Classes from "../../Component/Studentcomponents/Studashboard/Classes";
 import { useApi } from "../../api/useApi";
 import SpecialCourses from "../../Component/Studentcomponents/Studashboard/SpecialCourses";
-import { useJwt } from "react-jwt";
 import { useNavigate } from "react-router-dom";
 
 const Maindash = () => {
   const [studentData, setStudentData] = useState(null);
   const navigate = useNavigate();
   const { get } = useApi();
-  const { decodedToken } = useJwt(localStorage.getItem("token"));
-  const token = localStorage.getItem("token");
-
-  if (!token) {
-    navigate("/student-login");
-    return;
-  }
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
+    if (!localStorage.getItem("token")) {
       navigate("/student-login");
-    } else {
-      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
-
-      if (tokenExpiration && tokenExpiration < Date.now()) {
-        localStorage.removeItem("token");
-        navigate("/student-login");
-      }
     }
-  }, [decodedToken]);
+  }, [navigate]);
 
   useEffect(() => {
     const fetchStudentData = async () => {
@@ -57,7 +40,6 @@ const Maindash = () => {
         if (response.status == 200) {
           const stu = response.data;
           setStudentData(stu);
-        } else {
         }
       } catch (error) {
         console.error("Error fetching student data:", error);
@@ -65,7 +47,7 @@ const Maindash = () => {
     };
 
     fetchStudentData();
-  }, [decodedToken]);
+  }, [get, navigate]);
 
   return (
     <div className="student-shell min-h-screen bg-gradient-to-b from-orange-50 via-white to-amber-50">

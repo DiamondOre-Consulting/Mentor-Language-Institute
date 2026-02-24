@@ -19,7 +19,7 @@ const attendanceSchema = new mongoose.Schema({
       {
         classDate: {
           type: String,
-          default: Date.now,
+          default: "",
         },
         numberOfClassesTaken: {
           type: String,

@@ -1,8 +1,8 @@
-﻿import { useApi } from "../../../api/useApi";
-import React, { useEffect, useState } from "react";
+import { useApi } from "../../../api/useApi";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Footer, Tabs } from "flowbite-react";
-import { HiAdjustments, HiClipboardList } from "react-icons/hi";
+import { Tabs } from "flowbite-react";
+import { HiAdjustments } from "react-icons/hi";
 import { FaBook } from "react-icons/fa";
 import { MdDashboard } from "react-icons/md";
 import { ClipLoader } from "react-spinners";
@@ -58,7 +58,6 @@ const Coursedet = () => {
   const { id } = useParams();
   const [studentData, setStudentData] = useState("");
   const [classData, setClassData] = useState("");
-  const [allEnrollclassData, setAllClassData] = useState([]);
   const [feedetails, setFeeDetails] = useState(null);
   const [myenroll, setEnroll] = useState("");
   const [loading, setLoading] = useState(false);
@@ -113,7 +112,6 @@ const Coursedet = () => {
           }
         }
 
-        const allEnrollClassData = [];
         const classResponse = await get({
           url: `/students/all-courses/${id}`,
           headers: {
@@ -129,11 +127,7 @@ const Coursedet = () => {
             : classData;
           // console.log("Enrolled class details:", normalizedClass);
           setClassData(normalizedClass);
-          allEnrollClassData.push(normalizedClass);
         }
-
-        setAllClassData(allEnrollClassData);
-        // console.log("enroll class array", allEnrollclassData);
       } else {
         // console.log(response.data);
       }
@@ -283,7 +277,7 @@ const Coursedet = () => {
               <div className="flex justify-between">
                 <div className="flex">
                   <img
-                    class="w-10 h-10 rounded-full"
+                    className="w-10 h-10 rounded-full"
                     src={userimg2}
                     alt="Rounded avatar"
                   />
@@ -310,116 +304,116 @@ const Coursedet = () => {
                         Course Details
                       </p>
 
-                      <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
-                        <table class="w-full text-sm text-left rtl:text-right text-gray-500 ">
+                      <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+                        <table className="w-full text-sm text-left rtl:text-right text-gray-500 ">
                           <tbody>
-                            <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                            <tr className="odd:bg-white odd: even:bg-gray-50 even: border-b ">
                               <th
                                 scope="row"
-                                class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                                className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
                               >
                                 Student Name
                               </th>
-                              <td class="px-6 py-4">{studentData?.name}</td>
+                              <td className="px-6 py-4">{studentData?.name}</td>
                             </tr>
-                            <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                            <tr className="odd:bg-white odd: even:bg-gray-50 even: border-b ">
                               <th
                                 scope="row"
-                                class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                                className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
                               >
                                 Course Tilte
                               </th>
-                              <td class="px-6 py-4">{classData?.classTitle}</td>
+                              <td className="px-6 py-4">{classData?.classTitle}</td>
                             </tr>
-                            <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                            <tr className="odd:bg-white odd: even:bg-gray-50 even: border-b ">
                               <th
                                 scope="row"
-                                class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                                className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
                               >
                                 Teacher Name
                               </th>
-                              <td class="px-6 py-4">
+                              <td className="px-6 py-4">
                                 {classData.teacher?.name}
                               </td>
                             </tr>
-                            <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                            <tr className="odd:bg-white odd: even:bg-gray-50 even: border-b ">
                               <th
                                 scope="row"
-                                class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                                className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
                               >
                                 Branch
                               </th>
-                              <td class="px-6 py-4">{classData?.branch || "Main"}</td>
+                              <td className="px-6 py-4">{classData?.branch || "Main"}</td>
                             </tr>
-                            <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                            <tr className="odd:bg-white odd: even:bg-gray-50 even: border-b ">
                               <th
                                 scope="row"
-                                class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                                className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
                               >
                                 Grade
                               </th>
-                              <td class="px-6 py-4">{classData?.grade || "All levels"}</td>
+                              <td className="px-6 py-4">{classData?.grade || "All levels"}</td>
                             </tr>
-                            <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                            <tr className="odd:bg-white odd: even:bg-gray-50 even: border-b ">
                               <th
                                 scope="row"
-                                class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                                className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
                               >
                                 Total Hours
                               </th>
-                              <td class="px-6 py-4">
+                              <td className="px-6 py-4">
                                 {classData?.totalHours
                                   ? `${classData.totalHours} hours`
                                   : "TBA"}
                               </td>
                             </tr>
-                            <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                            <tr className="odd:bg-white odd: even:bg-gray-50 even: border-b ">
                               <th
                                 scope="row"
-                                class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                                className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
                               >
                                 Total Scheduled Classes
                               </th>
-                              <td class="px-6 py-4">
+                              <td className="px-6 py-4">
                                 {totalScheduledClasses || "TBA"}
                               </td>
                             </tr>
-                            <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                            <tr className="odd:bg-white odd: even:bg-gray-50 even: border-b ">
                               <th
                                 scope="row"
-                                class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                                className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
                               >
                                 Next Session
                               </th>
-                              <td class="px-6 py-4">{nextSessionLabel}</td>
+                              <td className="px-6 py-4">{nextSessionLabel}</td>
                             </tr>
-                            <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                            <tr className="odd:bg-white odd: even:bg-gray-50 even: border-b ">
                               <th
                                 scope="row"
-                                class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                                className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
                               >
                                 Added On
                               </th>
-                              <td class="px-6 py-4">
+                              <td className="px-6 py-4">
                                 {formatDate(classData?.createdAt)}
                               </td>
                             </tr>
-                            <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                            <tr className="odd:bg-white odd: even:bg-gray-50 even: border-b ">
                               <th
                                 scope="row"
-                                class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                                className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
                               >
                                 Course Price
                               </th>
-                              <td class="px-6 py-4">
+                              <td className="px-6 py-4">
                                 INR {feedetails?.totalFee}
                               </td>
                             </tr>
-                            {/* <tr class="odd:bg-white odd: even:bg-gray-50 even: border-b ">
-                                                            <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
+                            {/* <tr className="odd:bg-white odd: even:bg-gray-50 even: border-b ">
+                                                            <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
                                                                 Schedule
                                                             </th>
-                                                            <td class="px-6 py-4">
+                                                            <td className="px-6 py-4">
                                                                 {classData?.classSchedule}
                                                             </td>
                                                         </tr> */}
@@ -438,14 +432,14 @@ const Coursedet = () => {
                         Attendance Details
                       </p>
 
-                      <div class="overflow-auto max-h-96 overflow-x-auto shadow-md sm:rounded-lg">
-                        <table class="w-full text-sm text-center rtl:text-right text-gray-500 ">
-                          <thead class="sticky top-0 text-xs text-gray-100 uppercase bg-orange-400  ">
+                      <div className="overflow-auto max-h-96 overflow-x-auto shadow-md sm:rounded-lg">
+                        <table className="w-full text-sm text-center rtl:text-right text-gray-500 ">
+                          <thead className="sticky top-0 text-xs text-gray-100 uppercase bg-orange-400  ">
                             <tr>
-                              <th scope="col" class="px-6 py-3">
+                              <th scope="col" className="px-6 py-3">
                                 Date
                               </th>
-                              <th scope="col" class="px-6 py-3">
+                              <th scope="col" className="px-6 py-3">
                                 Number of Classes Taken
                               </th>
                             </tr>
@@ -458,10 +452,13 @@ const Coursedet = () => {
                               attendenceDetails &&
                               attendenceDetails.detailAttendance.map(
                                 (attendance) => (
-                                  <tr class="bg-white border-b  ">
+                                  <tr
+                                    key={attendance?._id || attendance?.classDate}
+                                    className="bg-white border-b  "
+                                  >
                                     <th
                                       scope="row"
-                                      class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                                      className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
                                     >
                                       {attendance.classDate}
                                     </th>
@@ -492,17 +489,17 @@ const Coursedet = () => {
                         Fee Details
                       </p>
 
-                      <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
-                        <table class="w-full text-sm text-left rtl:text-right text-gray-500 ">
-                          <thead class="text-xs text-gray-100 uppercase bg-orange-400  ">
+                      <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+                        <table className="w-full text-sm text-left rtl:text-right text-gray-500 ">
+                          <thead className="text-xs text-gray-100 uppercase bg-orange-400  ">
                             <tr>
-                              <th scope="col" class="px-6 py-3">
+                              <th scope="col" className="px-6 py-3">
                                 Month
                               </th>
-                              <th scope="col" class="px-6 py-3">
+                              <th scope="col" className="px-6 py-3">
                                 Amount
                               </th>
-                              <th scope="col" class="px-6 py-3">
+                              <th scope="col" className="px-6 py-3">
                                 Status
                               </th>
                             </tr>
@@ -510,17 +507,20 @@ const Coursedet = () => {
                           <tbody>
                             {feedetails &&
                               feedetails.detailFee.map((fee) => (
-                                <tr class="bg-white border-b  ">
+                                <tr
+                                  key={fee?._id || fee?.feeMonth}
+                                  className="bg-white border-b  "
+                                >
                                   <th
                                     scope="row"
-                                    class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                                    className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
                                   >
                                     {fee.feeMonth}
                                   </th>
 
                                   <th
                                     scope="row"
-                                    class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                                    className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
                                   >
                                     {fee.amountPaid}
                                   </th>

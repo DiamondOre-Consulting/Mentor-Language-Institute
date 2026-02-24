@@ -1,7 +1,7 @@
-﻿import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useApi } from "../../api/useApi";
 import ChatBoxTeacher from "../../Component/TeachersComponents/ChatBoxTeacher";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useMediaQuery } from "@react-hook/media-query";
 import { useJwt } from "react-jwt";
 import userimg2 from "..//..//assets/userimg2.png";
@@ -11,7 +11,6 @@ const ChatTeacher = () => {
   const { get } = useApi();
   const { decodedToken } = useJwt(localStorage.getItem("token"));
   const userName = decodedToken ? decodedToken.name : "No Name Found";
-  const [error, setError] = useState("");
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -20,26 +19,11 @@ const ChatTeacher = () => {
 
   const token = localStorage.getItem("token");
 
-  if (!token) {
-    navigate("/login"); // Redirect to login page if not authenticated
-    return;
-  }
-
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!localStorage.getItem("token")) {
       navigate("/login");
-    } else {
-      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0; // Convert expiration time to milliseconds
-      // console.log(tokenExpiration)
-
-      if (tokenExpiration && tokenExpiration < Date.now()) {
-        // Token expired, remove from local storage and redirect to login page
-        localStorage.removeItem("token");
-        navigate("/login");
-      }
     }
-  }, [decodedToken]);
+  }, [navigate]);
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -52,12 +36,9 @@ const ChatTeacher = () => {
         }).unwrap(); // Adjust the API endpoint
         if (response.status === 201) {
           setStudents(response.data); // Assuming the API returns an array of student objects
-        } else {
-          setError(response.status, response.data);
         }
       } catch (error) {
         console.error("Error fetching students:", error.message);
-        setError(error.message);
       }
     };
     fetchStudents();
@@ -78,8 +59,8 @@ const ChatTeacher = () => {
   return (
     <>
       <div>
-        <div class=" h-screen p-0">
-          <div class="md:flex border border-grey rounded shadow-lg h-full ">
+        <div className=" h-screen p-0">
+          <div className="md:flex border border-grey rounded shadow-lg h-full ">
             {isTeacherSectionVisible && (
               <div
                 className={`md:w-1/3 border flex flex-col  ${
@@ -88,29 +69,30 @@ const ChatTeacher = () => {
               >
                 {/* Left portion */}
 
-                <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center">
+                <div className="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center">
                   <div className="flex items-center">
-                    <img class="w-10 h-10 rounded-full" src={userimg2} />
+                    <img className="w-10 h-10 rounded-full" src={userimg2} />
                     <span className="ml-1">{userName}</span>
                   </div>
                 </div>
 
-                <div class="bg-grey-lightest w-full h-0.5 bg-gray-600 rounded-md my-4"></div>
+                <div className="bg-grey-lightest w-full h-0.5 bg-gray-600 rounded-md my-4"></div>
 
-                <div class="bg-grey-lighter flex-1 overflow-auto">
-                  {students.map((student, index) => (
+                <div className="bg-grey-lighter flex-1 overflow-auto">
+                  {students.map((student) => (
                     <div
-                      class="bg-white px-3 flex items-center hover:bg-grey-lighter cursor-pointer sm:pointer"
+                      key={student?._id || student?.phone}
+                      className="bg-white px-3 flex items-center hover:bg-grey-lighter cursor-pointer sm:pointer"
                       onClick={() => handleStudentClick(student)}
                     >
                       <div>
-                        <img class="h-12 w-12 rounded-full" src={userimg2} />
+                        <img className="h-12 w-12 rounded-full" src={userimg2} />
                       </div>
-                      <div class="ml-4 flex-1 border-b border-grey-lighter py-4">
-                        <div class="flex items-bottom justify-between">
-                          <p class="text-grey-darkest">{student?.name}</p>
+                      <div className="ml-4 flex-1 border-b border-grey-lighter py-4">
+                        <div className="flex items-bottom justify-between">
+                          <p className="text-grey-darkest">{student?.name}</p>
                         </div>
-                        <p class="text-grey-dark mt-1 text-sm">
+                        <p className="text-grey-dark mt-1 text-sm">
                           {/* {classData.map((classItem, index) => {
                     if (classItem.enrolledStudents.includes(student._id)) {
                       return (

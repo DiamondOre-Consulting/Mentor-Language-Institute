@@ -3,7 +3,6 @@ import Parentsignup from './Component/Studentcomponents/Stuauth/Parentsignup'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import Admin from './Pages/Adminpages/Admin'
 
-import Home from './Component/AdminComponents/Home'
 import Login from './Component/TeacherAdminAuthentication/Login'
 import Maindash from './Pages/Studentpages/Maindash'
 import StudentEachcourses from './Pages/Studentpages/StudentEachcourses'
@@ -12,7 +11,6 @@ import Error from './Component/Studentcomponents/Stuauth/Error'
 // import Chat from './Pages/Chat'
 
 import ChatStudent from './Pages/Studentpages/ChatStudent'
-import ChatTeacher from './Pages/Teacherpages/ChatTeacher'
 import UserVerify from './Component/Auth/ProtectedRoute'
 import SiteFooter from './Component/Common/SiteFooter'
 

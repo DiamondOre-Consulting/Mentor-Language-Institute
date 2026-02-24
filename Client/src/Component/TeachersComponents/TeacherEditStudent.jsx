@@ -1,5 +1,5 @@
-﻿import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
@@ -14,7 +14,8 @@ const override = css`
 const TeacherEditStudent = ({ studentData, closingModel }) => {
   // console.log("close model",closeModel)
   const navigate = useNavigate();
-  const { put } = useApi();
+  const { id } = useParams();
+  const { get, put } = useApi();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -22,26 +23,61 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
   const [email, setEmail] = useState("");
   const [dob, setdob] = useState("");
   const [grade, setGrade] = useState("");
-  const [studentDetails, setStudentsDetails] = useState(null);
   const [popupMessage, setPopupMessage] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resolvedStudent, setResolvedStudent] = useState(null);
 
-  const handleShowPassword = () => setShowPassword((prev) => !prev);
+  const effectiveStudent = studentData || resolvedStudent;
 
   const token = localStorage.getItem("token");
 
   useEffect(() => {
     if (studentData) {
-      setName(studentData.name || "");
-      setPhone(studentData.phone || "");
-      setUserName(studentData.userName || "");
-      setEmail(studentData.email || "");
-      setdob(studentData.dob || "");
-      setPassword("");
-      setGrade(studentData?.grade || "");
+      setResolvedStudent(studentData);
     }
   }, [studentData]);
+
+  useEffect(() => {
+    if (effectiveStudent) {
+      setName(effectiveStudent.name || "");
+      setPhone(effectiveStudent.phone || "");
+      setUserName(effectiveStudent.userName || "");
+      setEmail(effectiveStudent.email || "");
+      setdob(effectiveStudent.dob || "");
+      setPassword("");
+      setGrade(effectiveStudent?.grade || "");
+    }
+  }, [effectiveStudent]);
+
+  useEffect(() => {
+    const fetchStudent = async () => {
+      if (studentData || !id) return;
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          navigate("/login");
+          return;
+        }
+        setLoading(true);
+        const response = await get({
+          url: `/teachers/student/${id}`,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
+        if (response.status === 200) {
+          setResolvedStudent(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching student:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudent();
+  }, [id, studentData, navigate, get]);
 
   const handleStudentEdit = async (e) => {
     setLoading(true);
@@ -49,8 +85,12 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
     setPopupMessage(null);
 
     try {
+      if (!effectiveStudent?._id) {
+        setPopupMessage("Student data not available.");
+        return;
+      }
       const response = await put({
-        url: `/teachers/student-edit/${studentData?._id}`,
+        url: `/teachers/student-edit/${effectiveStudent?._id}`,
         data: {
           name,
           phone,
@@ -89,7 +129,11 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
       }
     } finally {
       setLoading(false);
-      closingModel();
+      if (closingModel) {
+        closingModel();
+      } else {
+        navigate(-1);
+      }
     }
   };
 
@@ -106,8 +150,8 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
             />
           </div>
         )}
-        <div className="flex flex-col items-center justify-center mt-16 lg:py-0 ">
-          <div className="bg-white border-t-4 border-orange-400 rounded-lg shadow md:w-full sm:w-1/2 md:mt-0 sm:max-w-md xl:p-0">
+        <div className="flex flex-col items-center justify-center mt-16 lg:py-0 px-4">
+          <div className="w-full bg-white border-t-4 border-orange-400 rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0">
             <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
               <div className="flex items-center justify-between">
                 <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl ">
@@ -191,7 +235,7 @@ const TeacherEditStudent = ({ studentData, closingModel }) => {
                     className="block mb-2 text-sm font-medium text-gray-900 "
                     htmlFor="dob"
                   >
-                    {studentData?.dob?.split("T")[0]}
+                    {effectiveStudent?.dob?.split("T")[0]}
                   </label>
                   <input
                     type="date"

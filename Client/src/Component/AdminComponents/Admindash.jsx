@@ -9,7 +9,6 @@ import EachTeacher from "./EachTeacher";
 import EachStu from "./EachStu";
 import Message from "./Message";
 import Eachcourse from "./Eachcourse";
-import { useJwt } from "react-jwt";
 import EachTeacherClassStudentAttendance from "./EachTeacherClassStudentAttendance";
 import Error from "../Studentcomponents/Stuauth/Error";
 import ChatAdmin from "../../Pages/Adminpages/ChatAdmin";
@@ -23,57 +22,37 @@ import PendingPayments from "./PendingPayments";
 const Admindash = () => {
   const navigate = useNavigate();
 
-  const { decodedToken } = useJwt(localStorage.getItem("token"));
-  const token = localStorage.getItem("token");
-
-  if (!token) {
-    navigate("/login");
-    return;
-  }
-
   useEffect(() => {
-    const currentToken = localStorage.getItem("token");
-    if (!currentToken) {
+    if (!localStorage.getItem("token")) {
       navigate("/login");
-    } else {
-      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0;
-      if (tokenExpiration && tokenExpiration < Date.now()) {
-        localStorage.removeItem("token");
-        navigate("/login");
-      }
     }
-  }, [decodedToken, navigate]);
+  }, [navigate]);
 
   return (
     <div className="admin-theme min-h-screen bg-gradient-to-br from-orange-50 via-slate-50 to-white pb-6 pt-16 sm:ml-72 sm:pt-6">
       <div className="mx-2 rounded-2xl border border-orange-100/70 bg-white/80 p-3 shadow-sm backdrop-blur-sm sm:mx-4 sm:p-5">
         <Routes>
-          <Route path="/">
-            <Route index element={<Home />} />
-            <Route path="/allstudents" element={<Allstudents />} />
-            <Route path="/allteachers" element={<AllTeachers />} />
-            <Route path="/allteacher/:id" element={<EachTeacher />} />
-            <Route
-              path="/:id/:selectedClassId"
-              element={<EachTeacherClassStudentAttendance />}
-            />
-            <Route path="/allstudents/:id" element={<EachStu />} />
-            <Route path="/student/:id" element={<EditStudent />} />
-            <Route path="/teacher-edit/:id" element={<EditTeacher />} />
-            <Route path="/course-edit/:id" element={<EditCourse />} />
-            <Route path="/messages" element={<Message />} />
-            <Route path="/allcourses" element={<Allcourses />} />
-            <Route path="/allcourses/:id" element={<Eachcourse />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/admin/chat/*" element={<ChatAdmin />} />
-            <Route path="/all-admin" element={<AllAdmin />} />
-            <Route path="/pending-payments" element={<PendingPayments />} />
-            <Route
-              path="/attendance-report"
-              element={<DownloadAttendanceReport />}
-            />
-            <Route path="*" element={<Error />} />
-          </Route>
+          <Route index element={<Home />} />
+          <Route path="allstudents" element={<Allstudents />} />
+          <Route path="allteachers" element={<AllTeachers />} />
+          <Route path="allteacher/:id" element={<EachTeacher />} />
+          <Route
+            path=":id/:selectedClassId"
+            element={<EachTeacherClassStudentAttendance />}
+          />
+          <Route path="allstudents/:id" element={<EachStu />} />
+          <Route path="student/:id" element={<EditStudent />} />
+          <Route path="teacher-edit/:id" element={<EditTeacher />} />
+          <Route path="course-edit/:id" element={<EditCourse />} />
+          <Route path="messages" element={<Message />} />
+          <Route path="allcourses" element={<Allcourses />} />
+          <Route path="allcourses/:id" element={<Eachcourse />} />
+          <Route path="register" element={<Register />} />
+          <Route path="admin/chat/*" element={<ChatAdmin />} />
+          <Route path="all-admin" element={<AllAdmin />} />
+          <Route path="pending-payments" element={<PendingPayments />} />
+          <Route path="attendance-report" element={<DownloadAttendanceReport />} />
+          <Route path="*" element={<Error />} />
         </Routes>
       </div>
     </div>

@@ -1,9 +1,9 @@
-﻿import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useApi } from "../../api/useApi";
 import ChatBox from "../../Component/Studentcomponents/Studashboard/ChatBox";
 import { useMediaQuery } from "@react-hook/media-query";
 import { useJwt } from "react-jwt";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import userimg2 from "..//..//assets/userimg2.png";
 
 const ChatStudent = () => {
@@ -63,30 +63,11 @@ const ChatStudent = () => {
 
   const token = localStorage.getItem("token");
 
-  if (!token) {
-    navigate("/student-login");
-    return;
-  }
-
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
+    if (!localStorage.getItem("token")) {
       navigate("/student-login");
-    } else {
-      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0;
-
-      if (tokenExpiration && tokenExpiration < Date.now()) {
-        localStorage.removeItem("token");
-        navigate("/student-login");
-      }
     }
-  }, [decodedToken]);
-
-  if (!token) {
-    navigate("/student-login");
-    return;
-  }
+  }, [navigate]);
 
   useEffect(() => {
     // Fetch teachers when the component mounts
@@ -141,8 +122,8 @@ const ChatStudent = () => {
   return (
     <>
       <div>
-        <div class=" h-screen">
-          <div class="md:flex border border-grey rounded shadow-lg h-full">
+        <div className=" h-screen">
+          <div className="md:flex border border-grey rounded shadow-lg h-full">
             {isTeacherSectionVisible && (
               <div
                 className={`md:w-1/3 border flex flex-col ${
@@ -151,24 +132,24 @@ const ChatStudent = () => {
               >
                 {/* Left portion */}
 
-                <div class="py-4 px-3 bg-grey-lighter flex flex-row justify-between items-center ">
+                <div className="py-4 px-3 bg-grey-lighter flex flex-row justify-between items-center ">
                   <div className="flex items-center">
-                    <img class="w-10 h-10 rounded-full" src={userimg2} />
+                    <img className="w-10 h-10 rounded-full" src={userimg2} />
                     <span className="ml-1">{userName}</span>
                   </div>
 
-                  <div class="flex">
+                  <div className="flex">
                     <svg
-                      class="h-8 w-8 text-gray-700 cursor-pointer"
+                      className="h-8 w-8 text-gray-700 cursor-pointer"
                       onClick={handleClick}
                       width="24"
                       height="24"
                       viewBox="0 0 24 24"
-                      stroke-width="2"
+                      strokeWidth="2"
                       stroke="currentColor"
                       fill="none"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     >
                       {" "}
                       <path stroke="none" d="M0 0h24v24H0z" />{" "}
@@ -179,23 +160,23 @@ const ChatStudent = () => {
                   </div>
                 </div>
 
-                <div class="bg-grey-lightest w-full h-0.5 bg-gray-600 rounded-md my-2"></div>
+                <div className="bg-grey-lightest w-full h-0.5 bg-gray-600 rounded-md my-2"></div>
 
-                <div class="bg-grey-lighter flex-1 overflow-auto">
-                  {teachers.map((teacher, index) => (
+                <div className="bg-grey-lighter flex-1 overflow-auto">
+                  {teachers.map((teacher) => (
                     <div
                       key={teacher._id}
-                      class="bg-white px-3 flex items-center hover:bg-grey-lighter cursor-pointer sm:pointer"
+                      className="bg-white px-3 flex items-center hover:bg-grey-lighter cursor-pointer sm:pointer"
                       onClick={() => handleTeacherClick(teacher)}
                     >
                       <div>
-                        <img class="h-12 w-12 rounded-full" src={userimg2} />
+                        <img className="h-12 w-12 rounded-full" src={userimg2} />
                       </div>
-                      <div class="ml-4 flex-1 border-b border-grey-lighter py-4">
-                        <div class="flex items-bottom justify-between">
-                          <p class="text-grey-darkest">{teacher.name}</p>
+                      <div className="ml-4 flex-1 border-b border-grey-lighter py-4">
+                        <div className="flex items-bottom justify-between">
+                          <p className="text-grey-darkest">{teacher.name}</p>
                         </div>
-                        <p class="text-grey-dark mt-1 text-sm">teacher</p>
+                        <p className="text-grey-dark mt-1 text-sm">teacher</p>
                       </div>
                     </div>
                   ))}

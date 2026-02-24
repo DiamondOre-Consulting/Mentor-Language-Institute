@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
-import { useJwt } from "react-jwt";
+import { logout } from "../../api/auth";
 import insta from "../../assets/instagram.png";
 import facebook from "../../assets/facebook.png";
 import whatsapp from "../../assets/whatsapp.png";
@@ -99,34 +99,19 @@ const TeacherSidebar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { decodedToken } = useJwt(localStorage.getItem("token"));
-  const token = localStorage.getItem("token");
-
-  if (!token) {
-    navigate("/login");
-    return;
-  }
-
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
       navigate("/login");
-    } else {
-      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0;
-      if (tokenExpiration && tokenExpiration < Date.now()) {
-        localStorage.removeItem("token");
-        navigate("/login");
-      }
     }
-  }, [decodedToken]);
+  }, [navigate]);
 
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location.pathname]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    window.location.href = "/login";
+    logout("/login");
   };
 
   const handleWhatsAppChat = () => {

@@ -1,21 +1,24 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useApi } from "../../api/useApi";
 
 const UserVerify = ({ routeName }) => {
   const [loading, setLoading] = useState(true);
+  const [authorized, setAuthorized] = useState(false);
   const navigate = useNavigate();
   const { get } = useApi();
 
   useEffect(() => {
     const fetchUserProfile = async () => {
+      const redirectTo =
+        routeName === "admin-confi" || routeName === "teachers"
+          ? "/login"
+          : "/student-login";
       const token = localStorage.getItem("token");
       if (!token) {
-        if (routeName === "admin-confi" || routeName === "teachers") {
-          navigate("/login");
-        } else {
-          navigate("/");
-        }
+        setAuthorized(false);
+        setLoading(false);
+        navigate(redirectTo);
         return;
       }
       try {
@@ -23,13 +26,12 @@ const UserVerify = ({ routeName }) => {
           url: `/${routeName}/my-profile`,
           headers: { Authorization: `Bearer ${token}` },
         }).unwrap();
+        setAuthorized(true);
         setLoading(false);
       } catch (error) {
-        if (routeName === "admin-confi" || routeName === "teachers") {
-          navigate("/login");
-        } else {
-          navigate("/");
-        }
+        setAuthorized(false);
+        setLoading(false);
+        navigate(redirectTo);
       }
     };
 
@@ -46,6 +48,10 @@ const UserVerify = ({ routeName }) => {
         </div>
       </div>
     );
+  }
+
+  if (!authorized) {
+    return null;
   }
 
   return <Outlet />;

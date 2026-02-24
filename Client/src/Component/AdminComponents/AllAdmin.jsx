@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useApi } from "../../api/useApi";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { toast } from "sonner";

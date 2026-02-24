@@ -1,6 +1,5 @@
 import express from "express";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import Admin from "../Models/Admin.js";
 import AdminAuthenticateToken from "../Middlewares/AdminAuthenticateToken.js";
@@ -18,6 +17,8 @@ import { deriveGradeFromText, isGradeMatch, resolveCourseGrade, toGradeLabel } f
 import { normalizeCommissionRateValue } from "../utils/classTeachers.js";
 import { generateInvoiceNumber, generateInvoicePdfBuffer } from "../services/invoiceService.js";
 import { sendEmail } from "../services/emailService.js";
+import { createRefreshTokenRecord, setRefreshCookie, signAccessToken } from "../utils/authTokens.js";
+import { deleteStudentCascade } from "../utils/deleteStudentCascade.js";
 import {
   normalizeFeeMonth,
   normalizePaidStatus,
@@ -33,13 +34,35 @@ import ExcelJS from "exceljs";
 import Teacher from "../Models/Teachers.js"
 dotenv.config();
 
-const secretKey = process.env.ADMIN_JWT_SECRET;
-
 const router = express.Router();
 
+const ensureAdminSignupAllowed = async (req, res, next) => {
+  try {
+    const hasAdmin = await Admin.exists({});
+    if (!hasAdmin) {
+      const setupToken = process.env.ADMIN_SETUP_TOKEN;
+      const provided =
+        req.headers["x-admin-setup-token"] || req.body?.setupToken;
+      if (!setupToken) {
+        return res.status(503).json({
+          message: "Admin signup is disabled. Configure ADMIN_SETUP_TOKEN.",
+        });
+      }
+      if (provided !== setupToken) {
+        return res.status(403).json({ message: "Unauthorized admin signup." });
+      }
+      return next();
+    }
+    return AdminAuthenticateToken(req, res, next);
+  } catch (error) {
+    console.error("Admin signup guard failed:", error);
+    return res.status(500).json({ message: "Unable to process signup." });
+  }
+};
 
 
-router.post("/signup-admin", async (req, res) => {
+
+router.post("/signup-admin", ensureAdminSignupAllowed, async (req, res) => {
   try {
     const { name, phone, password } = req.body;
 
@@ -86,19 +109,19 @@ router.post("/login-admin", async (req, res) => {
     }
 
     // Generate JWT token
-    const token = jwt.sign(
-      {
-        userId: user._id,
-        name: user.name,
-        username: user.username,
-        phone: user.phone,
-        role: user.role,
-      },
-      secretKey,
-      {
-        expiresIn: "1h",
-      }
-    );
+    const accessPayload = {
+      userId: user._id,
+      name: user.name,
+      username: user.username,
+      phone: user.phone,
+      role: user.role || "admin",
+    };
+    const token = signAccessToken(accessPayload, "admin");
+    const refreshToken = await createRefreshTokenRecord({
+      userId: user._id,
+      role: "admin",
+    });
+    setRefreshCookie(res, refreshToken);
 
     return res.status(200).json({ token });
   } catch (error) {
@@ -759,6 +782,9 @@ router.post("/add-student", AdminAuthenticateToken, async (req, res) => {
     if (!name || !phone || !password || !userName || !email) {
       return res.status(400).json({ message: "All fields are required." });
     }
+    if (!gradeLabel) {
+      return res.status(400).json({ message: "Grade is required." });
+    }
 
     const normalizedEmail = normalizeEmail(email);
     const normalizedUserName = userName.trim();
@@ -945,37 +971,46 @@ router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res)
     );
 
     if (updateClass) {
-      // UPDATE CLASS ACCESS STATUS
-      const newClassAccessStatus = new ClassAccessStatus({
-        classId: id1,
-        studentId: id2,
-        classAccessStatus: true,
-      });
+      await ClassAccessStatus.findOneAndUpdate(
+        { classId: id1, studentId: id2 },
+        { classAccessStatus: true },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
 
-      await newClassAccessStatus.save();
+      let feeRecord = await Fee.findOne({ classId: id1, studentId: id2 });
+      if (!feeRecord) {
+        feeRecord = new Fee({
+          classId: id1,
+          studentId: id2,
+          totalFee: normalizedTotalFee,
+          detailFee: [],
+        });
+      }
 
-      // UPDATE FEE FIRST TIME
-      // let forUpdate = totalFee-amountPaid;
-      const feeUpdate = new Fee({
-        classId: id1,
-        studentId: id2,
-        totalFee: normalizedTotalFee,
-        detailFee: [
-          {
-            feeMonth: normalizedFeeMonth,
-            paid: normalizedPaid,
-            amountPaid: normalizedAmountPaid ?? 0,
-          },
-        ],
-      });
+      const existingDetail = feeRecord.detailFee.find(
+        (detail) => normalizeFeeMonth(detail.feeMonth) === normalizedFeeMonth
+      );
+      const wasPaid = existingDetail?.paid === true;
 
-      await feeUpdate.save();
+      if (existingDetail) {
+        existingDetail.paid = normalizedPaid;
+        existingDetail.amountPaid = normalizedAmountPaid ?? 0;
+      } else {
+        feeRecord.detailFee.push({
+          feeMonth: normalizedFeeMonth,
+          paid: normalizedPaid,
+          amountPaid: normalizedAmountPaid ?? 0,
+        });
+      }
+
+      feeRecord.totalFee = normalizedTotalFee;
+      await feeRecord.save();
 
       // UPDATE STUDENT
-      const updateStudent = await Students.findByIdAndUpdate(
+      await Students.findByIdAndUpdate(
         { _id: id2 },
         {
-          $addToSet: { classes: id1, feeDetail: feeUpdate._id },
+          $addToSet: { classes: id1, feeDetail: feeRecord._id },
           $pull: { appliedClasses: id1 },
         },
         { new: true }
@@ -992,90 +1027,101 @@ router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res)
       if (normalizedPaid) {
         const studentEmail = studentExists.email;
         const issuedAt = new Date();
-        let invoiceNumber = generateInvoiceNumber(issuedAt);
-        let invoiceRecord;
+        let invoiceRecord = await Invoice.findOne({
+          feeId: feeRecord._id,
+          feeMonth: normalizedFeeMonth,
+          studentId: id2,
+        });
 
-        try {
-          invoiceRecord = await Invoice.create({
-            invoiceNumber,
-            classId: id1,
-            studentId: id2,
-            feeId: feeUpdate._id,
-            feeMonth: normalizedFeeMonth,
-            totalFee: normalizedTotalFee,
-            amountPaid: normalizedAmountPaid ?? 0,
-            sentToEmail: studentEmail,
-          });
-        } catch (error) {
-          if (error?.code === 11000) {
-            invoiceNumber = generateInvoiceNumber(new Date());
-            invoiceRecord = await Invoice.create({
-              invoiceNumber,
-              classId: id1,
-              studentId: id2,
-              feeId: feeUpdate._id,
-              feeMonth: normalizedFeeMonth,
-              totalFee: normalizedTotalFee,
-              amountPaid: normalizedAmountPaid ?? 0,
-              sentToEmail: studentEmail,
-            });
-          } else {
-            throw error;
+        if (!(invoiceRecord?.emailStatus === "sent" && wasPaid)) {
+          let invoiceNumber = invoiceRecord?.invoiceNumber;
+          if (!invoiceRecord) {
+            invoiceNumber = generateInvoiceNumber(issuedAt);
+            try {
+              invoiceRecord = await Invoice.create({
+                invoiceNumber,
+                classId: id1,
+                studentId: id2,
+                feeId: feeRecord._id,
+                feeMonth: normalizedFeeMonth,
+                totalFee: normalizedTotalFee,
+                amountPaid: normalizedAmountPaid ?? 0,
+                sentToEmail: studentEmail,
+              });
+            } catch (error) {
+              if (error?.code === 11000) {
+                invoiceNumber = generateInvoiceNumber(new Date());
+                invoiceRecord = await Invoice.create({
+                  invoiceNumber,
+                  classId: id1,
+                  studentId: id2,
+                  feeId: feeRecord._id,
+                  feeMonth: normalizedFeeMonth,
+                  totalFee: normalizedTotalFee,
+                  amountPaid: normalizedAmountPaid ?? 0,
+                  sentToEmail: studentEmail,
+                });
+              } else {
+                throw error;
+              }
+            }
           }
-        }
 
-        try {
-          const pdfBuffer = await generateInvoicePdfBuffer({
-            invoiceNumber,
-            issuedAt,
-            studentName: studentExists.name,
-            studentEmail,
-            classTitle: classExists.classTitle,
-            feeMonth: normalizedFeeMonth,
-            totalFee: normalizedTotalFee,
-            amountPaid: normalizedAmountPaid ?? 0,
-            currency: process.env.INVOICE_CURRENCY || "INR",
-          });
+          if (invoiceRecord && invoiceRecord.emailStatus !== "sent") {
+            try {
+              const pdfBuffer = await generateInvoicePdfBuffer({
+                invoiceNumber: invoiceRecord.invoiceNumber,
+                issuedAt,
+                studentName: studentExists.name,
+                studentEmail,
+                classTitle: classExists.classTitle,
+                feeMonth: normalizedFeeMonth,
+                totalFee: normalizedTotalFee,
+                amountPaid: normalizedAmountPaid ?? 0,
+                currency: process.env.INVOICE_CURRENCY || "INR",
+              });
 
-          const feeMonthLabel = formatFeeMonthLabel(normalizedFeeMonth);
-          const subject = `Invoice ${invoiceNumber} for ${classExists.classTitle}`;
-          const text = `Hi ${studentExists.name},\n\nThank you for your payment. Please find your invoice (${invoiceNumber}) attached.\n\nCourse: ${classExists.classTitle}\nFee Month: ${feeMonthLabel}\nTotal Fee: ${normalizedTotalFee}\nAmount Paid: ${normalizedAmountPaid}\n\nRegards,\nMentor Language Institute`;
-          const html = `
-            <div style="font-family:Arial, sans-serif; line-height:1.6; color:#111;">
-              <p>Hi ${studentExists.name},</p>
-              <p>Thank you for your payment. Please find your invoice attached.</p>
-              <p><strong>Invoice:</strong> ${invoiceNumber}</p>
-              <p><strong>Course:</strong> ${classExists.classTitle}<br/>
-              <strong>Fee Month:</strong> ${feeMonthLabel}<br/>
-              <strong>Total Fee:</strong> ${normalizedTotalFee}<br/>
-              <strong>Amount Paid:</strong> ${normalizedAmountPaid}</p>
-              <p>Regards,<br/>Mentor Language Institute</p>
-            </div>
-          `;
+              const feeMonthLabel = formatFeeMonthLabel(normalizedFeeMonth);
+              const subject = `Invoice ${invoiceRecord.invoiceNumber} for ${classExists.classTitle}`;
+              const text = `Hi ${studentExists.name},\n\nThank you for your payment. Please find your invoice (${invoiceRecord.invoiceNumber}) attached.\n\nCourse: ${classExists.classTitle}\nFee Month: ${feeMonthLabel}\nTotal Fee: ${normalizedTotalFee}\nAmount Paid: ${normalizedAmountPaid}\n\nRegards,\nMentor Language Institute`;
+              const html = `
+              <div style="font-family:Arial, sans-serif; line-height:1.6; color:#111;">
+                <p>Hi ${studentExists.name},</p>
+                <p>Thank you for your payment. Please find your invoice attached.</p>
+                <p><strong>Invoice:</strong> ${invoiceRecord.invoiceNumber}</p>
+                <p><strong>Course:</strong> ${classExists.classTitle}<br/>
+                <strong>Fee Month:</strong> ${feeMonthLabel}<br/>
+                <strong>Total Fee:</strong> ${normalizedTotalFee}<br/>
+                <strong>Amount Paid:</strong> ${normalizedAmountPaid}</p>
+                <p>Regards,<br/>Mentor Language Institute</p>
+              </div>
+            `;
 
-          await sendEmail({
-            to: studentEmail,
-            subject,
-            text,
-            html,
-            attachments: [
-              {
-                filename: `Invoice-${invoiceNumber}.pdf`,
-                content: pdfBuffer,
-                contentType: "application/pdf",
-              },
-            ],
-          });
+              await sendEmail({
+                to: studentEmail,
+                subject,
+                text,
+                html,
+                attachments: [
+                  {
+                    filename: `Invoice-${invoiceRecord.invoiceNumber}.pdf`,
+                    content: pdfBuffer,
+                    contentType: "application/pdf",
+                  },
+                ],
+              });
 
-          await Invoice.findByIdAndUpdate(invoiceRecord._id, {
-            emailStatus: "sent",
-          });
-        } catch (emailError) {
-          console.error("Invoice email failed:", emailError);
-          await Invoice.findByIdAndUpdate(invoiceRecord._id, {
-            emailStatus: "failed",
-            emailError: emailError?.message || "Email delivery failed.",
-          });
+              await Invoice.findByIdAndUpdate(invoiceRecord._id, {
+                emailStatus: "sent",
+              });
+            } catch (emailError) {
+              console.error("Invoice email failed:", emailError);
+              await Invoice.findByIdAndUpdate(invoiceRecord._id, {
+                emailStatus: "failed",
+                emailError: emailError?.message || "Email delivery failed.",
+              });
+            }
+          }
         }
       }
     }
@@ -1188,7 +1234,7 @@ router.put(
       }
 
       const existingDetail = fee.detailFee.find(
-        (detail) => detail.feeMonth === normalizedFeeMonth
+        (detail) => normalizeFeeMonth(detail.feeMonth) === normalizedFeeMonth
       );
       const wasPaid = existingDetail?.paid === true;
 
@@ -1706,10 +1752,39 @@ router.delete(
       }
 
       // Remove the class ID from students' classes
-      await Students.updateMany({ classes: id }, { $pull: { classes: id } });
+      await Students.updateMany(
+        { classes: id },
+        { $pull: { classes: id } }
+      );
+      await Students.updateMany(
+        { appliedClasses: id },
+        { $pull: { appliedClasses: id } }
+      );
 
       // Remove teacher assignments for this class
       await ClassTeachers.deleteMany({ classId: id });
+
+      const attendanceIds = await Attendance.find({ classId: id }).distinct("_id");
+      const feeIds = await Fee.find({ classId: id }).distinct("_id");
+
+      await Attendance.deleteMany({ classId: id });
+      await Fee.deleteMany({ classId: id });
+      await Invoice.deleteMany({ classId: id });
+      await ClassAccessStatus.deleteMany({ classId: id });
+      await Commission.deleteMany({ classId: id });
+
+      if (attendanceIds.length > 0) {
+        await Students.updateMany(
+          { attendanceDetail: { $in: attendanceIds } },
+          { $pull: { attendanceDetail: { $in: attendanceIds } } }
+        );
+      }
+      if (feeIds.length > 0) {
+        await Students.updateMany(
+          { feeDetail: { $in: feeIds } },
+          { $pull: { feeDetail: { $in: feeIds } } }
+        );
+      }
 
       // Delete the class
       await Classes.findByIdAndDelete(id);
@@ -1746,7 +1821,7 @@ router.delete(
 
 router.get(
   "/get-studentsListBySub/:id",
-
+  AdminAuthenticateToken,
   async (req, res) => {
     const { id } = req.params;
 
@@ -1780,9 +1855,8 @@ router.delete(
   async (req, res) => {
     try {
       const { id } = req.params;
-
-      const deleteStudent = await Students.findByIdAndDelete({ _id: id });
-      if (!deleteStudent) {
+      const deletedStudent = await deleteStudentCascade(id);
+      if (!deletedStudent) {
         return res
           .status(403)
           .json({ message: "No student Found with this id" });

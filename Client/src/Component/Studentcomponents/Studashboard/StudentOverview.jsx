@@ -211,34 +211,34 @@ const StudentOverview = ({ student }) => {
 
   return (
     <section className="mt-8 space-y-4">
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="border-orange-100/80 bg-white/90 shadow-sm">
-          <CardHeader>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Card className="border-orange-100/80 bg-white/90 shadow-sm overflow-hidden">
+          <CardHeader className="p-4 sm:p-6">
             <CardTitle className="text-lg">Learning Summary</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
-              <div className="rounded-xl border border-border bg-white/70 p-3">
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+            <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground sm:gap-4">
+              <div className="rounded-xl border border-border bg-white/70 p-2 sm:p-3">
                 <p className="text-xs uppercase tracking-wide">Enrolled</p>
-                <p className="mt-1 text-xl font-semibold text-slate-800">
+                <p className="mt-1 text-lg font-semibold text-slate-800 sm:text-xl">
                   {summary.enrolledCount}
                 </p>
               </div>
-              <div className="rounded-xl border border-border bg-white/70 p-3">
+              <div className="rounded-xl border border-border bg-white/70 p-2 sm:p-3">
                 <p className="text-xs uppercase tracking-wide">Applied</p>
-                <p className="mt-1 text-xl font-semibold text-slate-800">
+                <p className="mt-1 text-lg font-semibold text-slate-800 sm:text-xl">
                   {summary.appliedCount}
                 </p>
               </div>
-              <div className="rounded-xl border border-border bg-white/70 p-3">
+              <div className="rounded-xl border border-border bg-white/70 p-2 sm:p-3">
                 <p className="text-xs uppercase tracking-wide">Total Hours</p>
-                <p className="mt-1 text-xl font-semibold text-slate-800">
+                <p className="mt-1 text-lg font-semibold text-slate-800 sm:text-xl">
                   {summary.totalHours || 0} hrs
                 </p>
               </div>
-              <div className="rounded-xl border border-border bg-white/70 p-3">
+              <div className="rounded-xl border border-border bg-white/70 p-2 sm:p-3">
                 <p className="text-xs uppercase tracking-wide">Classes Taken</p>
-                <p className="mt-1 text-xl font-semibold text-slate-800">
+                <p className="mt-1 text-lg font-semibold text-slate-800 sm:text-xl">
                   {summary.totalAttended || 0}
                 </p>
               </div>
@@ -251,11 +251,11 @@ const StudentOverview = ({ student }) => {
           </CardContent>
         </Card>
 
-        <Card className="border-orange-100/80 bg-white/90 shadow-sm">
-          <CardHeader>
+        <Card className="border-orange-100/80 bg-white/90 shadow-sm overflow-hidden">
+          <CardHeader className="p-4 sm:p-6">
             <CardTitle className="text-lg">Financial Snapshot</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <CardContent className="space-y-3 p-4 pt-0 text-sm text-muted-foreground sm:p-6 sm:pt-0">
             <div className="flex items-center justify-between">
               <span>Total Fee</span>
               <span className="font-semibold text-slate-700">
@@ -274,26 +274,26 @@ const StudentOverview = ({ student }) => {
                 {summary.totalFee ? `INR ${summary.balance}` : "TBA"}
               </span>
             </div>
-            <div className="rounded-xl border border-border bg-white/70 p-3">
+            <div className="rounded-xl border border-border bg-white/70 p-2 sm:p-3">
               <p className="text-xs uppercase tracking-wide">Payment Status</p>
-              <p className="mt-1 text-base font-semibold text-slate-800">
+              <p className="mt-1 text-sm font-semibold text-slate-800 sm:text-base">
                 {summary.totalFee === 0
                   ? "Awaiting fee schedule"
                   : summary.balance > 0
-                  ? "Pending balance"
-                  : "All clear"}
+                    ? "Pending balance"
+                    : "All clear"}
               </p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="border-orange-100/80 bg-white/90 shadow-sm">
-          <CardHeader>
+      <div className="grid w-full gap-3 sm:grid-cols-2">
+        <Card className="border-orange-100/80 bg-white/90 shadow-sm overflow-hidden">
+          <CardHeader className="p-4 sm:p-6">
             <CardTitle className="text-lg">Upcoming Sessions</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <CardContent className="space-y-3 p-4 pt-0 text-sm text-muted-foreground sm:p-6 sm:pt-0">
             {loading && (
               <p className="text-xs text-muted-foreground">Loading schedule...</p>
             )}
@@ -305,10 +305,10 @@ const StudentOverview = ({ student }) => {
             {summary.upcomingSessions.map((session) => (
               <div
                 key={`${session.courseTitle}-${session.classDate}`}
-                className="flex items-center justify-between rounded-xl border border-border bg-white/70 p-3"
+                className="flex flex-col gap-2 rounded-xl border border-border bg-white/70 p-2.5 sm:flex-row sm:items-center sm:justify-between sm:p-3"
               >
-                <div>
-                  <p className="font-semibold text-slate-800">
+                <div className="min-w-0">
+                  <p className="break-words font-semibold text-slate-800">
                     {session.courseTitle}
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -317,7 +317,7 @@ const StudentOverview = ({ student }) => {
                       : "Session"}
                   </p>
                 </div>
-                <span className="text-xs font-semibold text-slate-700">
+                <span className="text-[10px] font-semibold text-slate-700 sm:shrink-0">
                   {session.label}
                 </span>
               </div>
@@ -325,11 +325,11 @@ const StudentOverview = ({ student }) => {
           </CardContent>
         </Card>
 
-        <Card className="border-orange-100/80 bg-white/90 shadow-sm">
-          <CardHeader>
+        <Card className="border-orange-100/80 bg-white/90 shadow-sm overflow-hidden">
+          <CardHeader className="p-4 sm:p-6">
             <CardTitle className="text-lg">Profile & Support</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
+          <CardContent className="space-y-4 p-4 pt-0 text-sm text-muted-foreground sm:p-6 sm:pt-0">
             <div>
               <div className="flex items-center justify-between">
                 <span>Profile Completion</span>
@@ -348,29 +348,32 @@ const StudentOverview = ({ student }) => {
                 communications.
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-white/70 p-3">
+            <div className="rounded-xl border border-border bg-white/70 p-2.5 break-words sm:p-3">
               <p className="text-xs uppercase tracking-wide">Support</p>
-              <p className="mt-1 text-sm text-slate-700">
+              <p className="mt-1 text-xs text-slate-700 break-words sm:text-sm">
                 Phone: +91 9999466159
               </p>
-              <p className="text-sm text-slate-700">
+              <p className="text-xs text-slate-700 break-words sm:text-sm">
                 Email: mentor.languageclasses@gmail.com
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button asChild size="sm">
+              <Button asChild size="sm" className="hidden">
                 <Link to="/student/chat">Chat with Mentor</Link>
               </Button>
-              <Button asChild size="sm" variant="outline">
-                <a href="#courses">Browse Courses</a>
-              </Button>
-              <Button asChild size="sm" variant="outline">
-                <a href="#enrolledcourse">My Courses</a>
-              </Button>
+              <div className="flex flex-wrap gap-2 pt-2">
+                <Button asChild size="sm" variant="outline" className="h-8 px-3 text-[11px]">
+                  <a href="#courses">Browse Courses</a>
+                </Button>
+                <Button asChild size="sm" variant="outline" className="h-8 px-3 text-[11px]">
+                  <a href="#enrolledcourse">My Courses</a>
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
     </section>
   );
 };

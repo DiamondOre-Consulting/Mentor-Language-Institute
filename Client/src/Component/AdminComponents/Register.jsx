@@ -1,9 +1,6 @@
-﻿import React, { useEffect, useState } from "react";
-import { Tabs } from "flowbite-react";
-import { MdDashboard } from "react-icons/md";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApi } from "../../api/useApi";
-import { useJwt } from "react-jwt";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 
@@ -26,9 +23,6 @@ const Register = () => {
   const handleTabClick = (index) => {
     setActiveTab(index);
   };
-  const { decodedToken } = useJwt(localStorage.getItem("token"));
-  const token = localStorage.getItem("token");
-  // console.log(token)
   // admin
   const [formValues, setFormValues] = useState({
     classTitle: "",
@@ -545,7 +539,7 @@ const Register = () => {
                           Phone
                         </label>
                         <input
-                          type="phone"
+                          type="tel"
                           name="phone"
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
@@ -675,7 +669,7 @@ const Register = () => {
                           name="password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                          placeholder="********"
                           className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      "
                           required=""
                         />
@@ -736,7 +730,7 @@ const Register = () => {
                           Phone
                         </label>
                         <input
-                          type="phone"
+                          type="tel"
                           name="phone"
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
@@ -799,7 +793,7 @@ const Register = () => {
                           name="password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                          placeholder="********"
                           className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      "
                           required=""
                         />
@@ -894,26 +888,26 @@ const Register = () => {
                         />
                       </div>
                       {/* <div>
-                                                <label class="block mb-2 text-sm font-medium text-gray-900 ">Schedule</label>
+                                                <label className="block mb-2 text-sm font-medium text-gray-900 ">Schedule</label>
                                                 <ul className="flex flex-wrap items-center w-full text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg sm:flex sm:">
 
                                                     {Object.entries(selectedDays).map(([day, isChecked]) => (
                                                         <li
                                                             key={day}
-                                                            class="w-full border-b border-gray-200 sm:border-b-0 sm:border-r "
+                                                            className="w-full border-b border-gray-200 sm:border-b-0 sm:border-r "
                                                         >
-                                                            <div class="flex items-center ps-3">
+                                                            <div className="flex items-center ps-3">
                                                                 <input
                                                                     id={`${day}-checkbox-list`}
                                                                     type="checkbox"
                                                                     name={day}
                                                                     checked={isChecked}
                                                                     onChange={handleCheckboxChange}
-                                                                    class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500    focus:ring-2  -gray-500"
+                                                                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500    focus:ring-2  -gray-500"
                                                                 />
                                                                 <label
                                                                     for={`${day}-checkbox-list`}
-                                                                    class="w-full py-3 ms-2 text-sm font-medium text-gray-900 "
+                                                                    className="w-full py-3 ms-2 text-sm font-medium text-gray-900 "
                                                                 >
                                                                     {day}
                                                                 </label>
@@ -967,6 +961,7 @@ const Register = () => {
 };
 
 export default Register;
+
 
 
 

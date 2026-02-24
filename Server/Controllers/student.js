@@ -1,7 +1,6 @@
 import express from "express";
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import cron from "node-cron";
 import Students from "../Models/Students.js";
@@ -13,10 +12,12 @@ import Attendance from "../Models/Attendance.js";
 import Fee from "../Models/Fee.js";
 import ClassTeachers from "../Models/ClassTeachers.js";
 import { normalizeFeeMonth, normalizePaidStatus, parseFeeAmount } from "../utils/fee.js";
+import { createRefreshTokenRecord, setRefreshCookie, signAccessToken } from "../utils/authTokens.js";
 import {
   isGradeMatch,
   normalizeGradeValue,
   resolveCourseGrade,
+  toGradeLabel,
 } from "../utils/grade.js";
 import {
   findStudentUniquenessConflict,
@@ -26,17 +27,20 @@ import {
 
 dotenv.config();
 
-const secretKey = process.env.STUDENT_JWT_SECRET;
-
 const router = express.Router();
 
 
 router.post("/signup", async (req, res) => {
   try {
-    const { name, phone, password, userName, dob, email } = req.body;
+    const { name, phone, password, userName, dob, email, grade } = req.body;
 
     if (!name || !phone || !password || !userName || !email) {
       return res.status(400).json({ message: "All fields are required." });
+    }
+
+    const gradeLabel = toGradeLabel(grade);
+    if (!gradeLabel) {
+      return res.status(400).json({ message: "Grade is required." });
     }
 
     const normalizedEmail = normalizeEmail(email);
@@ -64,6 +68,7 @@ router.post("/signup", async (req, res) => {
       email: normalizedEmail,
       userName: normalizedUserName,
       dob,
+      grade: gradeLabel,
       password: hashedPassword,
     });
 
@@ -88,6 +93,9 @@ router.post("/login", async (req, res) => {
     const { userName, password } = req.body;
 
     const user = await Students.findOne({ userName });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid username" });
+    }
 
     if (user.deactivated) {
       return res
@@ -100,18 +108,19 @@ router.post("/login", async (req, res) => {
       return res.status(403).json({ message: "Invalid password" });
     }
 
-    const token = jwt.sign(
-      {
-        userId: user._id,
-        name: user.name,
-        phone: user.phone,
-        userName: user.userName,
-      },
-      secretKey,
-      {
-        expiresIn: "1h",
-      }
-    );
+    const accessPayload = {
+      userId: user._id,
+      name: user.name,
+      phone: user.phone,
+      userName: user.userName,
+      role: user.role || "student",
+    };
+    const token = signAccessToken(accessPayload, "student");
+    const refreshToken = await createRefreshTokenRecord({
+      userId: user._id,
+      role: "student",
+    });
+    setRefreshCookie(res, refreshToken);
 
     return res.status(200).json({ token });
   } catch (error) {
@@ -429,37 +438,45 @@ router.post(
       );
 
       if (updateClass) {
-        // UPDATE CLASS ACCESS STATUS
-        const newClassAccessStatus = new ClassAccessStatus({
-          classId: id,
-          studentId: userId,
-          classAccessStatus: true,
-        });
+        await ClassAccessStatus.findOneAndUpdate(
+          { classId: id, studentId: userId },
+          { classAccessStatus: true },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
 
-        await newClassAccessStatus.save();
+        let feeRecord = await Fee.findOne({ classId: id, studentId: userId });
+        if (!feeRecord) {
+          feeRecord = new Fee({
+            classId: id,
+            studentId: userId,
+            totalFee: normalizedTotalFee,
+            detailFee: [],
+          });
+        }
 
-        // UPDATE FEE FIRST TIME
-        // let forUpdate = totalFee-amountPaid;
-        const feeUpdate = new Fee({
-          classId: id,
-          studentId: userId,
-          totalFee: normalizedTotalFee,
-          detailFee: [
-            {
-              feeMonth: normalizedFeeMonth,
-              paid: normalizedPaid,
-              amountPaid: normalizedAmountPaid ?? 0,
-            },
-          ],
-        });
+        const existingDetail = feeRecord.detailFee.find(
+          (detail) => normalizeFeeMonth(detail.feeMonth) === normalizedFeeMonth
+        );
 
-        await feeUpdate.save();
+        if (existingDetail) {
+          existingDetail.paid = normalizedPaid;
+          existingDetail.amountPaid = normalizedAmountPaid ?? 0;
+        } else {
+          feeRecord.detailFee.push({
+            feeMonth: normalizedFeeMonth,
+            paid: normalizedPaid,
+            amountPaid: normalizedAmountPaid ?? 0,
+          });
+        }
+
+        feeRecord.totalFee = normalizedTotalFee;
+        await feeRecord.save();
 
         // UPDATE STUDENT
-        const updateStudent = await Students.findByIdAndUpdate(
+        await Students.findByIdAndUpdate(
           { _id: userId },
           {
-            $addToSet: { classes: id, feeDetail: feeUpdate._id },
+            $addToSet: { classes: id, feeDetail: feeRecord._id },
           },
           { new: true }
         );

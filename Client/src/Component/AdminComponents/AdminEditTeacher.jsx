@@ -1,5 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
@@ -12,7 +11,6 @@ const override = css`
 `;
 
 const AdminEditTeacher = ({ teacherDetails, closingModel, id, onUpdated }) => {
-  const navigate = useNavigate();
   const { get, put } = useApi();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -20,14 +18,11 @@ const AdminEditTeacher = ({ teacherDetails, closingModel, id, onUpdated }) => {
   //   const [userName, setUserName] = useState("");
   const [dob, setdob] = useState("");
 
-  const [studentDetails, setStudentsDetails] = useState(null);
   const [popupMessage, setPopupMessage] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [allCourses, setAllCourses] = useState([]);
   const [teacherCourseId, setTeacherCourseId] = useState("");
-
-  const handleShowPassword = () => setShowPassword((prev) => !prev);
 
   const token = localStorage.getItem("token");
 
@@ -130,8 +125,8 @@ const AdminEditTeacher = ({ teacherDetails, closingModel, id, onUpdated }) => {
             />
           </div>
         )}
-        <div className="flex flex-col items-center justify-center mt-16 lg:py-0 ">
-          <div className="bg-white border-t-4 border-orange-400 rounded-lg shadow md:w-full sm:w-1/2 md:mt-0 sm:max-w-md xl:p-0">
+        <div className="flex flex-col items-center justify-center mt-16 lg:py-0 px-4">
+          <div className="w-full bg-white border-t-4 border-orange-400 rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0">
             <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
               <div className="flex items-center justify-between">
                 <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl ">

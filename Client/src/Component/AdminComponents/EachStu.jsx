@@ -1,7 +1,6 @@
-﻿import React, { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { useApi } from "../../api/useApi";
-import { useJwt } from "react-jwt";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 
@@ -14,11 +13,9 @@ const override = css`
 const EachStu = () => {
   const [activeTab, setActiveTab] = useState("personal");
   const [classes, setAllClasses] = useState([]);
-  const navigate = useNavigate();
   const { get, put } = useApi();
   const [studentsDetails, setStudentsDetails] = useState(null);
   const { id } = useParams();
-  const { decodedToken } = useJwt(localStorage.getItem("token"));
   const token = localStorage.getItem("token");
   const [attendenceDetails, setAttendenceDetails] = useState(null);
   const [feedetails, setFeeDetails] = useState(null);
@@ -26,7 +23,7 @@ const EachStu = () => {
   const [selectedMonth, setSelectedMonth] = useState("");
   const [amount, setAmount] = useState("");
   const [paidStatus, setPaidStatus] = useState("pending");
-  const [totafee, setTotalFee] = useState("");
+  const [totalFee, setTotalFee] = useState("");
   const [loading, setLoading] = useState(false);
   const months = [
     "January",
@@ -286,45 +283,45 @@ const EachStu = () => {
           />
         </div>
       )}
-      <div class="px-4 sm:px-1 lg:px-8">
-        <h1 class=" text-3xl font-semibold  tracking-tight text-gray-900">
+      <div className="px-4 sm:px-1 lg:px-8">
+        <h1 className=" text-3xl font-semibold  tracking-tight text-gray-900">
           {studentsDetails?.name}
         </h1>
-        <p class="text-gray-500">{studentsDetails?.phone}</p>
+        <p className="text-gray-500">{studentsDetails?.phone}</p>
       </div>
       <main className="overflow-x-hidden">
-        <div class="mt-4 md:mt-32 md:max-w-7xl py-0 ">
-          <div class="flex flex-wrap  md:-mx-2  ">
-            <div class="w-full mx-2 md:block lg:block md:-mt-24 sm:mt-0">
-              <div class="block lg:block overflow-scroll md:overflow-hidden">
-                <ul class="flex bg-white ">
-                  <li class=" mr-1">
+        <div className="mt-4 md:mt-32 md:max-w-7xl py-0 ">
+          <div className="flex flex-wrap  md:-mx-2  ">
+            <div className="w-full mx-2 md:block lg:block md:-mt-24 sm:mt-0">
+              <div className="block lg:block overflow-scroll md:overflow-hidden">
+                <ul className="flex bg-white ">
+                  <li className=" mr-1">
                     <a
-                      class="rounded-sm bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-orange-500 font-semibold shadow-md cursor-pointer"
+                      className="rounded-sm bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-orange-500 font-semibold shadow-md cursor-pointer"
                       onClick={() => handleTabClick("personal")}
                     >
                       Personal Information
                     </a>
                   </li>
-                  <li class="mr-1">
+                  <li className="mr-1">
                     <a
-                      class="rounded-sm bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-orange-500 font-semibold cursor-pointer"
+                      className="rounded-sm bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-orange-500 font-semibold cursor-pointer"
                       onClick={() => handleTabClick("EnrolledCourses")}
                     >
                       Enrolled Courses
                     </a>
                   </li>
-                  <li class="mr-1">
+                  <li className="mr-1">
                     <a
-                      class="rounded-sm bg-white inline-block py-2 px-4 border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-orange-500 font-semibold cursor-pointer"
+                      className="rounded-sm bg-white inline-block py-2 px-4 border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-orange-500 font-semibold cursor-pointer"
                       onClick={() => handleTabClick("FeeDetails")}
                     >
                       Fee Details
                     </a>
                   </li>
-                  <li class="mr-1">
+                  <li className="mr-1">
                     <a
-                      class="rounded-sm bg-white inline-block py-2 px-4 border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-orange-500 font-semibold cursor-pointer"
+                      className="rounded-sm bg-white inline-block py-2 px-4 border-l border-t border-r rounded-t py-2 px-4 text-blue-500 hover:text-orange-500 font-semibold cursor-pointer"
                       onClick={() => handleTabClick("AttendanceDetails")}
                     >
                       Attendance Details
@@ -333,18 +330,18 @@ const EachStu = () => {
                 </ul>
               </div>
               {activeTab === "personal" && (
-                <div class="w-full mt-8 flex flex-col 2xl:w-1/3">
-                  <div class="flex-1 bg-white rounded-lg shadow-xl p-8">
-                    <ul class="mt-2 text-gray-700">
-                      <li class="flex border-y py-2">
-                        <span class="font-bold w-24">Full name:</span>
-                        <span class="text-gray-700">
+                <div className="w-full mt-8 flex flex-col 2xl:w-1/3">
+                  <div className="flex-1 bg-white rounded-lg shadow-xl p-8">
+                    <ul className="mt-2 text-gray-700">
+                      <li className="flex border-y py-2">
+                        <span className="font-bold w-24">Full name:</span>
+                        <span className="text-gray-700">
                           {studentsDetails?.name}
                         </span>
                       </li>
-                      <li class="flex border-b py-2">
-                        <span class="font-bold w-24">phone:</span>
-                        <span class="text-gray-700">
+                      <li className="flex border-b py-2">
+                        <span className="font-bold w-24">phone:</span>
+                        <span className="text-gray-700">
                           {studentsDetails?.phone}
                         </span>
                       </li>
@@ -359,15 +356,18 @@ const EachStu = () => {
                     <div>No classes are there</div>
                   ) : (
                     classes.map((course) => (
-                      <a class="block max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100   ">
-                        <h5 class="mb-2 text-md md:text-xl font-bold tracking-tight text-gray-900 ">
+                      <a
+                        key={course?._id || course?.classTitle}
+                        className="block max-w-sm p-4 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100"
+                      >
+                        <h5 className="mb-2 text-md md:text-xl font-bold tracking-tight text-gray-900 ">
                           {course?.classTitle}
                         </h5>
-                        {/* <p class="font-normal text-sm text-gray-700 ">classSchedule:- <span>{course?.classSchedule}</span></p> */}
-                        <p class="font-normal text-sm text-gray-700 ">
+                        {/* <p className="font-normal text-sm text-gray-700 ">classSchedule:- <span>{course?.classSchedule}</span></p> */}
+                        <p className="font-normal text-sm text-gray-700 ">
                           Duration :- <span>{course?.totalHours}</span>
                         </p>
-                        <p class="font-normal text-sm text-gray-700 ">
+                        <p className="font-normal text-sm text-gray-700 ">
                           Teach By :-{" "}
                           <span>
                             {course?.teacher ? course.teacher.name : "Unknown"}
@@ -397,7 +397,7 @@ const EachStu = () => {
                     ))}
                   </select>
                     <span className="inline-flex w-fit rounded-md bg-orange-100 px-3 py-1 text-sm font-semibold text-orange-700">
-                      Total Fee: {totafee || 0}
+                      Total Fee: {totalFee || 0}
                     </span>
                   </div>
                   <div>
@@ -419,7 +419,10 @@ const EachStu = () => {
                         <tbody>
                           {feedetails &&
                             feedetails?.detailFee?.map((fee) => (
-                              <tr className="border-b bg-white">
+                              <tr
+                                key={fee?._id || fee?.feeMonth}
+                                className="border-b bg-white"
+                              >
                                 <th
                                   scope="row"
                                   className="whitespace-nowrap px-6 py-4 font-medium text-gray-900"
@@ -531,14 +534,14 @@ const EachStu = () => {
                     </div>
 
                     <div>
-                      <div class="relative overflow-x-auto mt-8">
-                        <table class="w-full text-sm text-center rtl:text-center text-gray-500 ">
-                          <thead class="text-xs text-gray-700 uppercase bg-gray-50  ">
+                      <div className="relative overflow-x-auto mt-8">
+                        <table className="w-full text-sm text-center rtl:text-center text-gray-500 ">
+                          <thead className="text-xs text-gray-700 uppercase bg-gray-50  ">
                             <tr>
-                              <th scope="col" class="px-6 py-3">
+                              <th scope="col" className="px-6 py-3">
                                 Date
                               </th>
-                              <th scope="col" class="px-6 py-3">
+                              <th scope="col" className="px-6 py-3">
                                 Number Of Classes Taken
                               </th>
                             </tr>
@@ -547,10 +550,13 @@ const EachStu = () => {
                             {attendenceDetails &&
                               attendenceDetails.detailAttendance.map(
                                 (attendance) => (
-                                  <tr class="bg-white border-b  ">
+                                  <tr
+                                    key={attendance?._id || attendance?.classDate}
+                                    className="bg-white border-b  "
+                                  >
                                     <th
                                       scope="row"
-                                      class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
+                                      className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap "
                                     >
                                       {attendance.classDate}
                                     </th>
@@ -568,7 +574,7 @@ const EachStu = () => {
                 )
               }
 
-              <div class="my-1 "></div>
+              <div className="my-1 "></div>
             </div>
           </div>
         </div>

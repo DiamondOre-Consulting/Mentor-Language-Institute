@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useApi } from "../../api/useApi";
 import io from "socket.io-client";
 import { useJwt } from "react-jwt";
@@ -15,46 +15,48 @@ const ChatBoxTeacher = ({
 }) => {
   const navigate = useNavigate();
   const { get } = useApi();
-  const { decodedToken, isExpired } = useJwt(localStorage.getItem("token"));
+  const { decodedToken } = useJwt(localStorage.getItem("token"));
   const userId = decodedToken ? decodedToken.userId : null;
+  const token = localStorage.getItem("token");
+  const socketUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:7000";
   const socket = useMemo(
-    () => io("http://mentor-language-institute-backend-hbyk.onrender.com"),
-    []
+    () =>
+      io(socketUrl, {
+        auth: {
+          token,
+        },
+      }),
+    [socketUrl, token]
   );
   const [chatHistory, setChatHistory] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const chatContainerRef = useRef(null);
   const [isUserAtBottom, setIsUserAtBottom] = useState(true);
 
-  const token = localStorage.getItem("token");
-
   useEffect(() => {
-    if (!token || isExpired) {
-      navigate("/student-login");
+    if (!localStorage.getItem("token")) {
+      navigate("/login?role=teacher");
     }
-  }, [token, isExpired, navigate]);
-
-  if (!token) {
-    navigate("/student-login");
-    return;
-  }
+  }, [navigate]);
 
   useEffect(() => {
     // Fetch chat history for the selected student
+    if (!student?._id) return;
     fetchChatHistory(student._id);
 
     // Listen for incoming messages
-    socket.on("receive-message", (message) => {
+    const handleReceive = (message) => {
       // Add the new message to the chat history
       // console.log("This is msg: ", message);
-      setChatHistory((chatHistory) => [...chatHistory, message]);
-    });
+      setChatHistory((prev) => [...prev, message]);
+    };
+    socket.on("receive-message", handleReceive);
 
     // Clean up the socket listener when the component unmounts
     return () => {
-      socket.off("receive-message");
+      socket.off("receive-message", handleReceive);
     };
-  }, [student]);
+  }, [student?._id, socket]);
 
   useEffect(() => {
     if (isUserAtBottom && chatContainerRef.current) {
@@ -99,8 +101,8 @@ const ChatBoxTeacher = ({
       // Emit the new message to the server
       // console.log(newMessage);
       socket.emit("send-message", {
-        senderId: userId,
         receiverId: student._id,
+        receiverRole: "student",
         message: newMessage,
       });
       // Clear the input field
@@ -125,13 +127,13 @@ const ChatBoxTeacher = ({
           isOpen ? "w-full h-full" : "hidden"
         }`}
       >
-        <div class="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center w-full fixed bg-white md:static">
-          <div class="flex items-center bg-white">
+        <div className="py-2 px-3 bg-grey-lighter flex flex-row justify-between items-center w-full fixed bg-white md:static">
+          <div className="flex items-center bg-white">
             <div>
-              <img class="w-10 h-10 rounded-full" src={userimg2} />
+              <img className="w-10 h-10 rounded-full" src={userimg2} />
             </div>
-            <div class="ml-4">
-              <p class="text-grey-darkest">
+            <div className="ml-4">
+              <p className="text-grey-darkest">
                 <h1> {student.name}</h1>
               </p>
             </div>
@@ -150,12 +152,12 @@ const ChatBoxTeacher = ({
         </div>
 
         <div
-          class="flex-1 overflow-auto bg-gray-200 "
+          className="flex-1 overflow-auto bg-gray-200 "
           ref={chatContainerRef}
           onScroll={handleScroll}
           style={{ paddingTop: "80px" }}
         >
-          <div class="py-2 px-3 mb-16 md:mb-0">
+          <div className="py-2 px-3 mb-16 md:mb-0">
             {chatHistory.map((message) => (
               <div
                 key={message._id}
@@ -168,8 +170,8 @@ const ChatBoxTeacher = ({
                     message.senderId === userId ? "bg-green-100" : "bg-gray-100"
                   }`}
                 >
-                  <p class="text-md mt-1">{message.message}</p>
-                  <p class="text-right  text-grey-dark mt-1">
+                  <p className="text-md mt-1">{message.message}</p>
+                  <p className="text-right  text-grey-dark mt-1">
                     <span className="text-xs">
                       {new Date(message.createdAt).toLocaleDateString()}{" "}
                     </span>
@@ -184,10 +186,10 @@ const ChatBoxTeacher = ({
           </div>
         </div>
 
-        <div class="bg-white px-4 py-4 flex fixed bottom-0 bg-white w-full md:relative  md:w-auto items-center ">
-          <div class="flex-1 mx-4">
+        <div className="bg-white px-4 py-4 flex fixed bottom-0 bg-white w-full md:relative  md:w-auto items-center ">
+          <div className="flex-1 mx-4">
             <input
-              class="w-full border rounded px-2 py-2"
+              className="w-full border rounded px-2 py-2"
               type="text"
               value={newMessage}
               onKeyPress={handleKeyPress}

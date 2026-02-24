@@ -44,7 +44,7 @@ const Studenthero = ({ naming }) => {
     <section className="relative mb-10 overflow-hidden rounded-3xl bg-gradient-to-br from-orange-100/80 via-white to-amber-100/60 p-5 shadow-lg sm:p-8 md:mb-14">
       <div className="grid items-center gap-7 lg:grid-cols-12">
         <div className="lg:col-span-7">
-          <span className="inline-flex w-fit items-center rounded-full border border-orange-200 bg-white/80 px-3 py-1 text-xs font-semibold text-orange-700">
+          <span className="inline-flex w-fit items-center rounded-full border mb-2 border-orange-200 bg-white/80 px-3 py-1 text-xs font-semibold text-orange-700">
             Student Portal
           </span>
           {userName && (

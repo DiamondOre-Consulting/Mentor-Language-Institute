@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import { useState } from "react";
 import Navbar from "./Navbar";
 import { Link, useNavigate } from "react-router-dom";
 import { useApi } from "../../../api/useApi";
@@ -73,10 +73,10 @@ const StudentLogin = () => {
           />
         </div>
       )}
-      <div className="mt-20 md:mt-12 flex items-center justify-center">
-        <div className="bg-white  shadow-xl rounded-lg px-8 py-6 w-3/4 md:max-w-md">
+      <div className="mt-20 md:mt-12 flex items-center justify-center px-4">
+        <div className="bg-white shadow-xl rounded-lg px-8 py-6 w-full max-w-md">
           <h1 className="text-3xl font-bold text-center mb-1 ">LOGIN</h1>
-          <div className="md:w-96 h-0.5 rounded bg-orange-500 mb-4"></div>
+          <div className="h-0.5 w-full max-w-xs sm:max-w-sm md:max-w-md rounded bg-orange-500 mb-4"></div>
           <form onSubmit={handleStudentLogin} className="">
             <div className="mb-4">
               <label
@@ -136,7 +136,7 @@ const StudentLogin = () => {
             <div className="flex items-center justify-between mb-4">
               <Link
                 to="/"
-                class="text-xs mt-2 text-indigo-500 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="text-xs mt-2 text-indigo-500 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 Create Account
               </Link>

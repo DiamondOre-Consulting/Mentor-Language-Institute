@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import logo from "../../assets/logo.png";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useJwt } from "react-jwt";
 import insta from "../../assets/instagram.png";
 import facebook from "../../assets/facebook.png";
 import whatsapp from "../../assets/whatsapp.png";
@@ -12,6 +11,7 @@ import { ScrollArea } from "../../components/ui/scroll-area";
 import { Separator } from "../../components/ui/separator";
 import { Sheet, SheetContent, SheetTrigger } from "../../components/ui/sheet";
 import { useApi } from "../../api/useApi";
+import { logout } from "../../api/auth";
 
 const navItems = [
   { label: "Home", to: "/admin-dashboard/", icon: "home" },
@@ -153,14 +153,6 @@ const AdminSidebar = () => {
   const [requestCount, setRequestCount] = useState(0);
   const { get } = useApi();
 
-  const { decodedToken } = useJwt(localStorage.getItem("token"));
-  const token = localStorage.getItem("token");
-
-  if (!token) {
-    navigate("/login");
-    return;
-  }
-
   const handleWhatsAppChat = () => {
     const phoneNumber = "8130265929";
     const url = `https://api.whatsapp.com/send?phone=${encodeURIComponent(
@@ -173,14 +165,8 @@ const AdminSidebar = () => {
     const currentToken = localStorage.getItem("token");
     if (!currentToken) {
       navigate("/login");
-    } else {
-      const tokenExpiration = decodedToken ? decodedToken.exp * 1000 : 0;
-      if (tokenExpiration && tokenExpiration < Date.now()) {
-        localStorage.removeItem("token");
-        navigate("/login");
-      }
     }
-  }, [decodedToken, navigate]);
+  }, [navigate]);
 
   useEffect(() => {
     setIsMenuOpen(false);
@@ -216,8 +202,7 @@ const AdminSidebar = () => {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    window.location.href = "/login";
+    logout("/login");
   };
 
   const SidebarContent = () => (

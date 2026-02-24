@@ -9,6 +9,10 @@ const classSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  classSchedule: {
+    type: String,
+    default: "",
+  },
   grade: {
     type: String,
     default: "",

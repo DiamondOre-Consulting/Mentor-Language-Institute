@@ -5,14 +5,25 @@ import Classes from "./Models/Classes.js";
 import Fee from "./Models/Fee.js";
 import { normalizeFeeMonth } from "./utils/fee.js";
 
-const accountSid = "ACb5f88acc0551052e9301d3334b6dffc8";
-const authToken = "5f266d8cfdab46c27bc43ce71256f1ff";
-// const client = require('twilio')(accountSid, authToken);
-const client = twilio(accountSid, authToken);
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const fromNumber = process.env.TWILIO_FROM_NUMBER;
+const defaultCountryCode = process.env.TWILIO_DEFAULT_COUNTRY_CODE || "+91";
+const client =
+  accountSid && authToken ? twilio(accountSid, authToken) : null;
 
 const feeReminderScheduler = () => {
-  cron.schedule("00 10 08 * *", async () => {
-    // 10 am IST is 4 am UTC
+  if (!client || !fromNumber) {
+    console.warn(
+      "Fee reminder scheduler is disabled. Missing Twilio configuration."
+    );
+    return;
+  }
+
+  cron.schedule(
+    "0 10 * * *",
+    async () => {
+      // 10 am IST is 4 am UTC
     try {
       const students = await Students.find({}, { password: 0 });
 
@@ -20,7 +31,10 @@ const feeReminderScheduler = () => {
       // const currentYear = new Date().getFullYear(); // Get current year
 
       for (const student of students) {
-        for (const fee of student.feeDetail) {
+        const feeIds = Array.isArray(student.feeDetail)
+          ? student.feeDetail
+          : [];
+        for (const fee of feeIds) {
           const oneFeeDetail = await Fee.findById({ _id: fee });
           if (oneFeeDetail.detailFee && Array.isArray(oneFeeDetail.detailFee)) {
             const detailFeeForCurrentMonth = oneFeeDetail.detailFee.find(
@@ -39,8 +53,8 @@ const feeReminderScheduler = () => {
               client.messages
                 .create({
                   body: messageMain,
-                  from: "+13343848072",
-                  to: `+91${phoneNumber}`,
+                  from: fromNumber,
+                  to: `${defaultCountryCode}${phoneNumber}`,
                 })
                 .then((message) => console.log(message.sid))
                 .catch((error) => console.error("Error sending SMS:", error));
@@ -57,7 +71,11 @@ const feeReminderScheduler = () => {
     } catch (error) {
       console.log("Something went wrong!!!", error);
     }
-  });
+    },
+    {
+      timezone: process.env.CRON_TIMEZONE || "Asia/Kolkata",
+    }
+  );
 };
 
 export default feeReminderScheduler;

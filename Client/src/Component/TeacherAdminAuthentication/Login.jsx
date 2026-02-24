@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../Studentcomponents/Stuauth/Navbar";
 import { useApi } from "../../api/useApi";
@@ -281,7 +281,6 @@ const Login = ({ defaultTab }) => {
                                   setShowPassword((prev) => !prev)
                                 }
                                 className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300    "
-                                required=""
                               />
                             </div>
                             <div className="ml-3 text-sm">
@@ -293,7 +292,7 @@ const Login = ({ defaultTab }) => {
                               </label>
                             </div>
                           </div>
-                          {/* <a href="#" class="text-sm font-medium text-primary-600 hover:underline ">Forgot password?</a> */}
+                          {/* <a href="#" className="text-sm font-medium text-primary-600 hover:underline ">Forgot password?</a> */}
                         </div>
                         <div className="w-full">
                           <button className="w-full p-2 text-white bg-orange-400 rounded-md">
@@ -399,7 +398,6 @@ const Login = ({ defaultTab }) => {
                                   setShowPassword((prev) => !prev)
                                 }
                                 className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300    "
-                                required=""
                               />
                             </div>
                             <div className="ml-3 text-sm">
@@ -411,7 +409,7 @@ const Login = ({ defaultTab }) => {
                               </label>
                             </div>
                           </div>
-                          {/* <a href="#" class="text-sm font-medium text-primary-600 hover:underline ">Forgot password?</a> */}
+                          {/* <a href="#" className="text-sm font-medium text-primary-600 hover:underline ">Forgot password?</a> */}
                         </div>
                         <div className="w-full">
                           <button className="w-full p-2 text-white bg-orange-400 rounded-md">
@@ -522,7 +520,6 @@ const Login = ({ defaultTab }) => {
                                   setShowPassword((prev) => !prev)
                                 }
                                 className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300    "
-                                required=""
                               />
                             </div>
                             <div className="ml-3 text-sm">
