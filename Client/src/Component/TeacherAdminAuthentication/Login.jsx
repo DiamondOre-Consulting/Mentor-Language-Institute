@@ -194,7 +194,7 @@ const Login = ({ defaultTab }) => {
       )}
       <div className="mt-6 sm:mt-10 px-4 sm:px-6">
         <div className="flex flex-col items-center justify-center">
-          <div className="py-4 w-full">
+          <div className="sm:py-4 w-full">
             {activeTab === 0 && (
               <section className="relative">
                 <div className="flex flex-col items-center justify-center mt-10 sm:mt-16">

@@ -10,7 +10,7 @@ const Navbar = () => {
 
   return (
     <div className='flex justify-between items-center pt-4 px-10'>
-      <img src={logo} alt="Logo" className='w-32' />
+      <img src={logo} alt="Logo" className='w-20 sm:w-32' />
       <ul className='relative'>
         <li>
           <button
@@ -26,19 +26,19 @@ const Navbar = () => {
           {isDropdownOpen && (
             <div
               id="dropdownNavbar"
-              className="absolute right-0 mt-2 bg-white text-base z-10 list-none divide-y divide-gray-100 rounded shadow w-54"
+              className="absolute right-0 -left-30 mt-2 bg-white text-base z-10 list-none divide-y divide-gray-100 rounded shadow w-54"
             >
               <ul className="py-1" aria-labelledby="dropdownLargeButton">
                 <li>
-                  <a href="#" className="text-sm hover:bg-gray-100 text-gray-700 block px-4 py-2">+91-9999466159</a>
+                  <a href="#" className="text-xs sm:text-sm hover:bg-gray-100 text-gray-700 block px-4 py-2">+91-9999466159</a>
                 </li>
 
               </ul>
               <div className="py-1">
-                <a href="#" className="text-sm hover:bg-gray-100 text-gray-700 text-wrap block px-4 py-2">mentor.languageclasses@gmail.com</a>
+                <a href="#" className="text-xs sm:text-sm hover:bg-gray-100 text-gray-700 text-wrap block px-4 py-2">mentor.languageclasses@gmail.com</a>
               </div>
               <div className="py-1">
-                <a href="#" className="text-sm hover:bg-gray-100 text-gray-700 text-wrap block px-4 py-2">F-4/1, Golf Course Rd, Block F, DLF Phase 1, Sector 26A, Gurugram, Haryana-122002</a>
+                <a href="#" className="text-xs sm:text-sm hover:bg-gray-100 text-gray-700 text-wrap block px-4 py-2">F-4/1, Golf Course Rd, Block F, DLF Phase 1, Sector 26A, Gurugram, Haryana-122002</a>
               </div>
             </div>
           )}

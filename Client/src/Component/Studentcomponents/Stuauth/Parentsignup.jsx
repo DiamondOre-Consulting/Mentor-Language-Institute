@@ -177,7 +177,7 @@ const Parentlog = () => {
                   </select>
                 </div>
 
-                <div className="flex items-center justify-between w-full p-2 border border-gray-500 rounded-md">
+                <div className="flex flex-col sm:flex-row items-center justify-between w-full p-2 border border-gray-500 rounded-md">
                   <label
                     className="block mb-2 text-sm font-medium text-gray-900 "
                     htmlFor="dob"

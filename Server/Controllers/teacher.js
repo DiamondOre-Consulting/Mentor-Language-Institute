@@ -75,23 +75,7 @@ router.post("/login-teacher", async (req, res) => {
 // GET ALL STUDENTS (teacher access)
 router.get("/all-students", TeacherAuthenticateToken, async (req, res) => {
   try {
-    const assignments = await ClassTeachers.find({
-      teacherId: req.user.userId,
-      active: true,
-    }).select("classId");
-    const classIds = assignments.map((a) => a.classId);
-
-    const classes = await Classes.find({ _id: { $in: classIds } }).populate({
-      path: "enrolledStudents",
-      model: "Student",
-      select: "-password",
-      populate: {
-        path: "attendanceDetail",
-        model: "Attendance",
-      },
-    });
-
-    const allStudents = classes.flatMap((cls) => cls.enrolledStudents || []);
+    const allStudents = await Students.find({}, { password: 0 });
     return res.status(200).json(allStudents);
   } catch (error) {
     console.log("Something went wrong!!! ");

@@ -151,26 +151,14 @@ const EnrolledCourses = () => {
                       Mentor: {getPrimaryTeacherName(course)}
                     </p>
                   </CardHeader>
-                  <CardContent className="relative z-10 mt-auto flex flex-1 flex-col gap-3 pt-0">
-                    <div className="flex-1 space-y-2 text-xs text-muted-foreground">
+                  <CardContent className="relative z-10 flex flex-col gap-3 pt-0">
+                    <div className="space-y-2 text-xs text-muted-foreground">                      
                       <div className="flex items-center justify-between rounded-lg border border-border/80 bg-white/70 px-3 py-2">
                         <p className="text-[10px] uppercase tracking-wide">Hours</p>
                         <p className="font-semibold text-slate-700">
                           {course.totalHours
                             ? `${course.totalHours} hrs`
                             : "TBA"}
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-between rounded-lg border border-border/80 bg-white/70 px-3 py-2">
-                        <p className="text-[10px] uppercase tracking-wide">Next</p>
-                        <p className="font-semibold text-slate-700">
-                          {getNextSession(course)?.label || "TBA"}
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-between rounded-lg border border-border/80 bg-white/70 px-3 py-2">
-                        <p className="text-[10px] uppercase tracking-wide">Branch</p>
-                        <p className="font-semibold text-slate-700">
-                          {course.branch || "Main"}
                         </p>
                       </div>
                       <div className="flex items-center justify-between rounded-lg border border-border/80 bg-white/70 px-3 py-2">

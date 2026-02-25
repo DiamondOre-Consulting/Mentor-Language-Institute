@@ -42,7 +42,7 @@ const StudentNav = ({ student, onProfileUpdated }) => {
                 Help
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-72 sm:w-80">
+            <DropdownMenuContent align="end" className="w-72 sm:w-80 ml-3 sm:ml-0">
               <DropdownMenuLabel>Need support?</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <div className="space-y-1 px-2 py-1.5 text-sm text-muted-foreground">
