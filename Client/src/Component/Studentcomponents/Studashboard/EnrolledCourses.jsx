@@ -11,43 +11,9 @@ import {
   CardTitle,
 } from "../../../components/ui/card";
 
-const formatDate = (value) => {
-  if (!value) return "TBA";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "TBA";
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-};
-
 const getPrimaryTeacherName = (course) => {
   const teacher = course?.teachers?.find((item) => item?.teacherId)?.teacherId;
   return teacher?.name || "To be assigned";
-};
-
-const getNextSession = (course) => {
-  const sessions = (course?.dailyClasses || [])
-    .map((entry) => {
-      const date = new Date(entry.classDate);
-      if (Number.isNaN(date.getTime())) return null;
-      return { ...entry, date };
-    })
-    .filter(Boolean)
-    .sort((a, b) => a.date - b.date);
-
-  if (sessions.length === 0) return null;
-
-  const today = new Date();
-  const nextSession =
-    sessions.find((session) => session.date >= today) ||
-    sessions[sessions.length - 1];
-
-  return {
-    label: formatDate(nextSession.classDate),
-    count: nextSession.numberOfClasses,
-  };
 };
 
 const EnrolledCourses = () => {

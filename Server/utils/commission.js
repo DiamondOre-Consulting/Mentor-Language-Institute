@@ -2,6 +2,8 @@ import Attendance from "../Models/Attendance.js";
 import Classes from "../Models/Classes.js";
 import ClassTeachers from "../Models/ClassTeachers.js";
 import Commission from "../Models/Commission.js";
+import { normalizeAttendanceMode } from "./attendanceMode.js";
+import { resolveCommissionRate } from "./classTeachers.js";
 
 const MONTH_NAMES = [
   "January",
@@ -47,7 +49,9 @@ const parseClassDate = (dateStr = "") => {
 };
 
 const calculateMonthlyCommission = async (classId, teacherId) => {
-  const classDoc = await Classes.findById(classId).select("classTitle");
+  const classDoc = await Classes.findById(classId).select(
+    "classTitle dailyClasses"
+  );
 
   if (!classDoc) {
     return { classDoc: null, commissions: [] };
@@ -62,35 +66,106 @@ const calculateMonthlyCommission = async (classId, teacherId) => {
     return { classDoc, commissions: [] };
   }
 
-  const rate = Number.isFinite(Number(assignment.commissionRate))
-    ? Number(assignment.commissionRate)
-    : Number(process.env.DEFAULT_COMMISSION_RATE || 1);
-
-  const attendanceDocs = await Attendance.find({ classId }).select(
-    "detailAttendance"
-  );
+  const offlineRate = resolveCommissionRate(assignment, "offline");
+  const onlineRate = resolveCommissionRate(assignment, "online");
 
   const totalsByMonth = new Map();
+  const sessions = (classDoc.dailyClasses || []).filter((entry) => {
+    if (!entry?.classDate) return false;
+    if (teacherId && entry.teacherId) {
+      return String(entry.teacherId) === String(teacherId);
+    }
+    return true;
+  });
 
-  for (const attendance of attendanceDocs) {
-    for (const detail of attendance.detailAttendance || []) {
-      if (teacherId && String(detail.teacherId) !== String(teacherId)) continue;
-      const parsed = parseClassDate(detail.classDate);
-      if (!parsed) continue;
+  const hasHeldFlag = sessions.some(
+    (entry) => typeof entry.isHeld === "boolean"
+  );
+  const heldSessions = hasHeldFlag
+    ? sessions.filter((entry) => entry.isHeld === true)
+    : sessions;
 
-      const units = Number(detail.numberOfClassesTaken || 0);
+  if (heldSessions.length > 0) {
+    const sessionMax = new Map();
+    for (const session of heldSessions) {
+      const mode = normalizeAttendanceMode(session.mode) || "offline";
+      const key = `${session.classDate}|${mode}`;
+      const units = Number(session.numberOfClasses || 0);
       if (!Number.isFinite(units) || units <= 0) continue;
+      const existing = sessionMax.get(key) || 0;
+      if (units > existing) {
+        sessionMax.set(key, units);
+      }
+    }
 
-      const key = `${parsed.monthName}|${parsed.year}`;
-      totalsByMonth.set(key, (totalsByMonth.get(key) || 0) + units);
+    for (const [key, units] of sessionMax.entries()) {
+      const [classDate, mode] = key.split("|");
+      const parsed = parseClassDate(classDate);
+      if (!parsed) continue;
+      const monthKey = `${parsed.monthName}|${parsed.year}`;
+      const bucket = totalsByMonth.get(monthKey) || {
+        offlineUnits: 0,
+        onlineUnits: 0,
+      };
+      if (mode === "online") {
+        bucket.onlineUnits += units;
+      } else {
+        bucket.offlineUnits += units;
+      }
+      totalsByMonth.set(monthKey, bucket);
+    }
+  } else {
+    const attendanceDocs = await Attendance.find({ classId }).select(
+      "detailAttendance"
+    );
+    const sessionMax = new Map();
+
+    for (const attendance of attendanceDocs) {
+      for (const detail of attendance.detailAttendance || []) {
+        if (teacherId && String(detail.teacherId) !== String(teacherId)) continue;
+        const parsed = parseClassDate(detail.classDate);
+        if (!parsed) continue;
+
+        const units = Number(detail.numberOfClassesTaken || 0);
+        if (!Number.isFinite(units) || units <= 0) continue;
+
+        const mode = normalizeAttendanceMode(detail.mode) || "offline";
+        const key = `${detail.classDate}|${mode}`;
+        const existing = sessionMax.get(key) || 0;
+        if (units > existing) {
+          sessionMax.set(key, units);
+        }
+      }
+    }
+
+    for (const [key, units] of sessionMax.entries()) {
+      const [classDate, mode] = key.split("|");
+      const parsed = parseClassDate(classDate);
+      if (!parsed) continue;
+      const monthKey = `${parsed.monthName}|${parsed.year}`;
+      const bucket = totalsByMonth.get(monthKey) || {
+        offlineUnits: 0,
+        onlineUnits: 0,
+      };
+      if (mode === "online") {
+        bucket.onlineUnits += units;
+      } else {
+        bucket.offlineUnits += units;
+      }
+      totalsByMonth.set(monthKey, bucket);
     }
   }
 
   const commissions = [];
 
-  for (const [key, totalUnits] of totalsByMonth.entries()) {
+  for (const [key, totals] of totalsByMonth.entries()) {
     const [monthName, year] = key.split("|");
-    const commissionAmount = Number((totalUnits * rate).toFixed(2));
+    const offlineUnits = Number(totals?.offlineUnits || 0);
+    const onlineUnits = Number(totals?.onlineUnits || 0);
+    const totalUnits = offlineUnits + onlineUnits;
+    const offlineCommission = Number((offlineUnits * offlineRate).toFixed(2));
+    const onlineCommission = Number((onlineUnits * onlineRate).toFixed(2));
+    const commissionAmount = Number((offlineCommission + onlineCommission).toFixed(2));
 
     const doc = await Commission.findOneAndUpdate(
       {
@@ -102,7 +177,11 @@ const calculateMonthlyCommission = async (classId, teacherId) => {
       {
         $set: {
           classesTaken: String(totalUnits),
+          offlineClassesTaken: String(offlineUnits),
+          onlineClassesTaken: String(onlineUnits),
           commission: commissionAmount,
+          offlineCommission,
+          onlineCommission,
         },
         $setOnInsert: {
           paid: null,

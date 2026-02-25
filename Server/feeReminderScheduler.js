@@ -36,6 +36,9 @@ const feeReminderScheduler = () => {
           : [];
         for (const fee of feeIds) {
           const oneFeeDetail = await Fee.findById({ _id: fee });
+          if (!oneFeeDetail) {
+            continue;
+          }
           if (oneFeeDetail.detailFee && Array.isArray(oneFeeDetail.detailFee)) {
             const detailFeeForCurrentMonth = oneFeeDetail.detailFee.find(
               (detail) => normalizeFeeMonth(detail.feeMonth) === currentMonth
@@ -47,7 +50,11 @@ const feeReminderScheduler = () => {
                 _id: oneFeeDetail.classId,
               });
               const phoneNumber = student.phone;
-              const messageMain = `Reminder: Your fee of ${singleClass.classTitle} is due for this month. Please pay as soon as possible.`;
+              if (!phoneNumber) {
+                continue;
+              }
+              const classTitle = singleClass?.classTitle || "your class";
+              const messageMain = `Reminder: Your fee of ${classTitle} is due for this month. Please pay as soon as possible.`;
               //
               // res.status(200).json(message)
               client.messages

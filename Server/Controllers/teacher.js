@@ -13,9 +13,10 @@ import Fee from "../Models/Fee.js";
 import Invoice from "../Models/Invoice.js";
 import ClassAccessStatus from "../Models/ClassAccessStatus.js";
 import ExcelJS from "exceljs";
-import { calculateMonthlyCommission, sortCommissions } from "../utils/commission.js";
+import { calculateMonthlyCommission, parseClassDate, sortCommissions } from "../utils/commission.js";
 import { isGradeMatch, resolveCourseGrade, toGradeLabel } from "../utils/grade.js";
 import { getAssignmentForTeacher } from "../utils/classTeachers.js";
+import { normalizeAttendanceMode } from "../utils/attendanceMode.js";
 import { generateInvoiceNumber, generateInvoicePdfBuffer } from "../services/invoiceService.js";
 import { sendEmail } from "../services/emailService.js";
 import {
@@ -38,9 +39,43 @@ dotenv.config();
 
 const router = express.Router();
 
+const normalizeNumericInput = (value, { allowZero = false } = {}) => {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return null;
+  if (allowZero) {
+    if (num < 0) return null;
+  } else if (num <= 0) {
+    return null;
+  }
+  return num;
+};
+
+const teacherHasStudentAccess = async (teacherId, studentId) => {
+  const directAccess = await Teachers.exists({
+    _id: teacherId,
+    myStudents: studentId,
+  });
+  if (directAccess) return true;
+
+  const assignments = await ClassTeachers.find({
+    teacherId,
+    active: true,
+  }).select("classId");
+  if (!assignments.length) return false;
+
+  const classIds = assignments.map((assignment) => assignment.classId);
+  return !!(await Students.exists({
+    _id: studentId,
+    classes: { $in: classIds },
+  }));
+};
+
 router.post("/login-teacher", async (req, res) => {
   try {
     const { phone, password } = req.body;
+    if (!phone || !password) {
+      return res.status(400).json({ message: "Phone and password are required." });
+    }
 
     const user = await Teachers.findOne({ phone });
     if (!user) {
@@ -52,9 +87,10 @@ router.post("/login-teacher", async (req, res) => {
       return res.status(402).json({ message: "Invalid password" });
     }
 
+    const normalizedRole = String(user.role || "teacher").toLowerCase();
     const accessPayload = {
       userId: user._id,
-      role: user.role || "teacher",
+      role: normalizedRole,
       name: user.name,
       phone: user.phone,
     };
@@ -738,6 +774,13 @@ router.get("/my-classes/:id", TeacherAuthenticateToken, async (req, res) => {
       return res.status(405).json({ message: "Class not found" });
     }
 
+    const normalizedDailyClasses = (getClassById.dailyClasses || []).filter(
+      (entry) =>
+        !entry.teacherId ||
+        String(entry.teacherId) === String(req.user.userId)
+    );
+    getClassById.dailyClasses = normalizedDailyClasses;
+
     res.status(200).json(getClassById);
   } catch (error) {
     console.log("Something went wrong!!! ");
@@ -749,7 +792,25 @@ router.get("/my-classes/:id", TeacherAuthenticateToken, async (req, res) => {
 router.post("/schedule-class/:id",TeacherAuthenticateToken,async (req, res) => {
     try {
       const { id } = req.params;
-      const { date, numberOfClasses } = req.body;
+      const { date, numberOfClasses, mode } = req.body;
+      const normalizedMode = normalizeAttendanceMode(mode) || "offline";
+      if (!date || numberOfClasses === undefined || numberOfClasses === null) {
+        return res.status(400).json({
+          message: "date and numberOfClasses are required.",
+        });
+      }
+      const parsedDate = parseClassDate(date);
+      if (!parsedDate) {
+        return res.status(400).json({
+          message: "Invalid date format. Use DD-MM-YYYY or YYYY-MM-DD.",
+        });
+      }
+      const normalizedClasses = Number(numberOfClasses);
+      if (!Number.isFinite(normalizedClasses) || normalizedClasses < 0) {
+        return res.status(400).json({
+          message: "numberOfClasses must be a valid non-negative number.",
+        });
+      }
 
       const assignment = await ClassTeachers.findOne({
         classId: id,
@@ -760,15 +821,31 @@ router.post("/schedule-class/:id",TeacherAuthenticateToken,async (req, res) => {
         return res.status(403).json({ message: "Unauthorized." });
       }
 
-      const addNewClass = await Classes.findByIdAndUpdate(
-        { _id: id },
-        {
-          $push: {
-            dailyClasses: { classDate: date, numberOfClasses: numberOfClasses },
-          },
-        },
-        { new: true }
+      const classDoc = await Classes.findById(id);
+      if (!classDoc) {
+        return res.status(404).json({ message: "Class not found." });
+      }
+
+      const existingSessionIndex = (classDoc.dailyClasses || []).findIndex(
+        (entry) =>
+          entry.classDate === date &&
+          String(entry.teacherId) === String(req.user.userId) &&
+          (normalizeAttendanceMode(entry.mode) || "offline") === normalizedMode
       );
+
+      if (existingSessionIndex >= 0) {
+        classDoc.dailyClasses[existingSessionIndex].numberOfClasses =
+          String(normalizedClasses);
+      } else {
+        classDoc.dailyClasses.push({
+          classDate: date,
+          numberOfClasses: String(normalizedClasses),
+          teacherId: req.user.userId,
+          mode: normalizedMode,
+        });
+      }
+
+      const addNewClass = await classDoc.save();
 
       const studentIds = addNewClass?.enrolledStudents || [];
 
@@ -784,7 +861,7 @@ router.post("/schedule-class/:id",TeacherAuthenticateToken,async (req, res) => {
           await Attendance.findByIdAndUpdate(
             existingAttendance._id,
             {
-              $push: { detailAttendance: { classDate: date, teacherId: req.user.userId } },
+              $push: { detailAttendance: { classDate: date, teacherId: req.user.userId, mode: normalizedMode } },
             },
             { new: true }
           );
@@ -795,7 +872,7 @@ router.post("/schedule-class/:id",TeacherAuthenticateToken,async (req, res) => {
           const newAttendance = new Attendance({
             classId: id,
             studentId,
-            detailAttendance: [{ classDate: date, teacherId: req.user.userId }],
+            detailAttendance: [{ classDate: date, teacherId: req.user.userId, mode: normalizedMode }],
           });
 
           await newAttendance.save();
@@ -852,7 +929,11 @@ router.put("/update-class-hours/:id",TeacherAuthenticateToken,async (req, res) =
 router.get("/attendance/:id", TeacherAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { attendanceDate } = req.query;
+    const { attendanceDate, mode } = req.query;
+    const normalizedMode = normalizeAttendanceMode(mode);
+    if (mode && !normalizedMode) {
+      return res.status(400).json({ message: "Invalid mode. Use online or offline." });
+    }
 
     const attendances = await Attendance.find({
       classId: id,
@@ -865,9 +946,14 @@ router.get("/attendance/:id", TeacherAuthenticateToken, async (req, res) => {
 
     const filtered = attendances.map((doc) => {
       const detailAttendance = (doc.detailAttendance || []).filter(
-        (entry) =>
-          entry.classDate === attendanceDate &&
-          String(entry.teacherId) === String(req.user.userId)
+        (entry) => {
+          const dateMatch = entry.classDate === attendanceDate;
+          const teacherMatch =
+            String(entry.teacherId) === String(req.user.userId);
+          const entryMode = normalizeAttendanceMode(entry.mode) || "offline";
+          const modeMatch = normalizedMode ? entryMode === normalizedMode : true;
+          return dateMatch && teacherMatch && modeMatch;
+        }
       );
       return {
         ...doc.toObject(),
@@ -887,43 +973,55 @@ router.put("/update-attendance/:id1/:id2",
   async (req, res) => {
     try {
       const { id1, id2 } = req.params;
-      const { attendanceDate, numberOfClassesTaken } = req.body;
+      const { attendanceDate, numberOfClassesTaken, mode } = req.body;
+      const normalizedMode = normalizeAttendanceMode(mode);
+      if (mode !== undefined && normalizedMode === null) {
+        return res.status(400).json({ message: "Invalid mode. Use online or offline." });
+      }
 
       const assignment = await getAssignmentForTeacher(id1, req.user.userId);
       if (!assignment) {
         return res.status(403).json({ message: "Unauthorized." });
       }
-      const rate = Number.isFinite(Number(assignment?.commissionRate))
-        ? Number(assignment.commissionRate)
-        : Number(process.env.DEFAULT_COMMISSION_RATE || 1);
-      const units = Number(numberOfClassesTaken || 0);
-      const computedCommission = Number.isFinite(units)
-        ? Number((units * rate).toFixed(2))
-        : 0;
+      const attendanceDoc = await Attendance.findOne({
+        classId: id1,
+        studentId: id2,
+        "detailAttendance.classDate": attendanceDate,
+        "detailAttendance.teacherId": req.user.userId,
+      });
 
-      const updatedAttendance = await Attendance.findOneAndUpdate(
-        {
-          classId: id1,
-          studentId: id2,
-          "detailAttendance.classDate": attendanceDate,
-          "detailAttendance.teacherId": req.user.userId,
-        },
-        {
-          $set: {
-            "detailAttendance.$.numberOfClassesTaken": numberOfClassesTaken,
-            "detailAttendance.$.commission": computedCommission,
-          },
-        },
-        { new: true }
-      );
-
-      if (!updatedAttendance) {
+      if (!attendanceDoc) {
         return res
           .status(404)
           .json({ message: "Attendance record not found." });
       }
 
-      res.status(200).json(updatedAttendance);
+      const detail = (attendanceDoc.detailAttendance || []).find((entry) => {
+        const dateMatch = entry.classDate === attendanceDate;
+        const teacherMatch =
+          String(entry.teacherId) === String(req.user.userId);
+        const entryMode = normalizeAttendanceMode(entry.mode);
+        const modeMatch = normalizedMode ? (entryMode ? entryMode === normalizedMode : true) : true;
+        return dateMatch && teacherMatch && modeMatch;
+      });
+
+      if (!detail) {
+        return res
+          .status(404)
+          .json({ message: "Attendance entry not found." });
+      }
+
+      const modeToUse =
+        normalizedMode || normalizeAttendanceMode(detail.mode) || "offline";
+      detail.numberOfClassesTaken = numberOfClassesTaken;
+      detail.commission = 0;
+      if (normalizedMode || !detail.mode) {
+        detail.mode = modeToUse;
+      }
+
+      await attendanceDoc.save();
+
+      res.status(200).json(attendanceDoc);
     } catch (error) {
       console.log("Something went wrong!!! ", error);
       res.status(500).json(error);
@@ -938,7 +1036,16 @@ router.post(
   async (req, res) => {
     try {
       const { classId } = req.params;
-      const { classDate, numberOfClasses, presentStudentIds = [] } = req.body;
+      const {
+        classDate,
+        numberOfClasses,
+        presentStudentIds = [],
+        mode,
+      } = req.body;
+      const normalizedMode = normalizeAttendanceMode(mode);
+      if (!normalizedMode) {
+        return res.status(400).json({ message: "Mode is required (online/offline)." });
+      }
 
       if (!classDate || numberOfClasses === undefined) {
         return res
@@ -964,12 +1071,11 @@ router.post(
         (presentStudentIds || []).map((id) => String(id))
       );
 
-      const rate = Number.isFinite(Number(assignment?.commissionRate))
-        ? Number(assignment.commissionRate)
-        : Number(process.env.DEFAULT_COMMISSION_RATE || 1);
-
       const existingSessionIndex = (classDoc.dailyClasses || []).findIndex(
-        (d) => d.classDate === classDate
+        (d) =>
+          d.classDate === classDate &&
+          String(d.teacherId) === String(req.user.userId) &&
+          (normalizeAttendanceMode(d.mode) || "offline") === normalizedMode
       );
 
       if (existingSessionIndex >= 0) {
@@ -979,6 +1085,8 @@ router.post(
         classDoc.dailyClasses.push({
           classDate,
           numberOfClasses: String(normalizedHours),
+          teacherId: req.user.userId,
+          mode: normalizedMode,
         });
       }
 
@@ -989,7 +1097,7 @@ router.post(
       for (const studentId of enrolledStudents) {
         const isPresent = presentSet.has(String(studentId));
         const units = isPresent ? normalizedHours : 0;
-        const computedCommission = Number((units * rate).toFixed(2));
+        const computedCommission = 0;
 
         const attendanceDoc = await Attendance.findOne({
           classId,
@@ -1006,6 +1114,7 @@ router.post(
                 numberOfClassesTaken: units,
                 commission: computedCommission,
                 teacherId: req.user.userId,
+                mode: normalizedMode,
               },
             ],
           });
@@ -1017,20 +1126,27 @@ router.post(
         }
 
         const detail = attendanceDoc.detailAttendance?.find(
-          (entry) =>
-            entry.classDate === classDate &&
-            String(entry.teacherId) === String(req.user.userId)
+          (entry) => {
+            const dateMatch = entry.classDate === classDate;
+            const teacherMatch =
+              String(entry.teacherId) === String(req.user.userId);
+            const entryMode = normalizeAttendanceMode(entry.mode);
+            const modeMatch = entryMode ? entryMode === normalizedMode : true;
+            return dateMatch && teacherMatch && modeMatch;
+          }
         );
 
         if (detail) {
           detail.numberOfClassesTaken = units;
           detail.commission = computedCommission;
+          detail.mode = normalizedMode;
         } else {
           attendanceDoc.detailAttendance.push({
             classDate,
             numberOfClassesTaken: units,
             commission: computedCommission,
             teacherId: req.user.userId,
+            mode: normalizedMode,
           });
         }
 
@@ -1158,56 +1274,18 @@ router.delete(
   }
 );
 
-// CHATTING LIST OF STUDENTS
-router.get("/chat-all-students", TeacherAuthenticateToken, async (req, res) => {
-  try {
-    const { userId } = req.user;
-
-    const assignments = await ClassTeachers.find({
-      teacherId: userId,
-      active: true,
-    }).select("classId");
-    const myClasses = assignments.map((a) => a.classId);
-
-    let allStudentIds = [];
-
-    await Promise.all(
-      myClasses.map(async (eachClass) => {
-        const currentClass = await Classes.findById(eachClass);
-        currentClass.enrolledStudents.forEach((studentId) => {
-          const stringId = String(studentId).trim().toLowerCase();
-          if (!allStudentIds.includes(stringId)) {
-            allStudentIds.push(stringId);
-          }
-        });
-      })
-    );
-
-    const objectIds = allStudentIds.map(
-      (id) => new mongoose.Types.ObjectId(id)
-    );
-
-    const students = await Promise.all(
-      objectIds.map((id) => Students.findById(id, { password: 0 }))
-    );
-
-    const filteredStudents = students.filter((student) => student !== null);
-
-    res.status(201).json(filteredStudents);
-  } catch (error) {
-    console.log("Something went wrong!!! ", error);
-    res.status(500).json(error);
-  }
-});
-
 router.post(
   "/mark-attendance/:studentId/:classId",
   TeacherAuthenticateToken,
   async (req, res) => {
   try {
     const { studentId } = req.params;
-    const { classDate, numberOfClassesTaken, grade } = req.body;
-    if (!classDate || !numberOfClassesTaken) {
+    const { classDate, numberOfClassesTaken, grade, mode } = req.body;
+    const normalizedMode = normalizeAttendanceMode(mode);
+    if (!normalizedMode) {
+      return res.status(400).json({ message: "Mode is required (online/offline)." });
+    }
+    if (!classDate || numberOfClassesTaken === undefined || numberOfClassesTaken === null) {
       return res
         .status(400)
         .json({ message: "Missing classDate or numberOfClassesTaken." });
@@ -1230,13 +1308,7 @@ router.post(
     if (!assignment) {
       return res.status(403).json({ message: "Unauthorized." });
     }
-    const rate = Number.isFinite(Number(assignment?.commissionRate))
-      ? Number(assignment.commissionRate)
-      : Number(process.env.DEFAULT_COMMISSION_RATE || 1);
-    const units = Number(numberOfClassesTaken || 0);
-    const computedCommission = Number.isFinite(units)
-      ? Number((units * rate).toFixed(2))
-      : 0;
+    const computedCommission = 0;
 
     let attendance = await Attendance.findOne({ studentId, classId });
 
@@ -1252,6 +1324,7 @@ router.post(
             grade,
             commission: computedCommission,
             teacherId: req.user.userId,
+            mode: normalizedMode,
           },
         ],
       });
@@ -1262,6 +1335,7 @@ router.post(
         grade,
         commission: computedCommission,
         teacherId: req.user.userId,
+        mode: normalizedMode,
       });
     }
 
@@ -1287,7 +1361,11 @@ router.put(
   async (req, res) => {
     try {
       const { studentId, attendanceEntryId , classId } = req.params;
-      const { classDate, numberOfClassesTaken, grade } = req.body;
+      const { classDate, numberOfClassesTaken, grade, mode } = req.body;
+      const normalizedMode = normalizeAttendanceMode(mode);
+      if (mode !== undefined && normalizedMode === null) {
+        return res.status(400).json({ message: "Invalid mode. Use online or offline." });
+      }
 
       // Find attendance doc by studentId (and other filters if you want)
       const attendance = await Attendance.findOne({ studentId , classId });
@@ -1312,23 +1390,28 @@ router.put(
       if (!assignment) {
         return res.status(403).json({ message: "Unauthorized." });
       }
-      const rate = Number.isFinite(Number(assignment?.commissionRate))
-        ? Number(assignment.commissionRate)
-        : Number(process.env.DEFAULT_COMMISSION_RATE || 1);
-      const units = Number(numberOfClassesTaken || 0);
-      const computedCommission = Number.isFinite(units)
-        ? Number((units * rate).toFixed(2))
-        : 0;
+      const modeToUse =
+        normalizedMode || normalizeAttendanceMode(attendanceEntry.mode) || "offline";
+      const computedCommission = 0;
 
       // Update fields
       if (String(attendanceEntry.teacherId) !== String(req.user.userId)) {
         return res.status(403).json({ message: "Unauthorized." });
       }
 
-      attendanceEntry.classDate = classDate; // optional, if you want to update date
-      attendanceEntry.numberOfClassesTaken = numberOfClassesTaken;
-      attendanceEntry.grade = grade;
+      if (classDate) {
+        attendanceEntry.classDate = classDate;
+      }
+      if (numberOfClassesTaken !== undefined && numberOfClassesTaken !== null) {
+        attendanceEntry.numberOfClassesTaken = numberOfClassesTaken;
+      }
+      if (grade !== undefined) {
+        attendanceEntry.grade = grade;
+      }
       attendanceEntry.commission = computedCommission;
+      if (normalizedMode || !attendanceEntry.mode) {
+        attendanceEntry.mode = modeToUse;
+      }
 
       await attendance.save();
 
@@ -1389,14 +1472,26 @@ router.get(
       })
     );
 
+    const filterYear = year ? Number(year) : null;
+    const filterMonth = month ? Number(month) : null;
+    if (year && !Number.isInteger(filterYear)) {
+      return res.status(400).json({ message: "Invalid year filter." });
+    }
+    if (month && (!Number.isInteger(filterMonth) || filterMonth < 1 || filterMonth > 12)) {
+      return res.status(400).json({ message: "Invalid month filter." });
+    }
+
     const filteredAttendance = detailAttendance
       .filter((entry) => String(entry.teacherId) === String(req.user.userId))
       .filter((entry) => {
-      const [day, entryMonth, entryYear] = entry.classDate.split("-");
-      if (year && entryYear !== year) return false;
-      if (month && entryMonth !== month) return false;
-      return true;
-    });
+        const parsed = parseClassDate(entry?.classDate);
+        if (!parsed) {
+          return !filterYear && !filterMonth;
+        }
+        if (filterYear && parsed.year !== filterYear) return false;
+        if (filterMonth && parsed.month !== filterMonth) return false;
+        return true;
+      });
 
     const totalClasses = filteredAttendance.reduce((sum, entry) => {
       return sum + parseFloat(entry.numberOfClassesTaken || 0);
@@ -1526,13 +1621,25 @@ router.put(
     try {
       const { id } = req.params;
       const { status } = req.body;
+      const normalizedStatus =
+        status === true || status === "true"
+          ? true
+          : status === false || status === "false"
+          ? false
+          : null;
+
+      if (normalizedStatus === null) {
+        return res.status(400).json({
+          message: "Invalid status. Use true or false.",
+        });
+      }
 
       await Students.findByIdAndUpdate(
         {
           _id: id,
         },
         {
-          $set: { deactivated: status },
+          $set: { deactivated: normalizedStatus },
         }
       );
 

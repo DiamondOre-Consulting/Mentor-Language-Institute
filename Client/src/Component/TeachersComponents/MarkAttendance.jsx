@@ -12,6 +12,7 @@ const MarkAttendance = () => {
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
   );
+  const [classMode, setClassMode] = useState("offline");
   const [loading, setLoading] = useState(false);
   const [marking, setMarking] = useState(false);
 
@@ -70,6 +71,7 @@ const MarkAttendance = () => {
       },
       params: {
         attendanceDate: formatDate(dateValue),
+        mode: classMode,
       },
     }).unwrap();
     return response.status === 200 ? response.data : [];
@@ -88,7 +90,9 @@ const MarkAttendance = () => {
       setStudentList(students);
 
       const session = classDetails?.dailyClasses?.find(
-        (d) => d.classDate === formatDate(selectedDate)
+        (d) =>
+          d.classDate === formatDate(selectedDate) &&
+          (d.mode || "offline") === classMode
       );
       if (session?.numberOfClasses) {
         setClassHours(session.numberOfClasses);
@@ -98,7 +102,9 @@ const MarkAttendance = () => {
         (attendanceRows || [])
           .filter((row) => {
             const detail = row.detailAttendance?.find(
-              (d) => d.classDate === formatDate(selectedDate)
+              (d) =>
+                d.classDate === formatDate(selectedDate) &&
+                (d.mode || "offline") === classMode
             );
             return detail && Number(detail.numberOfClassesTaken || 0) > 0;
           })
@@ -131,7 +137,7 @@ const MarkAttendance = () => {
 
   useEffect(() => {
     loadAttendanceSheet();
-  }, [selectedClassId, selectedDate]);
+  }, [selectedClassId, selectedDate, classMode]);
 
   const setAllPresence = (isPresent) => {
     const updated = {};
@@ -158,6 +164,7 @@ const MarkAttendance = () => {
           classDate: formatDate(selectedDate),
           numberOfClasses: classHours,
           presentStudentIds,
+          mode: classMode,
         },
         headers: {
           Authorization: `Bearer ${token}`,
@@ -206,6 +213,16 @@ const MarkAttendance = () => {
             onChange={(e) => setSelectedDate(e.target.value)}
             className="border px-3 py-1 rounded-md w-full sm:w-auto"
           />
+
+          <label className="text-lg font-medium">Mode:</label>
+          <select
+            value={classMode}
+            onChange={(e) => setClassMode(e.target.value)}
+            className="border px-3 py-2 rounded-md w-full sm:w-auto"
+          >
+            <option value="offline">Offline</option>
+            <option value="online">Online</option>
+          </select>
 
           <label className="text-lg font-medium">Hours:</label>
           <input

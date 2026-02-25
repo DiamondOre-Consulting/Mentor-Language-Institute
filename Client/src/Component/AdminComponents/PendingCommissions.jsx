@@ -235,7 +235,13 @@ const PendingCommissions = () => {
                   Classes
                 </th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                  Commission
+                  Offline Commission
+                </th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                  Online Commission
+                </th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                  Total Commission
                 </th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">
                   Status
@@ -271,7 +277,13 @@ const PendingCommissions = () => {
                       {item.classesTaken}
                     </td>
                     <td className="px-4 py-3 text-slate-700">
-                      {item.commission}
+                      {item.offlineCommission ?? 0}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {item.onlineCommission ?? 0}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {item.commission ?? 0}
                     </td>
                     <td className="px-4 py-3">
                       <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-600">
@@ -304,7 +316,7 @@ const PendingCommissions = () => {
                 <tr>
                   <td
                     className="px-4 py-8 text-center text-slate-500"
-                    colSpan={8}
+                    colSpan={10}
                   >
                     No pending commissions found.
                   </td>

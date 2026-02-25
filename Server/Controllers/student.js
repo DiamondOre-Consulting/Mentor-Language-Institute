@@ -91,6 +91,9 @@ router.post("/signup", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { userName, password } = req.body;
+    if (!userName || !password) {
+      return res.status(400).json({ message: "Username and password are required." });
+    }
 
     const user = await Students.findOne({ userName });
     if (!user) {
@@ -551,55 +554,5 @@ router.get(
     }
   }
 );
-
-// CHATTING LIST OF TEACHERS
-router.get("/chat-all-teachers", StudentAuthenticateToken, async (req, res) => {
-  try {
-    const { userId } = req.user;
-    let allTeachersIds = [];
-    let allTeachers = [];
-
-    const currentUser = await Students.findById({ _id: userId });
-
-    // if(currentUser.messages.length == 0) {
-    const myClasses = currentUser.classes;
-
-    await Promise.all(
-      myClasses.map(async (eachClass) => {
-        const assignments = await ClassTeachers.find({
-          classId: eachClass,
-          active: true,
-        }).select("teacherId");
-        assignments.forEach((assignment) => {
-          let teacherId = assignment.teacherId;
-          if (typeof teacherId !== "string") {
-            teacherId = String(teacherId);
-          }
-          teacherId = teacherId.trim().toLowerCase();
-          allTeachersIds.push(teacherId);
-        });
-      })
-    );
-    allTeachersIds = [...new Set(allTeachersIds)];
-    // Convert strings to ObjectIds
-    const objectIds = allTeachersIds.map(
-      (id) => new mongoose.Types.ObjectId(id)
-    );
-
-    await Promise.all(
-      objectIds.map(async (eachId) => {
-        const eachTeacher = await Teachers.findById({ _id: eachId }, { password: 0 });
-        allTeachers.push(eachTeacher);
-      })
-    );
-
-    res.status(201).json(allTeachers);
-
-    // }
-  } catch (error) {
-    console.log("Something went wrong!!! ", error);
-    res.status(500).json(error);
-  }
-});
 
 export default router;

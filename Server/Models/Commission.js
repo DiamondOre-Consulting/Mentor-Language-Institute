@@ -23,7 +23,23 @@ const commissionSchema = new mongoose.Schema({
         type: String,
         default: "0"
     },
+    offlineClassesTaken: {
+        type: String,
+        default: "0"
+    },
+    onlineClassesTaken: {
+        type: String,
+        default: "0"
+    },
     commission: {
+        type: Number,
+        default: 0
+    },
+    offlineCommission: {
+        type: Number,
+        default: 0
+    },
+    onlineCommission: {
         type: Number,
         default: 0
     },

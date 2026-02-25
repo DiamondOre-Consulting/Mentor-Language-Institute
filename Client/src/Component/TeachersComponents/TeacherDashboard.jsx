@@ -4,7 +4,6 @@ import TeacherHome from "./TeacherHome";
 import TeacherProfile from "./TeacherProfile";
 import TeacherAllStudentEachCourse from "./TeacherAllStudentEachCourse";
 import { useNavigate } from "react-router-dom";
-import ChatTeacher from "../../Pages/Teacherpages/ChatTeacher";
 import Error from "..//Studentcomponents/Stuauth/Error";
 import TeacherAddStudent from "./TeacherAddStudent";
 import TeacherAllStudents from "./TeacherAllStudents";
@@ -29,7 +28,6 @@ const TeacherDashboard = ({ teacherData }) => {
           <Routes>
             <Route index element={<TeacherHome teacherData={teacherData} />} />
             <Route path="mark-attendance" element={<MarkAttendance />} />
-            <Route path="teacher/chat/*" element={<ChatTeacher />} />
             <Route
               path="myaccount"
               element={<TeacherProfile teacherData={teacherData} />}

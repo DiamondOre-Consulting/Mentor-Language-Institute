@@ -29,6 +29,11 @@ const attendanceSchema = new mongoose.Schema({
           type: mongoose.Schema.Types.ObjectId,
           ref: "Teacher",
         },
+        mode: {
+          type: String,
+          enum: ["online", "offline"],
+          default: "offline",
+        },
         grade: {
           type: String,
           // required: true,

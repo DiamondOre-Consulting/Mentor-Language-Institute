@@ -24,7 +24,7 @@ const TeacherAllStudents = () => {
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [showPopup, setShowPopup] = useState(false);
-  const [status, setStatus] = useState(null);
+  const [status, setStatus] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [setuId, setStuId] = useState(null);
   const [stuname, setStuName] = useState("");
@@ -322,6 +322,10 @@ const TeacherAllStudents = () => {
     e.preventDefault();
 
     try {
+      if (status !== "true" && status !== "false") {
+        setPopupMessage("Please select a valid status.");
+        return;
+      }
       const token = localStorage.getItem("token");
       if (!token) {
         navigate("/login");
@@ -348,6 +352,7 @@ const TeacherAllStudents = () => {
           fetchStudentsForMyCourse(selectedMyCourseId);
         }
         setShowPopup(false);
+        setStatus("");
       }
     } catch (error) {
       console.error("Error deactivating account:", error);
@@ -408,7 +413,7 @@ const TeacherAllStudents = () => {
   return (
     <>
       <div className="space-y-6">
-        <div className="rounded-2xl border border-orange-100 bg-gradient-to-r from-white to-orange-50 p-5 shadow-sm">
+        <div className="rounded-2xl border mx-1 border-orange-100 bg-gradient-to-r from-white to-orange-50 p-5 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-slate-800">All Students</h1>
@@ -487,7 +492,7 @@ const TeacherAllStudents = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 mx-1 xl:grid-cols-3">
           {filteredStudents.map((student) => (
             <div
               key={student._id}
@@ -724,8 +729,11 @@ const TeacherAllStudents = () => {
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
                     className="w-full"
+                    required
                   >
-                    <option>Select Status</option>
+                    <option value="" disabled>
+                      Select Status
+                    </option>
                     <option value="false">Activate Account</option>
                     <option value="true">Deactivate Account</option>
                   </select>

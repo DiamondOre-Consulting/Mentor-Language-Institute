@@ -15,6 +15,14 @@ const classTeacherSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  offlineCommissionRate: {
+    type: Number,
+    default: 0,
+  },
+  onlineCommissionRate: {
+    type: Number,
+    default: 0,
+  },
   active: {
     type: Boolean,
     default: true,

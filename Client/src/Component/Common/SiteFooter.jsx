@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import logo from "../../assets/logo.png";
 import insta from "../../assets/instagram.png";
 import facebook from "../../assets/facebook.png";
@@ -12,7 +12,6 @@ const SiteFooter = () => {
   const hideOn = [
     "/admin-dashboard",
     "/teacher-dashboard",
-    "/student/chat",
   ];
   const shouldHide = hideOn.some((prefix) => location.pathname.startsWith(prefix));
 

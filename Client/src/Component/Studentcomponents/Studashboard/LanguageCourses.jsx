@@ -235,7 +235,6 @@ const LanguageCourses = () => {
 
   const CourseCard = ({ course }) => {
     const schedule = getScheduleSummary(course);
-    const nextSession = schedule.upcoming?.[0];
 
     return (
       <Card className="group relative flex h-full min-h-[14rem] flex-col overflow-hidden rounded-xl border border-orange-100/70 bg-white/95 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-md">

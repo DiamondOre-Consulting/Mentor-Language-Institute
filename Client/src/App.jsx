@@ -11,7 +11,6 @@ import Teachermain from './Pages/Teacherpages/Teachermain'
 import Error from './Component/Studentcomponents/Stuauth/Error'
 // import Chat from './Pages/Chat'
 
-import ChatStudent from './Pages/Studentpages/ChatStudent'
 import UserVerify from './Component/Auth/ProtectedRoute'
 import SiteFooter from './Component/Common/SiteFooter'
 
@@ -43,7 +42,6 @@ function App() {
             <Route element={<UserVerify routeName="students" />}>
               <Route path='/main-dashboard' element={<Maindash />} />
               <Route path='/student-each-course/:id' element={<StudentEachcourses />} />
-              <Route path='/student/chat/*' element={<ChatStudent />} />
             </Route>
             <Route element={<UserVerify routeName="admin-confi" />}>
               <Route path='/admin-dashboard/*' element={<Admin />} />

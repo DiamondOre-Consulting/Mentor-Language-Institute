@@ -266,15 +266,7 @@ const EachTeacherClassStudentAttendance = () => {
                       )
                   : 0;
 
-                const teachercommission = studentAttendanceDetails
-                  ? studentAttendanceDetails.detailAttendance
-                      .filter((details) => details.classDate === selectedDate)
-                      .reduce(
-                        (totalCommission, detail) =>
-                          totalCommission + detail.commission,
-                        0
-                      )
-                  : 0;
+                const teachercommission = "-";
 
                 return (
                   <tr key={student?._id} className="bg-white border-b ">
@@ -322,11 +314,20 @@ const EachTeacherClassStudentAttendance = () => {
                   Year
                 </th>
                 <th scope="col" className="px-6 py-3">
-                  Classes Taken
+                  Offline Classes
                 </th>
 
                 <th scope="col" className="px-6 py-3">
-                  commission
+                  Online Classes
+                </th>
+                <th scope="col" className="px-6 py-3">
+                  Offline Commission
+                </th>
+                <th scope="col" className="px-6 py-3">
+                  Online Commission
+                </th>
+                <th scope="col" className="px-6 py-3">
+                  Total Commission
                 </th>
                 <th scope="col" className="px-6 py-3">
                   paid
@@ -348,10 +349,19 @@ const EachTeacherClassStudentAttendance = () => {
                     </td>
                     <td className="px-6 py-4 text-center">{commission.year}</td>
                     <td className="px-6 py-4 text-center">
-                      {commission.classesTaken}
+                      {commission.offlineClassesTaken ?? 0}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      {commission.commission}
+                      {commission.onlineClassesTaken ?? 0}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {commission.offlineCommission ?? 0}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {commission.onlineCommission ?? 0}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {commission.commission ?? 0}
                     </td>
                     <td
                       className={`px-6 py-4 text-center ${

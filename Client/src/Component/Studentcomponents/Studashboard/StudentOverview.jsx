@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { useApi } from "../../../api/useApi";
 import { Button } from "../../../components/ui/button";
 import {
@@ -358,9 +357,6 @@ const StudentOverview = ({ student }) => {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button asChild size="sm" className="hidden">
-                <Link to="/student/chat">Chat with Mentor</Link>
-              </Button>
               <div className="flex flex-wrap gap-2 pt-2">
                 <Button asChild size="sm" variant="outline" className="h-8 px-3 text-[11px]">
                   <a href="#courses">Browse Courses</a>

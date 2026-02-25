@@ -22,6 +22,7 @@ const TeacherAllStudentEachCourse = () => {
   const [selectedStudentName, setSelectedStudentName] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [numberOfClasses, setNumberOfClasses] = useState("");
+  const [attendanceMode, setAttendanceMode] = useState("offline");
   const [selectedstudentId, setSelectedStudentId] = useState(null);
   const [numberOfClassesTaken, setNumberOfClassesTaken] = useState("");
   const [studentDetails, setStudentsDetails] = useState([]);
@@ -95,6 +96,7 @@ const TeacherAllStudentEachCourse = () => {
         },
         params: {
           attendanceDate: selectedDate, // Pass attendanceDate as a query parameter
+          mode: attendanceMode,
         },
       }).unwrap();
 
@@ -128,7 +130,7 @@ const TeacherAllStudentEachCourse = () => {
   useEffect(() => {
     // Call fetchAttendanceDetails when selectedDate or selectedClassId changes
     fetchAttendanceDetails();
-  }, [selectedDate, selectedClassId]);
+  }, [selectedDate, selectedClassId, attendanceMode]);
 
   const handleFetchStudentDetails = (studentId, studentName) => {
     setSelectedStudentName(studentName);
@@ -142,14 +144,25 @@ const TeacherAllStudentEachCourse = () => {
 
   const handleDateChange = (event) => {
     const selectedDate = event.target.value;
-    const selectedDateObj = courseDetails.dailyClasses.find(
-      (date) => date.classDate === selectedDate
+    setSelectedDate(selectedDate);
+  };
+
+  useEffect(() => {
+    if (!selectedDate) {
+      setNumberOfClasses("");
+      return;
+    }
+    const selectedDateObj = courseDetails.dailyClasses?.find(
+      (date) =>
+        date.classDate === selectedDate &&
+        (date.mode || "offline") === attendanceMode
     );
     if (selectedDateObj) {
-      setSelectedDate(selectedDate);
       setNumberOfClasses(selectedDateObj.numberOfClasses);
+    } else {
+      setNumberOfClasses("");
     }
-  };
+  }, [selectedDate, attendanceMode, courseDetails.dailyClasses]);
 
   // update atendence
 
@@ -170,6 +183,7 @@ const TeacherAllStudentEachCourse = () => {
         data: {
           attendanceDate: selectedDate,
           numberOfClassesTaken,
+          mode: attendanceMode,
         },
         headers: {
           Authorization: `Bearer ${token}`,
@@ -300,6 +314,15 @@ const TeacherAllStudentEachCourse = () => {
             </select>
           </div>
           <div>
+            <select
+              value={attendanceMode}
+              onChange={(e) => setAttendanceMode(e.target.value)}
+            >
+              <option value="offline">Offline</option>
+              <option value="online">Online</option>
+            </select>
+          </div>
+          <div>
             {selectedDate && (
               <div>
                 <div
@@ -336,7 +359,11 @@ const TeacherAllStudentEachCourse = () => {
                 );
                 const studentTotalClassesTaken = studentAttendanceDetails
                   ? studentAttendanceDetails.detailAttendance
-                      .filter((detail) => detail.classDate === selectedDate) // Filter by selected date
+                      .filter(
+                        (detail) =>
+                          detail.classDate === selectedDate &&
+                          (detail.mode || "offline") === attendanceMode
+                      )
                       .reduce(
                         (total, detail) =>
                           total + (+detail.numberOfClassesTaken || 0),
@@ -345,15 +372,7 @@ const TeacherAllStudentEachCourse = () => {
                   : 0;
                 const showEditIcon = studentTotalClassesTaken === 0;
 
-                const teachercommission = studentAttendanceDetails
-                  ? studentAttendanceDetails.detailAttendance
-                      .filter((details) => details.classDate === selectedDate)
-                      .reduce(
-                        (totalCommission, detail) =>
-                          totalCommission + detail.commission,
-                        0
-                      )
-                  : 0;
+                const teachercommission = "-";
 
                 return (
                   <tr key={student._id} className="bg-white border-b ">
@@ -456,10 +475,19 @@ const TeacherAllStudentEachCourse = () => {
                   Year
                 </th>
                 <th scope="col" className="px-6 py-3">
-                  Classes Taken
+                  Offline Classes
                 </th>
                 <th scope="col" className="px-6 py-3">
-                  commission
+                  Online Classes
+                </th>
+                <th scope="col" className="px-6 py-3">
+                  Offline Commission
+                </th>
+                <th scope="col" className="px-6 py-3">
+                  Online Commission
+                </th>
+                <th scope="col" className="px-6 py-3">
+                  Total Commission
                 </th>
 
                 <th scope="col" className="px-6 py-3">
@@ -485,10 +513,19 @@ const TeacherAllStudentEachCourse = () => {
                       {commission.year}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      {commission.classesTaken}
+                      {commission.offlineClassesTaken ?? 0}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      {commission.commission}
+                      {commission.onlineClassesTaken ?? 0}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {commission.offlineCommission ?? 0}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {commission.onlineCommission ?? 0}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {commission.commission ?? 0}
                     </td>
                     <td
                       className={`px-6 py-4 text-center ${

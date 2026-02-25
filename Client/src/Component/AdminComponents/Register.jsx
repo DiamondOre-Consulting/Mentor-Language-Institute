@@ -18,7 +18,8 @@ const Register = () => {
   const [allCourses, setAllCourses] = useState([]);
   const [courseId, setCourseId] = useState("");
   const [teacherCourseId, setTeacherCourseId] = useState("");
-  const [teacherCommissionRate, setTeacherCommissionRate] = useState("");
+  const [teacherOfflineCommissionRate, setTeacherOfflineCommissionRate] = useState("");
+  const [teacherOnlineCommissionRate, setTeacherOnlineCommissionRate] = useState("");
   const { get, post, put } = useApi();
 
   const handleTabClick = (index) => {
@@ -184,8 +185,14 @@ const Register = () => {
         password,
         dob,
         courseId: teacherCourseId || "",
-        commissionRate:
-          teacherCommissionRate === "" ? 0 : Number(teacherCommissionRate),
+        offlineCommissionRate:
+          teacherOfflineCommissionRate === ""
+            ? 0
+            : Number(teacherOfflineCommissionRate),
+        onlineCommissionRate:
+          teacherOnlineCommissionRate === ""
+            ? 0
+            : Number(teacherOnlineCommissionRate),
       };
 
       const response = await post({
@@ -203,7 +210,8 @@ const Register = () => {
         setPassword("");
         setdob("");
         setTeacherCourseId("");
-        setTeacherCommissionRate("");
+        setTeacherOfflineCommissionRate("");
+        setTeacherOnlineCommissionRate("");
       } else if (response.status === 409) {
         setPopupMessage("Teacher already registered");
       } else {
@@ -776,13 +784,25 @@ const Register = () => {
                       </div>
                       <div>
                         <label className="block mb-2 text-sm font-medium text-gray-900">
-                          Commission (Optional)
+                          Offline Commission (Optional)
                         </label>
                         <input
                           type="number"
-                          value={teacherCommissionRate}
-                          onChange={(e) => setTeacherCommissionRate(e.target.value)}
-                          placeholder="Enter commission rate"
+                          value={teacherOfflineCommissionRate}
+                          onChange={(e) => setTeacherOfflineCommissionRate(e.target.value)}
+                          placeholder="Enter offline rate"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg w-full p-2.5"
+                        />
+                      </div>
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-900">
+                          Online Commission (Optional)
+                        </label>
+                        <input
+                          type="number"
+                          value={teacherOnlineCommissionRate}
+                          onChange={(e) => setTeacherOnlineCommissionRate(e.target.value)}
+                          placeholder="Enter online rate"
                           className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg w-full p-2.5"
                         />
                       </div>

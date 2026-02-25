@@ -12,7 +12,7 @@ import ClassAccessStatus from "../Models/ClassAccessStatus.js";
 import Attendance from "../Models/Attendance.js";
 import Commission from "../Models/Commission.js";
 import ClassTeachers from "../Models/ClassTeachers.js";
-import { calculateMonthlyCommission, sortCommissions } from "../utils/commission.js";
+import { calculateMonthlyCommission, parseClassDate, sortCommissions } from "../utils/commission.js";
 import { deriveGradeFromText, isGradeMatch, resolveCourseGrade, toGradeLabel } from "../utils/grade.js";
 import { normalizeCommissionRateValue } from "../utils/classTeachers.js";
 import { generateInvoiceNumber, generateInvoicePdfBuffer } from "../services/invoiceService.js";
@@ -32,10 +32,37 @@ import {
   normalizeEmail,
 } from "../utils/studentValidation.js";
 import ExcelJS from "exceljs";
-import Teacher from "../Models/Teachers.js"
 dotenv.config();
 
 const router = express.Router();
+
+const normalizeRateInput = (value) => {
+  if (value === undefined || value === null || value === "") return null;
+  return normalizeCommissionRateValue(value);
+};
+
+const buildCommissionRates = ({
+  commissionRate,
+  offlineCommissionRate,
+  onlineCommissionRate,
+}) => {
+  const legacy = normalizeRateInput(commissionRate);
+  const offline = normalizeRateInput(offlineCommissionRate);
+  const online = normalizeRateInput(onlineCommissionRate);
+
+  const resolvedOffline = offline ?? legacy ?? 0;
+  const resolvedOnline = online ?? legacy ?? 0;
+  const resolvedLegacy = legacy ?? resolvedOffline ?? resolvedOnline ?? 0;
+
+  return {
+    legacy,
+    offline,
+    online,
+    resolvedLegacy,
+    resolvedOffline,
+    resolvedOnline,
+  };
+};
 
 const ensureAdminSignupAllowed = async (req, res, next) => {
   try {
@@ -66,9 +93,13 @@ const ensureAdminSignupAllowed = async (req, res, next) => {
 router.post("/signup-admin", ensureAdminSignupAllowed, async (req, res) => {
   try {
     const { name, phone, password } = req.body;
+    if (!name || !phone || !password) {
+      return res.status(400).json({
+        message: "Name, phone number, and password are required.",
+      });
+    }
 
     const adminuser = await Admin.findOne({ phone });
-    console.log(adminuser)
     if (adminuser) {
       return res.status(409).json({ message: "Admin user already exists" });
     }
@@ -98,6 +129,11 @@ router.post("/signup-admin", ensureAdminSignupAllowed, async (req, res) => {
 router.post("/login-admin", async (req, res) => {
   try {
     const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({
+        message: "Username and password are required.",
+      });
+    }
     const user = await Admin.findOne({ username });
     if (!user) {
       return res.status(401).json({ message: "Invalid username" });
@@ -244,28 +280,30 @@ router.put("/teacher-edit/:id", AdminAuthenticateToken, async (req, res) => {
     // Validate input fields (optional, depending on your requirements)
 
     // Find the student by ID
-    const teacher = await Teacher.findById(id);
+    const teacher = await Teachers.findById(id);
     if (!teacher) {
       return res.status(404).json({ message: "teacher not found." });
     }
 
     // Check if username already exists (excluding the current student)
-    const existingTeacher = await Teacher.findOne({ phone });
-    if (existingTeacher && existingTeacher._id.toString() !== id) {
-      return res.status(400).json({
-        message: "Teacher already taken. Please enter a unique phone number",
-      });
+    if (phone) {
+      const existingTeacher = await Teachers.findOne({ phone });
+      if (existingTeacher && existingTeacher._id.toString() !== id) {
+        return res.status(400).json({
+          message: "Teacher already taken. Please enter a unique phone number",
+        });
+      }
     }
 
 
     if (name) {
-      teacher.name = await name;
+      teacher.name = name;
     }
     if (phone) {
-      teacher.phone = await phone;
+      teacher.phone = phone;
     }
     if (dob) {
-      teacher.dob = await dob;
+      teacher.dob = dob;
     }
 
 
@@ -283,6 +321,8 @@ router.put("/teacher-edit/:id", AdminAuthenticateToken, async (req, res) => {
           classId: courseId,
           teacherId: teacher._id,
           commissionRate: 0,
+          offlineCommissionRate: 0,
+          onlineCommissionRate: 0,
         });
         await assignment.save();
       } else if (!existingAssignment.active) {
@@ -379,7 +419,7 @@ router.get("/class-teachers/:classId", AdminAuthenticateToken, async (req, res) 
 router.post("/class-teachers/:classId", AdminAuthenticateToken, async (req, res) => {
   try {
     const { classId } = req.params;
-    const { teacherId, commissionRate } = req.body;
+    const { teacherId, commissionRate, offlineCommissionRate, onlineCommissionRate } = req.body;
 
     if (!teacherId) {
       return res.status(400).json({ message: "Teacher is required." });
@@ -400,15 +440,35 @@ router.post("/class-teachers/:classId", AdminAuthenticateToken, async (req, res)
       if (!existing.active) {
         existing.active = true;
       }
-      existing.commissionRate = normalizeCommissionRateValue(commissionRate);
+      const rates = buildCommissionRates({
+        commissionRate,
+        offlineCommissionRate,
+        onlineCommissionRate,
+      });
+      if (rates.legacy !== null) {
+        existing.commissionRate = rates.resolvedLegacy;
+      }
+      if (rates.offline !== null || rates.legacy !== null) {
+        existing.offlineCommissionRate = rates.resolvedOffline;
+      }
+      if (rates.online !== null || rates.legacy !== null) {
+        existing.onlineCommissionRate = rates.resolvedOnline;
+      }
       await existing.save();
       return res.status(200).json(existing);
     }
 
+    const rates = buildCommissionRates({
+      commissionRate,
+      offlineCommissionRate,
+      onlineCommissionRate,
+    });
     const assignment = new ClassTeachers({
       classId,
       teacherId,
-      commissionRate: normalizeCommissionRateValue(commissionRate),
+      commissionRate: rates.resolvedLegacy,
+      offlineCommissionRate: rates.resolvedOffline,
+      onlineCommissionRate: rates.resolvedOnline,
     });
     await assignment.save();
     const populated = await assignment.populate({ path: "teacherId", select: "-password" });
@@ -422,15 +482,26 @@ router.post("/class-teachers/:classId", AdminAuthenticateToken, async (req, res)
 router.put("/class-teachers/:assignmentId", AdminAuthenticateToken, async (req, res) => {
   try {
     const { assignmentId } = req.params;
-    const { commissionRate, active } = req.body;
+    const { commissionRate, offlineCommissionRate, onlineCommissionRate, active } = req.body;
 
     const assignment = await ClassTeachers.findById(assignmentId);
     if (!assignment) {
       return res.status(404).json({ message: "Assignment not found." });
     }
 
-    if (commissionRate !== undefined) {
-      assignment.commissionRate = normalizeCommissionRateValue(commissionRate);
+    const rates = buildCommissionRates({
+      commissionRate,
+      offlineCommissionRate,
+      onlineCommissionRate,
+    });
+    if (rates.legacy !== null) {
+      assignment.commissionRate = rates.resolvedLegacy;
+    }
+    if (rates.offline !== null || rates.legacy !== null) {
+      assignment.offlineCommissionRate = rates.resolvedOffline;
+    }
+    if (rates.online !== null || rates.legacy !== null) {
+      assignment.onlineCommissionRate = rates.resolvedOnline;
     }
     if (active !== undefined) {
       assignment.active = Boolean(active);
@@ -465,7 +536,16 @@ router.post("/add-new-class", AdminAuthenticateToken, async (req, res) => {
   try {
     const { phone } = req.user;
     const branch = "Main";
-    const { classTitle, classSchedule, teacherId, totalHours, commissionRate, grade } = req.body;
+    const {
+      classTitle,
+      classSchedule,
+      teacherId,
+      totalHours,
+      commissionRate,
+      offlineCommissionRate,
+      onlineCommissionRate,
+      grade,
+    } = req.body;
 
     const admin = await Admin.findOne({ phone: phone });
 
@@ -494,14 +574,17 @@ router.post("/add-new-class", AdminAuthenticateToken, async (req, res) => {
       if (!teacher) {
         return res.status(404).json({ message: "Teacher not found." });
       }
-      const normalizedCommissionRate =
-        commissionRate === undefined || commissionRate === ""
-          ? 0
-          : normalizeCommissionRateValue(commissionRate);
+      const rates = buildCommissionRates({
+        commissionRate,
+        offlineCommissionRate,
+        onlineCommissionRate,
+      });
       assignment = new ClassTeachers({
         classId: newClass._id,
         teacherId,
-        commissionRate: normalizedCommissionRate,
+        commissionRate: rates.resolvedLegacy,
+        offlineCommissionRate: rates.resolvedOffline,
+        onlineCommissionRate: rates.resolvedOnline,
       });
       await assignment.save();
     }
@@ -627,7 +710,22 @@ router.get("/all-classes/:id", AdminAuthenticateToken, async (req, res) => {
 // ADD TEACHER
 router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
   try {
-    const { name, phone, password, dob, courseId, commissionRate } = req.body;
+    const {
+      name,
+      phone,
+      password,
+      dob,
+      courseId,
+      commissionRate,
+      offlineCommissionRate,
+      onlineCommissionRate,
+    } = req.body;
+
+    if (!name || !phone || !password) {
+      return res.status(400).json({
+        message: "Name, phone number, and password are required.",
+      });
+    }
 
     const teacher = await Teachers.exists({ phone });
 
@@ -646,31 +744,31 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
       }
     }
 
-    let newTeacher = null;
-    if (name && phone && password) {
-      newTeacher = new Teachers({
-        branch: "Main",
-        role: "Teacher",
-        name,
-        phone,
-        dob,
-        password: hashedPassword,
+    const newTeacher = new Teachers({
+      branch: "Main",
+      role: "teacher",
+      name,
+      phone,
+      dob,
+      password: hashedPassword,
+    });
+
+    await newTeacher.save();
+
+    if (courseId) {
+      const rates = buildCommissionRates({
+        commissionRate,
+        offlineCommissionRate,
+        onlineCommissionRate,
       });
-
-      await newTeacher.save();
-
-      if (courseId) {
-        const normalizedCommissionRate =
-          commissionRate === undefined || commissionRate === ""
-            ? 0
-            : normalizeCommissionRateValue(commissionRate);
-        const assignment = new ClassTeachers({
-          classId: courseId,
-          teacherId: newTeacher._id,
-          commissionRate: normalizedCommissionRate,
-        });
-        await assignment.save();
-      }
+      const assignment = new ClassTeachers({
+        classId: courseId,
+        teacherId: newTeacher._id,
+        commissionRate: rates.resolvedLegacy,
+        offlineCommissionRate: rates.resolvedOffline,
+        onlineCommissionRate: rates.resolvedOnline,
+      });
+      await assignment.save();
     }
     return res
       .status(200)
@@ -683,26 +781,31 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
 
 //All admin
 
-router.get("/all-admin", async (req, res) => {
+router.get("/all-admin", AdminAuthenticateToken, async (req, res) => {
   try {
     const admin = await Admin.find({}, { password: 0 });
     return res.status(200).json(admin);
   } catch (error) {
     console.log(error);
+    return res.status(500).json({ message: "Failed to fetch admins." });
   }
 });
 
-router.delete("/delete-admin/:id", async (req, res) => {
+router.delete("/delete-admin/:id", AdminAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const isAdminExist = await Admin.findByIdAndDelete(id);
+    if (!isAdminExist) {
+      return res.status(404).json({ message: "Admin not found." });
+    }
     return res.status(200).json({ message: "deleted successfully" });
   } catch (error) {
     console.log(error);
+    return res.status(500).json({ message: "Failed to delete admin." });
   }
 });
 
-router.put("/edit-admin/:id", async (req, res) => {
+router.put("/edit-admin/:id", AdminAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { name, phone, password } = req.body;
@@ -721,11 +824,11 @@ router.put("/edit-admin/:id", async (req, res) => {
       username,
     });
 
-    // if (isUserNameExist) {
-    //   return res.status(400).json({
-    //     message: "Username already taken. Please enter a unique username.",
-    //   });
-    // }
+    if (isUserNameExist) {
+      return res.status(400).json({
+        message: "Username already taken. Please enter a unique username.",
+      });
+    }
 
     if (name) admin.name = name;
     if (phone) admin.phone = phone;
@@ -2009,6 +2112,16 @@ router.get(
       if (!month || !year) {
         return res.status(400).send("Please provide both month and year.");
       }
+      const monthNumber = Number(month);
+      const yearNumber = Number(year);
+      if (
+        !Number.isInteger(monthNumber) ||
+        monthNumber < 1 ||
+        monthNumber > 12 ||
+        !Number.isInteger(yearNumber)
+      ) {
+        return res.status(400).send("Month and year must be valid numbers.");
+      }
 
       let allClasses = [];
 
@@ -2042,7 +2155,7 @@ router.get(
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet("Attendance Report");
 
-      const monthName = new Date(`${year}-${month}-01`).toLocaleString(
+      const monthName = new Date(yearNumber, monthNumber - 1, 1).toLocaleString(
         "default",
         { month: "long" }
       );
@@ -2096,8 +2209,9 @@ router.get(
             if (String(attendance.classId) !== String(course._id)) continue;
 
             for (const detail of attendance.detailAttendance || []) {
-              const [day, mon, yr] = detail.classDate.split("-").map(Number);
-              if (mon === parseInt(month) && yr === parseInt(year)) {
+              const parsed = parseClassDate(detail?.classDate);
+              if (!parsed) continue;
+              if (parsed.month === monthNumber && parsed.year === yearNumber) {
                 total += parseFloat(detail?.numberOfClassesTaken || 0);
               }
             }

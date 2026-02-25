@@ -47,6 +47,19 @@ const classSchema = new mongoose.Schema({
         numberOfClasses: {
           type: String,
         },
+        teacherId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Teacher",
+        },
+        mode: {
+          type: String,
+          enum: ["online", "offline"],
+          default: "offline",
+        },
+        isHeld: {
+          type: Boolean,
+          default: false,
+        },
       },
     ],
     default: [],

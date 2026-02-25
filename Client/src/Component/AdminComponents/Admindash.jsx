@@ -11,7 +11,6 @@ import Message from "./Message";
 import Eachcourse from "./Eachcourse";
 import EachTeacherClassStudentAttendance from "./EachTeacherClassStudentAttendance";
 import Error from "../Studentcomponents/Stuauth/Error";
-import ChatAdmin from "../../Pages/Adminpages/ChatAdmin";
 import EditStudent from "./EditStudent";
 import DownloadAttendanceReport from "./DownloadAttendanceReport";
 import AllAdmin from "./AllAdmin";
@@ -49,7 +48,6 @@ const Admindash = () => {
           <Route path="allcourses" element={<Allcourses />} />
           <Route path="allcourses/:id" element={<Eachcourse />} />
           <Route path="register" element={<Register />} />
-          <Route path="admin/chat/*" element={<ChatAdmin />} />
           <Route path="all-admin" element={<AllAdmin />} />
           <Route path="pending-payments" element={<PendingPayments />} />
           <Route path="pending-commissions" element={<PendingCommissions />} />

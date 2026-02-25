@@ -22,7 +22,7 @@ const buildAccessPayload = (user, role) => {
       name: user.name,
       username: user.username,
       phone: user.phone,
-      role: user.role || "admin",
+      role: String(user.role || "admin").toLowerCase(),
     };
   }
   if (role === "teacher") {
@@ -30,7 +30,7 @@ const buildAccessPayload = (user, role) => {
       userId: user._id,
       name: user.name,
       phone: user.phone,
-      role: user.role || "teacher",
+      role: String(user.role || "teacher").toLowerCase(),
     };
   }
   return {
@@ -38,7 +38,7 @@ const buildAccessPayload = (user, role) => {
     name: user.name,
     phone: user.phone,
     userName: user.userName,
-    role: user.role || "student",
+    role: String(user.role || "student").toLowerCase(),
   };
 };
 

@@ -172,8 +172,20 @@ const Eachcourse = () => {
                       <span>{assignment?.teacherId?.phone || "N/A"}</span>
                     </p>
                     <p>
-                      <span className="font-bold">Commission:</span>{" "}
-                      <span>{assignment?.commissionRate ?? 0}</span>
+                      <span className="font-bold">Offline Commission:</span>{" "}
+                      <span>
+                        {assignment?.offlineCommissionRate ??
+                          assignment?.commissionRate ??
+                          0}
+                      </span>
+                    </p>
+                    <p>
+                      <span className="font-bold">Online Commission:</span>{" "}
+                      <span>
+                        {assignment?.onlineCommissionRate ??
+                          assignment?.commissionRate ??
+                          0}
+                      </span>
                     </p>
                   </li>
                 ))}

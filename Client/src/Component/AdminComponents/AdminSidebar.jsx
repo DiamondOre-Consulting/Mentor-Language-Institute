@@ -34,12 +34,6 @@ const navItems = [
     to: "/admin-dashboard/pending-commissions",
     icon: "payment",
   },
-  {
-    label: "Chats",
-    to: "/admin-dashboard/admin/chat/",
-    icon: "users",
-    hidden: true,
-  },
   { label: "All Admin", to: "/admin-dashboard/all-admin", icon: "admin" },
   {
     label: "Attendance Report",

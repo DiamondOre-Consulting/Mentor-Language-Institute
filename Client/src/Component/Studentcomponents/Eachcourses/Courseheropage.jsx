@@ -79,15 +79,6 @@ const Courseheropage = () => {
         </div>
 
         <div className="flex justify-end items-center">
-          <li className="relative group z-50 hidden flex items-center float-right mr-1 p-4 cursor-pointer">
-            <Link
-              to={"/student/chat"}
-              className="block py-2 px-3 text-gray-200  rounded md:px-2 md:py-1 rounded-full bg-orange-400 "
-              aria-current="page"
-            >
-              Chat Now
-            </Link>
-          </li>
           <ul className="relative">
             <li>
               <button

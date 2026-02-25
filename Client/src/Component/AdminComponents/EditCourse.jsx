@@ -70,7 +70,8 @@ const EditCourse = () => {
   const [assignments, setAssignments] = useState([]);
   const [newAssignment, setNewAssignment] = useState({
     teacherId: "",
-    commissionRate: "",
+    offlineCommissionRate: "",
+    onlineCommissionRate: "",
   });
 
   const token = localStorage.getItem("token");
@@ -134,7 +135,14 @@ const EditCourse = () => {
         if (response.status === 200) {
           const normalized = (response.data || []).map((assignment) => ({
             ...assignment,
-            commissionRate: assignment?.commissionRate ?? 0,
+            offlineCommissionRate:
+              assignment?.offlineCommissionRate ??
+              assignment?.commissionRate ??
+              0,
+            onlineCommissionRate:
+              assignment?.onlineCommissionRate ??
+              assignment?.commissionRate ??
+              0,
           }));
           setAssignments(normalized);
         }
@@ -229,7 +237,14 @@ const EditCourse = () => {
       if (response.status === 200) {
         const normalized = (response.data || []).map((assignment) => ({
           ...assignment,
-          commissionRate: assignment?.commissionRate ?? 0,
+          offlineCommissionRate:
+            assignment?.offlineCommissionRate ??
+            assignment?.commissionRate ??
+            0,
+          onlineCommissionRate:
+            assignment?.onlineCommissionRate ??
+            assignment?.commissionRate ??
+            0,
         }));
         setAssignments(normalized);
       }
@@ -249,7 +264,8 @@ const EditCourse = () => {
         url: `/admin-confi/class-teachers/${id}`,
         data: {
           teacherId: newAssignment.teacherId,
-          commissionRate: Number(newAssignment.commissionRate || 0),
+          offlineCommissionRate: Number(newAssignment.offlineCommissionRate || 0),
+          onlineCommissionRate: Number(newAssignment.onlineCommissionRate || 0),
         },
         headers: {
           Authorization: `Bearer ${token}`,
@@ -257,7 +273,11 @@ const EditCourse = () => {
       }).unwrap();
       if (response.status === 200) {
         await refreshAssignments();
-        setNewAssignment({ teacherId: "", commissionRate: "" });
+        setNewAssignment({
+          teacherId: "",
+          offlineCommissionRate: "",
+          onlineCommissionRate: "",
+        });
       }
     } catch (error) {
       setPopupMessage(error?.response?.data?.message || "Error assigning teacher.");
@@ -266,13 +286,14 @@ const EditCourse = () => {
     }
   };
 
-  const handleUpdateAssignment = async (assignmentId, commissionRate) => {
+  const handleUpdateAssignment = async (assignmentId, offlineRate, onlineRate) => {
     setLoading(true);
     try {
       const response = await put({
         url: `/admin-confi/class-teachers/${assignmentId}`,
         data: {
-          commissionRate: Number(commissionRate || 0),
+          offlineCommissionRate: Number(offlineRate || 0),
+          onlineCommissionRate: Number(onlineRate || 0),
         },
         headers: {
           Authorization: `Bearer ${token}`,
@@ -403,16 +424,39 @@ const EditCourse = () => {
                   </div>
                   <input
                     type="number"
-                    value={assignment.commissionRate}
+                    value={assignment.offlineCommissionRate}
                     onChange={(e) =>
-                      handleAssignmentChange(assignment._id, "commissionRate", e.target.value)
+                      handleAssignmentChange(
+                        assignment._id,
+                        "offlineCommissionRate",
+                        e.target.value
+                      )
                     }
                     className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 sm:w-40"
-                    placeholder="Commission"
+                    placeholder="Offline rate"
+                  />
+                  <input
+                    type="number"
+                    value={assignment.onlineCommissionRate}
+                    onChange={(e) =>
+                      handleAssignmentChange(
+                        assignment._id,
+                        "onlineCommissionRate",
+                        e.target.value
+                      )
+                    }
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 sm:w-40"
+                    placeholder="Online rate"
                   />
                   <button
                     type="button"
-                    onClick={() => handleUpdateAssignment(assignment._id, assignment.commissionRate)}
+                    onClick={() =>
+                      handleUpdateAssignment(
+                        assignment._id,
+                        assignment.offlineCommissionRate,
+                        assignment.onlineCommissionRate
+                      )
+                    }
                     className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700"
                   >
                     Update
@@ -428,7 +472,7 @@ const EditCourse = () => {
               ))}
             </div>
 
-            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            <div className="mt-4 grid gap-2 sm:grid-cols-4">
               <select
                 value={newAssignment.teacherId}
                 onChange={(e) =>
@@ -445,11 +489,26 @@ const EditCourse = () => {
               </select>
               <input
                 type="number"
-                value={newAssignment.commissionRate}
+                value={newAssignment.offlineCommissionRate}
                 onChange={(e) =>
-                  setNewAssignment((prev) => ({ ...prev, commissionRate: e.target.value }))
+                  setNewAssignment((prev) => ({
+                    ...prev,
+                    offlineCommissionRate: e.target.value,
+                  }))
                 }
-                placeholder="Commission"
+                placeholder="Offline rate"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+              />
+              <input
+                type="number"
+                value={newAssignment.onlineCommissionRate}
+                onChange={(e) =>
+                  setNewAssignment((prev) => ({
+                    ...prev,
+                    onlineCommissionRate: e.target.value,
+                  }))
+                }
+                placeholder="Online rate"
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
               />
               <button
