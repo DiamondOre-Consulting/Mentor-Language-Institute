@@ -25,8 +25,6 @@ const EditTeacher = () => {
   const [password, setPassword] = useState("");
   const [dob, setDob] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
-  const [allCourses, setAllCourses] = useState([]);
-  const [teacherCourseId, setTeacherCourseId] = useState("");
   const toastVariant = getToastVariant(popupMessage);
 
   const token = localStorage.getItem("token");
@@ -73,28 +71,6 @@ const EditTeacher = () => {
   }, [id, token, navigate]);
 
   useEffect(() => {
-    const fetchAllCourses = async () => {
-      try {
-        const response = await get({
-          url: "/admin-confi/all-classes",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }).unwrap();
-        if (response.status === 200) {
-          setAllCourses(response.data || []);
-        }
-      } catch (error) {
-        console.error("Error fetching courses:", error);
-      }
-    };
-
-    if (token) {
-      fetchAllCourses();
-    }
-  }, [token, get]);
-
-  useEffect(() => {
     const hasOpenModal = loading || !!popupMessage;
     document.body.style.overflow = hasOpenModal ? "hidden" : "";
     return () => {
@@ -115,10 +91,6 @@ const EditTeacher = () => {
         password,
         dob,
       };
-      if (teacherCourseId) {
-        payload.courseId = teacherCourseId;
-      }
-
       const response = await put({
         url: `/admin-confi/teacher-edit/${id}`,
         data: payload,
@@ -219,25 +191,6 @@ const EditTeacher = () => {
             />
           </div>
 
-          <div>
-            <label htmlFor="teacherCourseId" className="mb-1 block text-sm font-medium text-slate-700">
-              Assign Course (Optional)
-            </label>
-            <select
-              id="teacherCourseId"
-              name="teacherCourseId"
-              value={teacherCourseId}
-              onChange={(e) => setTeacherCourseId(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700"
-            >
-              <option value="">Select Course</option>
-              {allCourses.map((course) => (
-                <option key={course?._id} value={course?._id}>
-                  {course?.classTitle}
-                </option>
-              ))}
-            </select>
-          </div>
 
           <div>
             <label htmlFor="dob" className="mb-1 block text-sm font-medium text-slate-700">

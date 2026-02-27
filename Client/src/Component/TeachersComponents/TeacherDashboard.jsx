@@ -10,7 +10,7 @@ import TeacherAllStudents from "./TeacherAllStudents";
 import TeacherEditStudent from "./TeacherEditStudent";
 import MarkAttendance from "./MarkAttendance";
 
-const TeacherDashboard = ({ teacherData }) => {
+const TeacherDashboard = ({ teacherData, onProfileUpdated }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,7 +30,12 @@ const TeacherDashboard = ({ teacherData }) => {
             <Route path="mark-attendance" element={<MarkAttendance />} />
             <Route
               path="myaccount"
-              element={<TeacherProfile teacherData={teacherData} />}
+              element={
+                <TeacherProfile
+                  teacherData={teacherData}
+                  onProfileUpdated={onProfileUpdated}
+                />
+              }
             />
             <Route
               path="all-students"

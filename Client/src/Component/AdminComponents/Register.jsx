@@ -17,9 +17,6 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [allCourses, setAllCourses] = useState([]);
   const [courseId, setCourseId] = useState("");
-  const [teacherCourseId, setTeacherCourseId] = useState("");
-  const [teacherOfflineCommissionRate, setTeacherOfflineCommissionRate] = useState("");
-  const [teacherOnlineCommissionRate, setTeacherOnlineCommissionRate] = useState("");
   const { get, post, put } = useApi();
 
   const handleTabClick = (index) => {
@@ -133,7 +130,7 @@ const Register = () => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [dob, setdob] = useState();
+  const [dob, setdob] = useState("");
   const [teacherEmail, setTeacherEmail] = useState("");
   const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
@@ -186,15 +183,6 @@ const Register = () => {
         email: teacherEmail,
         password,
         dob,
-        courseId: teacherCourseId || "",
-        offlineCommissionRate:
-          teacherOfflineCommissionRate === ""
-            ? 0
-            : Number(teacherOfflineCommissionRate),
-        onlineCommissionRate:
-          teacherOnlineCommissionRate === ""
-            ? 0
-            : Number(teacherOnlineCommissionRate),
       };
 
       const response = await post({
@@ -212,9 +200,6 @@ const Register = () => {
         setPassword("");
         setdob("");
         setTeacherEmail("");
-        setTeacherCourseId("");
-        setTeacherOfflineCommissionRate("");
-        setTeacherOnlineCommissionRate("");
       } else if (response.status === 409) {
         setPopupMessage("Teacher already registered");
       } else {
@@ -561,20 +546,6 @@ const Register = () => {
                           required=""
                         />
                       </div>
-                      <div>
-                        <label className="block mb-2 text-sm font-medium text-gray-900 ">
-                          Email
-                        </label>
-                        <input
-                          type="email"
-                          name="teacherEmail"
-                          value={teacherEmail}
-                          onChange={(e) => setTeacherEmail(e.target.value)}
-                          placeholder="Enter Email"
-                          className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      "
-                          required=""
-                        />
-                      </div>
                       <div className="">
                         <label
                           className="block mb-2 text-sm font-medium text-gray-900 "
@@ -783,44 +754,17 @@ const Register = () => {
                         />
                       </div>
                       <div>
-                        <label className="block mb-2 text-sm font-medium text-gray-900">
-                          Assign Course (Optional)
-                        </label>
-                        <select
-                          value={teacherCourseId}
-                          onChange={(e) => setTeacherCourseId(e.target.value)}
-                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
-                        >
-                          <option value="">-- Select a Course --</option>
-                          {allCourses?.map((course) => (
-                            <option key={course?._id} value={course?._id}>
-                              {course?.classTitle}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block mb-2 text-sm font-medium text-gray-900">
-                          Offline Commission (Optional)
+                        <label className="block mb-2 text-sm font-medium text-gray-900 ">
+                          Email
                         </label>
                         <input
-                          type="number"
-                          value={teacherOfflineCommissionRate}
-                          onChange={(e) => setTeacherOfflineCommissionRate(e.target.value)}
-                          placeholder="Enter offline rate"
-                          className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg w-full p-2.5"
-                        />
-                      </div>
-                      <div>
-                        <label className="block mb-2 text-sm font-medium text-gray-900">
-                          Online Commission (Optional)
-                        </label>
-                        <input
-                          type="number"
-                          value={teacherOnlineCommissionRate}
-                          onChange={(e) => setTeacherOnlineCommissionRate(e.target.value)}
-                          placeholder="Enter online rate"
-                          className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg w-full p-2.5"
+                          type="email"
+                          name="teacherEmail"
+                          value={teacherEmail}
+                          onChange={(e) => setTeacherEmail(e.target.value)}
+                          placeholder="Enter Email"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      "
+                          required=""
                         />
                       </div>
                       <div>

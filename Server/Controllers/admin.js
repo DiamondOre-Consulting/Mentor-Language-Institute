@@ -41,6 +41,30 @@ const normalizeRateInput = (value) => {
   return normalizeCommissionRateValue(value);
 };
 
+const parseCommissionValue = (value) => {
+  if (value === undefined || value === null || value === "") {
+    return { ok: false, value: null };
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return { ok: false, value: null };
+  }
+  return { ok: true, value: parsed };
+};
+
+const validateCommissionPair = (offlineCommissionRate, onlineCommissionRate) => {
+  const offline = parseCommissionValue(offlineCommissionRate);
+  const online = parseCommissionValue(onlineCommissionRate);
+  if (!offline.ok || !online.ok) {
+    return {
+      ok: false,
+      message:
+        "Offline and online commission rates are required and must be non-negative numbers.",
+    };
+  }
+  return { ok: true, offline: offline.value, online: online.value };
+};
+
 const buildCommissionRates = ({
   commissionRate,
   offlineCommissionRate,
@@ -296,6 +320,12 @@ router.put("/teacher-edit/:id", AdminAuthenticateToken, async (req, res) => {
   const { name, phone, password, dob, courseId, email } = req.body;
 
   try {
+    if (courseId) {
+      return res.status(400).json({
+        message:
+          "Assign courses to teachers from the course screen and set offline/online commission there.",
+      });
+    }
     // Validate input fields (optional, depending on your requirements)
 
     // Find the student by ID
@@ -339,30 +369,6 @@ router.put("/teacher-edit/:id", AdminAuthenticateToken, async (req, res) => {
       teacher.dob = dob;
     }
 
-
-    if (courseId) {
-      const course = await Classes.findById(courseId);
-      if (!course) {
-        return res.status(404).json({ message: "Course not found." });
-      }
-      const existingAssignment = await ClassTeachers.findOne({
-        classId: courseId,
-        teacherId: teacher._id,
-      });
-      if (!existingAssignment) {
-        const assignment = new ClassTeachers({
-          classId: courseId,
-          teacherId: teacher._id,
-          commissionRate: 0,
-          offlineCommissionRate: 0,
-          onlineCommissionRate: 0,
-        });
-        await assignment.save();
-      } else if (!existingAssignment.active) {
-        existingAssignment.active = true;
-        await existingAssignment.save();
-      }
-    }
 
     // If password is provided, hash it and update the password
     if (password) {
@@ -458,6 +464,14 @@ router.post("/class-teachers/:classId", AdminAuthenticateToken, async (req, res)
       return res.status(400).json({ message: "Teacher is required." });
     }
 
+    const commissionValidation = validateCommissionPair(
+      offlineCommissionRate,
+      onlineCommissionRate
+    );
+    if (!commissionValidation.ok) {
+      return res.status(400).json({ message: commissionValidation.message });
+    }
+
     const course = await Classes.findById(classId);
     if (!course) {
       return res.status(404).json({ message: "Course not found." });
@@ -520,6 +534,20 @@ router.put("/class-teachers/:assignmentId", AdminAuthenticateToken, async (req, 
     const assignment = await ClassTeachers.findById(assignmentId);
     if (!assignment) {
       return res.status(404).json({ message: "Assignment not found." });
+    }
+
+    const hasCommissionUpdate =
+      commissionRate !== undefined ||
+      offlineCommissionRate !== undefined ||
+      onlineCommissionRate !== undefined;
+    if (hasCommissionUpdate) {
+      const commissionValidation = validateCommissionPair(
+        offlineCommissionRate,
+        onlineCommissionRate
+      );
+      if (!commissionValidation.ok) {
+        return res.status(400).json({ message: commissionValidation.message });
+      }
     }
 
     const rates = buildCommissionRates({
@@ -603,6 +631,13 @@ router.post("/add-new-class", AdminAuthenticateToken, async (req, res) => {
 
     let assignment = null;
     if (teacherId) {
+      const commissionValidation = validateCommissionPair(
+        offlineCommissionRate,
+        onlineCommissionRate
+      );
+      if (!commissionValidation.ok) {
+        return res.status(400).json({ message: commissionValidation.message });
+      }
       const teacher = await Teachers.findById(teacherId);
       if (!teacher) {
         return res.status(404).json({ message: "Teacher not found." });
@@ -761,6 +796,18 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
       });
     }
 
+    if (
+      courseId ||
+      commissionRate !== undefined ||
+      offlineCommissionRate !== undefined ||
+      onlineCommissionRate !== undefined
+    ) {
+      return res.status(400).json({
+        message:
+          "Assign courses to teachers from the course screen and set offline/online commission there.",
+      });
+    }
+
     const normalizedEmail = normalizeEmail(email);
     if (!isValidEmail(normalizedEmail)) {
       return res.status(400).json({ message: "Please enter a valid email." });
@@ -778,13 +825,6 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    if (courseId) {
-      const course = await Classes.findById(courseId);
-      if (!course) {
-        return res.status(404).json({ message: "Course not found." });
-      }
-    }
-
     const newTeacher = new Teachers({
       branch: "Main",
       role: "teacher",
@@ -796,22 +836,6 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
     });
 
     await newTeacher.save();
-
-    if (courseId) {
-      const rates = buildCommissionRates({
-        commissionRate,
-        offlineCommissionRate,
-        onlineCommissionRate,
-      });
-      const assignment = new ClassTeachers({
-        classId: courseId,
-        teacherId: newTeacher._id,
-        commissionRate: rates.resolvedLegacy,
-        offlineCommissionRate: rates.resolvedOffline,
-        onlineCommissionRate: rates.resolvedOnline,
-      });
-      await assignment.save();
-    }
     return res
       .status(200)
       .json({ message: "new teacher has added!!!", newTeacher });

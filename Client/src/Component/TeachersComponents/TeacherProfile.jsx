@@ -1,6 +1,101 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useApi } from "../../api/useApi";
+import { getToastVariant } from "../../utils/toastVariant";
 
-const TeacherProfile = ({ teacherData }) => {
+const TeacherProfile = ({ teacherData, onProfileUpdated }) => {
+  const { put } = useApi();
+  const [isEditing, setIsEditing] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [popupMessage, setPopupMessage] = useState(null);
+  const [formValues, setFormValues] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    dob: "",
+    password: "",
+  });
+
+  const toastVariant = getToastVariant(popupMessage);
+
+  useEffect(() => {
+    if (!teacherData) return;
+    setFormValues({
+      name: teacherData?.name || "",
+      phone: teacherData?.phone || "",
+      email: teacherData?.email || "",
+      dob: teacherData?.dob ? String(teacherData.dob).split("T")[0] : "",
+      password: "",
+    });
+  }, [teacherData]);
+
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    setFormValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const resetForm = () => {
+    setFormValues({
+      name: teacherData?.name || "",
+      phone: teacherData?.phone || "",
+      email: teacherData?.email || "",
+      dob: teacherData?.dob ? String(teacherData.dob).split("T")[0] : "",
+      password: "",
+    });
+    setShowPassword(false);
+  };
+
+  const handleCancel = () => {
+    resetForm();
+    setPopupMessage(null);
+    setIsEditing(false);
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setPopupMessage(null);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setPopupMessage("Session expired. Please log in again.");
+        return;
+      }
+
+      const payload = {
+        name: formValues.name,
+        phone: formValues.phone,
+        email: formValues.email,
+        dob: formValues.dob,
+        ...(formValues.password ? { password: formValues.password } : {}),
+      };
+
+      const response = await put({
+        url: "/teachers/my-profile",
+        data: payload,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
+
+      if (response?.status === 200) {
+        setPopupMessage("Profile updated successfully.");
+        setIsEditing(false);
+        setFormValues((prev) => ({ ...prev, password: "" }));
+        if (onProfileUpdated) {
+          onProfileUpdated();
+        }
+      } else {
+        setPopupMessage("Error updating profile.");
+      }
+    } catch (error) {
+      const message =
+        error?.response?.data?.message || "Error updating profile.";
+      setPopupMessage(message);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <>
       <div className="w-full h-40">
@@ -54,26 +149,176 @@ const TeacherProfile = ({ teacherData }) => {
       <div className="my-4 flex flex-col 2xl:flex-row space-y-4 2xl:space-y-0 2xl:space-x-4">
         <div className="w-full flex flex-col 2xl:w-1/3">
           <div className="flex-1 bg-white rounded-lg shadow-xl p-8">
-            <h4 className="text-xl text-gray-900 font-bold">Personal Info</h4>
-            <ul className="mt-2 text-gray-700">
-              <li className="flex border-y py-2">
-                <span className="font-bold w-24">Full name:</span>
-                <span className="text-gray-700">{teacherData?.name}</span>
-              </li>
+            <div className="flex items-center justify-between">
+              <h4 className="text-xl text-gray-900 font-bold">Personal Info</h4>
+              {!isEditing && (
+                <button
+                  type="button"
+                  className="text-sm font-semibold text-orange-500 hover:text-orange-600"
+                  onClick={() => setIsEditing(true)}
+                >
+                  Edit Profile
+                </button>
+              )}
+            </div>
+            {!isEditing && (
+              <ul className="mt-2 text-gray-700">
+                <li className="flex border-y py-2">
+                  <span className="font-bold w-24">Full name:</span>
+                  <span className="text-gray-700">{teacherData?.name}</span>
+                </li>
 
-              <li className="flex border-b py-2">
-                <span className="font-bold w-24">Mobile:</span>
-                <span className="text-gray-700">{teacherData?.phone}</span>
-              </li>
+                <li className="flex border-b py-2">
+                  <span className="font-bold w-24">Email:</span>
+                  <span className="text-gray-700">
+                    {teacherData?.email || "Not set"}
+                  </span>
+                </li>
 
-              {/* <li className="flex border-b py-2">
-                            <span className="font-bold w-24">Joined:</span>
-                            <span className="text-gray-700">10 Jan 2022 (25 days ago)</span>
-                        </li> */}
-            </ul>
+                <li className="flex border-b py-2">
+                  <span className="font-bold w-24">Mobile:</span>
+                  <span className="text-gray-700">{teacherData?.phone}</span>
+                </li>
+
+                <li className="flex border-b py-2">
+                  <span className="font-bold w-24">DOB:</span>
+                  <span className="text-gray-700">
+                    {teacherData?.dob
+                      ? String(teacherData.dob).split("T")[0]
+                      : "Not set"}
+                  </span>
+                </li>
+              </ul>
+            )}
+            {isEditing && (
+              <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-gray-900">
+                    Full name
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formValues.name}
+                    onChange={handleInputChange}
+                    className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-gray-900">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formValues.email}
+                    onChange={handleInputChange}
+                    className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-gray-900">
+                    Mobile
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formValues.phone}
+                    onChange={handleInputChange}
+                    className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-gray-900">
+                    Date of Birth
+                  </label>
+                  <input
+                    type="date"
+                    name="dob"
+                    value={formValues.dob}
+                    onChange={handleInputChange}
+                    className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-gray-900">
+                    New Password
+                  </label>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formValues.password}
+                    onChange={handleInputChange}
+                    placeholder="Leave blank to keep current password"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5"
+                  />
+                  <div className="flex items-center mt-2">
+                    <input
+                      type="checkbox"
+                      className="mr-2"
+                      checked={showPassword}
+                      onChange={() => setShowPassword(!showPassword)}
+                    />
+                    <label
+                      className="text-sm font-medium text-gray-900 cursor-pointer"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      Show Password
+                    </label>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 pt-2">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-4 py-2 text-white bg-orange-400 rounded-md disabled:opacity-60"
+                  >
+                    {loading ? "Saving..." : "Save Changes"}
+                  </button>
+                  <button
+                    type="button"
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                    onClick={handleCancel}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       </div>
+
+      {popupMessage && (
+        <div className="app-toast-overlay">
+          <div className={`app-toast-card app-toast-${toastVariant} relative`}>
+            <button
+              type="button"
+              className="app-toast-close"
+              onClick={() => setPopupMessage(null)}
+              aria-label="Close notification"
+            >
+              <svg
+                className="h-4 w-4"
+                viewBox="0 0 24 24"
+                strokeWidth="2"
+                stroke="currentColor"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path stroke="none" d="M0 0h24v24H0z" />
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+            <p className="pt-2 text-sm font-semibold">{popupMessage}</p>
+          </div>
+        </div>
+      )}
     </>
   );
 };

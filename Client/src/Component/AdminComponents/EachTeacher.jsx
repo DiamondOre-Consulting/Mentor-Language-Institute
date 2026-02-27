@@ -23,6 +23,16 @@ const EachTeacher = () => {
   const [loading, setLoading] = useState(true);
   const { id } = useParams();
   // console.log(id);
+  const formatDate = (value) => {
+    if (!value) return "N/A";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "N/A";
+    return date.toLocaleDateString("en-US", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
 
   const fetchTeacherDetails = async () => {
     const token = localStorage.getItem("token");
@@ -136,6 +146,10 @@ const EachTeacher = () => {
           </span>
         </div>
         <p className="text-gray-700">Phone: {teacherDetails?.phone}</p>
+        <p className="text-gray-700">Email: {teacherDetails?.email || "N/A"}</p>
+        <p className="text-gray-700">
+          Joined: {formatDate(teacherDetails?.createdAt)}
+        </p>
         <p onClick={() => handleEditClick()} className="text-red-700 underline cursor-pointer">Edit Teacher</p>
 
       </div>
@@ -169,6 +183,30 @@ const EachTeacher = () => {
               <li className="flex py-2 border-b">
                 <span className="w-24 font-bold">Mobile:</span>
                 <span className="text-gray-700">{teacherDetails?.phone}</span>
+              </li>
+              <li className="flex py-2 border-b">
+                <span className="w-24 font-bold">Email:</span>
+                <span className="text-gray-700">
+                  {teacherDetails?.email || "N/A"}
+                </span>
+              </li>
+              <li className="flex py-2 border-b">
+                <span className="w-24 font-bold">DOB:</span>
+                <span className="text-gray-700">
+                  {formatDate(teacherDetails?.dob)}
+                </span>
+              </li>
+              <li className="flex py-2 border-b">
+                <span className="w-24 font-bold">Role:</span>
+                <span className="text-gray-700">
+                  {teacherDetails?.role || "Teacher"}
+                </span>
+              </li>
+              <li className="flex py-2 border-b">
+                <span className="w-24 font-bold">Joined:</span>
+                <span className="text-gray-700">
+                  {formatDate(teacherDetails?.createdAt)}
+                </span>
               </li>
             </ul>
           </div>

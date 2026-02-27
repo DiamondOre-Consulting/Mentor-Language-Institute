@@ -423,7 +423,7 @@ router.put(
 // MY PROFILE
 router.get("/my-profile", TeacherAuthenticateToken, async (req, res) => {
   try {
-    const { userId, role, name, phone } = req.user;
+    const { userId } = req.user;
 
     const myProfile = await Teachers.findById({ _id: userId });
 
@@ -436,18 +436,90 @@ router.get("/my-profile", TeacherAuthenticateToken, async (req, res) => {
       active: true,
     }).select("classId");
     const myClasses = assignments.map((a) => a.classId);
-    const { myScheduledClasses } = myProfile;
+
     res.status(200).json({
       userId,
-      role,
-      name,
-      phone,
+      role: myProfile.role,
+      name: myProfile.name,
+      phone: myProfile.phone,
+      email: myProfile.email,
+      dob: myProfile.dob,
       myClasses,
-      myScheduledClasses,
+      myScheduledClasses: myProfile.myScheduledClasses,
     });
   } catch (error) {
     console.log("Something went wrong!!! ");
     res.status(500).json(error);
+  }
+});
+
+router.put("/my-profile", TeacherAuthenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const { name, phone, email, dob, password } = req.body;
+
+    if (!name && !phone && !email && !dob && !password) {
+      return res.status(400).json({ message: "No profile changes provided." });
+    }
+
+    const teacher = await Teachers.findById(userId);
+    if (!teacher) {
+      return res.status(404).json({ message: "Teacher not found." });
+    }
+
+    if (phone) {
+      const existingTeacher = await Teachers.findOne({ phone });
+      if (existingTeacher && existingTeacher._id.toString() !== userId) {
+        return res.status(400).json({
+          message: "Phone already exists. Please enter a unique phone number.",
+        });
+      }
+      teacher.phone = phone;
+    }
+
+    if (email) {
+      const normalizedEmail = normalizeEmail(email);
+      if (!isValidEmail(normalizedEmail)) {
+        return res.status(400).json({ message: "Please enter a valid email." });
+      }
+      const existingTeacher = await Teachers.findOne({ email: normalizedEmail });
+      if (existingTeacher && existingTeacher._id.toString() !== userId) {
+        return res.status(400).json({
+          message: "Email already exists. Please enter a unique email address.",
+        });
+      }
+      teacher.email = normalizedEmail;
+    }
+
+    if (name) {
+      teacher.name = name;
+    }
+
+    if (dob) {
+      teacher.dob = dob;
+    }
+
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      teacher.password = await bcrypt.hash(password, salt);
+    }
+
+    await teacher.save();
+
+    return res.status(200).json({
+      message: "Profile updated successfully.",
+      teacher: {
+        userId: teacher._id,
+        role: teacher.role,
+        name: teacher.name,
+        phone: teacher.phone,
+        email: teacher.email,
+        dob: teacher.dob,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating teacher profile:", error);
+    res.status(500).json({ message: "Server error." });
   }
 });
 

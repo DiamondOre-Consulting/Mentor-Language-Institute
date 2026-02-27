@@ -81,6 +81,24 @@ const EditCourse = () => {
     [formValues.grade, formValues.classTitle]
   );
 
+  const validateCommissionPair = (offlineRate, onlineRate) => {
+    if (offlineRate === "" || offlineRate === null || offlineRate === undefined) {
+      return "Offline commission is required.";
+    }
+    if (onlineRate === "" || onlineRate === null || onlineRate === undefined) {
+      return "Online commission is required.";
+    }
+    const offlineValue = Number(offlineRate);
+    const onlineValue = Number(onlineRate);
+    if (!Number.isFinite(offlineValue) || offlineValue < 0) {
+      return "Offline commission must be a non-negative number.";
+    }
+    if (!Number.isFinite(onlineValue) || onlineValue < 0) {
+      return "Online commission must be a non-negative number.";
+    }
+    return null;
+  };
+
   useEffect(() => {
     const fetchCourse = async () => {
       try {
@@ -258,14 +276,22 @@ const EditCourse = () => {
       setPopupMessage("Please select a teacher.");
       return;
     }
+    const commissionError = validateCommissionPair(
+      newAssignment.offlineCommissionRate,
+      newAssignment.onlineCommissionRate
+    );
+    if (commissionError) {
+      setPopupMessage(commissionError);
+      return;
+    }
     setLoading(true);
     try {
       const response = await post({
         url: `/admin-confi/class-teachers/${id}`,
         data: {
           teacherId: newAssignment.teacherId,
-          offlineCommissionRate: Number(newAssignment.offlineCommissionRate || 0),
-          onlineCommissionRate: Number(newAssignment.onlineCommissionRate || 0),
+          offlineCommissionRate: Number(newAssignment.offlineCommissionRate),
+          onlineCommissionRate: Number(newAssignment.onlineCommissionRate),
         },
         headers: {
           Authorization: `Bearer ${token}`,
@@ -287,13 +313,18 @@ const EditCourse = () => {
   };
 
   const handleUpdateAssignment = async (assignmentId, offlineRate, onlineRate) => {
+    const commissionError = validateCommissionPair(offlineRate, onlineRate);
+    if (commissionError) {
+      setPopupMessage(commissionError);
+      return;
+    }
     setLoading(true);
     try {
       const response = await put({
         url: `/admin-confi/class-teachers/${assignmentId}`,
         data: {
-          offlineCommissionRate: Number(offlineRate || 0),
-          onlineCommissionRate: Number(onlineRate || 0),
+          offlineCommissionRate: Number(offlineRate),
+          onlineCommissionRate: Number(onlineRate),
         },
         headers: {
           Authorization: `Bearer ${token}`,

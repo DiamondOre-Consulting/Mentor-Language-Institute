@@ -12,7 +12,7 @@ const override = css`
 `;
 
 const AdminEditTeacher = ({ teacherDetails, closingModel, id, onUpdated }) => {
-  const { get, put } = useApi();
+  const { put } = useApi();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -23,8 +23,6 @@ const AdminEditTeacher = ({ teacherDetails, closingModel, id, onUpdated }) => {
   const [popupMessage, setPopupMessage] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [allCourses, setAllCourses] = useState([]);
-  const [teacherCourseId, setTeacherCourseId] = useState("");
   const toastVariant = getToastVariant(popupMessage);
 
   const token = localStorage.getItem("token");
@@ -41,28 +39,6 @@ const AdminEditTeacher = ({ teacherDetails, closingModel, id, onUpdated }) => {
     }
   }, [teacherDetails]);
 
-  useEffect(() => {
-    const fetchAllCourses = async () => {
-      try {
-        const response = await get({
-          url: "/admin-confi/all-classes",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }).unwrap();
-        if (response.status === 200) {
-          setAllCourses(response.data || []);
-        }
-      } catch (error) {
-        console.error("Error fetching courses:", error);
-      }
-    };
-
-    if (token) {
-      fetchAllCourses();
-    }
-  }, [token, get]);
-
   const handleTeacherEdit = async (e) => {
     setLoading(true);
     e.preventDefault();
@@ -76,10 +52,6 @@ const AdminEditTeacher = ({ teacherDetails, closingModel, id, onUpdated }) => {
         password,
         dob,
       };
-      if (teacherCourseId) {
-        payload.courseId = teacherCourseId;
-      }
-
       const response = await put({
         url: `/admin-confi/teacher-edit/${id}`,
         data: payload,
@@ -93,7 +65,6 @@ const AdminEditTeacher = ({ teacherDetails, closingModel, id, onUpdated }) => {
         setName("");
         setPhone("");
         setPassword("");
-        setTeacherCourseId("");
         await onUpdated?.();
       } else if (response.status === 400) {
         setPopupMessage(response.data.message);
@@ -187,20 +158,6 @@ const AdminEditTeacher = ({ teacherDetails, closingModel, id, onUpdated }) => {
                   />
                 </div>
 
-                <select
-                  id="teacherCourseId"
-                  name="teacherCourseId"
-                  value={teacherCourseId}
-                  onChange={(e) => setTeacherCourseId(e.target.value)}
-                  className="w-full p-2 border border-gray-500 rounded-md"
-                >
-                  <option value="">Assign Course (Optional)</option>
-                  {allCourses.map((course) => (
-                    <option key={course?._id} value={course?._id}>
-                      {course?.classTitle}
-                    </option>
-                  ))}
-                </select>
                 <div className="flex items-center justify-between w-full p-2 border border-gray-500 rounded-md">
                   <label
                     className="block mb-2 text-sm font-medium text-gray-900 "
