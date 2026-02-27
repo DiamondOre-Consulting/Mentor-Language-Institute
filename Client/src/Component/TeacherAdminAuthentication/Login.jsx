@@ -33,10 +33,12 @@ const Login = ({ defaultTab }) => {
   };
 
   const [activeTab, setActiveTab] = useState(resolveDefaultTab);
-  const [teacherPhone, setTeacherPhone] = useState("");
-  const [adminUsername, setAdminUsername] = useState("");
+  const [teacherLoginMode, setTeacherLoginMode] = useState("email");
+  const [teacherIdentifier, setTeacherIdentifier] = useState("");
+  const [adminIdentifier, setAdminIdentifier] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
-  const [studentUserName, setStudentUserName] = useState("");
+  const [studentLoginMode, setStudentLoginMode] = useState("email");
+  const [studentIdentifier, setStudentIdentifier] = useState("");
   const [studentPassword, setStudentPassword] = useState("");
   const [teacherPassword, setTeacherPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -54,7 +56,8 @@ const Login = ({ defaultTab }) => {
       const response = await post({
         url: "/admin-confi/login-admin",
         data: {
-          username: adminUsername,
+          identifier: adminIdentifier,
+          email: adminIdentifier,
           password: adminPassword,
         },
       }).unwrap();
@@ -76,7 +79,7 @@ const Login = ({ defaultTab }) => {
       if (error.response) {
         const status = error.response.status;
         if (status === 401) {
-          setError("Login Details Are Wrong!!");
+          setError("Invalid email or username.");
         } else {
           console.error("Error logging in:", status);
           setError("Login Details Are Wrong!!");
@@ -98,7 +101,9 @@ const Login = ({ defaultTab }) => {
       const response = await post({
         url: "/teachers/login-teacher",
         data: {
-          phone: teacherPhone,
+          identifier: teacherIdentifier,
+          email: teacherLoginMode === "email" ? teacherIdentifier : undefined,
+          phone: teacherLoginMode === "phone" ? teacherIdentifier : undefined,
           password: teacherPassword,
         },
       }).unwrap();
@@ -118,7 +123,7 @@ const Login = ({ defaultTab }) => {
       if (error.response) {
         const status = error.response.status;
         if (status === 401) {
-          setError("Invalid Phone No");
+          setError("Invalid email or phone number");
         } else if (status === 402) {
           setError("Invalid password");
         } else {
@@ -140,7 +145,9 @@ const Login = ({ defaultTab }) => {
       const response = await post({
         url: "/students/login",
         data: {
-          userName: studentUserName,
+          identifier: studentIdentifier,
+          email: studentLoginMode === "email" ? studentIdentifier : undefined,
+          phone: studentLoginMode === "phone" ? studentIdentifier : undefined,
           password: studentPassword,
         },
       }).unwrap();
@@ -156,7 +163,7 @@ const Login = ({ defaultTab }) => {
       if (error.response) {
         const status = error.response.status;
         if (status === 401) {
-          setError("Invalid UserName");
+          setError("Invalid email or phone number");
         } else if (status === 402) {
           setError("Your account has been deactivated!!");
         } else if (status === 403) {
@@ -246,10 +253,10 @@ const Login = ({ defaultTab }) => {
                         <div>
                           <input
                             type="text"
-                            name="username"
-                            value={adminUsername}
-                            onChange={(e) => setAdminUsername(e.target.value)}
-                            placeholder="Enter Username"
+                            name="adminIdentifier"
+                            value={adminIdentifier}
+                            onChange={(e) => setAdminIdentifier(e.target.value)}
+                            placeholder="Enter Email"
                             className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                             required=""
                           />
@@ -362,15 +369,34 @@ const Login = ({ defaultTab }) => {
                       >
                         <div>
                           <input
-                            type="text"
-                            name="phone"
-                            value={teacherPhone}
-                            onChange={(e) => setTeacherPhone(e.target.value)}
-                            placeholder="Enter Phone"
+                            type={teacherLoginMode === "phone" ? "tel" : "email"}
+                            name="teacherIdentifier"
+                            value={teacherIdentifier}
+                            onChange={(e) => setTeacherIdentifier(e.target.value)}
+                            placeholder={
+                              teacherLoginMode === "phone"
+                                ? "Enter Phone Number"
+                                : "Enter Email"
+                            }
                             className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                             required=""
                           />
                         </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setTeacherLoginMode((prev) => {
+                              const next = prev === "email" ? "phone" : "email";
+                              setTeacherIdentifier("");
+                              return next;
+                            })
+                          }
+                          className="text-xs text-indigo-600 hover:text-indigo-700"
+                        >
+                          {teacherLoginMode === "email"
+                            ? "Forgot email? Use phone instead"
+                            : "Use email instead"}
+                        </button>
                         <div>
                           <label htmlFor="password" className="sr-only">
                             Password
@@ -480,17 +506,36 @@ const Login = ({ defaultTab }) => {
                       >
                         <div>
                           <input
-                            type="text"
-                            name="userName"
-                            value={studentUserName}
+                            type={studentLoginMode === "phone" ? "tel" : "email"}
+                            name="studentIdentifier"
+                            value={studentIdentifier}
                             onChange={(e) =>
-                              setStudentUserName(e.target.value)
+                              setStudentIdentifier(e.target.value)
                             }
-                            placeholder="Enter Username"
+                            placeholder={
+                              studentLoginMode === "phone"
+                                ? "Enter Phone Number"
+                                : "Enter Email"
+                            }
                             className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                             required=""
                           />
                         </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setStudentLoginMode((prev) => {
+                              const next = prev === "email" ? "phone" : "email";
+                              setStudentIdentifier("");
+                              return next;
+                            })
+                          }
+                          className="text-xs text-indigo-600 hover:text-indigo-700"
+                        >
+                          {studentLoginMode === "email"
+                            ? "Forgot email? Use phone instead"
+                            : "Use email instead"}
+                        </button>
                         <div>
                           <label htmlFor="password" className="sr-only">
                             Password

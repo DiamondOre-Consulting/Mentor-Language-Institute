@@ -90,14 +90,27 @@ router.post("/signup", async (req, res) => {
 
 router.post("/login", async (req, res) => {
   try {
-    const { userName, password } = req.body;
-    if (!userName || !password) {
-      return res.status(400).json({ message: "Username and password are required." });
+    const { identifier, email, phone, userName, password } = req.body;
+    const rawIdentifier = identifier || email || phone || userName;
+    if (!rawIdentifier || !password) {
+      return res
+        .status(400)
+        .json({ message: "Email or phone and password are required." });
     }
 
-    const user = await Students.findOne({ userName });
+    const normalizedEmail = normalizeEmail(rawIdentifier);
+    let user = null;
+    if (isValidEmail(normalizedEmail)) {
+      user = await Students.findOne({ email: normalizedEmail });
+    }
     if (!user) {
-      return res.status(401).json({ message: "Invalid username" });
+      user = await Students.findOne({ phone: rawIdentifier });
+    }
+    if (!user) {
+      user = await Students.findOne({ userName: rawIdentifier });
+    }
+    if (!user) {
+      return res.status(401).json({ message: "Invalid email or phone" });
     }
 
     if (user.deactivated) {

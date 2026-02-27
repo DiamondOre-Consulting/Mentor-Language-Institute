@@ -21,6 +21,7 @@ const EditTeacher = () => {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [dob, setDob] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
@@ -53,6 +54,7 @@ const EditTeacher = () => {
         if (response?.status === 200) {
           setName(response?.data?.name || "");
           setPhone(response?.data?.phone || "");
+          setEmail(response?.data?.email || "");
           setDob(response?.data?.dob || "");
         }
       } catch (error) {
@@ -109,6 +111,7 @@ const EditTeacher = () => {
       const payload = {
         name,
         phone,
+        email,
         password,
         dob,
       };
@@ -195,6 +198,22 @@ const EditTeacher = () => {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="Enter phone number"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="email" className="mb-1 block text-sm font-medium text-slate-700">
+              Email
+            </label>
+            <input
+              type="email"
+              name="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter email"
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700"
               required
             />

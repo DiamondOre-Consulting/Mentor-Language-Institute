@@ -19,17 +19,14 @@ import { getAssignmentForTeacher } from "../utils/classTeachers.js";
 import { normalizeAttendanceMode } from "../utils/attendanceMode.js";
 import { generateInvoiceNumber, generateInvoicePdfBuffer } from "../services/invoiceService.js";
 import { sendEmail } from "../services/emailService.js";
+import { isValidEmail, normalizeEmail } from "../utils/studentValidation.js";
 import {
   normalizeFeeMonth,
   normalizePaidStatus,
   parseFeeAmount,
   formatFeeMonthLabel,
 } from "../utils/fee.js";
-import {
-  findStudentUniquenessConflict,
-  isValidEmail,
-  normalizeEmail,
-} from "../utils/studentValidation.js";
+import { findStudentUniquenessConflict } from "../utils/studentValidation.js";
 import { createRefreshTokenRecord, setRefreshCookie, signAccessToken } from "../utils/authTokens.js";
 import { deleteStudentCascade } from "../utils/deleteStudentCascade.js";
 
@@ -86,14 +83,21 @@ const teacherHasStudentAccess = async (teacherId, studentId) => {
 
 router.post("/login-teacher", async (req, res) => {
   try {
-    const { phone, password } = req.body;
-    if (!phone || !password) {
-      return res.status(400).json({ message: "Phone and password are required." });
+    const { identifier, email, phone, password } = req.body;
+    const rawIdentifier = identifier || email || phone;
+    if (!rawIdentifier || !password) {
+      return res
+        .status(400)
+        .json({ message: "Email or phone and password are required." });
     }
 
-    const user = await Teachers.findOne({ phone });
+    const normalizedEmail = normalizeEmail(rawIdentifier);
+    const query = isValidEmail(normalizedEmail)
+      ? { email: normalizedEmail }
+      : { phone: rawIdentifier };
+    const user = await Teachers.findOne(query);
     if (!user) {
-      return res.status(401).json({ message: "Invalid phone number" });
+      return res.status(401).json({ message: "Invalid email or phone number" });
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
@@ -107,6 +111,7 @@ router.post("/login-teacher", async (req, res) => {
       role: normalizedRole,
       name: user.name,
       phone: user.phone,
+      email: user.email,
     };
     const token = signAccessToken(accessPayload, "teacher");
     const refreshToken = await createRefreshTokenRecord({

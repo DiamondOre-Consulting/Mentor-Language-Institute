@@ -15,6 +15,7 @@ const AdminEditTeacher = ({ teacherDetails, closingModel, id, onUpdated }) => {
   const { get, put } = useApi();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   //   const [userName, setUserName] = useState("");
   const [dob, setdob] = useState("");
@@ -32,6 +33,7 @@ const AdminEditTeacher = ({ teacherDetails, closingModel, id, onUpdated }) => {
     if (teacherDetails) {
       setName(teacherDetails.name || "");
       setPhone(teacherDetails.phone || "");
+      setEmail(teacherDetails.email || "");
       //   setUserName(teacherDetails.userName || "");
       setdob(teacherDetails.dob || "");
       setPassword("");
@@ -70,6 +72,7 @@ const AdminEditTeacher = ({ teacherDetails, closingModel, id, onUpdated }) => {
       const payload = {
         name,
         phone,
+        email,
         password,
         dob,
       };
@@ -167,6 +170,18 @@ const AdminEditTeacher = ({ teacherDetails, closingModel, id, onUpdated }) => {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="Enter Your Phone Number"
+                    className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
+                    required=""
+                  />
+                </div>
+                <div>
+                  <input
+                    type="email"
+                    name="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter Email"
                     className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                     required=""
                   />

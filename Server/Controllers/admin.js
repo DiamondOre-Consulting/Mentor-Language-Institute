@@ -92,14 +92,21 @@ const ensureAdminSignupAllowed = async (req, res, next) => {
 
 router.post("/signup-admin", ensureAdminSignupAllowed, async (req, res) => {
   try {
-    const { name, phone, password } = req.body;
-    if (!name || !phone || !password) {
+    const { name, phone, password, email } = req.body;
+    if (!name || !phone || !password || !email) {
       return res.status(400).json({
-        message: "Name, phone number, and password are required.",
+        message: "Name, phone number, email, and password are required.",
       });
     }
 
-    const adminuser = await Admin.findOne({ phone });
+    const normalizedEmail = normalizeEmail(email);
+    if (!isValidEmail(normalizedEmail)) {
+      return res.status(400).json({ message: "Please enter a valid email." });
+    }
+
+    const adminuser = await Admin.findOne({
+      $or: [{ phone }, { email: normalizedEmail }],
+    });
     if (adminuser) {
       return res.status(409).json({ message: "Admin user already exists" });
     }
@@ -111,6 +118,7 @@ router.post("/signup-admin", ensureAdminSignupAllowed, async (req, res) => {
       name,
       username: name + "-" + phone,
       phone,
+      email: normalizedEmail,
       branch: "Main",
       password: hashedPassword,
     });
@@ -128,15 +136,25 @@ router.post("/signup-admin", ensureAdminSignupAllowed, async (req, res) => {
 
 router.post("/login-admin", async (req, res) => {
   try {
-    const { username, password } = req.body;
-    if (!username || !password) {
+    const { identifier, email, username, password } = req.body;
+    const rawIdentifier = identifier || email || username;
+    if (!rawIdentifier || !password) {
       return res.status(400).json({
-        message: "Username and password are required.",
+        message: "Email or username and password are required.",
       });
     }
-    const user = await Admin.findOne({ username });
+
+    const normalizedEmail = normalizeEmail(rawIdentifier);
+    let user = null;
+    if (isValidEmail(normalizedEmail)) {
+      user = await Admin.findOne({ email: normalizedEmail });
+    }
     if (!user) {
-      return res.status(401).json({ message: "Invalid username" });
+      user = await Admin.findOne({ username: rawIdentifier });
+    }
+
+    if (!user) {
+      return res.status(401).json({ message: "Invalid email or username" });
     }
 
     // Compare the passwords
@@ -150,6 +168,7 @@ router.post("/login-admin", async (req, res) => {
       userId: user._id,
       name: user.name,
       username: user.username,
+      email: user.email,
       phone: user.phone,
       role: user.role || "admin",
     };
@@ -274,7 +293,7 @@ router.put("/student-edit/:id", AdminAuthenticateToken, async (req, res) => {
 
 router.put("/teacher-edit/:id", AdminAuthenticateToken, async (req, res) => {
   const { id } = req.params;
-  const { name, phone, password, dob, courseId } = req.body;
+  const { name, phone, password, dob, courseId, email } = req.body;
 
   try {
     // Validate input fields (optional, depending on your requirements)
@@ -285,7 +304,7 @@ router.put("/teacher-edit/:id", AdminAuthenticateToken, async (req, res) => {
       return res.status(404).json({ message: "teacher not found." });
     }
 
-    // Check if username already exists (excluding the current student)
+    // Check if phone already exists (excluding the current teacher)
     if (phone) {
       const existingTeacher = await Teachers.findOne({ phone });
       if (existingTeacher && existingTeacher._id.toString() !== id) {
@@ -293,6 +312,20 @@ router.put("/teacher-edit/:id", AdminAuthenticateToken, async (req, res) => {
           message: "Teacher already taken. Please enter a unique phone number",
         });
       }
+    }
+
+    if (email) {
+      const normalizedEmail = normalizeEmail(email);
+      if (!isValidEmail(normalizedEmail)) {
+        return res.status(400).json({ message: "Please enter a valid email." });
+      }
+      const existingTeacher = await Teachers.findOne({ email: normalizedEmail });
+      if (existingTeacher && existingTeacher._id.toString() !== id) {
+        return res.status(400).json({
+          message: "Email already exists. Please enter a unique email address.",
+        });
+      }
+      teacher.email = normalizedEmail;
     }
 
 
@@ -715,19 +748,27 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
       phone,
       password,
       dob,
+      email,
       courseId,
       commissionRate,
       offlineCommissionRate,
       onlineCommissionRate,
     } = req.body;
 
-    if (!name || !phone || !password) {
+    if (!name || !phone || !password || !email) {
       return res.status(400).json({
-        message: "Name, phone number, and password are required.",
+        message: "Name, phone number, email, and password are required.",
       });
     }
 
-    const teacher = await Teachers.exists({ phone });
+    const normalizedEmail = normalizeEmail(email);
+    if (!isValidEmail(normalizedEmail)) {
+      return res.status(400).json({ message: "Please enter a valid email." });
+    }
+
+    const teacher = await Teachers.exists({
+      $or: [{ phone }, { email: normalizedEmail }],
+    });
 
     if (teacher) {
       return res
@@ -749,6 +790,7 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
       role: "teacher",
       name,
       phone,
+      email: normalizedEmail,
       dob,
       password: hashedPassword,
     });

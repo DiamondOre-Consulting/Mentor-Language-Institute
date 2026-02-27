@@ -20,6 +20,14 @@ const teacherSchema = new mongoose.Schema({
     trim:true,
     unique:true
   },
+  email: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    unique: true,
+    sparse: true,
+    match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address."],
+  },
   dob: {
     type: Date,
   },

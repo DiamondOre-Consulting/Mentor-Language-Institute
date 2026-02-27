@@ -134,6 +134,7 @@ const Register = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [dob, setdob] = useState();
+  const [teacherEmail, setTeacherEmail] = useState("");
   const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [grade, setGrade] = useState("");
@@ -174,7 +175,7 @@ const Register = () => {
         return;
       }
 
-      if (!name || !phone || !password || !dob) {
+      if (!name || !phone || !password || !dob || !teacherEmail) {
         setPopupMessage("All field are required");
         return;
       }
@@ -182,6 +183,7 @@ const Register = () => {
       const payload = {
         name,
         phone,
+        email: teacherEmail,
         password,
         dob,
         courseId: teacherCourseId || "",
@@ -209,6 +211,7 @@ const Register = () => {
         setPhone("");
         setPassword("");
         setdob("");
+        setTeacherEmail("");
         setTeacherCourseId("");
         setTeacherOfflineCommissionRate("");
         setTeacherOnlineCommissionRate("");
@@ -554,6 +557,20 @@ const Register = () => {
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
                           placeholder="Enter Phone No"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      "
+                          required=""
+                        />
+                      </div>
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-900 ">
+                          Email
+                        </label>
+                        <input
+                          type="email"
+                          name="teacherEmail"
+                          value={teacherEmail}
+                          onChange={(e) => setTeacherEmail(e.target.value)}
+                          placeholder="Enter Email"
                           className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      "
                           required=""
                         />

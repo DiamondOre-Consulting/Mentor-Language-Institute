@@ -17,6 +17,14 @@ const adminSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  email: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    unique: true,
+    sparse: true,
+    match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address."],
+  },
   phone: {
     type: String,
     required: true,
