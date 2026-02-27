@@ -148,21 +148,23 @@ const MarkAttendance = () => {
   };
 
   const submitAttendance = async () => {
-    if (!classHours && classHours !== 0) {
-      alert("Please enter class hours.");
-      return;
-    }
     try {
-      setMarking(true);
       const presentStudentIds = Object.entries(presentMap)
         .filter(([, value]) => value)
         .map(([key]) => key);
+      const hasPresent = presentStudentIds.length > 0;
 
+      if (hasPresent && !classHours && classHours !== 0) {
+        alert("Please enter class hours.");
+        return;
+      }
+
+      setMarking(true);
       await post({
         url: `/teachers/attendance/bulk/${selectedClassId}`,
         data: {
           classDate: formatDate(selectedDate),
-          numberOfClasses: classHours,
+          numberOfClasses: hasPresent ? classHours : 0,
           presentStudentIds,
           mode: classMode,
         },
@@ -241,12 +243,6 @@ const MarkAttendance = () => {
             onClick={() => setAllPresence(true)}
           >
             Mark All Present
-          </button>
-          <button
-            className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded-md text-sm"
-            onClick={() => setAllPresence(false)}
-          >
-            Mark All Absent
           </button>
           <button
             className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1 rounded-md text-sm"

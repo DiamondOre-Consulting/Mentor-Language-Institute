@@ -50,6 +50,20 @@ const normalizeNumericInput = (value, { allowZero = false } = {}) => {
   return num;
 };
 
+const buildModeConflictMatch = (normalizedMode) => {
+  if (normalizedMode === "online") {
+    return {
+      $or: [
+        { mode: "offline" },
+        { mode: { $exists: false } },
+        { mode: null },
+        { mode: "" },
+      ],
+    };
+  }
+  return { mode: "online" };
+};
+
 const teacherHasStudentAccess = async (teacherId, studentId) => {
   const directAccess = await Teachers.exists({
     _id: teacherId,
@@ -826,6 +840,39 @@ router.post("/schedule-class/:id",TeacherAuthenticateToken,async (req, res) => {
         return res.status(404).json({ message: "Class not found." });
       }
 
+      const existingSessionForDate = (classDoc.dailyClasses || []).find(
+        (entry) =>
+          entry.classDate === date &&
+          String(entry.teacherId) === String(req.user.userId)
+      );
+      if (existingSessionForDate) {
+        const existingMode =
+          normalizeAttendanceMode(existingSessionForDate.mode) || "offline";
+        if (existingMode !== normalizedMode) {
+          return res.status(409).json({
+            message: `Attendance already marked for this date in ${existingMode} mode.`,
+          });
+        }
+      }
+
+      const conflictMatch = buildModeConflictMatch(normalizedMode);
+      const conflictingAttendance = await Attendance.exists({
+        classId: id,
+        "detailAttendance": {
+          $elemMatch: {
+            classDate: date,
+            teacherId: req.user.userId,
+            ...conflictMatch,
+          },
+        },
+      });
+      if (conflictingAttendance) {
+        const otherMode = normalizedMode === "online" ? "offline" : "online";
+        return res.status(409).json({
+          message: `Attendance already marked for this date in ${otherMode} mode.`,
+        });
+      }
+
       const existingSessionIndex = (classDoc.dailyClasses || []).findIndex(
         (entry) =>
           entry.classDate === date &&
@@ -851,40 +898,58 @@ router.post("/schedule-class/:id",TeacherAuthenticateToken,async (req, res) => {
 
       // Check if there's an existing document in Attendance collection for each student
       for (const studentId of studentIds) {
-        const existingAttendance = await Attendance.findOne({
+        let attendanceDoc = await Attendance.findOne({
           classId: id,
           studentId,
         });
 
-        if (existingAttendance) {
-          // If existing document found, update it
-          await Attendance.findByIdAndUpdate(
-            existingAttendance._id,
-            {
-              $push: { detailAttendance: { classDate: date, teacherId: req.user.userId, mode: normalizedMode } },
-            },
-            { new: true }
-          );
-
-          // MY SCHEDULED CLASSES DATES IS LEFT
-        } else {
-          // If no existing document found, create a new one
+        if (!attendanceDoc) {
           const newAttendance = new Attendance({
             classId: id,
             studentId,
-            detailAttendance: [{ classDate: date, teacherId: req.user.userId, mode: normalizedMode }],
+            detailAttendance: [
+              {
+                classDate: date,
+                teacherId: req.user.userId,
+                mode: normalizedMode,
+              },
+            ],
           });
 
           await newAttendance.save();
 
-          const pushScheduledClass = await Students.findByIdAndUpdate(
+          await Students.findByIdAndUpdate(
             { _id: studentId },
             {
-              $push: { attendanceDetail: newAttendance._id },
+              $addToSet: { attendanceDetail: newAttendance._id },
             },
             { new: true }
           );
+          continue;
         }
+
+        const existingEntry = attendanceDoc.detailAttendance?.find((entry) => {
+          const dateMatch = entry.classDate === date;
+          const teacherMatch =
+            String(entry.teacherId) === String(req.user.userId);
+          return dateMatch && teacherMatch;
+        });
+
+        if (existingEntry) {
+          if (!existingEntry.mode) {
+            existingEntry.mode = normalizedMode;
+            await attendanceDoc.save();
+          }
+          continue;
+        }
+
+        attendanceDoc.detailAttendance.push({
+          classDate: date,
+          teacherId: req.user.userId,
+          mode: normalizedMode,
+        });
+
+        await attendanceDoc.save();
       }
 
       res.status(200).json({ message: "New class is scheduled" });
@@ -900,6 +965,10 @@ router.put("/update-class-hours/:id",TeacherAuthenticateToken,async (req, res) =
     try {
       const { id } = req.params;
       const { updatedHours } = req.body;
+      const normalizedHours = normalizeNumericInput(updatedHours, { allowZero: true });
+      if (normalizedHours === null) {
+        return res.status(400).json({ message: "Updated hours must be a valid number." });
+      }
 
       const assignment = await ClassTeachers.findOne({
         classId: id,
@@ -912,12 +981,13 @@ router.put("/update-class-hours/:id",TeacherAuthenticateToken,async (req, res) =
 
       const singleClass = await Classes.findByIdAndUpdate(
         { _id: id },
-        { $inc: { totalHours: updatedHours } },
+        { $set: { totalHours: normalizedHours } },
         { new: true }
       );
 
       res.status(200).json({
-        message: "Total hours of the class has been increased successfully!!!",
+        message: "Total hours of the class has been updated successfully.",
+        data: singleClass,
       });
     } catch (error) {
       console.log("Something went wrong!!! ", error);
@@ -1000,8 +1070,8 @@ router.put("/update-attendance/:id1/:id2",
         const dateMatch = entry.classDate === attendanceDate;
         const teacherMatch =
           String(entry.teacherId) === String(req.user.userId);
-        const entryMode = normalizeAttendanceMode(entry.mode);
-        const modeMatch = normalizedMode ? (entryMode ? entryMode === normalizedMode : true) : true;
+        const entryMode = normalizeAttendanceMode(entry.mode) || "offline";
+        const modeMatch = normalizedMode ? entryMode === normalizedMode : true;
         return dateMatch && teacherMatch && modeMatch;
       });
 
@@ -1066,10 +1136,96 @@ router.post(
         return res.status(403).json({ message: "Unauthorized." });
       }
 
+      const existingSessionForDate = (classDoc.dailyClasses || []).find(
+        (entry) =>
+          entry.classDate === classDate &&
+          String(entry.teacherId) === String(req.user.userId)
+      );
+      if (existingSessionForDate) {
+        const existingMode =
+          normalizeAttendanceMode(existingSessionForDate.mode) || "offline";
+        if (existingMode !== normalizedMode) {
+          return res.status(409).json({
+            message: `Attendance already marked for this date in ${existingMode} mode.`,
+          });
+        }
+      }
+
+      const conflictMatch = buildModeConflictMatch(normalizedMode);
+      const conflictingAttendance = await Attendance.exists({
+        classId,
+        "detailAttendance": {
+          $elemMatch: {
+            classDate,
+            teacherId: req.user.userId,
+            ...conflictMatch,
+          },
+        },
+      });
+      if (conflictingAttendance) {
+        const otherMode = normalizedMode === "online" ? "offline" : "online";
+        return res.status(409).json({
+          message: `Attendance already marked for this date in ${otherMode} mode.`,
+        });
+      }
+
       const normalizedHours = Number(numberOfClasses) || 0;
       const presentSet = new Set(
         (presentStudentIds || []).map((id) => String(id))
       );
+
+      const enrolledStudents = classDoc.enrolledStudents || [];
+
+      if (presentSet.size === 0) {
+        const cleanedDailyClasses = (classDoc.dailyClasses || []).filter((d) => {
+          const dateMatch = d.classDate === classDate;
+          const teacherMatch = String(d.teacherId) === String(req.user.userId);
+          const entryMode = normalizeAttendanceMode(d.mode) || "offline";
+          const modeMatch = entryMode === normalizedMode;
+          return !(dateMatch && teacherMatch && modeMatch);
+        });
+
+        if (cleanedDailyClasses.length !== (classDoc.dailyClasses || []).length) {
+          classDoc.dailyClasses = cleanedDailyClasses;
+          await classDoc.save();
+        }
+
+        const modeCriteria =
+          normalizedMode === "offline"
+            ? {
+                $or: [
+                  { mode: "offline" },
+                  { mode: { $exists: false } },
+                  { mode: null },
+                  { mode: "" },
+                ],
+              }
+            : { mode: normalizedMode };
+
+        await Attendance.updateMany(
+          {
+            classId,
+            "detailAttendance.classDate": classDate,
+            "detailAttendance.teacherId": req.user.userId,
+          },
+          {
+            $pull: {
+              detailAttendance: {
+                classDate,
+                teacherId: req.user.userId,
+                ...modeCriteria,
+              },
+            },
+          }
+        );
+
+        return res.status(200).json({
+          message: "No students present. Class not held.",
+          totalStudents: enrolledStudents.length,
+          presentCount: 0,
+          absentCount: enrolledStudents.length,
+        });
+      }
 
       const existingSessionIndex = (classDoc.dailyClasses || []).findIndex(
         (d) =>
@@ -1091,8 +1247,6 @@ router.post(
       }
 
       await classDoc.save();
-
-      const enrolledStudents = classDoc.enrolledStudents || [];
 
       for (const studentId of enrolledStudents) {
         const isPresent = presentSet.has(String(studentId));
@@ -1130,8 +1284,8 @@ router.post(
             const dateMatch = entry.classDate === classDate;
             const teacherMatch =
               String(entry.teacherId) === String(req.user.userId);
-            const entryMode = normalizeAttendanceMode(entry.mode);
-            const modeMatch = entryMode ? entryMode === normalizedMode : true;
+            const entryMode = normalizeAttendanceMode(entry.mode) || "offline";
+            const modeMatch = entryMode === normalizedMode;
             return dateMatch && teacherMatch && modeMatch;
           }
         );
@@ -1310,6 +1464,44 @@ router.post(
     }
     const computedCommission = 0;
 
+    const classDoc = await Classes.findById(classId).select("dailyClasses");
+    if (!classDoc) {
+      return res.status(404).json({ message: "Class not found." });
+    }
+
+    const existingSessionForDate = (classDoc.dailyClasses || []).find(
+      (entry) =>
+        entry.classDate === classDate &&
+        String(entry.teacherId) === String(req.user.userId)
+    );
+    if (existingSessionForDate) {
+      const existingMode =
+        normalizeAttendanceMode(existingSessionForDate.mode) || "offline";
+      if (existingMode !== normalizedMode) {
+        return res.status(409).json({
+          message: `Attendance already marked for this date in ${existingMode} mode.`,
+        });
+      }
+    }
+
+    const conflictMatch = buildModeConflictMatch(normalizedMode);
+    const conflictingAttendance = await Attendance.exists({
+      classId,
+      "detailAttendance": {
+        $elemMatch: {
+          classDate,
+          teacherId: req.user.userId,
+          ...conflictMatch,
+        },
+      },
+    });
+    if (conflictingAttendance) {
+      const otherMode = normalizedMode === "online" ? "offline" : "online";
+      return res.status(409).json({
+        message: `Attendance already marked for this date in ${otherMode} mode.`,
+      });
+    }
+
     let attendance = await Attendance.findOne({ studentId, classId });
 
     if (!attendance) {
@@ -1329,14 +1521,36 @@ router.post(
         ],
       });
     } else {
-      attendance.detailAttendance.push({
-        classDate,
-        numberOfClassesTaken,
-        grade,
-        commission: computedCommission,
-        teacherId: req.user.userId,
-        mode: normalizedMode,
+      const existingDetail = attendance.detailAttendance?.find((entry) => {
+        const dateMatch = entry.classDate === classDate;
+        const teacherMatch =
+          String(entry.teacherId) === String(req.user.userId);
+        return dateMatch && teacherMatch;
       });
+
+      if (existingDetail) {
+        const entryMode = normalizeAttendanceMode(existingDetail.mode) || "offline";
+        if (entryMode !== normalizedMode) {
+          return res.status(409).json({
+            message: `Attendance already marked for this date in ${entryMode} mode.`,
+          });
+        }
+        existingDetail.numberOfClassesTaken = numberOfClassesTaken;
+        if (grade !== undefined) {
+          existingDetail.grade = grade;
+        }
+        existingDetail.commission = computedCommission;
+        existingDetail.mode = normalizedMode;
+      } else {
+        attendance.detailAttendance.push({
+          classDate,
+          numberOfClassesTaken,
+          grade,
+          commission: computedCommission,
+          teacherId: req.user.userId,
+          mode: normalizedMode,
+        });
+      }
     }
 
     await attendance.save();

@@ -38,7 +38,8 @@ const SiteFooter = () => {
           <div className="mt-3 space-y-1 text-sm text-slate-600">
             <p>+91 9999466159</p>
             <p className="break-words">mentor.languageclasses@gmail.com</p>
-            <p>Gurugram, Haryana</p>
+            <p> F-4/1, Golf Course Rd, Block F, DLF Phase 1, Sector 26A, Gurugram,
+              Haryana-122002</p>
           </div>
           <div className="mt-4 flex items-center gap-3">
             <a href="https://www.instagram.com/mentorlanguage/" target="_blank" rel="noreferrer">

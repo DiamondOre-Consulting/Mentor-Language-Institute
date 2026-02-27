@@ -18,7 +18,6 @@ const PendingCommissions = () => {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [message, setMessage] = useState("");
-  const [formState, setFormState] = useState({});
   const [showDeleteAllPopup, setShowDeleteAllPopup] = useState(false);
 
   const fetchCommissions = async (refresh = false) => {
@@ -40,13 +39,6 @@ const PendingCommissions = () => {
       if (response.status === 200) {
         const rows = response.data || [];
         setCommissions(rows);
-        const nextForm = {};
-        rows.forEach((item) => {
-          nextForm[item._id] = {
-            remarks: item.remarks || "",
-          };
-        });
-        setFormState(nextForm);
       }
     } catch (error) {
       console.error("Error fetching pending commissions:", error);
@@ -75,16 +67,6 @@ const PendingCommissions = () => {
     });
   }, [commissions, searchQuery]);
 
-  const handleInputChange = (id, field, value) => {
-    setFormState((prev) => ({
-      ...prev,
-      [id]: {
-        ...(prev[id] || {}),
-        [field]: value,
-      },
-    }));
-  };
-
   const handleUpdate = async (commissionId) => {
     try {
       setLoading(true);
@@ -99,7 +81,6 @@ const PendingCommissions = () => {
         url: `/admin-confi/update-monthly-commission/${commissionId}`,
         data: {
           paid: true,
-          remarks: (formState[commissionId]?.remarks || "").trim(),
         },
         headers: {
           Authorization: `Bearer ${token}`,
@@ -147,7 +128,6 @@ const PendingCommissions = () => {
 
       if (response.status === 200) {
         setCommissions([]);
-        setFormState({});
         setShowDeleteAllPopup(false);
         setMessage(response.data?.message || "All commissions deleted.");
       }
@@ -247,22 +227,17 @@ const PendingCommissions = () => {
                   Status
                 </th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                  Remarks
-                </th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">
                   Action
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredCommissions.map((item) => {
-                const rowState = formState[item._id] || {};
-                return (
-                  <tr key={item._id} className="hover:bg-orange-50/40">
-                    <td className="px-4 py-3">
-                      <div className="font-semibold text-slate-800">
-                        {item?.teacherId?.name || "Unknown"}
-                      </div>
+              {filteredCommissions.map((item) => (
+                <tr key={item._id} className="hover:bg-orange-50/40">
+                  <td className="px-4 py-3">
+                    <div className="font-semibold text-slate-800">
+                      {item?.teacherId?.name || "Unknown"}
+                    </div>
                       <div className="text-xs text-slate-500">
                         {item?.teacherId?.phone || "No phone"}
                       </div>
@@ -291,17 +266,6 @@ const PendingCommissions = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <input
-                        type="text"
-                        className="w-44 rounded-lg border border-slate-300 px-2 py-1 text-sm text-slate-700"
-                        placeholder="Add remark"
-                        value={rowState.remarks ?? ""}
-                        onChange={(e) =>
-                          handleInputChange(item._id, "remarks", e.target.value)
-                        }
-                      />
-                    </td>
-                    <td className="px-4 py-3">
                       <button
                         onClick={() => handleUpdate(item._id)}
                         className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
@@ -309,14 +273,13 @@ const PendingCommissions = () => {
                         Mark Paid
                       </button>
                     </td>
-                  </tr>
-                );
-              })}
+                </tr>
+              ))}
               {filteredCommissions.length === 0 && (
                 <tr>
                   <td
                     className="px-4 py-8 text-center text-slate-500"
-                    colSpan={10}
+                    colSpan={9}
                   >
                     No pending commissions found.
                   </td>

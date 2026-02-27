@@ -332,9 +332,6 @@ const EachTeacherClassStudentAttendance = () => {
                 <th scope="col" className="px-6 py-3">
                   paid
                 </th>
-                <th scope="col" className="px-6 py-3">
-                  Remarks(if any)
-                </th>
               </tr>
             </thead>
             <tbody>
@@ -371,10 +368,6 @@ const EachTeacherClassStudentAttendance = () => {
                       }`}
                     >
                       {commission.paid ? "paid" : "Unpaid"}
-                    </td>
-
-                    <td className="px-6 py-4 text-center">
-                      {commission.remarks}
                     </td>
                   </tr>
                 ))}

@@ -322,18 +322,17 @@ const TeacherAllStudentEachCourse = () => {
               <option value="online">Online</option>
             </select>
           </div>
-          <div>
-            {selectedDate && (
-              <div>
-                <div
-                  className="px-6 sm:px-12 py-2 bg-gray-100 border border-2 rounded-md"
-                  value={numberOfClasses}
-                >
-                  <span>{numberOfClasses}</span>
-                </div>
-              </div>
-            )}
-          </div>
+         <div>
+  {selectedDate && numberOfClasses > 0 && (
+    <div>
+      <div
+        className="px-6 sm:px-12 py-2 bg-gray-100 border border-2 rounded-md"
+      >
+        <span>{numberOfClasses}</span>
+      </div>
+    </div>
+  )}
+</div>
         </div>
 
         <div className="grid grid-cols-1 gap-8 mt-10 md:grid-cols-1">
@@ -493,10 +492,6 @@ const TeacherAllStudentEachCourse = () => {
                 <th scope="col" className="px-6 py-3">
                   Paid
                 </th>
-
-                <th scope="col" className="px-6 py-3">
-                  Remarks(if any)
-                </th>
               </tr>
             </thead>
             <tbody>
@@ -535,9 +530,6 @@ const TeacherAllStudentEachCourse = () => {
                       }`}
                     >
                       {commission.paid ? "paid" : "Unpaid"}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-center">
-                      {commission.remarks}
                     </td>
                   </tr>
                 ))}
