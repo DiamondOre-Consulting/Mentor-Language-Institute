@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 360 360" role="img" aria-label="Payment QR Placeholder">
+  <rect width="360" height="360" fill="#ffffff"/>
+  <rect x="12" y="12" width="336" height="336" fill="none" stroke="#f97316" stroke-width="6"/>
+  <rect x="36" y="36" width="90" height="90" fill="#111827"/>
+  <rect x="48" y="48" width="66" height="66" fill="#ffffff"/>
+  <rect x="60" y="60" width="42" height="42" fill="#111827"/>
+
+  <rect x="234" y="36" width="90" height="90" fill="#111827"/>
+  <rect x="246" y="48" width="66" height="66" fill="#ffffff"/>
+  <rect x="258" y="60" width="42" height="42" fill="#111827"/>
+
+  <rect x="36" y="234" width="90" height="90" fill="#111827"/>
+  <rect x="48" y="246" width="66" height="66" fill="#ffffff"/>
+  <rect x="60" y="258" width="42" height="42" fill="#111827"/>
+
+  <rect x="150" y="150" width="60" height="60" fill="#111827"/>
+  <rect x="165" y="165" width="30" height="30" fill="#ffffff"/>
+
+  <text x="180" y="190" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#111827">
+    QR
+  </text>
+  <text x="180" y="230" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#6b7280">
+    Replace with real payment QR
+  </text>
+</svg>

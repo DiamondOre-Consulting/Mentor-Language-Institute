@@ -68,7 +68,7 @@ const Courseheropage = () => {
 
   return (
     <>
-      <div className="relative bg-gradient-to-r from-purple-600 to-blue-600 h-lg text-white overflow-hidden">
+      <div className="relative bg-gradient-to-r from-purple-600 to-blue-600 text-white overflow-hidden">
         <div className="absolute inset-0">
           <img
             src="https://images.unsplash.com/photo-1522252234503-e356532cafd5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NzEyNjZ8MHwxfHNlYXJjaHw2fHxjb2RlfGVufDB8MHx8fDE2OTQwOTg0MTZ8MA&ixlib=rb-4.0.3&q=80&w=1080"
@@ -78,65 +78,61 @@ const Courseheropage = () => {
           <div className="absolute inset-0 bg-black opacity-50"></div>
         </div>
 
-        <div className="flex justify-end items-center">
-          <ul className="relative">
-            <li>
-              <button
-                id="dropdownNavbarLink"
-                onClick={toggleDropdown}
-                className="text-gray-100  border-b border-gray-100 md:hover:bg-transparent md:border-0 pl-3 pr-4 py-2 md:hover:text-orange-400 md:p-0 font-medium flex items-center justify-between w-full md:w-auto"
+        <div className="relative z-10 flex flex-wrap items-center justify-end gap-3 px-4 py-4 sm:px-6 lg:px-10">
+          <div className="relative">
+            <button
+              id="dropdownNavbarLink"
+              onClick={toggleDropdown}
+              className="text-gray-100 border-b border-gray-100/60 md:hover:bg-transparent md:border-0 px-3 py-2 md:hover:text-orange-300 font-medium flex items-center justify-between"
+            >
+              Help ?
+              <svg
+                className="w-4 h-4 ml-1"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                Help ?
-                <svg
-                  className="w-4 h-4 ml-1"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  ></path>
-                </svg>
-              </button>
-              {isDropdownOpen && (
-                <div
-                  id="dropdownNavbar"
-                  className="absolute -right-8 mt-2 bg-white z-50 text-base z-10 list-none divide-y divide-gray-100 rounded shadow w-54"
-                >
-                  <ul className="py-1" aria-labelledby="dropdownLargeButton">
-                    <li>
-                      <a
-                        href="#"
-                        className="text-sm hover:bg-gray-100 text-gray-700 block px-4 py-2"
-                      >
-                        +91-9999466159
-                      </a>
-                    </li>
-                  </ul>
-                  <div className="py-1">
+                <path
+                  fillRule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                ></path>
+              </svg>
+            </button>
+            {isDropdownOpen && (
+              <div
+                id="dropdownNavbar"
+                className="absolute right-0 mt-2 bg-white z-50 text-base list-none divide-y divide-gray-100 rounded shadow w-56"
+              >
+                <ul className="py-1" aria-labelledby="dropdownLargeButton">
+                  <li>
                     <a
                       href="#"
-                      className="text-sm hover:bg-gray-100 text-gray-700 text-wrap block px-4 py-2"
+                      className="text-sm hover:bg-gray-100 text-gray-700 block px-4 py-2"
                     >
-                      mentor.languageclasses@gmail.com
+                      +91-9999466159
                     </a>
-                  </div>
+                  </li>
+                </ul>
+                <div className="py-1">
+                  <a
+                    href="#"
+                    className="text-sm hover:bg-gray-100 text-gray-700 block px-4 py-2 break-all"
+                  >
+                    mentor.languageclasses@gmail.com
+                  </a>
                 </div>
-              )}
-            </li>
-          </ul>
-          <li className="relative group z-50 flex items-center float-right mr-1 p-4 cursor-pointer">
-            <Link
-              className="block py-2 px-3 text-gray-200  rounded md:p-0"
-              aria-current="page"
-              onClick={handleLogout}
-            >
-              Logout
-            </Link>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="group inline-flex items-center gap-2 rounded-full border border-white/30 px-4 py-2 text-sm font-semibold text-white hover:border-orange-300 hover:text-orange-200"
+          >
+            Logout
             <svg
-              className="h-6 w-6 text-gray-200 mx-1"
+              className="h-5 w-5 text-gray-200 group-hover:text-orange-200"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -144,25 +140,26 @@ const Courseheropage = () => {
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              {" "}
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />{" "}
-              <polyline points="16 17 21 12 16 7" />{" "}
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
               <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
-          </li>
+          </button>
         </div>
 
-        <div className="relative z-10 flex flex-col justify-start py-10 px-10 h-full text-center">
+        <div className="relative z-10 flex flex-col justify-start px-4 pb-10 pt-6 sm:px-6 lg:px-10">
           <div className="flex items-center">
-            <div className="bg-orange-500 h-20 w-1"></div>
-            <div className="flex flex-col mx-2">
-              <h1 className="text-4xl font-bold">{classData?.classTitle}</h1>
+            <div className="bg-orange-500 h-14 sm:h-20 w-1"></div>
+            <div className="flex flex-col mx-3">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">
+                {classData?.classTitle}
+              </h1>
             </div>
           </div>
         </div>
       </div>
 
-      <nav className="flex px-10 py-2" aria-label="Breadcrumb">
+      <nav className="flex px-4 py-3 sm:px-6 lg:px-10" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
           <li className="inline-flex items-center">
             <Link

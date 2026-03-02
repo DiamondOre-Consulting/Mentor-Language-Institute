@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import cron from "node-cron";
+import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
 import Students from "../Models/Students.js";
 import StudentAuthenticateToken from "../Middlewares/StudentAuthenticateToken.js";
 import Classes from "../Models/Classes.js";
@@ -11,7 +13,7 @@ import Teachers from "../Models/Teachers.js";
 import Attendance from "../Models/Attendance.js";
 import Fee from "../Models/Fee.js";
 import ClassTeachers from "../Models/ClassTeachers.js";
-import { normalizeFeeMonth, normalizePaidStatus, parseFeeAmount } from "../utils/fee.js";
+import PaymentRequest from "../Models/PaymentRequest.js";
 import { createRefreshTokenRecord, setRefreshCookie, signAccessToken } from "../utils/authTokens.js";
 import {
   isGradeMatch,
@@ -28,6 +30,40 @@ import {
 dotenv.config();
 
 const router = express.Router();
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (allowed.includes(file.mimetype)) {
+      return cb(null, true);
+    }
+    return cb(new Error("Only JPG, PNG, and WEBP images are allowed."));
+  },
+});
+
+const uploadToCloudinary = (buffer, options = {}) =>
+  new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "mentor/payment-requests",
+        resource_type: "image",
+        ...options,
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    stream.end(buffer);
+  });
 
 
 router.post("/signup", async (req, res) => {
@@ -306,62 +342,10 @@ router.get("/teacher/:id", StudentAuthenticateToken, async (req, res) => {
 
 router.post("/apply-course/:id", StudentAuthenticateToken, async (req, res) => {
   try {
-    const { id } = req.params;
-    const { userId } = req.user;
-    const student = await Students.findById(userId).select("grade");
-    const classExists = await Classes.findById(id);
-    if (!classExists) {
-      return res.status(404).json({ message: "Class not found." });
-    }
-    const resolvedCourseGrade = resolveCourseGrade(classExists);
-    if (resolvedCourseGrade && !classExists.grade) {
-      classExists.grade = resolvedCourseGrade;
-      await classExists.save();
-    }
-    if (!isGradeMatch(resolvedCourseGrade, student?.grade)) {
-      return res
-        .status(403)
-        .json({ message: "Student grade does not match this course." });
-    }
-
-    const userApplied = await Classes.findOne({
-      _id: id,
-      appliedStudents: userId,
+    return res.status(403).json({
+      message:
+        "Enrollment requests are submitted through the payment request form. Payment details are optional.",
     });
-    if (userApplied) {
-      return res
-        .status(409)
-        .json({ message: "Student has already applied in this course!!!" });
-    }
-
-    const userRegistered = await Classes.findOne({
-      _id: id,
-      enrolledStudents: userId,
-    });
-    if (userRegistered) {
-      return res
-        .status(408)
-        .json({ message: "Student has already registered in this course!!!" });
-    }
-
-    const classUpdate = await Classes.findOneAndUpdate(
-      { _id: id },
-      {
-        $addToSet: { appliedStudents: userId },
-      },
-      { new: true }
-    );
-
-    const studentUpdate = await Students.findOneAndUpdate(
-      { _id: userId },
-      {
-        $addToSet: { appliedClasses: id },
-      }
-    );
-
-    res
-      .status(200)
-      .json({ message: "Student has applied for a course successfully!!!" });
   } catch (error) {
     console.log("Something went wrong!!! ");
     res.status(500).json(error);
@@ -372,155 +356,185 @@ router.post(
   "/enroll-course/:id",
   StudentAuthenticateToken,
   async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { userId } = req.user;
-      const { totalFee, feeMonth, paid, amountPaid } = req.body;
+    return res.status(403).json({
+      message:
+        "Enrollment requires admin approval. Please submit a payment request instead.",
+    });
+  }
+);
 
-      const normalizedPaid = normalizePaidStatus(paid);
-      if (normalizedPaid === null) {
-        return res.status(400).json({
-          message: "Invalid payment status. Use paid or pending.",
-        });
+router.post(
+  "/payment-requests/:id",
+  StudentAuthenticateToken,
+  (req, res) => {
+    upload.single("screenshot")(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({ message: err.message || "Upload failed." });
       }
+      try {
+        const { id } = req.params;
+        const { userId } = req.user;
+        const {
+          paymentMethod,
+          transactionId,
+          amount,
+          paidOn,
+          payerName,
+          phone,
+          notes,
+        } = req.body;
 
-      const normalizedTotalFee = parseFeeAmount(totalFee);
-      if (normalizedTotalFee === null || normalizedTotalFee < 0) {
-        return res.status(400).json({
-          message: "Total fee must be a valid number.",
-        });
-      }
+        if (!mongoose.isValidObjectId(id)) {
+          return res.status(400).json({ message: "Invalid class id." });
+        }
 
-      const normalizedFeeMonth = normalizeFeeMonth(feeMonth);
-      if (!normalizedFeeMonth) {
-        return res.status(400).json({
-          message: "Fee month must be a valid month number (1-12).",
-        });
-      }
+        if (!mongoose.isValidObjectId(userId)) {
+          return res.status(401).json({ message: "Invalid student token." });
+        }
 
-      const normalizedAmountPaid = normalizedPaid
-        ? parseFeeAmount(amountPaid)
-        : 0;
-      if (
-        normalizedPaid &&
-        (normalizedAmountPaid === null || normalizedAmountPaid <= 0)
-      ) {
-        return res.status(400).json({
-          message: "Amount paid must be a valid number when payment is marked paid.",
-        });
-      }
-      if (
-        normalizedPaid &&
-        normalizedAmountPaid !== null &&
-        normalizedAmountPaid > normalizedTotalFee
-      ) {
-        return res.status(400).json({
-          message: "Amount paid cannot exceed total fee.",
-        });
-      }
-
-      const classExists = await Classes.findById(id);
-      if (!classExists) {
-        return res.status(404).json({ message: "Class not found." });
-      }
-      const student = await Students.findById(userId).select("grade");
-      const resolvedCourseGrade = resolveCourseGrade(classExists);
-      if (resolvedCourseGrade && !classExists.grade) {
-        classExists.grade = resolvedCourseGrade;
-        await classExists.save();
-      }
-      if (!isGradeMatch(resolvedCourseGrade, student?.grade)) {
-        return res
-          .status(403)
-          .json({ message: "Student grade does not match this course." });
-      }
-
-      const userRegistered = await Classes.findOne({
-        _id: id,
-        enrolledStudents: userId,
-      });
-      if (userRegistered) {
-        return res.status(408).json({
-          message: "Student has already registered in this course!!!",
-        });
-      }
-
-      const updateClass = await Classes.findByIdAndUpdate(
-        { _id: id },
-        {
-          $addToSet: { enrolledStudents: userId },
-        },
-        { new: true }
-      );
-
-      if (updateClass) {
-        await ClassAccessStatus.findOneAndUpdate(
-          { classId: id, studentId: userId },
-          { classAccessStatus: true },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
+        const amountProvided =
+          amount !== undefined && amount !== null && String(amount).trim() !== "";
+        const hasPaymentDetails = Boolean(
+          transactionId ||
+            amountProvided ||
+            paidOn ||
+            payerName ||
+            phone ||
+            req.file
         );
 
-        let feeRecord = await Fee.findOne({ classId: id, studentId: userId });
-        if (!feeRecord) {
-          feeRecord = new Fee({
-            classId: id,
-            studentId: userId,
-            totalFee: normalizedTotalFee,
-            detailFee: [],
+        if (hasPaymentDetails) {
+          if (
+            !paymentMethod ||
+            !transactionId ||
+            !amountProvided ||
+            !paidOn ||
+            !payerName ||
+            !phone
+          ) {
+            return res.status(400).json({
+              message:
+                "paymentMethod, transactionId, amount, paidOn, payerName, and phone are required when submitting payment details.",
+            });
+          }
+        }
+
+        let parsedAmount = 0;
+        let paidDate = null;
+        if (hasPaymentDetails) {
+          parsedAmount = Number(amount);
+          if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+            return res.status(400).json({
+              message: "Amount must be a valid number greater than zero.",
+            });
+          }
+
+          paidDate = new Date(paidOn);
+          if (Number.isNaN(paidDate.getTime())) {
+            return res.status(400).json({ message: "paidOn must be a valid date." });
+          }
+        }
+
+        const classExists = await Classes.findById(id);
+        if (!classExists) {
+          return res.status(404).json({ message: "Class not found." });
+        }
+
+        const student = await Students.findById(userId).select("grade classes");
+        if (!student) {
+          return res.status(404).json({ message: "Student not found." });
+        }
+
+        const resolvedCourseGrade = resolveCourseGrade(classExists);
+        if (resolvedCourseGrade && !classExists.grade) {
+          classExists.grade = resolvedCourseGrade;
+          await classExists.save();
+        }
+        if (!isGradeMatch(resolvedCourseGrade, student?.grade)) {
+          return res
+            .status(403)
+            .json({ message: "Student grade does not match this course." });
+        }
+
+        const alreadyEnrolled = (student.classes || []).some(
+          (classId) => String(classId) === String(id)
+        );
+        if (alreadyEnrolled) {
+          return res.status(409).json({
+            message: "You are already enrolled in this course.",
           });
         }
 
-        const existingDetail = feeRecord.detailFee.find(
-          (detail) => normalizeFeeMonth(detail.feeMonth) === normalizedFeeMonth
-        );
-
-        if (existingDetail) {
-          existingDetail.paid = normalizedPaid;
-          existingDetail.amountPaid = normalizedAmountPaid ?? 0;
-        } else {
-          feeRecord.detailFee.push({
-            feeMonth: normalizedFeeMonth,
-            paid: normalizedPaid,
-            amountPaid: normalizedAmountPaid ?? 0,
+        const existingPending = await PaymentRequest.findOne({
+          studentId: userId,
+          classId: id,
+          status: "pending",
+        });
+        if (existingPending) {
+          return res.status(409).json({
+            message: "Payment request already submitted for this course.",
           });
         }
 
-        feeRecord.totalFee = normalizedTotalFee;
-        await feeRecord.save();
-
-        // UPDATE STUDENT
-        await Students.findByIdAndUpdate(
-          { _id: userId },
-          {
-            $addToSet: { classes: id, feeDetail: feeRecord._id },
-          },
-          { new: true }
-        );
-
-        // Remove id from appliedClasses array of Student
-        await Students.findByIdAndUpdate(
-          { _id: userId },
-          {
-            $pull: { appliedClasses: id },
+        let screenshotUrl = "";
+        if (hasPaymentDetails && req.file) {
+          if (
+            !process.env.CLOUDINARY_CLOUD_NAME ||
+            !process.env.CLOUDINARY_API_KEY ||
+            !process.env.CLOUDINARY_API_SECRET
+          ) {
+            console.warn("Cloudinary config missing; skipping screenshot upload.");
+          } else {
+            try {
+              const uploaded = await uploadToCloudinary(req.file.buffer, {
+                public_id: `payment-${userId}-${Date.now()}`,
+              });
+              screenshotUrl = uploaded?.secure_url || "";
+            } catch (uploadError) {
+              console.error("Screenshot upload failed:", uploadError);
+            }
           }
-        );
+        }
 
-        // Remove userId from appliedStudents array of Class
-        await Classes.findByIdAndUpdate(
-          { _id: id },
-          {
-            $pull: { appliedStudents: userId },
-          }
-        );
+        const request = await PaymentRequest.create({
+          studentId: userId,
+          classId: id,
+          paymentMethod: hasPaymentDetails ? String(paymentMethod).trim() : "",
+          transactionId: hasPaymentDetails ? String(transactionId).trim() : "",
+          amount: parsedAmount,
+          paidOn: paidDate,
+          payerName: hasPaymentDetails ? String(payerName).trim() : "",
+          phone: hasPaymentDetails ? String(phone).trim() : "",
+          notes: notes ? String(notes).trim() : "",
+          screenshotUrl,
+        });
+
+        await Students.findByIdAndUpdate(userId, {
+          $addToSet: { appliedClasses: id },
+        });
+        await Classes.findByIdAndUpdate(id, {
+          $addToSet: { appliedStudents: userId },
+        });
+
+        return res.status(201).json({
+          message: "Payment request submitted successfully.",
+          requestId: request._id,
+        });
+      } catch (error) {
+        console.error("Payment request error:", error);
+        if (error?.name === "ValidationError") {
+          return res.status(400).json({
+            message: "Payment request data is invalid.",
+          });
+        }
+        if (error?.name === "CastError") {
+          return res.status(400).json({
+            message: "Invalid identifier provided.",
+          });
+        }
+        return res.status(500).json({ message: "Unable to submit request." });
       }
-
-      res.status(200).json({
-        message: "Student has been enrolled in the course successfully!!!",
-      });
-    } catch (error) {
-      console.log("Something went wrong!!! ");
-      res.status(500).json(error);
-    }
+    });
   }
 );
 

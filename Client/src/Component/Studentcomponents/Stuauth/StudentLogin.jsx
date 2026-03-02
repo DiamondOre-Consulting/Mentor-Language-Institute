@@ -77,7 +77,7 @@ const StudentLogin = () => {
         <div className="bg-white shadow-xl rounded-lg px-8 py-6 w-full max-w-md">
           <h1 className="text-3xl font-bold text-center mb-1 ">LOGIN</h1>
           <div className="h-0.5 w-full max-w-xs sm:max-w-sm md:max-w-md rounded bg-orange-500 mb-4"></div>
-          <form onSubmit={handleStudentLogin} className="">
+          <form onSubmit={handleStudentLogin} className="" autoComplete="off">
             <div className="mb-4">
               <label
                 htmlFor="userName"
@@ -90,6 +90,10 @@ const StudentLogin = () => {
                 name="userName"
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
                 className="shadow-sm rounded-md w-full px-3 py-2 border border-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Enter UserName"
                 required
@@ -109,6 +113,8 @@ const StudentLogin = () => {
                   placeholder="Password"
                   value={password}
                   onChange={(e) => SetPassword(e.target.value)}
+                  name="password"
+                  autoComplete="new-password"
                 />
               </div>
             </div>

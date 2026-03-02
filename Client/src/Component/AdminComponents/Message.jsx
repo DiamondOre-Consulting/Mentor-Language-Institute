@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom";
+import axios from "../../api/axiosInstance";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 import { useApi } from "../../api/useApi";
@@ -24,17 +25,49 @@ const formatDate = (value) => {
   });
 };
 
-const getMentorNames = (course) =>
-  (course?.teachers || [])
-    .map((teacher) => teacher?.teacherId?.name)
-    .filter(Boolean)
-    .join(", ");
-
 const getShortId = (value) => {
   if (!value) return "N/A";
   const str = String(value);
   if (str.length <= 10) return str;
   return `${str.slice(0, 6)}...${str.slice(-4)}`;
+};
+
+const monthNameToNumber = {
+  January: 1,
+  February: 2,
+  March: 3,
+  April: 4,
+  May: 5,
+  June: 6,
+  July: 7,
+  August: 8,
+  September: 9,
+  October: 10,
+  November: 11,
+  December: 12,
+};
+
+const months = Object.keys(monthNameToNumber);
+
+const hasPaymentDetails = (request) => {
+  const amount = Number(request?.amount);
+  return Boolean(
+    request?.transactionId ||
+      request?.paymentMethod ||
+      request?.paidOn ||
+      request?.payerName ||
+      request?.phone ||
+      request?.screenshotUrl ||
+      (Number.isFinite(amount) && amount > 0)
+  );
+};
+
+const getPaymentStatusLabel = (request) =>
+  hasPaymentDetails(request) ? "Pending" : "Unpaid";
+
+const resolveServerOrigin = () => {
+  const base = axios?.defaults?.baseURL || "";
+  return base.replace(/\/api\/?$/, "");
 };
 
 const Message = () => {
@@ -45,32 +78,18 @@ const Message = () => {
   const [formData, setFormData] = useState({
     totalFee: "",
     feeMonth: "",
-    paid: "pending",
-    amountPaid: "0",
+    amountPaid: "",
+    rejectionReason: "",
   });
   const [popupMessage, setPopupMessage] = useState("");
-  const [selectedStudentId, setSelectedStudentId] = useState("");
-  const [selectedClassId, setSelectedClassId] = useState("");
+  const [selectedRequest, setSelectedRequest] = useState(null);
   const [loading, setLoading] = useState(false);
   const toastVariant = getToastVariant(popupMessage);
 
-  const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
+  const serverOrigin = resolveServerOrigin();
 
   useEffect(() => {
-    const fetchAllStudents = async () => {
+    const fetchRequests = async () => {
       try {
         setLoading(true);
         const token = localStorage.getItem("token");
@@ -80,77 +99,23 @@ const Message = () => {
         }
 
         const response = await get({
-          url: "/admin-confi/all-students",
+          url: "/admin-confi/payment-requests?status=pending",
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }).unwrap();
 
         if (response.status === 200) {
-          const students = response.data || [];
-          const studentById = students.reduce((acc, student) => {
-            acc[student._id] = student;
-            return acc;
-          }, {});
-
-          const appliedCourses = students.flatMap((student) =>
-            (student.appliedClasses || []).map((classId) => ({
-              studentId: student._id,
-              classId,
-            }))
-          );
-
-          if (appliedCourses.length === 0) {
-            setRequests([]);
-            return;
-          }
-
-          const courseResults = await Promise.allSettled(
-            appliedCourses.map(async ({ studentId, classId }) => {
-              const classDetails = await get({
-                url: `/admin-confi/all-classes/${classId}`,
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }).unwrap();
-              return {
-                studentId,
-                classId,
-                course: classDetails.data,
-              };
-            })
-          );
-
-          const nextRequests = courseResults
-            .filter(
-              (result) =>
-                result.status === "fulfilled" &&
-                result.value?.course &&
-                studentById[result.value.studentId]
-            )
-            .map((result) => {
-              const { studentId, classId, course } = result.value;
-              const student = studentById[studentId];
-              return {
-                id: `${studentId}-${classId}`,
-                studentId,
-                classId,
-                student,
-                course,
-                mentors: getMentorNames(course),
-              };
-            });
-
-          setRequests(nextRequests);
+          setRequests(response.data || []);
         }
       } catch (error) {
-        console.error("Error fetching students:", error);
+        console.error("Error fetching payment requests:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAllStudents();
+    fetchRequests();
   }, []);
 
   useEffect(() => {
@@ -166,8 +131,8 @@ const Message = () => {
     if (!trimmed) return requests;
 
     return requests.filter((request) => {
-      const student = request.student || {};
-      const course = request.course || {};
+      const student = request.studentId || {};
+      const course = request.classId || {};
       return [
         student.name,
         student.email,
@@ -178,26 +143,39 @@ const Message = () => {
         course.classTitle,
         course.grade,
         course.branch,
+        request.paymentMethod,
+        request.transactionId,
+        request.payerName,
+        request.phone,
       ]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(trimmed));
     });
   }, [requests, query]);
 
-  const openForm = (studentId, classId) => {
-    setSelectedStudentId(studentId);
-    setSelectedClassId(classId);
+  const openForm = (request) => {
+    const paidOnDate = request?.paidOn ? new Date(request.paidOn) : null;
+    const monthLabel = paidOnDate
+      ? paidOnDate.toLocaleDateString("en-US", { month: "long" })
+      : "";
+    const paymentProvided = hasPaymentDetails(request);
+    setSelectedRequest(request);
+    setFormData({
+      totalFee: paymentProvided ? request?.amount ?? "" : "",
+      feeMonth: paymentProvided ? monthLabel || "" : "",
+      amountPaid: paymentProvided ? request?.amount ?? "" : "",
+      rejectionReason: "",
+    });
     setIsFormOpen(true);
   };
 
   const closeForm = () => {
-    setSelectedStudentId("");
-    setSelectedClassId("");
+    setSelectedRequest(null);
     setFormData({
       totalFee: "",
       feeMonth: "",
-      paid: "pending",
-      amountPaid: "0",
+      amountPaid: "",
+      rejectionReason: "",
     });
     setIsFormOpen(false);
     setPopupMessage("");
@@ -207,51 +185,25 @@ const Message = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handlePaidChange = (value) => {
-    setFormData((prev) => ({
-      ...prev,
-      paid: value,
-      amountPaid: value === "pending" ? "0" : prev.amountPaid,
-    }));
-  };
-
-  const monthNameToNumber = {
-    January: 1,
-    February: 2,
-    March: 3,
-    April: 4,
-    May: 5,
-    June: 6,
-    July: 7,
-    August: 8,
-    September: 9,
-    October: 10,
-    November: 11,
-    December: 12,
-  };
-
-  const handleSubmit = async (e) => {
+  const handleApprove = async (e) => {
     e.preventDefault();
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("No token found");
+      if (!token || !selectedRequest) {
+        console.error("Missing token or request");
         return;
       }
 
-      const { totalFee, feeMonth, paid, amountPaid } = formData;
+      const { totalFee, feeMonth, amountPaid } = formData;
       const monthNumber = monthNameToNumber[feeMonth];
-      const isPaid = paid === "yes";
-      const normalizedAmountPaid = isPaid ? Number(amountPaid) : 0;
 
       const response = await put({
-        url: `/admin-confi/enroll-student/${selectedClassId}/${selectedStudentId}`,
+        url: `/admin-confi/payment-requests/${selectedRequest._id}/approve`,
         data: {
           totalFee: Number(totalFee),
           feeMonth: monthNumber,
-          paid: isPaid,
-          amountPaid: normalizedAmountPaid,
+          amountPaid: Number(amountPaid),
         },
         headers: {
           Authorization: `Bearer ${token}`,
@@ -259,46 +211,69 @@ const Message = () => {
       }).unwrap();
 
       if (response.status === 200) {
-        if (isPaid) {
-          setPopupMessage("Student enrolled and invoice sent.");
-        } else {
-          setPopupMessage("Student enrolled.");
-        }
-        setRequests((prev) =>
-          prev.filter(
-            (request) =>
-              !(
-                request.studentId === selectedStudentId &&
-                request.classId === selectedClassId
-              )
-          )
-        );
-        setFormData({
-          totalFee: "",
-          feeMonth: "",
-          paid: "pending",
-          amountPaid: "0",
-        });
-        setSelectedStudentId("");
-        setSelectedClassId("");
-        setIsFormOpen(false);
-      } else if (response.status === 409) {
-        setPopupMessage("Student already Enrolled!");
-        setIsFormOpen(false);
+        setPopupMessage("Request approved, invoice sent, student enrolled.");
+        setRequests((prev) => prev.filter((req) => req._id !== selectedRequest._id));
+        closeForm();
       }
     } catch (error) {
-      if (error.response) {
-        const status = error.response.status;
-        if (status === 409) {
-          setPopupMessage("Student already Enrolled!");
-          setIsFormOpen(false);
-        } else {
-          setPopupMessage("Unable to enroll student right now.");
-        }
-      }
+      console.error("Error approving request:", error);
+      setPopupMessage("Unable to approve request right now.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleReject = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      if (!token || !selectedRequest) {
+        console.error("Missing token or request");
+        return;
+      }
+
+      const response = await put({
+        url: `/admin-confi/payment-requests/${selectedRequest._id}/reject`,
+        data: {
+          reason: formData.rejectionReason,
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
+
+      if (response.status === 200) {
+        setPopupMessage("Payment request rejected.");
+        setRequests((prev) => prev.filter((req) => req._id !== selectedRequest._id));
+        closeForm();
+      }
+    } catch (error) {
+      console.error("Error rejecting request:", error);
+      setPopupMessage("Unable to reject request right now.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resolveScreenshotUrl = (url) => {
+    if (!url) return "";
+    if (/^https?:\/\//i.test(url)) return url;
+    return `${serverOrigin}${url}`;
+  };
+
+  const renderScreenshot = (request) => {
+    if (!request?.screenshotUrl) return "Not provided";
+    const href = resolveScreenshotUrl(request.screenshotUrl);
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className="text-orange-600 hover:text-orange-700 underline"
+      >
+        View Screenshot
+      </a>
+    );
   };
 
   return (
@@ -316,7 +291,7 @@ const Message = () => {
               Enrollment Requests
             </h1>
             <p className="text-sm text-slate-500">
-              Review student applications and enroll them into courses.
+              Review payment details and approve enrollment.
             </p>
           </div>
           <div className="w-full sm:w-72">
@@ -326,7 +301,7 @@ const Message = () => {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search student or course..."
+              placeholder="Search student, course, or transaction..."
               className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-200"
             />
           </div>
@@ -346,46 +321,37 @@ const Message = () => {
 
         {filteredRequests.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-orange-200 bg-orange-50/60 p-8 text-center text-sm text-slate-600">
-            No enrollment requests right now.
+            No payment requests right now.
           </div>
         ) : (
           <div className="grid gap-4">
             {filteredRequests.map((request) => (
               <div
-                key={request.id}
+                key={request._id}
                 className="rounded-2xl border border-orange-100/70 bg-white p-4 shadow-sm sm:p-5"
               >
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-lg font-semibold text-slate-900">
-                        {request.course?.classTitle}
+                        {request.classId?.classTitle || "Course"}
                       </h3>
                       <Badge variant="secondary">Pending</Badge>
                       <span className="text-xs text-slate-500">
-                        Course ID: {getShortId(request.classId)}
+                        Request ID: {getShortId(request._id)}
                       </span>
                     </div>
                     <p className="text-sm text-slate-600">
-                      Grade: {request.course?.grade || "N/A"} · Hours:{" "}
-                      {request.course?.totalHours || "TBA"} · Branch:{" "}
-                      {request.course?.branch || "Main"}
-                    </p>
-                    <p className="text-sm text-slate-600">
-                      Mentors: {request.mentors || "Not assigned"}
+                      Grade: {request.classId?.grade || "N/A"} · Hours:{" "}
+                      {request.classId?.totalHours || "TBA"} · Branch:{" "}
+                      {request.classId?.branch || "Main"}
                     </p>
                     <p className="text-xs text-slate-500">
-                      Added on {formatDate(request.course?.createdAt)}
+                      Submitted on {formatDate(request.createdAt)}
                     </p>
                   </div>
-                  <Button
-                    size="sm"
-                    className="self-start"
-                    onClick={() =>
-                      openForm(request.studentId, request.classId)
-                    }
-                  >
-                    Enroll Now
+                  <Button size="sm" className="self-start" onClick={() => openForm(request)}>
+                    Review & Approve
                   </Button>
                 </div>
 
@@ -395,39 +361,63 @@ const Message = () => {
                       Student
                     </p>
                     <p className="mt-1 font-semibold text-slate-800">
-                      {request.student?.name}
+                      {request.studentId?.name}
                     </p>
                     <p className="text-xs text-slate-500">
-                      Username: {request.student?.userName || "N/A"}
+                      Username: {request.studentId?.userName || "N/A"}
                     </p>
                     <p className="text-xs text-slate-500">
-                      Student ID: {getShortId(request.studentId)}
+                      Student ID: {getShortId(request.studentId?._id)}
                     </p>
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-sm">
                     <p className="text-xs uppercase tracking-wide text-slate-500">
-                      Contact
+                      Payment
                     </p>
                     <p className="mt-1 text-sm text-slate-700">
-                      {request.student?.email || "No email"}
+                      Status: {getPaymentStatusLabel(request)}
+                    </p>
+                    {hasPaymentDetails(request) ? (
+                      <>
+                    <p className="mt-1 text-sm text-slate-700">
+                      Method: {request.paymentMethod || "N/A"}
                     </p>
                     <p className="text-sm text-slate-700">
-                      {request.student?.phone || "No phone"}
+                      Amount: {request.amount}
                     </p>
+                    <p className="text-sm text-slate-700">
+                      Paid on: {formatDate(request.paidOn)}
+                    </p>
+                    <p className="text-sm text-slate-700">
+                      Payer: {request.payerName || "N/A"}
+                    </p>
+                    <p className="text-sm text-slate-700">
+                      Phone: {request.phone || "N/A"}
+                    </p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-slate-700">No payment details provided.</p>
+                    )}
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-sm">
                     <p className="text-xs uppercase tracking-wide text-slate-500">
-                      Profile
+                      Verification
                     </p>
-                    <p className="mt-1 text-sm text-slate-700">
-                      Grade: {request.student?.grade || "Not set"}
-                    </p>
-                    <p className="text-sm text-slate-700">
-                      Branch: {request.student?.branch || "Main"}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      Joined {formatDate(request.student?.createdAt)}
-                    </p>
+                    {hasPaymentDetails(request) ? (
+                      <>
+                        <p className="mt-1 text-sm text-slate-700">
+                          Transaction: {request.transactionId || "N/A"}
+                        </p>
+                        <p className="text-sm text-slate-700">
+                          Screenshot: {renderScreenshot(request)}
+                        </p>
+                        <p className="text-sm text-slate-700">
+                          Notes: {request.notes || "N/A"}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="mt-1 text-sm text-slate-700">No payment details to verify.</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -441,9 +431,36 @@ const Message = () => {
           <div className="app-modal-overlay app-modal-overlay--top app-modal-overlay--scroll">
             <div className="app-modal-card app-modal-card-md max-h-[90vh] overflow-y-auto">
               <h2 className="mb-4 text-lg font-semibold text-slate-800">
-                Enroll Student
+                Approve Payment Request
               </h2>
-              <form onSubmit={handleSubmit}>
+              <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-sm">
+                <p className="text-xs uppercase tracking-wide text-slate-500">
+                  Payment Summary
+                </p>
+                <p className="mt-1 text-slate-700">
+                  Status: {getPaymentStatusLabel(selectedRequest)}
+                </p>
+                <p className="mt-1 text-slate-700">
+                  Method: {selectedRequest?.paymentMethod || "N/A"}
+                </p>
+                <p className="text-slate-700">
+                  Transaction: {selectedRequest?.transactionId || "N/A"}
+                </p>
+                <p className="text-slate-700">
+                  Amount: {selectedRequest?.amount || "N/A"}
+                </p>
+                <p className="text-slate-700">
+                  Paid On: {formatDate(selectedRequest?.paidOn)}
+                </p>
+                <p className="text-slate-700">
+                  Screenshot: {renderScreenshot(selectedRequest)}
+                </p>
+                <p className="text-slate-700">
+                  Notes: {selectedRequest?.notes || "N/A"}
+                </p>
+              </div>
+
+              <form onSubmit={handleApprove}>
                 <div className="mb-4">
                   <label
                     htmlFor="totalFee"
@@ -477,40 +494,12 @@ const Message = () => {
                     required
                   >
                     <option value="">Select Month</option>
-                    {months.map((month, index) => (
-                      <option key={index} value={month}>
+                    {months.map((month) => (
+                      <option key={month} value={month}>
                         {month}
                       </option>
                     ))}
                   </select>
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-slate-700">
-                    Payment Status
-                  </label>
-                  <div className="mt-2 flex items-center gap-4 text-sm text-slate-700">
-                    <label className="inline-flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="paid"
-                        value="pending"
-                        checked={formData.paid === "pending"}
-                        onChange={() => handlePaidChange("pending")}
-                      />
-                      <span>Pending</span>
-                    </label>
-                    <label className="inline-flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="paid"
-                        value="yes"
-                        checked={formData.paid === "yes"}
-                        onChange={() => handlePaidChange("yes")}
-                      />
-                      <span>Yes</span>
-                    </label>
-                  </div>
                 </div>
 
                 <div className="mb-5">
@@ -527,12 +516,28 @@ const Message = () => {
                     value={formData.amountPaid}
                     onChange={handleChange}
                     className="mt-1"
-                    required={formData.paid === "yes"}
-                    disabled={formData.paid === "pending"}
+                    required
                   />
                 </div>
 
-                <div className="flex justify-end gap-2">
+                <div className="mb-5">
+                  <label
+                    htmlFor="rejectionReason"
+                    className="block text-sm font-medium text-slate-700"
+                  >
+                    Rejection Reason (optional)
+                  </label>
+                  <textarea
+                    id="rejectionReason"
+                    name="rejectionReason"
+                    value={formData.rejectionReason}
+                    onChange={handleChange}
+                    className="mt-1 min-h-[80px] w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    placeholder="Add a note if rejecting..."
+                  />
+                </div>
+
+                <div className="flex flex-wrap justify-end gap-2">
                   <button
                     type="button"
                     onClick={closeForm}
@@ -541,10 +546,17 @@ const Message = () => {
                     Close
                   </button>
                   <button
+                    type="button"
+                    onClick={handleReject}
+                    className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-rose-600 hover:bg-rose-100"
+                  >
+                    Reject
+                  </button>
+                  <button
                     type="submit"
                     className="rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600"
                   >
-                    Submit
+                    Approve & Enroll
                   </button>
                 </div>
               </form>

@@ -267,25 +267,27 @@ const Coursedet = () => {
           />
         </div>
       )}
-      <div className="p-10 md:p-20 ">
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-          <div className="col-span-2">
-            <h1 className="text-3xl text-wrap  md:text-4xl font-bold">
+      <div className="px-4 py-8 sm:px-6 lg:px-10 lg:py-12">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <h1 className="text-2xl break-words sm:text-3xl lg:text-4xl font-bold">
               {classData?.classTitle}
             </h1>
             <div className="pt-4">
-              <div className="flex justify-between">
-                <div className="flex">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
                   <img
                     className="w-10 h-10 rounded-full"
                     src={userimg2}
                     alt="Rounded avatar"
                   />
-                  <div className="flex flex-col mx-2">
-                    <p className="text-gray-700 font-bold">
+                  <div className="flex flex-col">
+                    <p className="text-gray-700 font-bold text-sm sm:text-base">
                       {classData.teacher?.name}
                     </p>
-                    <p className="text-gray-600 -mt-1">Teacher</p>
+                    <p className="text-gray-600 -mt-1 text-xs sm:text-sm">
+                      Teacher
+                    </p>
                   </div>
                 </div>
               </div>
@@ -305,7 +307,7 @@ const Coursedet = () => {
                       </p>
 
                       <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-                        <table className="w-full text-sm text-left rtl:text-right text-gray-500 ">
+                        <table className="w-full min-w-[540px] text-sm text-left rtl:text-right text-gray-500 ">
                           <tbody>
                             <tr className="odd:bg-white odd: even:bg-gray-50 even: border-b ">
                               <th
@@ -323,7 +325,9 @@ const Coursedet = () => {
                               >
                                 Course Tilte
                               </th>
-                              <td className="px-6 py-4">{classData?.classTitle}</td>
+                              <td className="px-6 py-4">
+                                {classData?.classTitle}
+                              </td>
                             </tr>
                             <tr className="odd:bg-white odd: even:bg-gray-50 even: border-b ">
                               <th
@@ -343,7 +347,9 @@ const Coursedet = () => {
                               >
                                 Branch
                               </th>
-                              <td className="px-6 py-4">{classData?.branch || "Main"}</td>
+                              <td className="px-6 py-4">
+                                {classData?.branch || "Main"}
+                              </td>
                             </tr>
                             <tr className="odd:bg-white odd: even:bg-gray-50 even: border-b ">
                               <th
@@ -352,7 +358,9 @@ const Coursedet = () => {
                               >
                                 Grade
                               </th>
-                              <td className="px-6 py-4">{classData?.grade || "All levels"}</td>
+                              <td className="px-6 py-4">
+                                {classData?.grade || "All levels"}
+                              </td>
                             </tr>
                             <tr className="odd:bg-white odd: even:bg-gray-50 even: border-b ">
                               <th
@@ -406,7 +414,7 @@ const Coursedet = () => {
                                 Course Price
                               </th>
                               <td className="px-6 py-4">
-                                INR {feedetails?.totalFee}
+                                INR {feedetails?.totalFee || 0}
                               </td>
                             </tr>
                             {/* <tr className="odd:bg-white odd: even:bg-gray-50 even: border-b ">
@@ -433,7 +441,7 @@ const Coursedet = () => {
                       </p>
 
                       <div className="overflow-auto max-h-96 overflow-x-auto shadow-md sm:rounded-lg">
-                        <table className="w-full text-sm text-center rtl:text-right text-gray-500 ">
+                        <table className="w-full min-w-[520px] text-sm text-center rtl:text-right text-gray-500 ">
                           <thead className="sticky top-0 text-xs text-gray-100 uppercase bg-orange-400  ">
                             <tr>
                               <th scope="col" className="px-6 py-3">
@@ -490,7 +498,7 @@ const Coursedet = () => {
                       </p>
 
                       <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-                        <table className="w-full text-sm text-left rtl:text-right text-gray-500 ">
+                        <table className="w-full min-w-[520px] text-sm text-left rtl:text-right text-gray-500 ">
                           <thead className="text-xs text-gray-100 uppercase bg-orange-400  ">
                             <tr>
                               <th scope="col" className="px-6 py-3">
@@ -548,30 +556,28 @@ const Coursedet = () => {
             </div>
           </div>
 
-          <div className="flex mt-10 md:mt-0">
-            <div className="border border-0 rounded-md bl-4 w-1 h-60 bg-gradient-to-b from-orange-500 to-stone-200"></div>
-            <div className="flex">
-              <div className="flex-col mx-3  cursor-pointer">
-                <p className="text-gray-700 font-bold text-xl mb-2">
-                  Enrolled Courses
+          <div className="lg:col-span-1">
+            <div className="rounded-2xl border border-orange-100 bg-white p-5 shadow-sm">
+              <p className="text-gray-700 font-bold text-lg mb-3">
+                Enrolled Courses
+              </p>
+              {myenroll.length === 0 ? (
+                <p className="text-center font-semibold bg-orange-400 p-4 flex items-center justify-center text-gray-100 rounded-md text-sm">
+                  No enrolled courses yet
                 </p>
-                {myenroll.length === 0 ? (
-                  <p className="text-center font-bold bg-orange-400 p-4 flex items-center justify-center text-gray-200 rounded-md">
-                    No Enrolled Courses are there
-                  </p>
-                ) : (
-                  myenroll.map((enroll) => (
-                    <div key={enroll._id}>
-                      <Link
-                        to={`/student-each-course/${enroll._id}`}
-                        className="py-1 hover:text-orange-500"
-                      >
-                        {enroll?.classTitle}
-                      </Link>
-                    </div>
-                  ))
-                )}
-              </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {myenroll.map((enroll) => (
+                    <Link
+                      key={enroll._id}
+                      to={`/student-each-course/${enroll._id}`}
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:border-orange-300 hover:text-orange-500"
+                    >
+                      {enroll?.classTitle}
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

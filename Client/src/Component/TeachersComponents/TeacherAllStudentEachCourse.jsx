@@ -322,22 +322,22 @@ const TeacherAllStudentEachCourse = () => {
               <option value="online">Online</option>
             </select>
           </div>
-         <div>
-  {selectedDate && numberOfClasses > 0 && (
-    <div>
-      <div
-        className="px-6 sm:px-12 py-2 bg-gray-100 border border-2 rounded-md"
-      >
-        <span>{numberOfClasses}</span>
-      </div>
-    </div>
-  )}
-</div>
+          <div>
+            {selectedDate && numberOfClasses > 0 && (
+              <div>
+                <div
+                  className="px-6 sm:px-12 py-2 bg-gray-100 border border-2 rounded-md"
+                >
+                  <span>{numberOfClasses}</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-8 mt-10 md:grid-cols-1">
-          <table className="w-full text-sm text-center text-gray-500 shadow-xl rtl:text-right">
-            <thead className="text-xs text-gray-100 uppercase bg-orange-500 ">
+          <table className="w-full text-sm text-center text-gray-900 shadow-xl rtl:text-right">
+            <thead className="text-xs text-gray-900 uppercase bg-orange-500 ">
               <tr>
                 <th scope="col" className="px-6 py-3">
                   Name
@@ -358,16 +358,16 @@ const TeacherAllStudentEachCourse = () => {
                 );
                 const studentTotalClassesTaken = studentAttendanceDetails
                   ? studentAttendanceDetails.detailAttendance
-                      .filter(
-                        (detail) =>
-                          detail.classDate === selectedDate &&
-                          (detail.mode || "offline") === attendanceMode
-                      )
-                      .reduce(
-                        (total, detail) =>
-                          total + (+detail.numberOfClassesTaken || 0),
-                        0
-                      )
+                    .filter(
+                      (detail) =>
+                        detail.classDate === selectedDate &&
+                        (detail.mode || "offline") === attendanceMode
+                    )
+                    .reduce(
+                      (total, detail) =>
+                        total + (+detail.numberOfClassesTaken || 0),
+                      0
+                    )
                   : 0;
                 const showEditIcon = studentTotalClassesTaken === 0;
 
@@ -465,7 +465,7 @@ const TeacherAllStudentEachCourse = () => {
           </div>
 
           <table className="w-full text-sm text-center text-gray-500 rounded-md shadow-xl rtl:text-center">
-            <thead className="text-xs text-gray-100 uppercase bg-orange-500 rounded-md ">
+            <thead className="text-xs text-gray-900 uppercase bg-orange-500 rounded-md ">
               <tr>
                 <th scope="col" className="px-6 py-3">
                   Month
@@ -523,11 +523,10 @@ const TeacherAllStudentEachCourse = () => {
                       {commission.commission ?? 0}
                     </td>
                     <td
-                      className={`px-6 py-4 text-center ${
-                        commission.paid
-                          ? "text-green-500 font-bold"
-                          : "text-red-400"
-                      }`}
+                      className={`px-6 py-4 text-center ${commission.paid
+                        ? "text-green-500 font-bold"
+                        : "text-red-400"
+                        }`}
                     >
                       {commission.paid ? "paid" : "Unpaid"}
                     </td>
@@ -581,7 +580,7 @@ const TeacherAllStudentEachCourse = () => {
         )}
       <div>
         <div className="mt-8 text-3xl">Student List</div>
-        <table className="w-full text-sm text-center text-gray-500 shadow-xl rtl:text-right">
+        <table className="w-full text-sm text-center text-gray-900 shadow-xl rtl:text-right">
           <thead className="text-xs text-gray-100 uppercase bg-orange-500">
             <tr>
               <th scope="col" className="px-6 py-3">

@@ -123,39 +123,91 @@ const TeacherSidebar = () => {
   };
 
   const SidebarContent = () => (
-    <div className="flex h-full flex-col overflow-hidden px-4 py-5">
-      <div className="mb-5 flex items-center justify-between">
-        <img src={logo} className="h-12 sm:h-14" alt="Mentor Logo" />
+    <div style={{ display: "flex", height: "100%", flexDirection: "column", overflow: "hidden", padding: "1.25rem 1rem" }}>
+      {/* Logo + Teacher chip */}
+      <div style={{ marginBottom: "1.25rem" }} data-sr="fade-down">
+        <img src={logo} style={{ height: "3rem", width: "auto" }} alt="Mentor Logo" />
+        <div
+          style={{
+            marginTop: "0.875rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            background: "linear-gradient(135deg, #fff7ed, #fffbf5)",
+            border: "1px solid #fed7aa",
+            borderRadius: "0.75rem",
+            padding: "0.5rem 0.75rem",
+          }}
+        >
+          <div
+            style={{
+              width: "30px",
+              height: "30px",
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "0.75rem",
+              fontWeight: 800,
+              color: "#fff",
+              flexShrink: 0,
+            }}
+          >
+            T
+          </div>
+          <div>
+            <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "#1e293b", margin: 0 }}>Teacher Panel</p>
+            <p style={{ fontSize: "0.65rem", color: "#94a3b8", margin: 0 }}>Manage Classes</p>
+          </div>
+        </div>
       </div>
 
       <ScrollArea className="flex-1 pr-2">
-        <ul className="space-y-1.5 text-sm font-medium text-slate-700">
-          {navItems.map((item) => {
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+          {navItems.map((item, idx) => {
             const isActive =
               location.pathname === item.to ||
-              (item.to !== "/teacher-dashboard/" &&
-                location.pathname.startsWith(item.to));
+              (item.to !== "/teacher-dashboard/" && location.pathname.startsWith(item.to));
 
             return (
-              <li key={item.to}>
+              <li key={item.to} data-sr="fade-left" data-sr-delay={idx * 40}>
                 <Link
                   to={item.to}
-                  className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all ${
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow"
-                      : "hover:bg-orange-100/70 hover:text-orange-700"
-                  }`}
-                >
-                  <span
-                    className={
-                      isActive
-                        ? "text-primary-foreground"
-                        : "text-slate-500 group-hover:text-orange-600"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.75rem",
+                    padding: "0.6rem 0.75rem",
+                    borderRadius: "0.75rem",
+                    textDecoration: "none",
+                    fontSize: "0.875rem",
+                    fontWeight: isActive ? 700 : 500,
+                    color: isActive ? "#fff" : "#475569",
+                    background: isActive ? "linear-gradient(135deg, #f97316, #fb923c)" : "transparent",
+                    boxShadow: isActive ? "0 4px 12px rgba(249,115,22,0.3)" : "none",
+                    transition: "all 0.18s",
+                    borderLeft: "3px solid transparent",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = "#fff7ed";
+                      e.currentTarget.style.color = "#c2410c";
+                      e.currentTarget.style.borderLeftColor = "#f97316";
                     }
-                  >
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "#475569";
+                      e.currentTarget.style.borderLeftColor = "transparent";
+                    }
+                  }}
+                >
+                  <span style={{ color: isActive ? "rgba(255,255,255,0.9)" : "#94a3b8", flexShrink: 0 }}>
                     {renderIcon(item.icon)}
                   </span>
-                  <span className="truncate">{item.label}</span>
+                  <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.label}</span>
                 </Link>
               </li>
             );
@@ -164,22 +216,36 @@ const TeacherSidebar = () => {
           <li>
             <button
               onClick={handleLogout}
-              className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-slate-700 transition-all hover:bg-rose-50 hover:text-rose-600"
+              style={{
+                display: "flex",
+                width: "100%",
+                alignItems: "center",
+                gap: "0.75rem",
+                padding: "0.6rem 0.75rem",
+                borderRadius: "0.75rem",
+                border: "none",
+                background: "transparent",
+                color: "#475569",
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                cursor: "pointer",
+                textAlign: "left",
+                transition: "all 0.18s",
+                borderLeft: "3px solid transparent",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#fef2f2";
+                e.currentTarget.style.color = "#dc2626";
+                e.currentTarget.style.borderLeftColor = "#dc2626";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = "#475569";
+                e.currentTarget.style.borderLeftColor = "transparent";
+              }}
             >
-              <svg
-                className="h-5 w-5 text-slate-500 group-hover:text-rose-500"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 18 16"
-              >
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M1 8h11m0 0L8 4m4 4-4 4m4-11h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-3"
-                />
+              <svg className="h-5 w-5" style={{ color: "inherit" }} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 16">
+                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 8h11m0 0L8 4m4 4-4 4m4-11h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-3" />
               </svg>
               <span>Logout</span>
             </button>
@@ -189,49 +255,33 @@ const TeacherSidebar = () => {
 
       <Separator className="my-4" />
 
-      <div className="space-y-3">
-        <div className="grid grid-cols-5 gap-3 rounded-xl border border-orange-100 bg-white p-3">
-          <a href="https://www.instagram.com/mentorlanguage/" target="_blank" rel="noreferrer">
-            <img src={insta} alt="Instagram" className="w-6" />
-          </a>
-          <a href="https://www.facebook.com/mentorlanguage/" target="_blank" rel="noreferrer">
-            <img src={facebook} alt="Facebook" className="w-6" />
-          </a>
-          <button onClick={handleWhatsAppChat} className="text-left">
-            <img src={whatsapp} alt="WhatsApp" className="w-6" />
-          </button>
-          <a
-            href="https://www.linkedin.com/company/mentor-the-language-institute/?viewAsMember=true"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <img src={linkedin} alt="LinkedIn" className="w-6" />
-          </a>
-          <a
-            href="https://youtube.com/@mentorlanguageinstitute8431?si=cztyFsLYOEKvWPO7"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <img src={youtube} alt="YouTube" className="w-6" />
-          </a>
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }} data-sr="zoom" data-sr-delay="300">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: "0.625rem", background: "#fff", border: "1px solid #fed7aa55", borderRadius: "0.875rem", padding: "0.625rem" }}>
+          {[
+            { href: "https://www.instagram.com/mentorlanguage/", src: insta, alt: "Instagram" },
+            { href: "https://www.facebook.com/mentorlanguage/", src: facebook, alt: "Facebook" },
+            { onClick: handleWhatsAppChat, src: whatsapp, alt: "WhatsApp" },
+            { href: "https://www.linkedin.com/company/mentor-the-language-institute/?viewAsMember=true", src: linkedin, alt: "LinkedIn" },
+            { href: "https://youtube.com/@mentorlanguageinstitute8431?si=cztyFsLYOEKvWPO7", src: youtube, alt: "YouTube" },
+          ].map((s) => {
+            const img = (
+              <img src={s.src} alt={s.alt} style={{ width: "22px", transition: "transform 0.2s, opacity 0.2s" }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.15)"; e.currentTarget.style.opacity = "0.85"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.opacity = "1"; }}
+              />
+            );
+            return s.onClick
+              ? <button key={s.alt} onClick={s.onClick} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}>{img}</button>
+              : <a key={s.alt} href={s.href} target="_blank" rel="noreferrer" style={{ display: "flex" }}>{img}</a>;
+          })}
         </div>
 
-        <div className="rounded-xl border border-orange-100 bg-white p-3 text-center text-xs text-slate-500">
-          <span className="block">
+        <div style={{ background: "#fff", border: "1px solid #fed7aa55", borderRadius: "0.875rem", padding: "0.625rem", textAlign: "center", fontSize: "0.72rem", color: "#94a3b8", lineHeight: 1.6 }}>
+          <span style={{ display: "block" }}>
             Designed &amp; Developed by{" "}
-            <a
-              href="https://www.doclabz.com/"
-              target="_blank"
-              rel="noreferrer"
-              className="font-semibold text-orange-500 hover:underline"
-            >
-              DOC-LABZ
-            </a>
-            .
+            <a href="https://www.doclabz.com/" target="_blank" rel="noreferrer" style={{ color: "#f97316", fontWeight: 700, textDecoration: "none" }}>DOC-LABZ</a>
           </span>
-          <span className="mt-1 block">
-            &copy; 2024 Mentor Institute. All Rights Reserved.
-          </span>
+          <span style={{ display: "block" }}>&copy; 2024 Mentor Institute. All Rights Reserved.</span>
         </div>
       </div>
     </div>
@@ -247,21 +297,13 @@ const TeacherSidebar = () => {
             className="fixed left-4 top-4 z-50 border-orange-200 bg-white/95 text-orange-700 shadow-md backdrop-blur sm:hidden"
             aria-label="Toggle menu"
           >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+            <svg className="h-6 w-6" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
               <path d="M4 6h16M4 12h16m-7 6h7" />
             </svg>
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-72 p-0">
-          <aside className="h-full border-r border-orange-100 bg-gradient-to-b from-orange-50 via-white to-white">
+          <aside style={{ height: "100%", borderRight: "1px solid #fed7aa44", background: "linear-gradient(180deg, #fff7ed 0%, #fff3e0 20%, #ffffff 60%)" }}>
             <SidebarContent />
           </aside>
         </SheetContent>
@@ -269,7 +311,18 @@ const TeacherSidebar = () => {
 
       <aside
         id="logo-sidebar"
-        className="fixed left-0 top-0 z-40 hidden h-screen w-72 border-r border-orange-100 bg-gradient-to-b from-orange-50 via-white to-white shadow-xl sm:block"
+        style={{
+          position: "fixed",
+          left: 0,
+          top: 0,
+          zIndex: 40,
+          height: "100vh",
+          width: "18rem",
+          borderRight: "1px solid #fed7aa44",
+          background: "linear-gradient(180deg, #fff7ed 0%, #fff3e0 20%, #ffffff 60%)",
+          boxShadow: "4px 0 24px -8px rgba(249,115,22,0.12)",
+        }}
+        className="hidden sm:block"
         aria-label="Sidebar"
       >
         <SidebarContent />

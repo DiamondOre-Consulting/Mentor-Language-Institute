@@ -12,7 +12,8 @@ import ClassAccessStatus from "../Models/ClassAccessStatus.js";
 import Attendance from "../Models/Attendance.js";
 import Commission from "../Models/Commission.js";
 import ClassTeachers from "../Models/ClassTeachers.js";
-import { calculateMonthlyCommission, parseClassDate, sortCommissions } from "../utils/commission.js";
+import PaymentRequest from "../Models/PaymentRequest.js";
+import { calculateMonthlyCommission, sortCommissions } from "../utils/commission.js";
 import { deriveGradeFromText, isGradeMatch, resolveCourseGrade, toGradeLabel } from "../utils/grade.js";
 import { normalizeCommissionRateValue } from "../utils/classTeachers.js";
 import { generateInvoiceNumber, generateInvoicePdfBuffer } from "../services/invoiceService.js";
@@ -50,6 +51,43 @@ const parseCommissionValue = (value) => {
     return { ok: false, value: null };
   }
   return { ok: true, value: parsed };
+};
+
+const parseClassDateParts = (dateStr = "") => {
+  const parts = String(dateStr).split("-").map((part) => part.trim());
+  if (parts.length < 3) return null;
+
+  let yearPart = "";
+  let monthPart = "";
+  let dayPart = "";
+
+  if (parts[0].length === 4) {
+    yearPart = parts[0];
+    monthPart = parts[1];
+    dayPart = parts[2];
+  } else {
+    dayPart = parts[0];
+    monthPart = parts[1];
+    yearPart = parts[2];
+  }
+
+  const year = Number(yearPart);
+  const month = Number(monthPart);
+  const day = Number(dayPart);
+
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day) ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > 31
+  ) {
+    return null;
+  }
+
+  return { year, month, day };
 };
 
 const validateCommissionPair = (offlineCommissionRate, onlineCommissionRate) => {
@@ -1305,6 +1343,334 @@ router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res)
   }
 });
 
+// PAYMENT REQUESTS
+router.get(
+  "/payment-requests",
+  AdminAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { status } = req.query;
+      const query = {};
+      if (status) {
+        query.status = String(status).toLowerCase();
+      }
+
+      const requests = await PaymentRequest.find(query)
+        .sort({ createdAt: -1 })
+        .populate("studentId", "name email phone userName grade branch")
+        .populate("classId", "classTitle grade totalHours branch");
+
+      res.status(200).json(requests);
+    } catch (error) {
+      console.log("Something went wrong!!! ", error);
+      res.status(500).json({ message: "Failed to fetch payment requests." });
+    }
+  }
+);
+
+router.put(
+  "/payment-requests/:id/approve",
+  AdminAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { totalFee, feeMonth, amountPaid } = req.body || {};
+
+      const request = await PaymentRequest.findById(id);
+      if (!request) {
+        return res.status(404).json({ message: "Payment request not found." });
+      }
+      if (request.status !== "pending") {
+        return res
+          .status(409)
+          .json({ message: "Payment request already processed." });
+      }
+
+      const classExists = await Classes.findById(request.classId);
+      if (!classExists) {
+        return res.status(404).json({ message: "Class not found." });
+      }
+
+      const studentExists = await Students.findById(request.studentId);
+      if (!studentExists) {
+        return res.status(404).json({ message: "Student not found." });
+      }
+
+      const resolvedCourseGrade = resolveCourseGrade(classExists);
+      if (resolvedCourseGrade && !classExists.grade) {
+        classExists.grade = resolvedCourseGrade;
+        await classExists.save();
+      }
+      if (resolvedCourseGrade && !isGradeMatch(resolvedCourseGrade, studentExists?.grade)) {
+        return res.status(400).json({
+          message: "Student grade does not match the course grade.",
+        });
+      }
+
+      if (!studentExists.email) {
+        return res.status(400).json({
+          message: "Student email is required to send the invoice.",
+        });
+      }
+
+      const alreadyEnrolled = await Classes.findOne({
+        _id: request.classId,
+        enrolledStudents: request.studentId,
+      });
+      if (alreadyEnrolled) {
+        return res
+          .status(409)
+          .json({ message: "Student already enrolled in this class." });
+      }
+
+      const fallbackMonth = request.paidOn
+        ? request.paidOn.getMonth() + 1
+        : null;
+      const normalizedFeeMonth = normalizeFeeMonth(
+        feeMonth ?? fallbackMonth
+      );
+      if (!normalizedFeeMonth) {
+        return res.status(400).json({
+          message: "Fee month must be a valid month number (1-12).",
+        });
+      }
+
+      const normalizedTotalFee =
+        totalFee !== undefined && totalFee !== null && totalFee !== ""
+          ? parseFeeAmount(totalFee)
+          : parseFeeAmount(request.amount);
+      if (normalizedTotalFee === null || normalizedTotalFee <= 0) {
+        return res.status(400).json({
+          message: "Total fee must be a valid number greater than zero.",
+        });
+      }
+
+      const normalizedAmountPaid =
+        amountPaid !== undefined && amountPaid !== null && amountPaid !== ""
+          ? parseFeeAmount(amountPaid)
+          : parseFeeAmount(request.amount);
+      if (normalizedAmountPaid === null || normalizedAmountPaid < 0) {
+        return res.status(400).json({
+          message: "Amount paid must be a valid number.",
+        });
+      }
+      if (normalizedAmountPaid > normalizedTotalFee) {
+        return res.status(400).json({
+          message: "Amount paid cannot exceed total fee.",
+        });
+      }
+
+      const updateClass = await Classes.findByIdAndUpdate(
+        { _id: request.classId },
+        {
+          $addToSet: { enrolledStudents: request.studentId },
+          $pull: { appliedStudents: request.studentId },
+        },
+        { new: true }
+      );
+
+      if (updateClass) {
+        await ClassAccessStatus.findOneAndUpdate(
+          { classId: request.classId, studentId: request.studentId },
+          { classAccessStatus: true },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+
+        let feeRecord = await Fee.findOne({
+          classId: request.classId,
+          studentId: request.studentId,
+        });
+        if (!feeRecord) {
+          feeRecord = new Fee({
+            classId: request.classId,
+            studentId: request.studentId,
+            totalFee: normalizedTotalFee,
+            detailFee: [],
+          });
+        }
+
+        const existingDetail = feeRecord.detailFee.find(
+          (detail) => normalizeFeeMonth(detail.feeMonth) === normalizedFeeMonth
+        );
+        const wasPaid = existingDetail?.paid === true;
+
+        if (existingDetail) {
+          existingDetail.paid = true;
+          existingDetail.amountPaid = normalizedAmountPaid ?? 0;
+        } else {
+          feeRecord.detailFee.push({
+            feeMonth: normalizedFeeMonth,
+            paid: true,
+            amountPaid: normalizedAmountPaid ?? 0,
+          });
+        }
+
+        feeRecord.totalFee = normalizedTotalFee;
+        await feeRecord.save();
+
+        await Students.findByIdAndUpdate(
+          { _id: request.studentId },
+          {
+            $addToSet: { classes: request.classId, feeDetail: feeRecord._id },
+            $pull: { appliedClasses: request.classId },
+          },
+          { new: true }
+        );
+
+        const studentEmail = studentExists.email;
+        const issuedAt = new Date();
+        let invoiceRecord = await Invoice.findOne({
+          feeId: feeRecord._id,
+          feeMonth: normalizedFeeMonth,
+          studentId: request.studentId,
+        });
+
+        if (!(invoiceRecord?.emailStatus === "sent" && wasPaid)) {
+          let invoiceNumber = invoiceRecord?.invoiceNumber;
+          if (!invoiceRecord) {
+            invoiceNumber = generateInvoiceNumber(issuedAt);
+            try {
+              invoiceRecord = await Invoice.create({
+                invoiceNumber,
+                classId: request.classId,
+                studentId: request.studentId,
+                feeId: feeRecord._id,
+                feeMonth: normalizedFeeMonth,
+                totalFee: normalizedTotalFee,
+                amountPaid: normalizedAmountPaid ?? 0,
+                sentToEmail: studentEmail,
+              });
+            } catch (error) {
+              if (error?.code === 11000) {
+                invoiceNumber = generateInvoiceNumber(new Date());
+                invoiceRecord = await Invoice.create({
+                  invoiceNumber,
+                  classId: request.classId,
+                  studentId: request.studentId,
+                  feeId: feeRecord._id,
+                  feeMonth: normalizedFeeMonth,
+                  totalFee: normalizedTotalFee,
+                  amountPaid: normalizedAmountPaid ?? 0,
+                  sentToEmail: studentEmail,
+                });
+              } else {
+                throw error;
+              }
+            }
+          }
+
+          if (invoiceRecord && invoiceRecord.emailStatus !== "sent") {
+            try {
+              const pdfBuffer = await generateInvoicePdfBuffer({
+                invoiceNumber: invoiceRecord.invoiceNumber,
+                issuedAt,
+                studentName: studentExists.name,
+                studentEmail,
+                classTitle: classExists.classTitle,
+                feeMonth: normalizedFeeMonth,
+                totalFee: normalizedTotalFee,
+                amountPaid: normalizedAmountPaid ?? 0,
+                currency: process.env.INVOICE_CURRENCY || "INR",
+              });
+
+              const feeMonthLabel = formatFeeMonthLabel(normalizedFeeMonth);
+              const subject = `Invoice ${invoiceRecord.invoiceNumber} for ${classExists.classTitle}`;
+              const text = `Hi ${studentExists.name},\n\nThank you for your payment. Please find your invoice (${invoiceRecord.invoiceNumber}) attached.\n\nCourse: ${classExists.classTitle}\nFee Month: ${feeMonthLabel}\nTotal Fee: ${normalizedTotalFee}\nAmount Paid: ${normalizedAmountPaid}\n\nRegards,\nMentor Language Institute`;
+              const html = `
+              <div style="font-family:Arial, sans-serif; line-height:1.6; color:#111;">
+                <p>Hi ${studentExists.name},</p>
+                <p>Thank you for your payment. Please find your invoice attached.</p>
+                <p><strong>Invoice:</strong> ${invoiceRecord.invoiceNumber}</p>
+                <p><strong>Course:</strong> ${classExists.classTitle}<br/>
+                <strong>Fee Month:</strong> ${feeMonthLabel}<br/>
+                <strong>Total Fee:</strong> ${normalizedTotalFee}<br/>
+                <strong>Amount Paid:</strong> ${normalizedAmountPaid}</p>
+                <p>Regards,<br/>Mentor Language Institute</p>
+              </div>
+            `;
+
+              await sendEmail({
+                to: studentEmail,
+                subject,
+                text,
+                html,
+                attachments: [
+                  {
+                    filename: `Invoice-${invoiceRecord.invoiceNumber}.pdf`,
+                    content: pdfBuffer,
+                    contentType: "application/pdf",
+                  },
+                ],
+              });
+
+              await Invoice.findByIdAndUpdate(invoiceRecord._id, {
+                emailStatus: "sent",
+              });
+            } catch (emailError) {
+              console.error("Invoice email failed:", emailError);
+              await Invoice.findByIdAndUpdate(invoiceRecord._id, {
+                emailStatus: "failed",
+                emailError: emailError?.message || "Email delivery failed.",
+              });
+            }
+          }
+        }
+      }
+
+      request.status = "approved";
+      request.adminId = req.user.userId;
+      request.decisionAt = new Date();
+      await request.save();
+
+      return res.status(200).json({
+        message: "Payment request approved. Student enrolled and invoice sent.",
+      });
+    } catch (error) {
+      console.log("Something went wrong!!! ", error);
+      res.status(500).json({ message: "Failed to approve payment request." });
+    }
+  }
+);
+
+router.put(
+  "/payment-requests/:id/reject",
+  AdminAuthenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body || {};
+
+      const request = await PaymentRequest.findById(id);
+      if (!request) {
+        return res.status(404).json({ message: "Payment request not found." });
+      }
+      if (request.status !== "pending") {
+        return res
+          .status(409)
+          .json({ message: "Payment request already processed." });
+      }
+
+      request.status = "rejected";
+      request.adminId = req.user.userId;
+      request.decisionAt = new Date();
+      request.rejectionReason = reason ? String(reason).trim() : "";
+      await request.save();
+
+      await Students.findByIdAndUpdate(request.studentId, {
+        $pull: { appliedClasses: request.classId },
+      });
+      await Classes.findByIdAndUpdate(request.classId, {
+        $pull: { appliedStudents: request.studentId },
+      });
+
+      return res.status(200).json({ message: "Payment request rejected." });
+    } catch (error) {
+      console.log("Something went wrong!!! ", error);
+      res.status(500).json({ message: "Failed to reject payment request." });
+    }
+  }
+);
+
 // UPDATE FEE DETAIL
 router.put(
   "/update-fee/:id1/:id2",
@@ -2226,8 +2592,14 @@ router.get(
         { month: "long" }
       );
 
-      sheet.mergeCells("A1", "C1");
-      const titleCell = sheet.getCell("A1");
+      const daysInMonth = new Date(yearNumber, monthNumber, 0).getDate();
+      const dayLabels = Array.from({ length: daysInMonth }, (_, index) =>
+        String(index + 1).padStart(2, "0")
+      );
+      const totalColumns = 2 + dayLabels.length + 2; // Sno + Name + days + Total + Grade
+
+      sheet.mergeCells(1, 1, 1, totalColumns);
+      const titleCell = sheet.getCell(1, 1);
       titleCell.value = `Attendance Report - ${monthName} ${year}`;
       titleCell.font = { bold: true, size: 14 };
       titleCell.alignment = { horizontal: "center" };
@@ -2237,13 +2609,13 @@ router.get(
       for (const course of allClasses) {
         const courseTitle = course.classTitle || "Unnamed Course";
 
-        sheet.mergeCells(`A${currentRow}:C${currentRow}`);
-        sheet.getCell(`A${currentRow}`).value = courseTitle;
-        sheet.getCell(`A${currentRow}`).font = {
+        sheet.mergeCells(currentRow, 1, currentRow, totalColumns);
+        sheet.getCell(currentRow, 1).value = courseTitle;
+        sheet.getCell(currentRow, 1).font = {
           bold: true,
           color: { argb: "FF000000" },
         };
-        sheet.getCell(`A${currentRow}`).fill = {
+        sheet.getCell(currentRow, 1).fill = {
           type: "pattern",
           pattern: "solid",
           fgColor: { argb: "FFFBE2C3" },
@@ -2254,7 +2626,8 @@ router.get(
         sheet.getRow(currentRow).values = [
           "Sno.",
           "Name",
-          "No. of Hours",
+          ...dayLabels,
+          "Total Hours",
           "Grade",
         ];
         sheet.getRow(currentRow).font = { bold: true };
@@ -2270,21 +2643,40 @@ router.get(
         for (const student of course.enrolledStudents) {
           let total = 0;
           let grade = student?.grade || "";
+          const dayTotals = {};
 
           for (const attendance of student.attendanceDetail || []) {
             if (String(attendance.classId) !== String(course._id)) continue;
 
             for (const detail of attendance.detailAttendance || []) {
-              const parsed = parseClassDate(detail?.classDate);
+              const parsed = parseClassDateParts(detail?.classDate);
               if (!parsed) continue;
-              if (parsed.month === monthNumber && parsed.year === yearNumber) {
-                total += parseFloat(detail?.numberOfClassesTaken || 0);
+              if (parsed.month !== monthNumber || parsed.year !== yearNumber) {
+                continue;
               }
+              if (parsed.day < 1 || parsed.day > daysInMonth) continue;
+
+              const value = Number(detail?.numberOfClassesTaken || 0);
+              if (!Number.isFinite(value)) continue;
+
+              const next = (dayTotals[parsed.day] || 0) + value;
+              dayTotals[parsed.day] = next;
+              total += value;
             }
           }
 
           const row = sheet.getRow(currentRow);
-          row.values = [sno++, student.name, total.toFixed(1), grade];
+          row.values = [
+            sno++,
+            student.name,
+            ...dayLabels.map((label) => {
+              const day = Number(label);
+              const value = dayTotals[day] || 0;
+              return Number.isFinite(value) ? Number(value.toFixed(1)) : 0;
+            }),
+            Number(total.toFixed(1)),
+            grade,
+          ];
 
           if (total === 0) {
             row.getCell(2).font = { color: { argb: "FFFF0000" }, bold: true };
@@ -2297,10 +2689,11 @@ router.get(
       }
 
       sheet.columns = [
-        { key: "sno", width: 10 },
+        { key: "sno", width: 8 },
         { key: "name", width: 30 },
-        { key: "total", width: 20 },
-        { key: "grade", width: 20 },
+        ...dayLabels.map((label) => ({ key: `day_${label}`, width: 6 })),
+        { key: "total", width: 12 },
+        { key: "grade", width: 16 },
       ];
 
       res.setHeader(

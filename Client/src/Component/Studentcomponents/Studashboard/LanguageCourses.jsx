@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../../../components/ui/dialog";
+import paymentQr from "../../../assets/QR.jpeg";
 
 const toNumber = (value) => {
   const parsed = Number(value);
@@ -73,6 +74,18 @@ const LanguageCourses = () => {
   const [showPopupEnroll, setShowPopupEnroll] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState(null);
   const [popupMessage, setPopupMessage] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [showQrPreview, setShowQrPreview] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({
+    paymentMethod: "UPI",
+    transactionId: "",
+    amount: "",
+    paidOn: "",
+    payerName: "",
+    phone: "",
+    notes: "",
+    screenshot: null,
+  });
 
   const handleEnrollClose = () => {
     setShowPopupEnroll(false);
@@ -82,6 +95,16 @@ const LanguageCourses = () => {
     setSelectedCourseId(courseId);
     setShowPopup(true);
     setPopupMessage(null);
+    setPaymentForm({
+      paymentMethod: "UPI",
+      transactionId: "",
+      amount: "",
+      paidOn: "",
+      payerName: "",
+      phone: "",
+      notes: "",
+      screenshot: null,
+    });
   };
 
   const settings = {
@@ -195,7 +218,30 @@ const LanguageCourses = () => {
   const handleApplyCourse = async (courseId) => {
     try {
       setPopupMessage(null);
-      setShowPopup(false);
+      setSubmitting(true);
+
+      const hasPaymentDetails = Boolean(
+        paymentForm.transactionId ||
+          paymentForm.amount ||
+          paymentForm.paidOn ||
+          paymentForm.payerName ||
+          paymentForm.phone ||
+          paymentForm.screenshot
+      );
+
+      if (hasPaymentDetails) {
+        if (
+          !paymentForm.transactionId ||
+          !paymentForm.amount ||
+          !paymentForm.paidOn ||
+          !paymentForm.payerName ||
+          !paymentForm.phone
+        ) {
+          setPopupMessage("Complete all payment fields or leave them blank to submit without payment.");
+          setSubmitting(false);
+          return;
+        }
+      }
 
       const token = localStorage.getItem("token");
       if (!token) {
@@ -203,15 +249,31 @@ const LanguageCourses = () => {
         return;
       }
 
+      const formData = new FormData();
+      if (hasPaymentDetails) {
+        formData.append("paymentMethod", paymentForm.paymentMethod);
+        formData.append("transactionId", paymentForm.transactionId);
+        formData.append("amount", paymentForm.amount);
+        formData.append("paidOn", paymentForm.paidOn);
+        formData.append("payerName", paymentForm.payerName);
+        formData.append("phone", paymentForm.phone);
+        if (paymentForm.screenshot) {
+          formData.append("screenshot", paymentForm.screenshot);
+        }
+      }
+      if (paymentForm.notes) {
+        formData.append("notes", paymentForm.notes);
+      }
+
       const response = await post({
-        url: `/students/apply-course/${courseId}`,
-        data: {},
+        url: `/students/payment-requests/${courseId}`,
+        data: formData,
         headers: {
           Authorization: `Bearer ${token}`,
         },
       }).unwrap();
 
-      if (response.status === 200) {
+      if (response.status === 201) {
         setShowPopup(false);
         setShowPopupEnroll(true);
         setSelectedCourseId(null);
@@ -223,13 +285,21 @@ const LanguageCourses = () => {
       if (error.response) {
         const status = error.response.status;
         if (status === 409) {
-          setPopupMessage("You Have Already Applied For This Course!!!");
+          setPopupMessage("You already submitted a request for this course.");
           setShowPopup(false);
         } else if (status === 408) {
           setPopupMessage("You Are Already Enrolled In This Course!!!");
           setShowPopup(false);
+        } else if (status === 400) {
+          setPopupMessage("Complete all payment fields or leave them blank to submit without payment.");
+          setShowPopup(false);
+        } else if (status === 403) {
+          setPopupMessage("You are not eligible to enroll in this course.");
+          setShowPopup(false);
         }
       }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -314,90 +384,270 @@ const LanguageCourses = () => {
       </section>
 
       <Dialog open={showPopup} onOpenChange={setShowPopup}>
-        <DialogContent className="max-w-2xl p-0">
-          <div className="grid overflow-hidden rounded-lg md:grid-cols-2">
-            <img
-              src="https://t4.ftcdn.net/jpg/06/23/40/73/360_F_623407391_wtq6RVJUq2RGb2e3D0ykn5zJOqfJhOSc.jpg"
-              className="hidden h-full w-full object-cover md:block"
-              alt="Course preview"
-            />
-            <div className="p-6">
-              <DialogHeader>
-                <DialogTitle className="text-xl">{Eachcourse?.classTitle}</DialogTitle>
-                <DialogDescription>
-                  Review the course plan before submitting your application.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="mt-4 space-y-4 text-sm text-muted-foreground">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-lg border border-border bg-white/70 p-3">
-                    <p className="text-[11px] uppercase tracking-wide">Grade</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-800">
-                      {Eachcourse?.grade || "All levels"}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-border bg-white/70 p-3">
-                    <p className="text-[11px] uppercase tracking-wide">Total Hours</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-800">
-                      {Eachcourse?.totalHours ? `${Eachcourse.totalHours} hrs` : "TBA"}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-border bg-white/70 p-3">
-                    <p className="text-[11px] uppercase tracking-wide">Total Sessions</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-800">
-                      {scheduleSummary.totalSessions || "TBA"}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-border bg-white/70 p-3">
-                    <p className="text-[11px] uppercase tracking-wide">Branch</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-800">
-                      {Eachcourse?.branch || "Main"}
-                    </p>
-                  </div>
-                </div>
+        <DialogContent
+          style={{
+            maxWidth: "min(95vw, 680px)",
+            padding: 0,
+            borderRadius: "1.25rem",
+            overflow: "hidden",
+            border: "none",
+            boxShadow: "0 25px 60px -10px rgba(0,0,0,0.18), 0 10px 30px -5px rgba(0,0,0,0.1)",
+          }}
+        >
+          {/* ── Header banner ── */}
+          <div
+            style={{
+              background: "linear-gradient(135deg, #f97316 0%, #fb923c 50%, #fbbf24 100%)",
+              padding: "1.25rem 1.5rem 1rem",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            {/* decorative blobs */}
+            <div style={{ position: "absolute", top: "-30px", right: "-30px", width: "120px", height: "120px", borderRadius: "50%", background: "rgba(255,255,255,0.12)" }} />
+            <div style={{ position: "absolute", bottom: "-20px", left: "60px", width: "80px", height: "80px", borderRadius: "50%", background: "rgba(255,255,255,0.08)" }} />
 
-                <div>
-                  <p className="text-[11px] uppercase tracking-wide">Mentors</p>
-                  <p className="mt-1 text-sm text-slate-700">
-                    {mentorNames || "To be assigned"}
-                  </p>
-                </div>
+            <div style={{ position: "relative", zIndex: 1 }}>
+              <span style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.8)", background: "rgba(255,255,255,0.2)", padding: "2px 10px", borderRadius: "999px" }}>
+                Course Enrollment
+              </span>
+              <h2 style={{ marginTop: "0.5rem", fontSize: "clamp(1rem,3.5vw,1.35rem)", fontWeight: 700, color: "#fff", lineHeight: 1.25 }}>
+                {Eachcourse?.classTitle || "Loading…"}
+              </h2>
+              <p style={{ marginTop: "0.25rem", fontSize: "0.78rem", color: "rgba(255,255,255,0.85)" }}>
+                Review details and complete payment to enroll
+              </p>
+            </div>
+          </div>
 
-                <div>
-                  <p className="text-[11px] uppercase tracking-wide">Schedule Preview</p>
-                  {scheduleSummary.upcoming.length > 0 ? (
-                    <div className="mt-2 space-y-2">
-                      {scheduleSummary.upcoming.map((entry, index) => (
-                        <div
-                          key={`${entry.label}-${index}`}
-                          className="flex items-center justify-between rounded-md border border-border bg-white/70 px-3 py-2 text-xs text-slate-700"
-                        >
-                          <span>{entry.label}</span>
-                          <span className="font-semibold">
-                            {entry.count ? `${entry.count} class(es)` : "Session"}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Schedule will be shared once enrollment is confirmed.
-                    </p>
-                  )}
-                </div>
+          {/* ── Scrollable body ── */}
+          <div style={{ maxHeight: "calc(95dvh - 120px)", overflowY: "auto", overscrollBehavior: "contain", background: "#fafafa" }}>
 
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Added on</span>
-                  <span className="font-semibold text-slate-700">
-                    {formatDate(Eachcourse?.createdAt)}
-                  </span>
+            {/* ── Course stats strip ── */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: "0.75rem", padding: "1.25rem 1.5rem 0" }}>
+              {[
+                { icon: "🎓", label: "Grade", value: Eachcourse?.grade || "All levels" },
+                { icon: "⏱️", label: "Duration", value: Eachcourse?.totalHours ? `${Eachcourse.totalHours} hrs` : "TBA" },
+                { icon: "📅", label: "Sessions", value: scheduleSummary.totalSessions || "TBA" },
+                { icon: "🏫", label: "Branch", value: Eachcourse?.branch || "Main" },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  style={{ background: "#fff", border: "1px solid #fed7aa", borderRadius: "0.875rem", padding: "0.75rem 0.875rem", display: "flex", flexDirection: "column", gap: "0.2rem" }}
+                >
+                  <span style={{ fontSize: "1.1rem" }}>{stat.icon}</span>
+                  <span style={{ fontSize: "0.62rem", textTransform: "uppercase", letterSpacing: "0.07em", color: "#9ca3af", fontWeight: 600 }}>{stat.label}</span>
+                  <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "#1e293b" }}>{stat.value}</span>
                 </div>
+              ))}
+            </div>
+
+            {/* ── Mentor + Schedule ── */}
+            <div style={{ padding: "1rem 1.5rem 0", display: "flex", flexDirection: "column", gap: "0.875rem" }}>
+              {mentorNames && (
+                <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "0.875rem", padding: "0.875rem 1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                  <span style={{ fontSize: "1.2rem" }}>👨‍🏫</span>
+                  <div>
+                    <p style={{ fontSize: "0.62rem", textTransform: "uppercase", letterSpacing: "0.07em", color: "#9ca3af", fontWeight: 600 }}>Mentors</p>
+                    <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "#334155", marginTop: "1px" }}>{mentorNames}</p>
+                  </div>
+                </div>
+              )}
+
+              {scheduleSummary.upcoming.length > 0 && (
+                <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "0.875rem", padding: "0.875rem 1rem" }}>
+                  <p style={{ fontSize: "0.62rem", textTransform: "uppercase", letterSpacing: "0.07em", color: "#9ca3af", fontWeight: 600, marginBottom: "0.5rem" }}>📆 Upcoming Sessions</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                    {scheduleSummary.upcoming.map((entry, i) => (
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8rem", color: "#475569", background: "#f8fafc", borderRadius: "0.5rem", padding: "0.4rem 0.75rem" }}>
+                        <span>{entry.label}</span>
+                        <span style={{ fontWeight: 700, color: "#f97316" }}>{entry.count ? `${entry.count} class(es)` : "Session"}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── Divider ── */}
+            <div style={{ margin: "1.25rem 1.5rem 0", borderTop: "2px dashed #fed7aa" }} />
+
+            {/* ── Payment section ── */}
+            <div style={{ padding: "1.25rem 1.5rem 1.5rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
+                <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: "linear-gradient(135deg,#f97316,#fb923c)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.85rem" }}>💳</div>
+                <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#1e293b" }}>Payment Details (Optional)</h3>
+                <span style={{ fontSize: "0.65rem", color: "#9ca3af", background: "#f1f5f9", padding: "2px 8px", borderRadius: "999px", marginLeft: "auto" }}>Payment optional</span>
               </div>
-              <DialogFooter className="mt-6">
-                <Button className="w-full" onClick={() => handleApplyCourse(selectedCourseId)}>
-                  Apply Now
-                </Button>
-              </DialogFooter>
+
+              {/* QR + form wrapper */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+
+                {/* QR card */}
+                <div style={{ background: "linear-gradient(135deg,#fff7ed,#fff)", border: "1.5px solid #fed7aa", borderRadius: "1rem", padding: "1rem 1.25rem", display: "flex", alignItems: "center", gap: "1.25rem" }}>
+                  <img
+                    src={paymentQr}
+                    alt="Payment QR Code"
+                    onClick={() => setShowQrPreview(true)}
+                    style={{ width: "88px", height: "88px", flexShrink: 0, borderRadius: "0.625rem", border: "1px solid #fed7aa", background: "#fff", objectFit: "contain", padding: "6px", cursor: "pointer" }}
+                  />
+                  <div>
+                    <p style={{ fontSize: "0.8rem", fontWeight: 700, color: "#c2410c" }}>Scan QR to Pay</p>
+                    <p style={{ fontSize: "0.73rem", color: "#78716c", marginTop: "0.25rem", lineHeight: 1.5 }}>
+                      If you have already paid via UPI, fill in the details below and upload your screenshot. Otherwise you can submit without payment.
+                    </p>
+                    <div style={{ marginTop: "0.5rem", display: "inline-flex", alignItems: "center", gap: "4px", background: "#fef3c7", borderRadius: "999px", padding: "2px 10px", fontSize: "0.65rem", color: "#92400e", fontWeight: 600 }}>
+                      ⚠️ Pay now or submit without payment
+                    </div>
+                  </div>
+                </div>
+
+                {/* Form grid */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.875rem" }}>
+                  {/* Payment Method */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Payment Method (UPI only)</label>
+                    <input
+                      value={paymentForm.paymentMethod}
+                      readOnly
+                      style={{ width: "100%", borderRadius: "0.625rem", border: "1.5px solid #e2e8f0", background: "#f8fafc", padding: "0.55rem 0.75rem", fontSize: "0.85rem", color: "#1e293b", outline: "none" }}
+                    />
+                  </div>
+
+                  {/* Transaction ID */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Transaction / UTR ID <span style={{ color: "#ef4444" }}>*</span></label>
+                    <input
+                      value={paymentForm.transactionId}
+                      onChange={(e) => setPaymentForm((prev) => ({ ...prev, transactionId: e.target.value }))}
+                      placeholder="e.g. 4234XXXXXXXX"
+                      style={{ width: "100%", borderRadius: "0.625rem", border: "1.5px solid #e2e8f0", background: "#fff", padding: "0.55rem 0.75rem", fontSize: "0.85rem", color: "#1e293b", outline: "none", transition: "border-color .15s" }}
+                      onFocus={e => e.target.style.borderColor = "#f97316"}
+                      onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+                    />
+                  </div>
+
+                  {/* Amount */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Amount Paid (₹) <span style={{ color: "#ef4444" }}>*</span></label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={paymentForm.amount}
+                      onChange={(e) => setPaymentForm((prev) => ({ ...prev, amount: e.target.value }))}
+                      placeholder="0"
+                      style={{ width: "100%", borderRadius: "0.625rem", border: "1.5px solid #e2e8f0", background: "#fff", padding: "0.55rem 0.75rem", fontSize: "0.85rem", color: "#1e293b", outline: "none", transition: "border-color .15s" }}
+                      onFocus={e => e.target.style.borderColor = "#f97316"}
+                      onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+                    />
+                  </div>
+
+                  {/* Paid On */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Paid On <span style={{ color: "#ef4444" }}>*</span></label>
+                    <input
+                      type="date"
+                      value={paymentForm.paidOn}
+                      onChange={(e) => setPaymentForm((prev) => ({ ...prev, paidOn: e.target.value }))}
+                      style={{ width: "100%", borderRadius: "0.625rem", border: "1.5px solid #e2e8f0", background: "#fff", padding: "0.55rem 0.75rem", fontSize: "0.85rem", color: "#1e293b", outline: "none", transition: "border-color .15s" }}
+                      onFocus={e => e.target.style.borderColor = "#f97316"}
+                      onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+                    />
+                  </div>
+
+                  {/* Payer Name */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Payer Name <span style={{ color: "#ef4444" }}>*</span></label>
+                    <input
+                      value={paymentForm.payerName}
+                      onChange={(e) => setPaymentForm((prev) => ({ ...prev, payerName: e.target.value }))}
+                      placeholder="Full name"
+                      style={{ width: "100%", borderRadius: "0.625rem", border: "1.5px solid #e2e8f0", background: "#fff", padding: "0.55rem 0.75rem", fontSize: "0.85rem", color: "#1e293b", outline: "none", transition: "border-color .15s" }}
+                      onFocus={e => e.target.style.borderColor = "#f97316"}
+                      onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+                    />
+                  </div>
+
+                  {/* Phone */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Phone <span style={{ color: "#ef4444" }}>*</span></label>
+                    <input
+                      value={paymentForm.phone}
+                      onChange={(e) => setPaymentForm((prev) => ({ ...prev, phone: e.target.value }))}
+                      placeholder="+91 XXXXXXXXXX"
+                      style={{ width: "100%", borderRadius: "0.625rem", border: "1.5px solid #e2e8f0", background: "#fff", padding: "0.55rem 0.75rem", fontSize: "0.85rem", color: "#1e293b", outline: "none", transition: "border-color .15s" }}
+                      onFocus={e => e.target.style.borderColor = "#f97316"}
+                      onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+                    />
+                  </div>
+
+                  {/* Notes — full width */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem", gridColumn: "1 / -1" }}>
+                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Notes <span style={{ color: "#94a3b8", fontWeight: 500 }}>(optional)</span></label>
+                    <textarea
+                      value={paymentForm.notes}
+                      onChange={(e) => setPaymentForm((prev) => ({ ...prev, notes: e.target.value }))}
+                      placeholder="Any additional info for the admin…"
+                      rows={2}
+                      style={{ width: "100%", borderRadius: "0.625rem", border: "1.5px solid #e2e8f0", background: "#fff", padding: "0.55rem 0.75rem", fontSize: "0.85rem", color: "#1e293b", outline: "none", resize: "vertical", fontFamily: "inherit", transition: "border-color .15s" }}
+                      onFocus={e => e.target.style.borderColor = "#f97316"}
+                      onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+                    />
+                  </div>
+
+                  {/* Screenshot — full width */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem", gridColumn: "1 / -1" }}>
+                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Payment Screenshot <span style={{ color: "#94a3b8", fontWeight: 500 }}>(optional)</span></label>
+                    <label
+                      style={{ display: "flex", alignItems: "center", gap: "0.6rem", width: "100%", borderRadius: "0.625rem", border: "1.5px dashed #fed7aa", background: "#fff7ed", padding: "0.65rem 0.875rem", cursor: "pointer", transition: "border-color .15s, background .15s" }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = "#f97316"; e.currentTarget.style.background = "#fff1e6"; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = "#fed7aa"; e.currentTarget.style.background = "#fff7ed"; }}
+                    >
+                      <span style={{ fontSize: "1.1rem" }}>📎</span>
+                      <span style={{ fontSize: "0.8rem", color: "#c2410c", fontWeight: 600 }}>
+                        {paymentForm.screenshot ? paymentForm.screenshot.name : "Click to upload screenshot"}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={(e) => setPaymentForm((prev) => ({ ...prev, screenshot: e.target.files?.[0] || null }))}
+                        style={{ display: "none" }}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Error message */}
+                {popupMessage && (
+                  <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "0.625rem", padding: "0.6rem 0.875rem", fontSize: "0.82rem", color: "#b91c1c", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    ⚠️ {popupMessage}
+                  </div>
+                )}
+
+                {/* Submit button */}
+                <button
+                  onClick={() => handleApplyCourse(selectedCourseId)}
+                  disabled={submitting}
+                  style={{
+                    width: "100%",
+                    padding: "0.8rem 1rem",
+                    borderRadius: "0.875rem",
+                    background: submitting ? "#fdba74" : "linear-gradient(135deg,#f97316,#fb923c)",
+                    color: "#fff",
+                    fontWeight: 700,
+                    fontSize: "0.95rem",
+                    border: "none",
+                    cursor: submitting ? "not-allowed" : "pointer",
+                    boxShadow: "0 4px 14px rgba(249,115,22,0.35)",
+                    transition: "all .2s",
+                    letterSpacing: "0.02em",
+                  }}
+                  onMouseEnter={e => { if (!submitting) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 18px rgba(249,115,22,0.45)"; } }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(249,115,22,0.35)"; }}
+                >
+                  {submitting ? "⏳ Submitting…" : "✅ Submit Enrollment Request"}
+                </button>
+              </div>
             </div>
           </div>
         </DialogContent>
@@ -406,11 +656,32 @@ const LanguageCourses = () => {
       <Dialog open={showPopupEnroll} onOpenChange={setShowPopupEnroll}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Thank you for applying!</DialogTitle>
-            <DialogDescription>We will connect you soon.</DialogDescription>
+            <DialogTitle>Request submitted!</DialogTitle>
+            <DialogDescription>
+              We have received your payment details. Admin will verify and enroll you.
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4">
             <Button onClick={handleEnrollClose}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showQrPreview} onOpenChange={setShowQrPreview}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Scan QR to Pay</DialogTitle>
+            <DialogDescription>Open this QR in full size to scan clearly.</DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-center">
+            <img
+              src={paymentQr}
+              alt="Payment QR Code"
+              style={{ width: "320px", height: "320px", objectFit: "contain" }}
+            />
+          </div>
+          <DialogFooter className="mt-4">
+            <Button onClick={() => setShowQrPreview(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -471,3 +742,5 @@ const LanguageCourses = () => {
 };
 
 export default LanguageCourses;
+
+

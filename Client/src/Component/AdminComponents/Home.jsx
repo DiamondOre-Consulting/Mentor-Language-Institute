@@ -4,15 +4,7 @@ import { useApi } from "../../api/useApi";
 import adminhome1 from "../../assets/adminhome1.jpg";
 import adminhome2 from "../../assets/adminhome2.jpg";
 import adminhome3 from "../../assets/adminhome3.jpg";
-import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../../components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -178,67 +170,149 @@ const Home = () => {
 
   return (
     <>
-      <div className="space-y-8">
-        <Card className="border-orange-100/70 bg-gradient-to-r from-white via-orange-50 to-orange-100/40">
-          <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+
+        {/* ── Welcome banner ── */}
+        <div
+          data-sr="fade-down"
+          style={{
+            position: "relative",
+            overflow: "hidden",
+            borderRadius: "1.25rem",
+            background: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 40%, #fffbf0 100%)",
+            border: "1px solid #fed7aa66",
+            padding: "clamp(1.25rem, 4vw, 2rem)",
+            boxShadow: "0 4px 24px -8px rgba(249,115,22,0.14)",
+          }}
+        >
+          {/* Decorative blob */}
+          <div style={{ position: "absolute", top: "-40px", right: "-40px", width: "200px", height: "200px", borderRadius: "50%", background: "rgba(251,191,36,0.15)", filter: "blur(50px)", pointerEvents: "none" }} />
+          <div style={{ position: "relative", zIndex: 1, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
             <div>
-              <CardTitle className="text-2xl text-slate-700 sm:text-3xl">
-                Welcome <span className="text-orange-600">Admin</span>
-              </CardTitle>
-              <CardDescription className="mt-2 text-sm sm:text-base">
-                Manage students, teachers, courses, and operations from one place.
-              </CardDescription>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.2)", borderRadius: "999px", padding: "0.25rem 0.75rem", fontSize: "0.7rem", fontWeight: 700, color: "#c2410c", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: "0.75rem" }}>
+                👋 Admin Dashboard
+              </span>
+              <h1 style={{ fontSize: "clamp(1.5rem, 4vw, 2.25rem)", fontWeight: 800, color: "#1e293b", letterSpacing: "-0.02em", margin: 0 }}>
+                Welcome, <span style={{ color: "#f97316" }}>Admin</span>
+              </h1>
+              <p style={{ marginTop: "0.5rem", fontSize: "0.9rem", color: "#64748b", maxWidth: "480px" }}>
+                Manage students, teachers, courses, and all platform operations from one place.
+              </p>
             </div>
-
-            <Button onClick={() => setIsFormOpen(true)} className="w-full sm:w-auto">
-              Add Admin
-            </Button>
-          </CardHeader>
-        </Card>
-
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {cards.map((card) => (
-            <Card
-              key={card.title}
-              className="overflow-hidden border-border/70 bg-background shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+            <button
+              onClick={() => setIsFormOpen(true)}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.65rem 1.25rem",
+                borderRadius: "0.875rem",
+                background: "linear-gradient(135deg, #f97316, #fb923c)",
+                color: "#fff",
+                fontWeight: 700,
+                fontSize: "0.875rem",
+                border: "none",
+                cursor: "pointer",
+                boxShadow: "0 4px 14px rgba(249,115,22,0.35)",
+                transition: "all 0.2s",
+                whiteSpace: "nowrap",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 18px rgba(249,115,22,0.5)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(249,115,22,0.35)"; }}
             >
-              <div className="relative h-48 w-full overflow-hidden">
-                <img className="h-full w-full object-cover" src={card.image} alt={card.title} />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent" />
-                <Badge variant="secondary" className="absolute bottom-3 left-3">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" /></svg>
+              Add Admin
+            </button>
+          </div>
+        </div>
+
+        {/* ── Stats cards ── */}
+        <div style={{ display: "grid", gap: "1.25rem", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
+          {cards.map((card, i) => (
+            <div
+              key={card.title}
+              data-sr="zoom"
+              data-sr-delay={i * 100}
+              style={{
+                borderRadius: "1.125rem",
+                overflow: "hidden",
+                background: "#fff",
+                border: "1.5px solid #fed7aa55",
+                boxShadow: "0 2px 16px -8px rgba(249,115,22,0.1)",
+                transition: "transform 0.2s, box-shadow 0.2s",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 32px -8px rgba(249,115,22,0.18)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 16px -8px rgba(249,115,22,0.1)"; }}
+            >
+              {/* Image */}
+              <div style={{ position: "relative", height: "11rem", overflow: "hidden" }}>
+                <img src={card.image} alt={card.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(15,23,42,0.65), transparent 60%)" }} />
+                <span
+                  style={{
+                    position: "absolute",
+                    bottom: "0.75rem",
+                    left: "0.875rem",
+                    background: "rgba(255,255,255,0.15)",
+                    backdropFilter: "blur(8px)",
+                    border: "1px solid rgba(255,255,255,0.3)",
+                    borderRadius: "999px",
+                    padding: "0.2rem 0.625rem",
+                    fontSize: "0.65rem",
+                    fontWeight: 700,
+                    color: "#fff",
+                    letterSpacing: "0.05em",
+                    textTransform: "uppercase",
+                  }}
+                >
                   Overview
-                </Badge>
+                </span>
               </div>
 
-              <CardHeader className="space-y-2">
-                <CardTitle className="text-xl">{card.title}</CardTitle>
-                <CardDescription>
-                  {card.countLabel}: <span className="font-semibold text-foreground">{card.count}</span>
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button asChild className="w-full">
-                  <Link to={card.to}>
-                    Explore More
-                    <svg
-                      className="ms-2 h-3.5 w-3.5"
-                      aria-hidden="true"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 14 10"
-                    >
-                      <path
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M1 5h12m0 0L9 1m4 4L9 9"
-                      />
-                    </svg>
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
+              {/* Content */}
+              <div style={{ padding: "1rem 1.125rem 1.125rem" }}>
+                <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#1e293b", margin: "0 0 0.25rem" }}>{card.title}</h3>
+                <p style={{ fontSize: "0.82rem", color: "#64748b", margin: "0 0 0.875rem" }}>
+                  {card.countLabel}:{" "}
+                  <span
+                    style={{
+                      fontWeight: 800,
+                      fontSize: "1.35rem",
+                      color: "#f97316",
+                      display: "inline-block",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {card.count}
+                  </span>
+                </p>
+                <Link
+                  to={card.to}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.5rem",
+                    width: "100%",
+                    padding: "0.6rem",
+                    borderRadius: "0.75rem",
+                    background: "linear-gradient(135deg, #f97316, #fb923c)",
+                    color: "#fff",
+                    fontWeight: 700,
+                    fontSize: "0.85rem",
+                    textDecoration: "none",
+                    transition: "opacity 0.15s",
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                  onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                >
+                  Explore More
+                  <svg className="h-3.5 w-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 5h12m0 0L9 1m4 4L9 9" />
+                  </svg>
+                </Link>
+              </div>
+            </div>
           ))}
         </div>
       </div>

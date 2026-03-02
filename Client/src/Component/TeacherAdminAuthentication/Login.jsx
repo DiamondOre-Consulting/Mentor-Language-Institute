@@ -249,6 +249,7 @@ const Login = ({ defaultTab }) => {
                         className="space-y-4 md:space-y-6"
                         action="#"
                         onSubmit={handleAdminLogin}
+                        autoComplete="off"
                       >
                         <div>
                           <input
@@ -256,6 +257,10 @@ const Login = ({ defaultTab }) => {
                             name="adminIdentifier"
                             value={adminIdentifier}
                             onChange={(e) => setAdminIdentifier(e.target.value)}
+                            autoComplete="off"
+                            autoCorrect="off"
+                            autoCapitalize="none"
+                            spellCheck={false}
                             placeholder="Enter Email"
                             className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                             required=""
@@ -272,6 +277,8 @@ const Login = ({ defaultTab }) => {
                               placeholder="Password"
                               value={adminPassword}
                               onChange={(e) => setAdminPassword(e.target.value)}
+                              name="adminPassword"
+                              autoComplete="new-password"
                             />
                           </div>
                         </div>
@@ -307,12 +314,7 @@ const Login = ({ defaultTab }) => {
                           </button>
                         </div>
 
-                        <a
-                          href="#"
-                          className="text-center flex items-center justify-center text-sm font-medium text-primary-600 hover:underline "
-                        >
-                          <Link to={"/"} className="underline"></Link>
-                        </a>
+
                       </form>
                     </div>
                   </div>
@@ -366,6 +368,7 @@ const Login = ({ defaultTab }) => {
                         className="space-y-4 md:space-y-6"
                         action="#"
                         onSubmit={handleTeacherLogin}
+                        autoComplete="off"
                       >
                         <div>
                           <input
@@ -373,6 +376,10 @@ const Login = ({ defaultTab }) => {
                             name="teacherIdentifier"
                             value={teacherIdentifier}
                             onChange={(e) => setTeacherIdentifier(e.target.value)}
+                            autoComplete="off"
+                            autoCorrect="off"
+                            autoCapitalize="none"
+                            spellCheck={false}
                             placeholder={
                               teacherLoginMode === "phone"
                                 ? "Enter Phone Number"
@@ -408,6 +415,8 @@ const Login = ({ defaultTab }) => {
                               placeholder="Password"
                               value={teacherPassword}
                               onChange={(e) => setTeacherPassword(e.target.value)}
+                              name="teacherPassword"
+                              autoComplete="new-password"
                             />
                           </div>
                         </div>
@@ -443,12 +452,7 @@ const Login = ({ defaultTab }) => {
                           </button>
                         </div>
 
-                        <a
-                          href="#"
-                          className="text-center flex items-center justify-center text-sm font-medium text-primary-600 hover:underline "
-                        >
-                          <Link to={"/"} className="underline"></Link>
-                        </a>
+
                       </form>
                     </div>
                   </div>
@@ -503,6 +507,7 @@ const Login = ({ defaultTab }) => {
                         className="space-y-4 md:space-y-6"
                         action="#"
                         onSubmit={handleStudentLogin}
+                        autoComplete="off"
                       >
                         <div>
                           <input
@@ -512,6 +517,10 @@ const Login = ({ defaultTab }) => {
                             onChange={(e) =>
                               setStudentIdentifier(e.target.value)
                             }
+                            autoComplete="off"
+                            autoCorrect="off"
+                            autoCapitalize="none"
+                            spellCheck={false}
                             placeholder={
                               studentLoginMode === "phone"
                                 ? "Enter Phone Number"
@@ -549,6 +558,8 @@ const Login = ({ defaultTab }) => {
                               onChange={(e) =>
                                 setStudentPassword(e.target.value)
                               }
+                              name="studentPassword"
+                              autoComplete="new-password"
                             />
                           </div>
                         </div>

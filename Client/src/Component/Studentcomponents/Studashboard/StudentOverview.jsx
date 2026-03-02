@@ -1,12 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useApi } from "../../../api/useApi";
-import { Button } from "../../../components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../../components/ui/card";
 
 const toNumber = (value) => {
   const parsed = Number(value);
@@ -17,11 +10,7 @@ const formatDate = (value) => {
   if (!value) return "TBA";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "TBA";
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
 
 const getProfileCompletion = (student) => {
@@ -30,6 +19,57 @@ const getProfileCompletion = (student) => {
   const completed = fields.filter((key) => Boolean(student?.[key])).length;
   return Math.round((completed / fields.length) * 100);
 };
+
+/* ── Small reusable stat card ────────────────────────────── */
+const StatCard = ({ icon, label, value, color = "#f97316", delay = 0 }) => (
+  <div
+    data-sr="zoom"
+    data-sr-delay={delay}
+    style={{
+      background: "#fff",
+      border: "1.5px solid #fed7aa",
+      borderRadius: "0.875rem",
+      padding: "0.875rem 1rem",
+      display: "flex",
+      flexDirection: "column",
+      gap: "0.25rem",
+      transition: "transform 0.18s, box-shadow 0.18s, border-color 0.18s",
+      cursor: "default",
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.transform = "translateY(-2px)";
+      e.currentTarget.style.boxShadow = "0 6px 20px -6px rgba(249,115,22,0.2)";
+      e.currentTarget.style.borderColor = "#fb923c";
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.transform = "translateY(0)";
+      e.currentTarget.style.boxShadow = "none";
+      e.currentTarget.style.borderColor = "#fed7aa";
+    }}
+  >
+    <div
+      style={{
+        width: "32px",
+        height: "32px",
+        borderRadius: "0.5rem",
+        background: `linear-gradient(135deg, ${color}22, ${color}11)`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "1rem",
+        marginBottom: "0.25rem",
+      }}
+    >
+      {icon}
+    </div>
+    <span style={{ fontSize: "0.62rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "#94a3b8", fontWeight: 600 }}>
+      {label}
+    </span>
+    <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>
+      {value}
+    </span>
+  </div>
+);
 
 const StudentOverview = ({ student }) => {
   const { get } = useApi();
@@ -46,146 +86,65 @@ const StudentOverview = ({ student }) => {
     upcomingSessions: [],
   });
 
-  const profileCompletion = useMemo(
-    () => getProfileCompletion(student),
-    [student]
-  );
+  const profileCompletion = useMemo(() => getProfileCompletion(student), [student]);
 
   useEffect(() => {
     const classIds = student?.classes || [];
     const appliedCount = student?.appliedClasses?.length || 0;
-
-    if (!student) {
-      return;
-    }
-
+    if (!student) return;
     if (classIds.length === 0) {
-      setSummary((prev) => ({
-        ...prev,
-        enrolledCount: 0,
-        appliedCount,
-      }));
+      setSummary((prev) => ({ ...prev, enrolledCount: 0, appliedCount }));
       return;
     }
 
     const fetchSummary = async () => {
       const token = localStorage.getItem("token");
       if (!token) return;
-
       setLoading(true);
-
       try {
         const headers = { Authorization: `Bearer ${token}` };
-
         const courseResults = await Promise.allSettled(
-          classIds.map((classId) =>
-            get({
-              url: `/students/all-courses/${classId}`,
-              headers,
-            }).unwrap()
-          )
+          classIds.map((id) => get({ url: `/students/all-courses/${id}`, headers }).unwrap())
         );
-
         const courses = courseResults
-          .filter(
-            (result) =>
-              result.status === "fulfilled" &&
-              result.value.status === 200 &&
-              result.value.data
-          )
-          .map((result) => result.value.data);
+          .filter((r) => r.status === "fulfilled" && r.value.status === 200 && r.value.data)
+          .map((r) => r.value.data);
 
         const attendanceResults = await Promise.allSettled(
-          classIds.map((classId) =>
-            get({
-              url: `/students/my-attendance/${classId}`,
-              headers,
-            }).unwrap()
-          )
+          classIds.map((id) => get({ url: `/students/my-attendance/${id}`, headers }).unwrap())
         );
-
         const feeResults = await Promise.allSettled(
-          classIds.map((classId) =>
-            get({
-              url: `/students/my-fee-details/${classId}`,
-              headers,
-            }).unwrap()
-          )
+          classIds.map((id) => get({ url: `/students/my-fee-details/${id}`, headers }).unwrap())
         );
 
-        const scheduleEntries = courses.flatMap((course) =>
-          (course?.dailyClasses || []).map((entry) => ({
-            ...entry,
-            courseTitle: course?.classTitle || "Course",
-          }))
+        const scheduleEntries = courses.flatMap((c) =>
+          (c?.dailyClasses || []).map((e) => ({ ...e, courseTitle: c?.classTitle || "Course" }))
         );
-
-        const scheduleDates = scheduleEntries
-          .map((entry) => {
-            const dateValue = new Date(entry.classDate);
-            if (Number.isNaN(dateValue.getTime())) return null;
-            return { ...entry, dateValue };
-          })
-          .filter(Boolean);
-
         const today = new Date();
-        const todayStart = new Date(
-          today.getFullYear(),
-          today.getMonth(),
-          today.getDate()
-        );
+        const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-        const upcomingSessions = scheduleDates
-          .filter((entry) => entry.dateValue >= todayStart)
+        const upcomingSessions = scheduleEntries
+          .map((e) => { const d = new Date(e.classDate); return Number.isNaN(d.getTime()) ? null : { ...e, dateValue: d }; })
+          .filter(Boolean)
+          .filter((e) => e.dateValue >= todayStart)
           .sort((a, b) => a.dateValue - b.dateValue)
           .slice(0, 3)
-          .map((entry) => ({
-            ...entry,
-            label: formatDate(entry.classDate),
-          }));
+          .map((e) => ({ ...e, label: formatDate(e.classDate) }));
 
-        const totalScheduled = scheduleEntries.reduce(
-          (total, entry) => total + toNumber(entry.numberOfClasses),
-          0
-        );
-
-        const totalHours = courses.reduce(
-          (total, course) => total + toNumber(course.totalHours),
-          0
-        );
-
-        const totalAttended = attendanceResults.reduce((total, result) => {
-          if (result.status !== "fulfilled") return total;
-          const data = result.value?.data;
-          if (!data) return total;
-          if (data.totalClassesTaken) {
-            return total + toNumber(data.totalClassesTaken);
-          }
-          const detailTotal = (data.detailAttendance || []).reduce(
-            (sum, row) => sum + toNumber(row.numberOfClassesTaken),
-            0
-          );
-          return total + detailTotal;
+        const totalScheduled = scheduleEntries.reduce((t, e) => t + toNumber(e.numberOfClasses), 0);
+        const totalHours = courses.reduce((t, c) => t + toNumber(c.totalHours), 0);
+        const totalAttended = attendanceResults.reduce((t, r) => {
+          if (r.status !== "fulfilled") return t;
+          const d = r.value?.data;
+          if (!d) return t;
+          if (d.totalClassesTaken) return t + toNumber(d.totalClassesTaken);
+          return t + (d.detailAttendance || []).reduce((s, row) => s + toNumber(row.numberOfClassesTaken), 0);
         }, 0);
-
-        const totalFee = feeResults.reduce((total, result) => {
-          if (result.status !== "fulfilled") return total;
-          return total + toNumber(result.value?.data?.totalFee);
+        const totalFee = feeResults.reduce((t, r) => r.status !== "fulfilled" ? t : t + toNumber(r.value?.data?.totalFee), 0);
+        const totalPaid = feeResults.reduce((t, r) => {
+          if (r.status !== "fulfilled") return t;
+          return t + (r.value?.data?.detailFee || []).reduce((s, f) => s + toNumber(f.amountPaid), 0);
         }, 0);
-
-        const totalPaid = feeResults.reduce((total, result) => {
-          if (result.status !== "fulfilled") return total;
-          const detailFee = result.value?.data?.detailFee || [];
-          return (
-            total +
-            detailFee.reduce(
-              (sum, fee) => sum + toNumber(fee.amountPaid),
-              0
-            )
-          );
-        }, 0);
-
-        const balance = Math.max(0, totalFee - totalPaid);
 
         setSummary({
           enrolledCount: classIds.length,
@@ -195,181 +154,266 @@ const StudentOverview = ({ student }) => {
           totalAttended,
           totalFee,
           totalPaid,
-          balance,
+          balance: Math.max(0, totalFee - totalPaid),
           upcomingSessions,
         });
-      } catch (error) {
-        console.error("Error building student summary:", error);
+      } catch (err) {
+        console.error("Error building student summary:", err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchSummary();
   }, [student]);
 
-  return (
-    <section className="mt-8 space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Card className="border-orange-100/80 bg-white/90 shadow-sm overflow-hidden">
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="text-lg">Learning Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
-            <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground sm:gap-4">
-              <div className="rounded-xl border border-border bg-white/70 p-2 sm:p-3">
-                <p className="text-xs uppercase tracking-wide">Enrolled</p>
-                <p className="mt-1 text-lg font-semibold text-slate-800 sm:text-xl">
-                  {summary.enrolledCount}
-                </p>
-              </div>
-              <div className="rounded-xl border border-border bg-white/70 p-2 sm:p-3">
-                <p className="text-xs uppercase tracking-wide">Applied</p>
-                <p className="mt-1 text-lg font-semibold text-slate-800 sm:text-xl">
-                  {summary.appliedCount}
-                </p>
-              </div>
-              <div className="rounded-xl border border-border bg-white/70 p-2 sm:p-3">
-                <p className="text-xs uppercase tracking-wide">Total Hours</p>
-                <p className="mt-1 text-lg font-semibold text-slate-800 sm:text-xl">
-                  {summary.totalHours || 0} hrs
-                </p>
-              </div>
-              <div className="rounded-xl border border-border bg-white/70 p-2 sm:p-3">
-                <p className="text-xs uppercase tracking-wide">Classes Taken</p>
-                <p className="mt-1 text-lg font-semibold text-slate-800 sm:text-xl">
-                  {summary.totalAttended || 0}
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 text-xs text-muted-foreground">
-              {summary.totalScheduled > 0
-                ? `Scheduled sessions: ${summary.totalScheduled}`
-                : "Schedule updates will appear once published."}
-            </div>
-          </CardContent>
-        </Card>
+  const cardStyle = {
+    background: "#fff",
+    border: "1.5px solid #fed7aa66",
+    borderRadius: "1.125rem",
+    overflow: "hidden",
+    boxShadow: "0 2px 16px -8px rgba(249,115,22,0.1)",
+  };
 
-        <Card className="border-orange-100/80 bg-white/90 shadow-sm overflow-hidden">
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="text-lg">Financial Snapshot</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 p-4 pt-0 text-sm text-muted-foreground sm:p-6 sm:pt-0">
-            <div className="flex items-center justify-between">
-              <span>Total Fee</span>
-              <span className="font-semibold text-slate-700">
-                {summary.totalFee ? `INR ${summary.totalFee}` : "TBA"}
-              </span>
+  const cardHeaderStyle = {
+    padding: "1rem 1.25rem 0.5rem",
+    borderBottom: "1px solid #f1f5f9",
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+  };
+
+  const cardTitleStyle = {
+    fontSize: "1rem",
+    fontWeight: 700,
+    color: "#0f172a",
+    margin: 0,
+  };
+
+  const balanceColor = summary.balance > 0 ? "#dc2626" : "#16a34a";
+  const balanceBg = summary.balance > 0 ? "#fef2f2" : "#f0fdf4";
+  const balanceBorder = summary.balance > 0 ? "#fecaca" : "#bbf7d0";
+
+  return (
+    <section style={{ marginTop: "2rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+
+      {/* Row 1: Learning Summary + Financial Snapshot */}
+      <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
+
+        {/* Learning Summary */}
+        <div style={cardStyle} data-sr="fade-up">
+          <div style={cardHeaderStyle}>
+            <span style={{ fontSize: "1.1rem" }}>📚</span>
+            <h3 style={cardTitleStyle}>Learning Summary</h3>
+          </div>
+          <div style={{ padding: "1rem 1.25rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+              <StatCard icon="🎓" label="Enrolled" value={summary.enrolledCount} delay={100} />
+              <StatCard icon="📝" label="Applied" value={summary.appliedCount} color="#6366f1" delay={150} />
+              <StatCard icon="⏱️" label="Total Hours" value={`${summary.totalHours || 0}h`} color="#0ea5e9" delay={200} />
+              <StatCard icon="✅" label="Classes Taken" value={summary.totalAttended || 0} color="#10b981" delay={250} />
             </div>
-            <div className="flex items-center justify-between">
-              <span>Paid to Date</span>
-              <span className="font-semibold text-slate-700">
-                {summary.totalPaid ? `INR ${summary.totalPaid}` : "INR 0"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Balance</span>
-              <span className="font-semibold text-slate-700">
-                {summary.totalFee ? `INR ${summary.balance}` : "TBA"}
-              </span>
-            </div>
-            <div className="rounded-xl border border-border bg-white/70 p-2 sm:p-3">
-              <p className="text-xs uppercase tracking-wide">Payment Status</p>
-              <p className="mt-1 text-sm font-semibold text-slate-800 sm:text-base">
-                {summary.totalFee === 0
-                  ? "Awaiting fee schedule"
-                  : summary.balance > 0
-                    ? "Pending balance"
-                    : "All clear"}
+            {summary.totalScheduled > 0 && (
+              <p style={{ marginTop: "0.75rem", fontSize: "0.75rem", color: "#94a3b8" }}>
+                📆 {summary.totalScheduled} total sessions scheduled
               </p>
+            )}
+          </div>
+        </div>
+
+        {/* Financial Snapshot */}
+        <div style={cardStyle} data-sr="fade-up" data-sr-delay="100">
+          <div style={cardHeaderStyle}>
+            <span style={{ fontSize: "1.1rem" }}>💰</span>
+            <h3 style={cardTitleStyle}>Financial Snapshot</h3>
+          </div>
+          <div style={{ padding: "1rem 1.25rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            {[
+              { label: "Total Fee", value: summary.totalFee ? `₹ ${summary.totalFee}` : "TBA" },
+              { label: "Paid to Date", value: summary.totalPaid ? `₹ ${summary.totalPaid}` : "₹ 0" },
+            ].map((row) => (
+              <div
+                key={row.label}
+                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.6rem 0.875rem", background: "#f8fafc", borderRadius: "0.625rem", border: "1px solid #e2e8f0" }}
+              >
+                <span style={{ fontSize: "0.85rem", color: "#64748b" }}>{row.label}</span>
+                <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "#1e293b" }}>{row.value}</span>
+              </div>
+            ))}
+            {/* Balance row with color coding */}
+            <div
+              style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.6rem 0.875rem", background: balanceBg, borderRadius: "0.625rem", border: `1px solid ${balanceBorder}` }}
+            >
+              <span style={{ fontSize: "0.85rem", color: "#64748b" }}>Balance Due</span>
+              <span style={{ fontSize: "0.9rem", fontWeight: 700, color: balanceColor }}>
+                {summary.totalFee ? `₹ ${summary.balance}` : "TBA"}
+              </span>
             </div>
-          </CardContent>
-        </Card>
+            {/* Payment status chip */}
+            <div
+              style={{ textAlign: "center", padding: "0.5rem", borderRadius: "0.625rem", background: summary.balance > 0 ? "#fff7ed" : "#f0fdf4", border: `1px solid ${balanceBorder}`, fontSize: "0.78rem", fontWeight: 700, color: balanceColor }}
+            >
+              {summary.totalFee === 0 ? "⏳ Awaiting fee schedule" : summary.balance > 0 ? "⚠️ Pending balance" : "✅ All clear — fully paid"}
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="grid w-full gap-3 sm:grid-cols-2">
-        <Card className="border-orange-100/80 bg-white/90 shadow-sm overflow-hidden">
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="text-lg">Upcoming Sessions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 p-4 pt-0 text-sm text-muted-foreground sm:p-6 sm:pt-0">
+      {/* Row 2: Upcoming Sessions + Profile & Support */}
+      <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
+
+        {/* Upcoming Sessions */}
+        <div style={cardStyle} data-sr="fade-up" data-sr-delay="200">
+          <div style={cardHeaderStyle}>
+            <span style={{ fontSize: "1.1rem" }}>📅</span>
+            <h3 style={cardTitleStyle}>Upcoming Sessions</h3>
+          </div>
+          <div style={{ padding: "1rem 1.25rem", display: "flex", flexDirection: "column", gap: "0.625rem" }}>
             {loading && (
-              <p className="text-xs text-muted-foreground">Loading schedule...</p>
+              <p style={{ fontSize: "0.8rem", color: "#94a3b8" }}>Loading schedule…</p>
             )}
             {!loading && summary.upcomingSessions.length === 0 && (
-              <p className="text-xs text-muted-foreground">
-                No sessions scheduled yet. Check with your mentor for updates.
-              </p>
+              <div style={{ textAlign: "center", padding: "1.5rem 1rem", color: "#94a3b8" }}>
+                <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>📭</div>
+                <p style={{ fontSize: "0.82rem" }}>No upcoming sessions yet. Check with your mentor.</p>
+              </div>
             )}
-            {summary.upcomingSessions.map((session) => (
+            {summary.upcomingSessions.map((session, i) => (
               <div
                 key={`${session.courseTitle}-${session.classDate}`}
-                className="flex flex-col gap-2 rounded-xl border border-border bg-white/70 p-2.5 sm:flex-row sm:items-center sm:justify-between sm:p-3"
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "0.75rem 0.875rem",
+                  background: "#fff7ed",
+                  border: "1px solid #fed7aa",
+                  borderRadius: "0.75rem",
+                  gap: "0.75rem",
+                  animation: `fadeUp 0.3s ${i * 0.05}s ease both`,
+                }}
               >
-                <div className="min-w-0">
-                  <p className="break-words font-semibold text-slate-800">
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.85rem", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {session.courseTitle}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    {session.numberOfClasses
-                      ? `${session.numberOfClasses} class(es)`
-                      : "Session"}
+                  <p style={{ fontSize: "0.72rem", color: "#78716c", margin: "2px 0 0" }}>
+                    {session.numberOfClasses ? `${session.numberOfClasses} class(es)` : "Session"}
                   </p>
                 </div>
-                <span className="text-[10px] font-semibold text-slate-700 sm:shrink-0">
+                <span
+                  style={{
+                    flexShrink: 0,
+                    background: "linear-gradient(135deg, #f97316, #fb923c)",
+                    color: "#fff",
+                    borderRadius: "999px",
+                    padding: "0.2rem 0.625rem",
+                    fontSize: "0.68rem",
+                    fontWeight: 700,
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   {session.label}
                 </span>
               </div>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card className="border-orange-100/80 bg-white/90 shadow-sm overflow-hidden">
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="text-lg">Profile & Support</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 p-4 pt-0 text-sm text-muted-foreground sm:p-6 sm:pt-0">
+        {/* Profile & Support */}
+        <div style={cardStyle} data-sr="fade-up" data-sr-delay="300">
+          <div style={cardHeaderStyle}>
+            <span style={{ fontSize: "1.1rem" }}>👤</span>
+            <h3 style={cardTitleStyle}>Profile & Support</h3>
+          </div>
+          <div style={{ padding: "1rem 1.25rem", display: "flex", flexDirection: "column", gap: "0.875rem" }}>
+            {/* Profile completion */}
             <div>
-              <div className="flex items-center justify-between">
-                <span>Profile Completion</span>
-                <span className="font-semibold text-slate-700">
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.375rem" }}>
+                <span style={{ fontSize: "0.82rem", color: "#64748b" }}>Profile Completion</span>
+                <span
+                  style={{
+                    fontSize: "0.72rem",
+                    fontWeight: 700,
+                    color: "#fff",
+                    background: profileCompletion === 100 ? "#16a34a" : "#f97316",
+                    padding: "0.1rem 0.5rem",
+                    borderRadius: "999px",
+                  }}
+                >
                   {profileCompletion}%
                 </span>
               </div>
-              <div className="mt-2 h-2 w-full rounded-full bg-orange-100">
+              <div style={{ height: "8px", width: "100%", borderRadius: "999px", background: "#f1f5f9", overflow: "hidden" }}>
                 <div
-                  className="h-2 rounded-full bg-orange-500"
-                  style={{ width: `${profileCompletion}%` }}
+                  style={{
+                    height: "100%",
+                    borderRadius: "999px",
+                    background: profileCompletion === 100
+                      ? "linear-gradient(90deg, #16a34a, #4ade80)"
+                      : "linear-gradient(90deg, #f97316, #fbbf24)",
+                    width: `${profileCompletion}%`,
+                    transition: "width 0.6s ease",
+                  }}
                 />
               </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Keep your details updated for smooth enrollments and
-                communications.
+              <p style={{ fontSize: "0.72rem", color: "#94a3b8", marginTop: "0.375rem" }}>
+                Keep your details updated for smooth enrollments.
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-white/70 p-2.5 break-words sm:p-3">
-              <p className="text-xs uppercase tracking-wide">Support</p>
-              <p className="mt-1 text-xs text-slate-700 break-words sm:text-sm">
-                Phone: +91 9999466159
-              </p>
-              <p className="text-xs text-slate-700 break-words sm:text-sm">
-                Email: mentor.languageclasses@gmail.com
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <div className="flex flex-wrap gap-2 pt-2">
-                <Button asChild size="sm" variant="outline" className="h-8 px-3 text-[11px]">
-                  <a href="#courses">Browse Courses</a>
-                </Button>
-                <Button asChild size="sm" variant="outline" className="h-8 px-3 text-[11px]">
-                  <a href="#enrolledcourse">My Courses</a>
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
+            {/* Support info */}
+            <div
+              style={{
+                background: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                borderRadius: "0.75rem",
+                padding: "0.75rem 0.875rem",
+              }}
+            >
+              <p style={{ fontSize: "0.62rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "#94a3b8", fontWeight: 700, marginBottom: "0.4rem" }}>
+                Support
+              </p>
+              <p style={{ fontSize: "0.82rem", color: "#334155", display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.2rem" }}>
+                <span>📞</span> +91 9999466159
+              </p>
+              <p style={{ fontSize: "0.82rem", color: "#334155", display: "flex", alignItems: "center", gap: "0.4rem", wordBreak: "break-all" }}>
+                <span>✉️</span> mentor.languageclasses@gmail.com
+              </p>
+            </div>
+
+            {/* Quick links */}
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              {[
+                { href: "#courses", label: "Browse Courses" },
+                { href: "#enrolledcourse", label: "My Courses" },
+              ].map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.3rem",
+                    padding: "0.35rem 0.75rem",
+                    borderRadius: "999px",
+                    border: "1.5px solid #fed7aa",
+                    background: "#fff",
+                    color: "#c2410c",
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    transition: "all 0.15s",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#fff7ed"; e.currentTarget.style.borderColor = "#f97316"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#fed7aa"; }}
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   );
 };

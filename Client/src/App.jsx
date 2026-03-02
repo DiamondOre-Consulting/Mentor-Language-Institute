@@ -3,20 +3,14 @@ import { useEffect } from 'react'
 import Parentsignup from './Component/Studentcomponents/Stuauth/Parentsignup'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import Admin from './Pages/Adminpages/Admin'
-
 import Login from './Component/TeacherAdminAuthentication/Login'
 import Maindash from './Pages/Studentpages/Maindash'
 import StudentEachcourses from './Pages/Studentpages/StudentEachcourses'
 import Teachermain from './Pages/Teacherpages/Teachermain'
 import Error from './Component/Studentcomponents/Stuauth/Error'
-// import Chat from './Pages/Chat'
-
 import UserVerify from './Component/Auth/ProtectedRoute'
 import SiteFooter from './Component/Common/SiteFooter'
-
-
-
-
+import { initScrollReveal } from './utils/scrollReveal'
 
 function App() {
   useEffect(() => {
@@ -25,8 +19,13 @@ function App() {
     }
 
     document.addEventListener('submit', handleSubmit)
+
+    // Initialize site-wide scroll-reveal animations
+    const cleanup = initScrollReveal()
+
     return () => {
       document.removeEventListener('submit', handleSubmit)
+      if (cleanup) cleanup()
     }
   }, [])
 

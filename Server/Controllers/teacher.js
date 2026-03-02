@@ -100,7 +100,20 @@ router.post("/login-teacher", async (req, res) => {
       return res.status(401).json({ message: "Invalid email or phone number" });
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
+    let passwordMatch = false;
+    try {
+      passwordMatch = await bcrypt.compare(password, user.password);
+    } catch (compareError) {
+      passwordMatch = false;
+    }
+
+    if (!passwordMatch && user.password === password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      user.password = hashedPassword;
+      await user.save();
+      passwordMatch = true;
+    }
+
     if (!passwordMatch) {
       return res.status(402).json({ message: "Invalid password" });
     }

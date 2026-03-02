@@ -102,7 +102,6 @@ const EditTeacher = () => {
       if (response.status === 200) {
         setPopupMessage("Teacher Edited Successfully");
         setPassword("");
-        setTeacherCourseId("");
       } else if (response.status === 400) {
         setPopupMessage(response.data.message);
       } else {

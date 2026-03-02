@@ -10,58 +10,128 @@ import youtube from "..//..//../assets/youtube.png";
 const StuFooter = () => {
   const handleWhatsAppChat = () => {
     const phoneNumber = "8130265929";
-    const url = `https://api.whatsapp.com/send?phone=${encodeURIComponent(phoneNumber)}`;
-    window.open(url, "_blank");
+    window.open(`https://api.whatsapp.com/send?phone=${encodeURIComponent(phoneNumber)}`, "_blank");
   };
 
-  return (
-    <footer className="mx-4 mb-4 mt-10 rounded-2xl border border-orange-100 bg-white shadow-sm sm:mx-6 lg:mx-8">
-      <div className="mx-auto w-full max-w-7xl p-5 sm:p-7">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <img src={logo} className="h-12 md:h-16" alt="Mentor Institute logo" />
+  const socials = [
+    { src: insta, alt: "Instagram", href: "https://www.instagram.com/mentorlanguage/", hoverFilter: "sepia(1) saturate(4) hue-rotate(290deg)" },
+    { src: facebook, alt: "Facebook", href: "https://www.facebook.com/mentorlanguage/", hoverFilter: "sepia(1) saturate(4) hue-rotate(180deg)" },
+    { src: whatsapp, alt: "WhatsApp", onClick: handleWhatsAppChat, hoverFilter: "sepia(1) saturate(3) hue-rotate(85deg)" },
+    { src: linkedin, alt: "LinkedIn", href: "https://www.linkedin.com/company/mentor-the-language-institute/?viewAsMember=true", hoverFilter: "sepia(1) saturate(4) hue-rotate(170deg)" },
+    { src: youtube, alt: "YouTube", href: "https://youtube.com/@mentorlanguageinstitute8431?si=cztyFsLYOEKvWPO7", hoverFilter: "sepia(1) saturate(5) hue-rotate(320deg)" },
+  ];
 
-          <ul className="flex flex-wrap items-center gap-4 text-sm font-medium text-slate-600">
-            <li>
-              <Link to="/main-dashboard" className="transition hover:text-orange-600 hover:underline">Home</Link>
-            </li>
-            <li>
-              <a href="#enrolledcourse" className="transition hover:text-orange-600 hover:underline">Enrolled Courses</a>
-            </li>
+  return (
+    <footer
+      style={{
+        margin: "2.5rem 1rem 1rem",
+        borderRadius: "1.25rem",
+        background: "#fff",
+        border: "1px solid #fed7aa55",
+        boxShadow: "0 -2px 20px -10px rgba(249,115,22,0.12)",
+        overflow: "hidden",
+      }}
+    >
+      {/* Gradient top accent bar */}
+      <div style={{ height: "3px", background: "linear-gradient(90deg, #f97316, #fb923c, #fbbf24)" }} />
+
+      <div style={{ padding: "1.5rem", maxWidth: "80rem", margin: "0 auto" }}>
+        {/* Top row: logo + nav links */}
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "1rem",
+            marginBottom: "1.25rem",
+          }}
+        >
+          <img src={logo} style={{ height: "clamp(2.25rem, 5vw, 3rem)", width: "auto" }} alt="Mentor Institute logo" />
+
+          <ul style={{ display: "flex", flexWrap: "wrap", gap: "1.5rem", listStyle: "none", margin: 0, padding: 0 }}>
+            {[
+              { to: "/main-dashboard", label: "Home" },
+              { href: "#enrolledcourse", label: "Enrolled Courses" },
+              { href: "#courses", label: "Browse Courses" },
+            ].map((link) => (
+              <li key={link.label}>
+                {link.to ? (
+                  <Link
+                    to={link.to}
+                    style={{ fontSize: "0.85rem", fontWeight: 600, color: "#64748b", textDecoration: "none", transition: "color 0.15s" }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = "#f97316"}
+                    onMouseLeave={(e) => e.currentTarget.style.color = "#64748b"}
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a
+                    href={link.href}
+                    style={{ fontSize: "0.85rem", fontWeight: 600, color: "#64748b", textDecoration: "none", transition: "color 0.15s" }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = "#f97316"}
+                    onMouseLeave={(e) => e.currentTarget.style.color = "#64748b"}
+                  >
+                    {link.label}
+                  </a>
+                )}
+              </li>
+            ))}
           </ul>
         </div>
 
-        <hr className="my-5 border-orange-100" />
+        {/* Divider */}
+        <hr style={{ border: "none", borderTop: "1px solid #f1f5f9", margin: "0 0 1.25rem" }} />
 
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="order-2 space-y-1 text-center text-xs text-slate-500 md:order-1 md:text-left sm:text-sm">
-            <p>
+        {/* Bottom row: copyright + socials */}
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "1rem",
+          }}
+        >
+          <div style={{ fontSize: "0.75rem", color: "#94a3b8", lineHeight: 1.6 }}>
+            <p style={{ margin: 0 }}>
               Designed & Developed by{" "}
-              <a href="https://www.doclabz.com/" target="_blank" rel="noreferrer" className="text-orange-500 hover:underline">
+              <a
+                href="https://www.doclabz.com/"
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: "#f97316", fontWeight: 700, textDecoration: "none" }}
+              >
                 DOC-LABZ
               </a>
-              .
             </p>
-            <p>
-              Copyright 2024 <span className="font-medium text-slate-700">Mentor Institute</span>. All rights reserved.
+            <p style={{ margin: 0 }}>
+              © 2024 <span style={{ fontWeight: 600, color: "#64748b" }}>Mentor Institute</span>. All rights reserved.
             </p>
           </div>
 
-          <div className="order-1 flex items-center justify-center gap-4 md:order-2">
-            <a href="https://www.instagram.com/mentorlanguage/" target="_blank" rel="noreferrer">
-              <img src={insta} alt="Instagram" className="w-8 cursor-pointer" />
-            </a>
-            <a href="https://www.facebook.com/mentorlanguage/" target="_blank" rel="noreferrer">
-              <img src={facebook} alt="Facebook" className="w-8" />
-            </a>
-            <button onClick={handleWhatsAppChat} className="inline-flex" aria-label="Open WhatsApp chat">
-              <img src={whatsapp} alt="WhatsApp" className="w-8" />
-            </button>
-            <a href="https://www.linkedin.com/company/mentor-the-language-institute/?viewAsMember=true" target="_blank" rel="noreferrer">
-              <img src={linkedin} alt="LinkedIn" className="w-8" />
-            </a>
-            <a href="https://youtube.com/@mentorlanguageinstitute8431?si=cztyFsLYOEKvWPO7" target="_blank" rel="noreferrer">
-              <img src={youtube} alt="YouTube" className="w-8" />
-            </a>
+          {/* Social icons */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.875rem" }}>
+            {socials.map((s) => {
+              const inner = (
+                <img
+                  src={s.src}
+                  alt={s.alt}
+                  style={{ width: "28px", height: "28px", objectFit: "contain", transition: "filter 0.2s, transform 0.2s" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.filter = s.hoverFilter; e.currentTarget.style.transform = "translateY(-2px) scale(1.1)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.filter = "none"; e.currentTarget.style.transform = "none"; }}
+                />
+              );
+              return s.onClick ? (
+                <button key={s.alt} onClick={s.onClick} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex" }}>
+                  {inner}
+                </button>
+              ) : (
+                <a key={s.alt} href={s.href} target="_blank" rel="noreferrer" style={{ display: "flex" }}>
+                  {inner}
+                </a>
+              );
+            })}
           </div>
         </div>
       </div>

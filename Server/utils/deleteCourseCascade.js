@@ -5,6 +5,7 @@ import ClassTeachers from "../Models/ClassTeachers.js";
 import Commission from "../Models/Commission.js";
 import Fee from "../Models/Fee.js";
 import Invoice from "../Models/Invoice.js";
+import PaymentRequest from "../Models/PaymentRequest.js";
 import Students from "../Models/Students.js";
 
 export const deleteAllCoursesCascade = async () => {
@@ -37,6 +38,7 @@ export const deleteAllCoursesCascade = async () => {
   await Attendance.deleteMany({ classId: { $in: ids } });
   await Fee.deleteMany({ classId: { $in: ids } });
   await Invoice.deleteMany({ classId: { $in: ids } });
+  await PaymentRequest.deleteMany({ classId: { $in: ids } });
   await ClassAccessStatus.deleteMany({ classId: { $in: ids } });
   await Commission.deleteMany({ classId: { $in: ids } });
 

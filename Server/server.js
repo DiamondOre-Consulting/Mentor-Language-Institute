@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import morgan from "morgan";
 import { createServer } from "http";
+import path from "path";
 import feeReminderScheduler from "./feeReminderScheduler.js";
 
 dotenv.config();
@@ -35,6 +36,7 @@ app.use(
 
 const PORT = process.env.PORT|| 7000;
 app.use(morgan("dev"));
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 
 mongoose

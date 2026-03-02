@@ -236,8 +236,8 @@ const EachTeacherClassStudentAttendance = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-8 mt-10 md:grid-cols-1">
-          <table className="w-full text-sm text-center text-gray-500 shadow-xl rtl:text-right">
-            <thead className="text-xs text-gray-100 uppercase bg-orange-500 ">
+          <table className="w-full text-sm text-center text-gray-900 shadow-xl rtl:text-right">
+            <thead className="text-xs text-gray-900 uppercase bg-orange-500 ">
               <tr>
                 <th scope="col" className="px-6 py-3">
                   Name
@@ -258,12 +258,12 @@ const EachTeacherClassStudentAttendance = () => {
                 );
                 const studentTotalClassesTaken = studentAttendanceDetails
                   ? studentAttendanceDetails.detailAttendance
-                      .filter((detail) => detail.classDate === selectedDate) // Filter by selected date
-                      .reduce(
-                        (total, detail) =>
-                          total + (+detail.numberOfClassesTaken || 0),
-                        0
-                      )
+                    .filter((detail) => detail.classDate === selectedDate) // Filter by selected date
+                    .reduce(
+                      (total, detail) =>
+                        total + (+detail.numberOfClassesTaken || 0),
+                      0
+                    )
                   : 0;
 
                 const teachercommission = "-";
@@ -305,7 +305,7 @@ const EachTeacherClassStudentAttendance = () => {
           <h1 className="mt-4 text-3xl ">Monthly Commission</h1>
 
           <table className="w-full text-sm text-center text-gray-500 rounded-md shadow-xl rtl:text-center">
-            <thead className="text-xs text-gray-100 uppercase bg-orange-500 rounded-md ">
+            <thead className="text-xs text-gray-900 uppercase bg-orange-500 rounded-md ">
               <tr>
                 <th scope="col" className="px-6 py-3">
                   Month
@@ -361,11 +361,10 @@ const EachTeacherClassStudentAttendance = () => {
                       {commission.commission ?? 0}
                     </td>
                     <td
-                      className={`px-6 py-4 text-center ${
-                        commission.paid
-                          ? "text-green-500 font-bold"
-                          : "text-red-400"
-                      }`}
+                      className={`px-6 py-4 text-center ${commission.paid
+                        ? "text-green-500 font-bold"
+                        : "text-red-400"
+                        }`}
                     >
                       {commission.paid ? "paid" : "Unpaid"}
                     </td>
@@ -377,7 +376,7 @@ const EachTeacherClassStudentAttendance = () => {
       </div>
       <div>
         <div className="mt-8 text-3xl">Student List</div>
-        <table className="w-full text-sm text-center text-gray-500 shadow-xl rtl:text-right">
+        <table className="w-full text-sm text-center text-gray-900 shadow-xl rtl:text-right">
           <thead className="text-xs text-gray-100 uppercase bg-orange-500">
             <tr>
               <th scope="col" className="px-6 py-3">
@@ -400,10 +399,10 @@ const EachTeacherClassStudentAttendance = () => {
                   <td className="px-6 py-4">
                     {student?.dob
                       ? new Date(student.dob).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })
                       : "N/A"}
                   </td>
                 </tr>
