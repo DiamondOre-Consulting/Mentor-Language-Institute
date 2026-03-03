@@ -9,6 +9,7 @@ import StudentEachcourses from './Pages/Studentpages/StudentEachcourses'
 import Teachermain from './Pages/Teacherpages/Teachermain'
 import Error from './Component/Studentcomponents/Stuauth/Error'
 import UserVerify from './Component/Auth/ProtectedRoute'
+import ResetPassword from './Component/Auth/ResetPassword'
 import SiteFooter from './Component/Common/SiteFooter'
 import { initScrollReveal } from './utils/scrollReveal'
 
@@ -37,6 +38,7 @@ function App() {
             <Route index element={<Parentsignup />} />
             <Route path='/login' element={<Login />} />
             <Route path='/student-login' element={<Login defaultTab="student" />} />
+            <Route path='/reset-password' element={<ResetPassword />} />
             {/* <Route path='/student-chat' element={<StudentChat/>}/> */}
             <Route element={<UserVerify routeName="students" />}>
               <Route path='/main-dashboard' element={<Maindash />} />

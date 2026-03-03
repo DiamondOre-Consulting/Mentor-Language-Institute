@@ -39,6 +39,13 @@ const studentSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  resetPasswordTokenHash: {
+    type: String,
+    default: "",
+  },
+  resetPasswordExpiresAt: {
+    type: Date,
+  },
   appliedClasses: {
     type: [
       {

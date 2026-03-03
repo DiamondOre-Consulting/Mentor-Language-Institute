@@ -35,6 +35,13 @@ const teacherSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  resetPasswordTokenHash: {
+    type: String,
+    default: "",
+  },
+  resetPasswordExpiresAt: {
+    type: Date,
+  },
   
   jwtStore: {
     type: String,

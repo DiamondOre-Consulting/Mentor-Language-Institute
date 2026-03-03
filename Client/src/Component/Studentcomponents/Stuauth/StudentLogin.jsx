@@ -4,6 +4,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { useApi } from "../../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../../components/ui/dialog";
 
 const override = css`
   display: block;
@@ -19,6 +27,10 @@ const StudentLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetIdentifier, setResetIdentifier] = useState("");
+  const [resetStatus, setResetStatus] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleStudentLogin = async (e) => {
     e.preventDefault();
@@ -58,6 +70,33 @@ const StudentLogin = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResetRequest = async () => {
+    if (!resetIdentifier.trim()) {
+      setResetStatus("Please enter your email/phone/username.");
+      return;
+    }
+    setResetLoading(true);
+    setResetStatus("");
+    try {
+      const response = await post({
+        url: "/auth/request-password-reset",
+        data: {
+          role: "student",
+          identifier: resetIdentifier.trim(),
+        },
+      }).unwrap();
+      if (response.status === 200) {
+        setResetStatus("If an account exists, a reset link has been sent.");
+      } else {
+        setResetStatus("Unable to send reset link right now.");
+      }
+    } catch (error) {
+      setResetStatus("Unable to send reset link right now.");
+    } finally {
+      setResetLoading(false);
     }
   };
   return (
@@ -146,6 +185,17 @@ const StudentLogin = () => {
               >
                 Create Account
               </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setResetIdentifier("");
+                  setResetStatus("");
+                  setResetOpen(true);
+                }}
+                className="text-xs mt-2 text-indigo-500 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Forgot password?
+              </button>
             </div>
             <div className="w-full">
               <button className="w-full p-2 text-white bg-orange-400 rounded-md">
@@ -161,6 +211,46 @@ const StudentLogin = () => {
           )}
         </div>
       </div>
+
+      <Dialog open={resetOpen} onOpenChange={setResetOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reset password</DialogTitle>
+            <DialogDescription>
+              Enter your email, phone number, or username and we will send a reset link.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <input
+              type="text"
+              value={resetIdentifier}
+              onChange={(e) => setResetIdentifier(e.target.value)}
+              placeholder="Email, phone, or username"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+            />
+            {resetStatus && (
+              <p className="text-xs text-slate-600">{resetStatus}</p>
+            )}
+          </div>
+          <DialogFooter className="mt-4">
+            <button
+              type="button"
+              onClick={() => setResetOpen(false)}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleResetRequest}
+              disabled={resetLoading}
+              className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {resetLoading ? "Sending..." : "Send reset link"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </>
   );
