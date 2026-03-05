@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "../../../components/ui/card";
+import { validateRequired } from "../../../utils/validators";
 
 const formatDate = (value) => {
   if (!value) return "N/A";
@@ -36,6 +37,7 @@ const StudentProfile = ({ student, onUpdated, variant = "page" }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
     name: "",
@@ -67,7 +69,20 @@ const StudentProfile = ({ student, onUpdated, variant = "page" }) => {
   }, [student]);
 
   const handleChange = (e) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "name") {
+      setErrors((prev) => ({
+        ...prev,
+        name: validateRequired(value, "Full name"),
+      }));
+    }
+    if (name === "userName") {
+      setErrors((prev) => ({
+        ...prev,
+        userName: validateRequired(value, "Username"),
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -79,6 +94,16 @@ const StudentProfile = ({ student, onUpdated, variant = "page" }) => {
       const token = localStorage.getItem("token");
       if (!token) {
         setError("Session expired. Please login again.");
+        return;
+      }
+
+      const nextErrors = {
+        name: validateRequired(formData.name, "Full name"),
+        userName: validateRequired(formData.userName, "Username"),
+      };
+      setErrors(nextErrors);
+      if (Object.values(nextErrors).some(Boolean)) {
+        setIsSaving(false);
         return;
       }
 
@@ -163,6 +188,11 @@ const StudentProfile = ({ student, onUpdated, variant = "page" }) => {
                       placeholder="Enter full name"
                       required
                     />
+                    {errors.name && (
+                      <p className="text-xs font-medium text-rose-600">
+                        {errors.name}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="userName">Username</Label>
@@ -174,6 +204,11 @@ const StudentProfile = ({ student, onUpdated, variant = "page" }) => {
                       placeholder="Enter username"
                       required
                     />
+                    {errors.userName && (
+                      <p className="text-xs font-medium text-rose-600">
+                        {errors.userName}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="dob">Date of Birth</Label>

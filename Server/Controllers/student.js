@@ -26,6 +26,7 @@ import {
   isValidEmail,
   normalizeEmail,
 } from "../utils/studentValidation.js";
+import { isValidPhone, normalizePhone } from "../utils/phone.js";
 
 dotenv.config();
 
@@ -81,7 +82,10 @@ router.post("/signup", async (req, res) => {
 
     const normalizedEmail = normalizeEmail(email);
     const normalizedUserName = userName.trim();
-    const normalizedPhone = phone.trim();
+    const normalizedPhone = normalizePhone(phone);
+    if (!isValidPhone(normalizedPhone)) {
+      return res.status(400).json({ message: "Phone number must be 10 digits." });
+    }
     if (!isValidEmail(normalizedEmail)) {
       return res.status(400).json({ message: "Please enter a valid email." });
     }
@@ -421,21 +425,25 @@ router.post(
             req.file
         );
 
-        if (hasPaymentDetails) {
-          if (
-            !paymentMethod ||
-            !transactionId ||
-            !amountProvided ||
-            !paidOn ||
-            !payerName ||
-            !phone
-          ) {
-            return res.status(400).json({
-              message:
-                "paymentMethod, transactionId, amount, paidOn, payerName, and phone are required when submitting payment details.",
-            });
+          if (hasPaymentDetails) {
+            if (
+              !paymentMethod ||
+              !transactionId ||
+              !amountProvided ||
+              !paidOn ||
+              !payerName ||
+              !phone
+            ) {
+              return res.status(400).json({
+                message:
+                  "paymentMethod, transactionId, amount, paidOn, payerName, and phone are required when submitting payment details.",
+              });
+            }
+            const normalizedPhone = normalizePhone(phone);
+            if (!isValidPhone(normalizedPhone)) {
+              return res.status(400).json({ message: "Phone number must be 10 digits." });
+            }
           }
-        }
 
         let parsedAmount = 0;
         let paidDate = null;

@@ -18,7 +18,8 @@ const teacherSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim:true,
-    unique:true
+    unique:true,
+    match: [/^\d{10}$/, "Phone number must be 10 digits."],
   },
   email: {
     type: String,

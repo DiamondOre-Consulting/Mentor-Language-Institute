@@ -32,6 +32,7 @@ import {
   isValidEmail,
   normalizeEmail,
 } from "../utils/studentValidation.js";
+import { isValidPhone, normalizePhone } from "../utils/phone.js";
 import ExcelJS from "exceljs";
 dotenv.config();
 
@@ -160,14 +161,17 @@ router.post("/signup-admin", ensureAdminSignupAllowed, async (req, res) => {
         message: "Name, phone number, email, and password are required.",
       });
     }
-
+    const normalizedPhone = normalizePhone(phone);
+    if (!isValidPhone(normalizedPhone)) {
+      return res.status(400).json({ message: "Phone number must be 10 digits." });
+    }
     const normalizedEmail = normalizeEmail(email);
     if (!isValidEmail(normalizedEmail)) {
       return res.status(400).json({ message: "Please enter a valid email." });
     }
 
     const adminuser = await Admin.findOne({
-      $or: [{ phone }, { email: normalizedEmail }],
+      $or: [{ phone: normalizedPhone }, { email: normalizedEmail }],
     });
     if (adminuser) {
       return res.status(409).json({ message: "Admin user already exists" });
@@ -178,8 +182,8 @@ router.post("/signup-admin", ensureAdminSignupAllowed, async (req, res) => {
     const newAdmin = new Admin({
       role: "admin",
       name,
-      username: name + "-" + phone,
-      phone,
+      username: name + "-" + normalizedPhone,
+      phone: normalizedPhone,
       email: normalizedEmail,
       branch: "Main",
       password: hashedPassword,
@@ -289,7 +293,10 @@ router.put("/student-edit/:id", AdminAuthenticateToken, async (req, res) => {
 
     const normalizedEmail = email ? normalizeEmail(email) : null;
     const normalizedUserName = userName ? userName.trim() : null;
-    const normalizedPhone = phone ? phone.trim() : null;
+    const normalizedPhone = phone ? normalizePhone(phone) : null;
+    if (normalizedPhone && !isValidPhone(normalizedPhone)) {
+      return res.status(400).json({ message: "Phone number must be 10 digits." });
+    }
     if (email && !isValidEmail(normalizedEmail)) {
       return res.status(400).json({ message: "Please enter a valid email." });
     }
@@ -374,7 +381,11 @@ router.put("/teacher-edit/:id", AdminAuthenticateToken, async (req, res) => {
 
     // Check if phone already exists (excluding the current teacher)
     if (phone) {
-      const existingTeacher = await Teachers.findOne({ phone });
+      const normalizedPhone = normalizePhone(phone);
+      if (!isValidPhone(normalizedPhone)) {
+        return res.status(400).json({ message: "Phone number must be 10 digits." });
+      }
+      const existingTeacher = await Teachers.findOne({ phone: normalizedPhone });
       if (existingTeacher && existingTeacher._id.toString() !== id) {
         return res.status(400).json({
           message: "Teacher already taken. Please enter a unique phone number",
@@ -401,7 +412,7 @@ router.put("/teacher-edit/:id", AdminAuthenticateToken, async (req, res) => {
       teacher.name = name;
     }
     if (phone) {
-      teacher.phone = phone;
+      teacher.phone = normalizePhone(phone);
     }
     if (dob) {
       teacher.dob = dob;
@@ -846,14 +857,14 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
       });
     }
 
-    const normalizedEmail = normalizeEmail(email);
-    if (!isValidEmail(normalizedEmail)) {
-      return res.status(400).json({ message: "Please enter a valid email." });
-    }
+      const normalizedEmail = normalizeEmail(email);
+      if (!isValidEmail(normalizedEmail)) {
+        return res.status(400).json({ message: "Please enter a valid email." });
+      }
 
-    const teacher = await Teachers.exists({
-      $or: [{ phone }, { email: normalizedEmail }],
-    });
+      const teacher = await Teachers.exists({
+        $or: [{ phone: normalizedPhone }, { email: normalizedEmail }],
+      });
 
     if (teacher) {
       return res
@@ -863,15 +874,15 @@ router.post("/add-teacher", AdminAuthenticateToken, async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newTeacher = new Teachers({
-      branch: "Main",
-      role: "teacher",
-      name,
-      phone,
-      email: normalizedEmail,
-      dob,
-      password: hashedPassword,
-    });
+      const newTeacher = new Teachers({
+        branch: "Main",
+        role: "teacher",
+        name,
+        phone: normalizedPhone,
+        email: normalizedEmail,
+        dob,
+        password: hashedPassword,
+      });
 
     await newTeacher.save();
     return res
@@ -913,13 +924,17 @@ router.put("/edit-admin/:id", AdminAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { name, phone, password } = req.body;
-    const admin = await Admin.findById(id);
-    if (!admin) {
-      return res.status(404).json({ message: "Admin not found!" });
-    }
+      const admin = await Admin.findById(id);
+      if (!admin) {
+        return res.status(404).json({ message: "Admin not found!" });
+      }
 
-    const updatedName = name || admin.name;
-    const updatedPhone = phone || admin.phone;
+      const updatedName = name || admin.name;
+      const normalizedPhone = phone ? normalizePhone(phone) : admin.phone;
+      if (phone && !isValidPhone(normalizedPhone)) {
+        return res.status(400).json({ message: "Phone number must be 10 digits." });
+      }
+      const updatedPhone = normalizedPhone;
 
 
     const username = `${updatedName}-${updatedPhone}`;
@@ -935,7 +950,7 @@ router.put("/edit-admin/:id", AdminAuthenticateToken, async (req, res) => {
     }
 
     if (name) admin.name = name;
-    if (phone) admin.phone = phone;
+      if (phone) admin.phone = normalizedPhone;
     admin.username = username;
 
     if (password) {
@@ -994,12 +1009,15 @@ router.post("/add-student", AdminAuthenticateToken, async (req, res) => {
       return res.status(400).json({ message: "Grade is required." });
     }
 
-    const normalizedEmail = normalizeEmail(email);
-    const normalizedUserName = userName.trim();
-    const normalizedPhone = phone.trim();
-    if (!isValidEmail(normalizedEmail)) {
-      return res.status(400).json({ message: "Please enter a valid email." });
-    }
+      const normalizedEmail = normalizeEmail(email);
+      const normalizedUserName = userName.trim();
+      const normalizedPhone = normalizePhone(phone);
+      if (!isValidPhone(normalizedPhone)) {
+        return res.status(400).json({ message: "Phone number must be 10 digits." });
+      }
+      if (!isValidEmail(normalizedEmail)) {
+        return res.status(400).json({ message: "Please enter a valid email." });
+      }
 
     const conflictMessage = await findStudentUniquenessConflict({
       userName: normalizedUserName,
@@ -1141,6 +1159,14 @@ router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res)
     const studentExists = await Students.findById(id2);
     if (!studentExists) {
       return res.status(404).json({ message: "Student not found." });
+    }
+    const alreadyInStudent = (studentExists.classes || []).some(
+      (classId) => String(classId) === String(id1)
+    );
+    if (alreadyInStudent) {
+      return res.status(409).json({
+        message: "Student already exists in this class!!!",
+      });
     }
     const resolvedCourseGrade = resolveCourseGrade(classExists);
     if (resolvedCourseGrade && !classExists.grade) {
@@ -1394,6 +1420,14 @@ router.put(
       const studentExists = await Students.findById(request.studentId);
       if (!studentExists) {
         return res.status(404).json({ message: "Student not found." });
+      }
+      const alreadyInStudent = (studentExists.classes || []).some(
+        (classId) => String(classId) === String(request.classId)
+      );
+      if (alreadyInStudent) {
+        return res
+          .status(409)
+          .json({ message: "Student already enrolled in this class." });
       }
 
       const resolvedCourseGrade = resolveCourseGrade(classExists);

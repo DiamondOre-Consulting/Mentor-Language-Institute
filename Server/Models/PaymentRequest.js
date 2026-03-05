@@ -39,6 +39,7 @@ const paymentRequestSchema = new mongoose.Schema({
     type: String,
     trim: true,
     default: "",
+    match: [/^\d{10}$/, "Phone number must be 10 digits."],
   },
   notes: {
     type: String,

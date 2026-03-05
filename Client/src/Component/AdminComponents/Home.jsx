@@ -15,6 +15,12 @@ import {
 } from "../../components/ui/dialog";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
+import {
+  normalizeDigits,
+  validateEmail,
+  validatePhone,
+  validateRequired,
+} from "../../utils/validators";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -26,6 +32,7 @@ const Home = () => {
   const [popupMessage, setPopupMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [userName, setUserName] = useState("");
+  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -117,12 +124,29 @@ const Home = () => {
     fetchAllTeachers();
   }, [navigate]);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const updateField = (name, value, validator) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (validator) {
+      setErrors((prev) => ({ ...prev, [name]: validator(value) }));
+    }
+  };
+
+  const validateForm = () => {
+    const nextErrors = {
+      name: validateRequired(formData.name, "Name"),
+      email: validateEmail(formData.email),
+      phone: validatePhone(formData.phone),
+      password: validateRequired(formData.password, "Password"),
+    };
+    setErrors(nextErrors);
+    return !Object.values(nextErrors).some(Boolean);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) {
+      return;
+    }
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -143,6 +167,7 @@ const Home = () => {
         setPopupMessage("New Admin Has Been Created Successfully!");
         setIsFormOpen(false);
         setFormData({ name: "", email: "", phone: "", password: "" });
+        setErrors({});
         setUserName(response.data.newAdmin.username);
       }
     } catch (error) {
@@ -347,9 +372,16 @@ const Home = () => {
                 id="name"
                 name="name"
                 value={formData.name}
-                onChange={handleChange}
+                onChange={(e) =>
+                  updateField("name", e.target.value, (val) =>
+                    validateRequired(val, "Name")
+                  )
+                }
                 required
               />
+              {errors.name && (
+                <p className="text-xs text-rose-600">{errors.name}</p>
+              )}
             </div>
 
             <div className="grid gap-2">
@@ -359,10 +391,13 @@ const Home = () => {
                 id="email"
                 name="email"
                 value={formData.email}
-                onChange={handleChange}
+                onChange={(e) => updateField("email", e.target.value, validateEmail)}
                 required
                 autoComplete="off"
               />
+              {errors.email && (
+                <p className="text-xs text-rose-600">{errors.email}</p>
+              )}
             </div>
 
             <div className="grid gap-2">
@@ -372,10 +407,21 @@ const Home = () => {
                 id="phone"
                 name="phone"
                 value={formData.phone}
-                onChange={handleChange}
+                onChange={(e) =>
+                  updateField(
+                    "phone",
+                    normalizeDigits(e.target.value).slice(0, 10),
+                    (val) => validatePhone(val)
+                  )
+                }
                 required
                 autoComplete="off"
+                inputMode="numeric"
+                maxLength={10}
               />
+              {errors.phone && (
+                <p className="text-xs text-rose-600">{errors.phone}</p>
+              )}
             </div>
 
             <div className="grid gap-2">
@@ -385,10 +431,17 @@ const Home = () => {
                 id="password"
                 name="password"
                 value={formData.password}
-                onChange={handleChange}
+                onChange={(e) =>
+                  updateField("password", e.target.value, (val) =>
+                    validateRequired(val, "Password")
+                  )
+                }
                 required
                 autoComplete="off"
               />
+              {errors.password && (
+                <p className="text-xs text-rose-600">{errors.password}</p>
+              )}
             </div>
 
             <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
@@ -406,7 +459,9 @@ const Home = () => {
               <Button type="button" variant="secondary" onClick={() => setIsFormOpen(false)}>
                 Close
               </Button>
-              <Button type="submit">Submit</Button>
+              <Button type="submit" disabled={Object.values(errors).some(Boolean)}>
+                Submit
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

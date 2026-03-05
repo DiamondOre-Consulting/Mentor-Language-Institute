@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
+import { validateAmountPaid, validateNumber, validateRequired } from "../../utils/validators";
 
 const override = css`
   display: block;
@@ -25,6 +26,7 @@ const EachStu = () => {
   const [paidStatus, setPaidStatus] = useState("pending");
   const [totalFee, setTotalFee] = useState("");
   const [loading, setLoading] = useState(false);
+  const [feeErrors, setFeeErrors] = useState({});
   const months = [
     "January",
     "February",
@@ -223,6 +225,17 @@ const EachStu = () => {
       }
       const isPaid = paidStatus === "yes";
       const normalizedAmount = isPaid ? Number(amount) : 0;
+      const nextErrors = {
+        feeMonth: validateRequired(selectedMonth, "Fee month"),
+        amountPaid: isPaid
+          ? validateAmountPaid(amount, totalFee, { required: true })
+          : "",
+        totalFee: validateNumber(totalFee, { min: 0, label: "Total fee" }),
+      };
+      setFeeErrors(nextErrors);
+      if (Object.values(nextErrors).some(Boolean)) {
+        return;
+      }
       if (isPaid && (!amount || Number.isNaN(normalizedAmount) || normalizedAmount <= 0)) {
         alert("Please enter a valid amount.");
         return;
@@ -451,56 +464,93 @@ const EachStu = () => {
                             ))}
 
                           <tr className="bg-white border-b  ">
-                            <td className="px-6 py-4 font-medium text-gray-900">
-                              <select
-                                className="rounded-md border border-slate-300 bg-white px-2 py-1"
-                                onChange={(e) =>
-                                  setSelectedMonth(e.target.value)
-                                }
-                              >
-                                <option>Select Month</option>
-                                {months.map((month, index) => (
-                                  <option key={index} value={month}>
-                                    {month}
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
+                              <td className="px-6 py-4 font-medium text-gray-900">
+                                <select
+                                  className="rounded-md border border-slate-300 bg-white px-2 py-1"
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    setSelectedMonth(value);
+                                    setFeeErrors((prev) => ({
+                                      ...prev,
+                                      feeMonth: validateRequired(value, "Fee month"),
+                                    }));
+                                  }}
+                                >
+                                  <option>Select Month</option>
+                                  {months.map((month, index) => (
+                                    <option key={index} value={month}>
+                                      {month}
+                                    </option>
+                                  ))}
+                                </select>
+                                {feeErrors.feeMonth && (
+                                  <p className="mt-1 text-xs text-rose-600">
+                                    {feeErrors.feeMonth}
+                                  </p>
+                                )}
+                              </td>
 
-                            <td className="px-6 py-4 font-medium text-gray-900">
-                              <input
-                                type="text"
-                                className="w-full rounded-md border border-slate-300 bg-white px-2 py-1 sm:w-auto"
-                                placeholder="Enter Amount"
-                                value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
-                                disabled={paidStatus === "pending"}
-                              ></input>
-                            </td>
+                              <td className="px-6 py-4 font-medium text-gray-900">
+                                <input
+                                  type="text"
+                                  className="w-full rounded-md border border-slate-300 bg-white px-2 py-1 sm:w-auto"
+                                  placeholder="Enter Amount"
+                                  value={amount}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    setAmount(value);
+                                    setFeeErrors((prev) => ({
+                                      ...prev,
+                                      amountPaid:
+                                        paidStatus === "yes"
+                                          ? validateAmountPaid(value, totalFee, { required: true })
+                                          : "",
+                                    }));
+                                  }}
+                                  disabled={paidStatus === "pending"}
+                                  inputMode="decimal"
+                                ></input>
+                                {feeErrors.amountPaid && (
+                                  <p className="mt-1 text-xs text-rose-600">
+                                    {feeErrors.amountPaid}
+                                  </p>
+                                )}
+                              </td>
 
                             <td className="px-6 py-4 font-medium text-gray-900">
                               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                                   <label className="inline-flex items-center gap-2 text-sm text-slate-600">
-                                    <input
-                                      type="radio"
-                                      name="paidStatus"
-                                      value="pending"
-                                      checked={paidStatus === "pending"}
-                                      onChange={() => setPaidStatus("pending")}
-                                    />
-                                    Pending
-                                  </label>
-                                  <label className="inline-flex items-center gap-2 text-sm text-slate-600">
-                                    <input
-                                      type="radio"
-                                      name="paidStatus"
-                                      value="yes"
-                                      checked={paidStatus === "yes"}
-                                      onChange={() => setPaidStatus("yes")}
-                                    />
-                                    Yes
-                                  </label>
+                                      <input
+                                        type="radio"
+                                        name="paidStatus"
+                                        value="pending"
+                                        checked={paidStatus === "pending"}
+                                        onChange={() => {
+                                          setPaidStatus("pending");
+                                          setFeeErrors((prev) => ({ ...prev, amountPaid: "" }));
+                                        }}
+                                      />
+                                      Pending
+                                    </label>
+                                    <label className="inline-flex items-center gap-2 text-sm text-slate-600">
+                                      <input
+                                        type="radio"
+                                        name="paidStatus"
+                                        value="yes"
+                                        checked={paidStatus === "yes"}
+                                        onChange={() => {
+                                          setPaidStatus("yes");
+                                          setFeeErrors((prev) => ({
+                                            ...prev,
+                                            amountPaid: validateAmountPaid(amount, totalFee, {
+                                              required: true,
+                                            }),
+                                          }));
+                                        }}
+                                      />
+                                      Yes
+                                    </label>
                                 </div>
                                 <button
                                   className="rounded-md bg-green-600 px-4 py-2 text-gray-200"

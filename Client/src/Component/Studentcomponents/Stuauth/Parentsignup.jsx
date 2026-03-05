@@ -5,6 +5,12 @@ import { useApi } from "../../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 import { getToastVariant } from "../../../utils/toastVariant";
+import {
+  normalizeDigits,
+  validateEmail,
+  validatePhone,
+  validateRequired,
+} from "../../../utils/validators";
 
 const override = css`
   display: block;
@@ -22,6 +28,7 @@ const Parentlog = () => {
   const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [grade, setGrade] = useState("");
+  const [errors, setErrors] = useState({});
   const [popupMessage, setPopupMessage] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -32,6 +39,21 @@ const Parentlog = () => {
     setLoading(true);
     e.preventDefault();
     setPopupMessage(null);
+
+    const nextErrors = {
+      userName: validateRequired(userName, "Username"),
+      name: validateRequired(name, "Name"),
+      email: validateEmail(email),
+      phone: validatePhone(phone),
+      grade: validateRequired(grade, "Grade"),
+      dob: validateRequired(dob, "Date of birth"),
+      password: validateRequired(password, "Password"),
+    };
+    setErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await post({
@@ -114,11 +136,21 @@ const Parentlog = () => {
                     name="userName"
                     id="userName"
                     value={userName}
-                    onChange={(e) => setUserName(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setUserName(value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        userName: validateRequired(value, "Username"),
+                      }));
+                    }}
                     placeholder="Please Enter a unique userName"
                     className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                     required=""
                   />
+                  {errors.userName && (
+                    <p className="mt-1 text-xs text-rose-600">{errors.userName}</p>
+                  )}
                 </div>
                 <div>
                   <input
@@ -126,11 +158,21 @@ const Parentlog = () => {
                     name="name"
                     id="name"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setName(value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        name: validateRequired(value, "Name"),
+                      }));
+                    }}
                     placeholder="Enter Your Name"
                     className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                     required=""
                   />
+                  {errors.name && (
+                    <p className="mt-1 text-xs text-rose-600">{errors.name}</p>
+                  )}
                 </div>
 
                 <div>
@@ -139,11 +181,21 @@ const Parentlog = () => {
                     name="email"
                     id="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setEmail(value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        email: validateEmail(value),
+                      }));
+                    }}
                     placeholder="Enter your email address"
                     className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                     required=""
                   />
+                  {errors.email && (
+                    <p className="mt-1 text-xs text-rose-600">{errors.email}</p>
+                  )}
                 </div>
 
                 <div>
@@ -152,11 +204,23 @@ const Parentlog = () => {
                     name="phone"
                     id="phone"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => {
+                      const value = normalizeDigits(e.target.value).slice(0, 10);
+                      setPhone(value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        phone: validatePhone(value),
+                      }));
+                    }}
                     placeholder="Enter Your Phone Number"
                     className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                     required=""
+                    inputMode="numeric"
+                    maxLength={10}
                   />
+                  {errors.phone && (
+                    <p className="mt-1 text-xs text-rose-600">{errors.phone}</p>
+                  )}
                 </div>
 
                 <div>
@@ -164,7 +228,14 @@ const Parentlog = () => {
                     name="grade"
                     id="grade"
                     value={grade}
-                    onChange={(e) => setGrade(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setGrade(value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        grade: validateRequired(value, "Grade"),
+                      }));
+                    }}
                     className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                     required
                   >
@@ -175,6 +246,9 @@ const Parentlog = () => {
                       </option>
                     ))}
                   </select>
+                  {errors.grade && (
+                    <p className="mt-1 text-xs text-rose-600">{errors.grade}</p>
+                  )}
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center justify-between w-full p-2 border border-gray-500 rounded-md">
@@ -189,21 +263,41 @@ const Parentlog = () => {
                     id="dob"
                     value={dob}
                     className=" rounded-lg outline-none h-8 focus:ring-0"
-                    onChange={(e) => setdob(e.target.value)} // Capture the date input
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setdob(value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        dob: validateRequired(value, "Date of birth"),
+                      }));
+                    }} // Capture the date input
                     required
                     placeholder="Data of Birth"
                   />
                 </div>
+                {errors.dob && (
+                  <p className="mt-1 text-xs text-rose-600">{errors.dob}</p>
+                )}
                 <div>
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setPassword(value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        password: validateRequired(value, "Password"),
+                      }));
+                    }}
                     placeholder="********"
                     className="bg-gray-50 border border-gray-900 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-600 focus:border-gray-600 block w-full p-2.5      "
                     required=""
                   />
+                  {errors.password && (
+                    <p className="mt-1 text-xs text-rose-600">{errors.password}</p>
+                  )}
                 </div>
 
                 <div className="flex items-center mt-2">

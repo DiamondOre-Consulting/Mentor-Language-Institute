@@ -20,6 +20,7 @@ const studentSchema = new mongoose.Schema({
     required: true,
     unique: true,
     trim: true,
+    match: [/^\d{10}$/, "Phone number must be 10 digits."],
   },
   email: {
     type: String,

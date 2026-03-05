@@ -6,6 +6,11 @@ import { css } from "@emotion/react";
 import { useApi } from "../../api/useApi";
 import TeacherEditStudent from "./TeacherEditStudent";
 import { getToastVariant } from "../../utils/toastVariant";
+import {
+  validateAmountPaid,
+  validateNumber,
+  validateRequired,
+} from "../../utils/validators";
 
 const override = css`
   display: block;
@@ -39,6 +44,7 @@ const TeacherAllStudents = () => {
   const [filterMode, setFilterMode] = useState("all");
   const [selectedMyCourseId, setSelectedMyCourseId] = useState("");
   const [myCourseStudents, setMyCourseStudents] = useState([]);
+  const [formErrors, setFormErrors] = useState({});
 
   const months = [
     "January",
@@ -60,6 +66,15 @@ const TeacherAllStudents = () => {
     feeMonth: "",
     paid: "pending",
     amountPaid: "0",
+  });
+
+  const buildFormErrors = (data) => ({
+    totalFee: validateNumber(data.totalFee, { min: 0, label: "Total fee" }),
+    feeMonth: validateRequired(data.feeMonth, "Fee month"),
+    amountPaid:
+      data.paid === "yes"
+        ? validateAmountPaid(data.amountPaid, data.totalFee, { required: true })
+        : "",
   });
 
   useEffect(() => {
@@ -205,6 +220,7 @@ const TeacherAllStudents = () => {
 
   const openForm = (studentId) => {
     setSelectedStudentId(studentId);
+    setFormErrors({});
     setIsFormOpen(true);
   };
 
@@ -215,15 +231,24 @@ const TeacherAllStudents = () => {
   };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+      setFormErrors(buildFormErrors(next));
+      return next;
+    });
   };
 
   const handlePaidChange = (value) => {
-    setFormData((prev) => ({
-      ...prev,
-      paid: value,
-      amountPaid: value === "pending" ? "0" : prev.amountPaid,
-    }));
+    setFormData((prev) => {
+      const next = {
+        ...prev,
+        paid: value,
+        amountPaid: value === "pending" ? "0" : prev.amountPaid,
+      };
+      setFormErrors(buildFormErrors(next));
+      return next;
+    });
   };
 
   const monthNameToNumber = {
@@ -251,6 +276,12 @@ const TeacherAllStudents = () => {
       }
 
       const { totalFee, feeMonth, paid, amountPaid } = formData;
+      const nextErrors = buildFormErrors(formData);
+      setFormErrors(nextErrors);
+      if (Object.values(nextErrors).some(Boolean)) {
+        setLoading(false);
+        return;
+      }
       const monthNumber = monthNameToNumber[feeMonth];
       const isPaid = paid === "yes";
       const normalizedAmountPaid = isPaid ? Number(amountPaid) : 0;
@@ -315,6 +346,7 @@ const TeacherAllStudents = () => {
       paid: "pending",
       amountPaid: "0",
     });
+    setFormErrors({});
     setIsFormOpen(false);
   };
 
@@ -621,7 +653,13 @@ const TeacherAllStudents = () => {
                     onChange={handleChange}
                     className="mt-1"
                     required
+                    inputMode="decimal"
                   />
+                  {formErrors.totalFee && (
+                    <p className="mt-1 text-xs text-rose-600">
+                      {formErrors.totalFee}
+                    </p>
+                  )}
                 </div>
 
                 <div className="mb-4">
@@ -633,10 +671,9 @@ const TeacherAllStudents = () => {
                   </label>
                   <select
                     className="mt-1 w-full"
-                    onChange={(e) =>
-                      setFormData({ ...formData, feeMonth: e.target.value })
-                    }
+                    onChange={handleChange}
                     value={formData.feeMonth}
+                    name="feeMonth"
                     required
                   >
                     <option value="">Select Month</option>
@@ -646,6 +683,11 @@ const TeacherAllStudents = () => {
                       </option>
                     ))}
                   </select>
+                  {formErrors.feeMonth && (
+                    <p className="mt-1 text-xs text-rose-600">
+                      {formErrors.feeMonth}
+                    </p>
+                  )}
                 </div>
 
                 <div className="mb-4">
@@ -692,7 +734,13 @@ const TeacherAllStudents = () => {
                     className="mt-1"
                     required={formData.paid === "yes"}
                     disabled={formData.paid === "pending"}
+                    inputMode="decimal"
                   />
+                  {formErrors.amountPaid && (
+                    <p className="mt-1 text-xs text-rose-600">
+                      {formErrors.amountPaid}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex justify-end gap-2">

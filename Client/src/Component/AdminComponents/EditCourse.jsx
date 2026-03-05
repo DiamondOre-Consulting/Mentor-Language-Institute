@@ -4,6 +4,7 @@ import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 import { getToastVariant } from "../../utils/toastVariant";
+import { validateNumber, validateRequired } from "../../utils/validators";
 
 const override = css`
   display: block;
@@ -67,12 +68,15 @@ const EditCourse = () => {
     totalHours: "",
     grade: "",
   });
+  const [formErrors, setFormErrors] = useState({});
   const [assignments, setAssignments] = useState([]);
+  const [assignmentErrors, setAssignmentErrors] = useState({});
   const [newAssignment, setNewAssignment] = useState({
     teacherId: "",
     offlineCommissionRate: "",
     onlineCommissionRate: "",
   });
+  const [newAssignmentErrors, setNewAssignmentErrors] = useState({});
 
   const token = localStorage.getItem("token");
 
@@ -98,6 +102,15 @@ const EditCourse = () => {
     }
     return null;
   };
+
+  const validateCommissionValue = (value, label) =>
+    validateNumber(value, { min: 0, label });
+
+  const buildCourseErrors = (values, resolvedGradeValue) => ({
+    classTitle: validateRequired(values.classTitle, "Course title"),
+    totalHours: validateNumber(values.totalHours, { min: 1, label: "Total hours" }),
+    grade: values.grade || resolvedGradeValue ? "" : "Grade is required.",
+  });
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -163,6 +176,7 @@ const EditCourse = () => {
               0,
           }));
           setAssignments(normalized);
+          setAssignmentErrors({});
         }
       } catch (error) {
         console.error("Error fetching class teachers:", error);
@@ -189,7 +203,12 @@ const EditCourse = () => {
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
-    setFormValues((prev) => ({ ...prev, [name]: value }));
+    setFormValues((prev) => {
+      const next = { ...prev, [name]: value };
+      const nextResolved = next.grade || deriveGradeFromText(next.classTitle);
+      setFormErrors(buildCourseErrors(next, nextResolved));
+      return next;
+    });
   };
 
   const handleCourseEdit = async (e) => {
@@ -198,6 +217,12 @@ const EditCourse = () => {
     setPopupMessage(null);
 
     const gradeValue = formValues.grade || resolvedGrade;
+    const nextErrors = buildCourseErrors(formValues, resolvedGrade);
+    setFormErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      setLoading(false);
+      return;
+    }
     if (!gradeValue) {
       setLoading(false);
       setPopupMessage("Please select a grade for this course.");
@@ -242,6 +267,17 @@ const EditCourse = () => {
           : assignment
       )
     );
+    const label =
+      field === "offlineCommissionRate"
+        ? "Offline commission"
+        : "Online commission";
+    setAssignmentErrors((prev) => ({
+      ...prev,
+      [assignmentId]: {
+        ...(prev[assignmentId] || {}),
+        [field]: validateCommissionValue(value, label),
+      },
+    }));
   };
 
   const refreshAssignments = async () => {
@@ -265,6 +301,7 @@ const EditCourse = () => {
             0,
         }));
         setAssignments(normalized);
+        setAssignmentErrors({});
       }
     } catch (error) {
       console.error("Error fetching class teachers:", error);
@@ -272,6 +309,21 @@ const EditCourse = () => {
   };
 
   const handleAddAssignment = async () => {
+    const nextErrors = {
+      teacherId: validateRequired(newAssignment.teacherId, "Teacher"),
+      offlineCommissionRate: validateCommissionValue(
+        newAssignment.offlineCommissionRate,
+        "Offline commission"
+      ),
+      onlineCommissionRate: validateCommissionValue(
+        newAssignment.onlineCommissionRate,
+        "Online commission"
+      ),
+    };
+    setNewAssignmentErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      return;
+    }
     if (!newAssignment.teacherId) {
       setPopupMessage("Please select a teacher.");
       return;
@@ -304,6 +356,7 @@ const EditCourse = () => {
           offlineCommissionRate: "",
           onlineCommissionRate: "",
         });
+        setNewAssignmentErrors({});
       }
     } catch (error) {
       setPopupMessage(error?.response?.data?.message || "Error assigning teacher.");
@@ -313,6 +366,20 @@ const EditCourse = () => {
   };
 
   const handleUpdateAssignment = async (assignmentId, offlineRate, onlineRate) => {
+    const nextErrors = {
+      offlineCommissionRate: validateCommissionValue(
+        offlineRate,
+        "Offline commission"
+      ),
+      onlineCommissionRate: validateCommissionValue(
+        onlineRate,
+        "Online commission"
+      ),
+    };
+    setAssignmentErrors((prev) => ({ ...prev, [assignmentId]: nextErrors }));
+    if (Object.values(nextErrors).some(Boolean)) {
+      return;
+    }
     const commissionError = validateCommissionPair(offlineRate, onlineRate);
     if (commissionError) {
       setPopupMessage(commissionError);
@@ -397,6 +464,9 @@ const EditCourse = () => {
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700"
               required
             />
+            {formErrors.classTitle && (
+              <p className="mt-1 text-xs text-rose-600">{formErrors.classTitle}</p>
+            )}
           </div>
 
           <div>
@@ -421,6 +491,9 @@ const EditCourse = () => {
             {resolvedGrade && !formValues.grade && (
               <p className="mt-1 text-xs text-slate-500">Detected from title: {resolvedGrade}</p>
             )}
+            {formErrors.grade && (
+              <p className="mt-1 text-xs text-rose-600">{formErrors.grade}</p>
+            )}
           </div>
 
           <div>
@@ -437,6 +510,9 @@ const EditCourse = () => {
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700"
               required
             />
+            {formErrors.totalHours && (
+              <p className="mt-1 text-xs text-rose-600">{formErrors.totalHours}</p>
+            )}
           </div>
 
           <div className="sm:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -453,32 +529,46 @@ const EditCourse = () => {
                   <div className="flex-1 text-sm text-slate-700">
                     {assignment?.teacherId?.name || "Unknown"} ({assignment?.teacherId?.phone || "N/A"})
                   </div>
-                  <input
-                    type="number"
-                    value={assignment.offlineCommissionRate}
-                    onChange={(e) =>
-                      handleAssignmentChange(
-                        assignment._id,
-                        "offlineCommissionRate",
-                        e.target.value
-                      )
-                    }
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 sm:w-40"
-                    placeholder="Offline rate"
-                  />
-                  <input
-                    type="number"
-                    value={assignment.onlineCommissionRate}
-                    onChange={(e) =>
-                      handleAssignmentChange(
-                        assignment._id,
-                        "onlineCommissionRate",
-                        e.target.value
-                      )
-                    }
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 sm:w-40"
-                    placeholder="Online rate"
-                  />
+                  <div className="flex w-full flex-col sm:w-40">
+                    <input
+                      type="number"
+                      value={assignment.offlineCommissionRate}
+                      onChange={(e) =>
+                        handleAssignmentChange(
+                          assignment._id,
+                          "offlineCommissionRate",
+                          e.target.value
+                        )
+                      }
+                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+                      placeholder="Offline rate"
+                    />
+                    {assignmentErrors?.[assignment._id]?.offlineCommissionRate && (
+                      <p className="mt-1 text-xs text-rose-600">
+                        {assignmentErrors[assignment._id].offlineCommissionRate}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex w-full flex-col sm:w-40">
+                    <input
+                      type="number"
+                      value={assignment.onlineCommissionRate}
+                      onChange={(e) =>
+                        handleAssignmentChange(
+                          assignment._id,
+                          "onlineCommissionRate",
+                          e.target.value
+                        )
+                      }
+                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+                      placeholder="Online rate"
+                    />
+                    {assignmentErrors?.[assignment._id]?.onlineCommissionRate && (
+                      <p className="mt-1 text-xs text-rose-600">
+                        {assignmentErrors[assignment._id].onlineCommissionRate}
+                      </p>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={() =>
@@ -507,7 +597,14 @@ const EditCourse = () => {
               <select
                 value={newAssignment.teacherId}
                 onChange={(e) =>
-                  setNewAssignment((prev) => ({ ...prev, teacherId: e.target.value }))
+                  setNewAssignment((prev) => {
+                    const next = { ...prev, teacherId: e.target.value };
+                    setNewAssignmentErrors((current) => ({
+                      ...current,
+                      teacherId: validateRequired(next.teacherId, "Teacher"),
+                    }));
+                    return next;
+                  })
                 }
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
               >
@@ -518,30 +615,59 @@ const EditCourse = () => {
                   </option>
                 ))}
               </select>
+              {newAssignmentErrors.teacherId && (
+                <p className="text-xs text-rose-600 sm:col-span-4">
+                  {newAssignmentErrors.teacherId}
+                </p>
+              )}
               <input
                 type="number"
                 value={newAssignment.offlineCommissionRate}
                 onChange={(e) =>
-                  setNewAssignment((prev) => ({
-                    ...prev,
-                    offlineCommissionRate: e.target.value,
-                  }))
+                  setNewAssignment((prev) => {
+                    const next = { ...prev, offlineCommissionRate: e.target.value };
+                    setNewAssignmentErrors((current) => ({
+                      ...current,
+                      offlineCommissionRate: validateCommissionValue(
+                        next.offlineCommissionRate,
+                        "Offline commission"
+                      ),
+                    }));
+                    return next;
+                  })
                 }
                 placeholder="Offline rate"
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
               />
+              {newAssignmentErrors.offlineCommissionRate && (
+                <p className="text-xs text-rose-600 sm:col-span-4">
+                  {newAssignmentErrors.offlineCommissionRate}
+                </p>
+              )}
               <input
                 type="number"
                 value={newAssignment.onlineCommissionRate}
                 onChange={(e) =>
-                  setNewAssignment((prev) => ({
-                    ...prev,
-                    onlineCommissionRate: e.target.value,
-                  }))
+                  setNewAssignment((prev) => {
+                    const next = { ...prev, onlineCommissionRate: e.target.value };
+                    setNewAssignmentErrors((current) => ({
+                      ...current,
+                      onlineCommissionRate: validateCommissionValue(
+                        next.onlineCommissionRate,
+                        "Online commission"
+                      ),
+                    }));
+                    return next;
+                  })
                 }
                 placeholder="Online rate"
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
               />
+              {newAssignmentErrors.onlineCommissionRate && (
+                <p className="text-xs text-rose-600 sm:col-span-4">
+                  {newAssignmentErrors.onlineCommissionRate}
+                </p>
+              )}
               <button
                 type="button"
                 onClick={handleAddAssignment}

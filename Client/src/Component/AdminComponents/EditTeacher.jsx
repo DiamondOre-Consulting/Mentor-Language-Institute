@@ -4,6 +4,12 @@ import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 import { getToastVariant } from "../../utils/toastVariant";
+import {
+  normalizeDigits,
+  validateEmail,
+  validatePhone,
+  validateRequired,
+} from "../../utils/validators";
 
 const override = css`
   display: block;
@@ -25,6 +31,7 @@ const EditTeacher = () => {
   const [password, setPassword] = useState("");
   const [dob, setDob] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
+  const [errors, setErrors] = useState({});
   const toastVariant = getToastVariant(popupMessage);
 
   const token = localStorage.getItem("token");
@@ -82,6 +89,16 @@ const EditTeacher = () => {
     e.preventDefault();
     setLoading(true);
     setPopupMessage(null);
+    const nextErrors = {
+      name: validateRequired(name, "Name"),
+      phone: validatePhone(phone),
+      email: validateEmail(email),
+    };
+    setErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const payload = {
@@ -151,11 +168,21 @@ const EditTeacher = () => {
               name="name"
               id="name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setName(value);
+                setErrors((prev) => ({
+                  ...prev,
+                  name: validateRequired(value, "Name"),
+                }));
+              }}
               placeholder="Enter teacher name"
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700"
               required
             />
+            {errors.name && (
+              <p className="mt-1 text-xs text-rose-600">{errors.name}</p>
+            )}
           </div>
 
           <div>
@@ -167,11 +194,23 @@ const EditTeacher = () => {
               name="phone"
               id="phone"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => {
+                const value = normalizeDigits(e.target.value).slice(0, 10);
+                setPhone(value);
+                setErrors((prev) => ({
+                  ...prev,
+                  phone: validatePhone(value),
+                }));
+              }}
               placeholder="Enter phone number"
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700"
               required
+              inputMode="numeric"
+              maxLength={10}
             />
+            {errors.phone && (
+              <p className="mt-1 text-xs text-rose-600">{errors.phone}</p>
+            )}
           </div>
 
           <div>
@@ -183,11 +222,21 @@ const EditTeacher = () => {
               name="email"
               id="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setEmail(value);
+                setErrors((prev) => ({
+                  ...prev,
+                  email: validateEmail(value),
+                }));
+              }}
               placeholder="Enter email"
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700"
               required
             />
+            {errors.email && (
+              <p className="mt-1 text-xs text-rose-600">{errors.email}</p>
+            )}
           </div>
 
 

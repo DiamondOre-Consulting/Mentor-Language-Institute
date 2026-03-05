@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../../components/ui/dialog";
+import { validateRequired } from "../../utils/validators";
 
 const override = css`
   display: block;
@@ -49,12 +50,16 @@ const Login = ({ defaultTab }) => {
   const [teacherPassword, setTeacherPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
+  const [adminErrors, setAdminErrors] = useState({});
+  const [teacherErrors, setTeacherErrors] = useState({});
+  const [studentErrors, setStudentErrors] = useState({});
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [resetRole, setResetRole] = useState("admin");
   const [resetIdentifier, setResetIdentifier] = useState("");
   const [resetStatus, setResetStatus] = useState("");
+  const [resetError, setResetError] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
 
   // ADMIN LOGIN
@@ -62,6 +67,15 @@ const Login = ({ defaultTab }) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    const nextErrors = {
+      identifier: validateRequired(adminIdentifier, "Email or username"),
+      password: validateRequired(adminPassword, "Password"),
+    };
+    setAdminErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      setLoading(false);
+      return;
+    }
     // Perform login logic here
     try {
       const response = await post({
@@ -106,6 +120,14 @@ const Login = ({ defaultTab }) => {
   const handleTeacherLogin = async (e) => {
     e.preventDefault();
     setError(null);
+    const nextErrors = {
+      identifier: validateRequired(teacherIdentifier, "Email or mobile number"),
+      password: validateRequired(teacherPassword, "Password"),
+    };
+    setTeacherErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      return;
+    }
     setLoading(true);
 
     try {
@@ -148,6 +170,14 @@ const Login = ({ defaultTab }) => {
   const handleStudentLogin = async (e) => {
     e.preventDefault();
     setError(null);
+    const nextErrors = {
+      identifier: validateRequired(studentIdentifier, "Email or mobile number"),
+      password: validateRequired(studentPassword, "Password"),
+    };
+    setStudentErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      return;
+    }
     setLoading(true);
 
     try {
@@ -187,22 +217,28 @@ const Login = ({ defaultTab }) => {
   const handleTabClick = (index) => {
     setActiveTab(index);
     setError(null);
+    if (index === 0) setAdminErrors({});
+    if (index === 1) setTeacherErrors({});
+    if (index === 2) setStudentErrors({});
   };
 
   const openResetDialog = (role) => {
     setResetRole(role);
     setResetIdentifier("");
     setResetStatus("");
+    setResetError("");
     setResetOpen(true);
   };
 
   const handleResetRequest = async () => {
     if (!resetIdentifier.trim()) {
+      setResetError("Email/phone/username is required.");
       setResetStatus("Please enter your email/phone/username.");
       return;
     }
     setResetLoading(true);
     setResetStatus("");
+    setResetError("");
     try {
       const response = await post({
         url: "/auth/request-password-reset",
@@ -297,7 +333,14 @@ const Login = ({ defaultTab }) => {
                             type="text"
                             name="adminIdentifier"
                             value={adminIdentifier}
-                            onChange={(e) => setAdminIdentifier(e.target.value)}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setAdminIdentifier(value);
+                              setAdminErrors((prev) => ({
+                                ...prev,
+                                identifier: validateRequired(value, "Email or username"),
+                              }));
+                            }}
                             autoComplete="off"
                             autoCorrect="off"
                             autoCapitalize="none"
@@ -306,6 +349,11 @@ const Login = ({ defaultTab }) => {
                             className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                             required=""
                           />
+                          {adminErrors.identifier && (
+                            <p className="mt-1 text-xs text-rose-600">
+                              {adminErrors.identifier}
+                            </p>
+                          )}
                         </div>
                         <div>
                           <label htmlFor="password" className="sr-only">
@@ -317,11 +365,23 @@ const Login = ({ defaultTab }) => {
                               type={showPassword ? "text" : "password"}
                               placeholder="Password"
                               value={adminPassword}
-                              onChange={(e) => setAdminPassword(e.target.value)}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setAdminPassword(value);
+                                setAdminErrors((prev) => ({
+                                  ...prev,
+                                  password: validateRequired(value, "Password"),
+                                }));
+                              }}
                               name="adminPassword"
                               autoComplete="new-password"
                             />
                           </div>
+                          {adminErrors.password && (
+                            <p className="mt-1 text-xs text-rose-600">
+                              {adminErrors.password}
+                            </p>
+                          )}
                         </div>
 
                         <div className="flex items-center justify-between">
@@ -423,7 +483,14 @@ const Login = ({ defaultTab }) => {
                             type="text"
                             name="teacherIdentifier"
                             value={teacherIdentifier}
-                            onChange={(e) => setTeacherIdentifier(e.target.value)}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setTeacherIdentifier(value);
+                              setTeacherErrors((prev) => ({
+                                ...prev,
+                                identifier: validateRequired(value, "Email or mobile number"),
+                              }));
+                            }}
                             autoComplete="off"
                             autoCorrect="off"
                             autoCapitalize="none"
@@ -432,6 +499,11 @@ const Login = ({ defaultTab }) => {
                             className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                             required=""
                           />
+                          {teacherErrors.identifier && (
+                            <p className="mt-1 text-xs text-rose-600">
+                              {teacherErrors.identifier}
+                            </p>
+                          )}
                         </div>
                         <div>
                           <label htmlFor="password" className="sr-only">
@@ -443,11 +515,23 @@ const Login = ({ defaultTab }) => {
                               type={showPassword ? "text" : "password"}
                               placeholder="Password"
                               value={teacherPassword}
-                              onChange={(e) => setTeacherPassword(e.target.value)}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setTeacherPassword(value);
+                                setTeacherErrors((prev) => ({
+                                  ...prev,
+                                  password: validateRequired(value, "Password"),
+                                }));
+                              }}
                               name="teacherPassword"
                               autoComplete="new-password"
                             />
                           </div>
+                          {teacherErrors.password && (
+                            <p className="mt-1 text-xs text-rose-600">
+                              {teacherErrors.password}
+                            </p>
+                          )}
                         </div>
 
                         <div className="flex items-center justify-between">
@@ -550,9 +634,14 @@ const Login = ({ defaultTab }) => {
                             type="text"
                             name="studentIdentifier"
                             value={studentIdentifier}
-                            onChange={(e) =>
-                              setStudentIdentifier(e.target.value)
-                            }
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setStudentIdentifier(value);
+                              setStudentErrors((prev) => ({
+                                ...prev,
+                                identifier: validateRequired(value, "Email or mobile number"),
+                              }));
+                            }}
                             autoComplete="off"
                             autoCorrect="off"
                             autoCapitalize="none"
@@ -561,6 +650,11 @@ const Login = ({ defaultTab }) => {
                             className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                             required=""
                           />
+                          {studentErrors.identifier && (
+                            <p className="mt-1 text-xs text-rose-600">
+                              {studentErrors.identifier}
+                            </p>
+                          )}
                         </div>
                         <div>
                           <label htmlFor="password" className="sr-only">
@@ -572,13 +666,23 @@ const Login = ({ defaultTab }) => {
                               type={showPassword ? "text" : "password"}
                               placeholder="Password"
                               value={studentPassword}
-                              onChange={(e) =>
-                                setStudentPassword(e.target.value)
-                              }
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setStudentPassword(value);
+                                setStudentErrors((prev) => ({
+                                  ...prev,
+                                  password: validateRequired(value, "Password"),
+                                }));
+                              }}
                               name="studentPassword"
                               autoComplete="new-password"
                             />
                           </div>
+                          {studentErrors.password && (
+                            <p className="mt-1 text-xs text-rose-600">
+                              {studentErrors.password}
+                            </p>
+                          )}
                         </div>
 
                         <div className="flex items-center justify-between">
@@ -653,7 +757,11 @@ const Login = ({ defaultTab }) => {
             <input
               type="text"
               value={resetIdentifier}
-              onChange={(e) => setResetIdentifier(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setResetIdentifier(value);
+                setResetError(value.trim() ? "" : "Email/phone/username is required.");
+              }}
               placeholder={
                 resetRole === "admin"
                   ? "Email"
@@ -663,6 +771,7 @@ const Login = ({ defaultTab }) => {
               }
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
             />
+            {resetError && <p className="text-xs text-rose-600">{resetError}</p>}
             {resetStatus && (
               <p className="text-xs text-slate-600">{resetStatus}</p>
             )}

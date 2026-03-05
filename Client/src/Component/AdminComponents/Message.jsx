@@ -7,6 +7,11 @@ import { useApi } from "../../api/useApi";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { getToastVariant } from "../../utils/toastVariant";
+import {
+  validateAmountPaid,
+  validateNumber,
+  validateRequired,
+} from "../../utils/validators";
 
 const override = css`
   display: block;
@@ -81,6 +86,7 @@ const Message = () => {
     amountPaid: "",
     rejectionReason: "",
   });
+  const [formErrors, setFormErrors] = useState({});
   const [popupMessage, setPopupMessage] = useState("");
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -166,6 +172,7 @@ const Message = () => {
       amountPaid: paymentProvided ? request?.amount ?? "" : "",
       rejectionReason: "",
     });
+    setFormErrors({});
     setIsFormOpen(true);
   };
 
@@ -177,12 +184,25 @@ const Message = () => {
       amountPaid: "",
       rejectionReason: "",
     });
+    setFormErrors({});
     setIsFormOpen(false);
     setPopupMessage("");
   };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+      const nextErrors = {
+        totalFee: validateNumber(next.totalFee, { min: 0, label: "Total fee" }),
+        feeMonth: validateRequired(next.feeMonth, "Fee month"),
+        amountPaid: validateAmountPaid(next.amountPaid, next.totalFee, {
+          required: true,
+        }),
+      };
+      setFormErrors(nextErrors);
+      return next;
+    });
   };
 
   const handleApprove = async (e) => {
@@ -196,6 +216,16 @@ const Message = () => {
       }
 
       const { totalFee, feeMonth, amountPaid } = formData;
+      const nextErrors = {
+        totalFee: validateNumber(totalFee, { min: 0, label: "Total fee" }),
+        feeMonth: validateRequired(feeMonth, "Fee month"),
+        amountPaid: validateAmountPaid(amountPaid, totalFee, { required: true }),
+      };
+      setFormErrors(nextErrors);
+      if (Object.values(nextErrors).some(Boolean)) {
+        setLoading(false);
+        return;
+      }
       const monthNumber = monthNameToNumber[feeMonth];
 
       const response = await put({
@@ -476,7 +506,13 @@ const Message = () => {
                     onChange={handleChange}
                     className="mt-1"
                     required
+                    inputMode="decimal"
                   />
+                  {formErrors.totalFee && (
+                    <p className="mt-1 text-xs text-rose-600">
+                      {formErrors.totalFee}
+                    </p>
+                  )}
                 </div>
                 <div className="mb-4">
                   <label
@@ -487,10 +523,9 @@ const Message = () => {
                   </label>
                   <select
                     className="mt-1 w-full"
-                    onChange={(e) =>
-                      setFormData({ ...formData, feeMonth: e.target.value })
-                    }
+                    onChange={handleChange}
                     value={formData.feeMonth}
+                    name="feeMonth"
                     required
                   >
                     <option value="">Select Month</option>
@@ -500,6 +535,11 @@ const Message = () => {
                       </option>
                     ))}
                   </select>
+                  {formErrors.feeMonth && (
+                    <p className="mt-1 text-xs text-rose-600">
+                      {formErrors.feeMonth}
+                    </p>
+                  )}
                 </div>
 
                 <div className="mb-5">
@@ -517,7 +557,13 @@ const Message = () => {
                     onChange={handleChange}
                     className="mt-1"
                     required
+                    inputMode="decimal"
                   />
+                  {formErrors.amountPaid && (
+                    <p className="mt-1 text-xs text-rose-600">
+                      {formErrors.amountPaid}
+                    </p>
+                  )}
                 </div>
 
                 <div className="mb-5">

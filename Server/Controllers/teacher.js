@@ -29,6 +29,7 @@ import {
 import { findStudentUniquenessConflict } from "../utils/studentValidation.js";
 import { createRefreshTokenRecord, setRefreshCookie, signAccessToken } from "../utils/authTokens.js";
 import { deleteStudentCascade } from "../utils/deleteStudentCascade.js";
+import { isValidPhone, normalizePhone } from "../utils/phone.js";
 
 
 
@@ -46,6 +47,14 @@ const normalizeNumericInput = (value, { allowZero = false } = {}) => {
   }
   return num;
 };
+
+const toNumber = (value) => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+};
+
+const getTotalScheduledHours = (dailyClasses = []) =>
+  dailyClasses.reduce((sum, entry) => sum + toNumber(entry?.numberOfClasses), 0);
 
 const buildModeConflictMatch = (normalizedMode) => {
   if (normalizedMode === "online") {
@@ -421,6 +430,14 @@ router.put(
       if (!studentExists) {
         return res.status(404).json({ message: "Student not found." });
       }
+      const alreadyInStudent = (studentExists.classes || []).some(
+        (classId) => String(classId) === String(id1)
+      );
+      if (alreadyInStudent) {
+        return res
+          .status(409)
+          .json({ message: `Student already exists in this class!!!` });
+      }
       const resolvedCourseGrade = resolveCourseGrade(classExists);
       if (resolvedCourseGrade && !classExists.grade) {
         classExists.grade = resolvedCourseGrade;
@@ -672,13 +689,17 @@ router.put("/my-profile", TeacherAuthenticateToken, async (req, res) => {
     }
 
     if (phone) {
-      const existingTeacher = await Teachers.findOne({ phone });
+      const normalizedPhone = normalizePhone(phone);
+      if (!isValidPhone(normalizedPhone)) {
+        return res.status(400).json({ message: "Phone number must be 10 digits." });
+      }
+      const existingTeacher = await Teachers.findOne({ phone: normalizedPhone });
       if (existingTeacher && existingTeacher._id.toString() !== userId) {
         return res.status(400).json({
           message: "Phone already exists. Please enter a unique phone number.",
         });
       }
-      teacher.phone = phone;
+      teacher.phone = normalizedPhone;
     }
 
     if (email) {
@@ -742,7 +763,10 @@ router.post("/add-student", TeacherAuthenticateToken, async (req, res) => {
 
     const normalizedEmail = normalizeEmail(email);
     const normalizedUserName = userName.trim();
-    const normalizedPhone = phone.trim();
+  const normalizedPhone = normalizePhone(phone);
+  if (!isValidPhone(normalizedPhone)) {
+    return res.status(400).json({ message: "Phone number must be 10 digits." });
+  }
     if (!isValidEmail(normalizedEmail)) {
       return res.status(400).json({ message: "Please enter a valid email." });
     }
@@ -941,7 +965,10 @@ router.put("/student-edit/:id", TeacherAuthenticateToken, async (req, res) => {
 
     const normalizedEmail = email ? normalizeEmail(email) : null;
     const normalizedUserName = userName ? userName.trim() : null;
-    const normalizedPhone = phone ? phone.trim() : null;
+    const normalizedPhone = phone ? normalizePhone(phone) : null;
+    if (normalizedPhone && !isValidPhone(normalizedPhone)) {
+      return res.status(400).json({ message: "Phone number must be 10 digits." });
+    }
     if (email && !isValidEmail(normalizedEmail)) {
       return res.status(400).json({ message: "Please enter a valid email." });
     }
@@ -1178,6 +1205,9 @@ router.post("/schedule-class/:id",TeacherAuthenticateToken,async (req, res) => {
           (normalizeAttendanceMode(entry.mode) || "offline") === normalizedMode
       );
 
+      const existingTotal = getTotalScheduledHours(classDoc.dailyClasses || []);
+      const classTotalHours = toNumber(classDoc.totalHours);
+
       if (existingSessionIndex >= 0) {
         const existingSlots = Array.isArray(
           classDoc.dailyClasses[existingSessionIndex].timeSlots
@@ -1193,10 +1223,25 @@ router.post("/schedule-class/:id",TeacherAuthenticateToken,async (req, res) => {
           });
         }
         const mergedSlots = [...existingSlots, ...normalizedTimeSlots.slots];
+        const previousHours = toNumber(
+          classDoc.dailyClasses[existingSessionIndex].numberOfClasses
+        );
+        const proposedTotal = existingTotal - previousHours + mergedSlots.length;
+        if (classTotalHours > 0 && proposedTotal > classTotalHours) {
+          return res.status(400).json({
+            message: "Total scheduled hours exceed the course total hours.",
+          });
+        }
         classDoc.dailyClasses[existingSessionIndex].timeSlots = mergedSlots;
         classDoc.dailyClasses[existingSessionIndex].numberOfClasses =
           String(mergedSlots.length);
       } else {
+        const proposedTotal = existingTotal + normalizedClasses;
+        if (classTotalHours > 0 && proposedTotal > classTotalHours) {
+          return res.status(400).json({
+            message: "Total scheduled hours exceed the course total hours.",
+          });
+        }
         classDoc.dailyClasses.push({
           classDate: date,
           numberOfClasses: String(normalizedClasses),
@@ -1483,6 +1528,17 @@ router.put("/schedule-class/:id", TeacherAuthenticateToken, async (req, res) => 
     if (lockedViolations.length > 0) {
       return res.status(403).json({
         message: "You cannot set slots within 3 hours of their start time.",
+      });
+    }
+
+    const existingTotal = getTotalScheduledHours(classDoc.dailyClasses || []);
+    const classTotalHours = toNumber(classDoc.totalHours);
+    const previousHours = toNumber(session.numberOfClasses);
+    const proposedTotal =
+      existingTotal - previousHours + normalizedTimeSlots.slots.length;
+    if (classTotalHours > 0 && proposedTotal > classTotalHours) {
+      return res.status(400).json({
+        message: "Total scheduled hours exceed the course total hours.",
       });
     }
 

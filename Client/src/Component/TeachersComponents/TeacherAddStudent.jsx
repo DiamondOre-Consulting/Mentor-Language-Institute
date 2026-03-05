@@ -4,6 +4,12 @@ import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 import { getToastVariant } from "../../utils/toastVariant";
+import {
+  normalizeDigits,
+  validateEmail,
+  validatePhone,
+  validateRequired,
+} from "../../utils/validators";
 
 const override = css`
   display: block;
@@ -28,6 +34,7 @@ const TeacherAddStudent = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [classesData, setClassesData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
   const toastVariant = getToastVariant(popupMessage);
 
   const togglePasswordVisibility = () => {
@@ -70,6 +77,20 @@ const TeacherAddStudent = () => {
     e.preventDefault();
     setPopupMessage(null);
     setLoading(true);
+    const nextErrors = {
+      userName: validateRequired(userName, "Username"),
+      name: validateRequired(name, "Name"),
+      phone: validatePhone(phone),
+      email: validateEmail(email),
+      dob: validateRequired(dob, "Date of birth"),
+      grade: validateRequired(grade, "Grade"),
+      password: validateRequired(password, "Password"),
+    };
+    setErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await post({
@@ -147,11 +168,21 @@ const TeacherAddStudent = () => {
                   <input
                     type="text"
                     value={userName}
-                    onChange={(e) => setUserName(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setUserName(value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        userName: validateRequired(value, "Username"),
+                      }));
+                    }}
                     placeholder="Please Enter a unique userName"
                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
                     required
                   />
+                  {errors.userName && (
+                    <p className="mt-1 text-xs text-rose-600">{errors.userName}</p>
+                  )}
                 </div>
 
                 <div>
@@ -161,11 +192,21 @@ const TeacherAddStudent = () => {
                   <input
                     type="text"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setName(value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        name: validateRequired(value, "Name"),
+                      }));
+                    }}
                     placeholder="Enter Student Name"
                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
                     required
                   />
+                  {errors.name && (
+                    <p className="mt-1 text-xs text-rose-600">{errors.name}</p>
+                  )}
                 </div>
 
                 <div>
@@ -175,11 +216,23 @@ const TeacherAddStudent = () => {
                   <input
                     type="tel"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => {
+                      const value = normalizeDigits(e.target.value).slice(0, 10);
+                      setPhone(value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        phone: validatePhone(value),
+                      }));
+                    }}
                     placeholder="Enter Phone No"
                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
                     required
+                    inputMode="numeric"
+                    maxLength={10}
                   />
+                  {errors.phone && (
+                    <p className="mt-1 text-xs text-rose-600">{errors.phone}</p>
+                  )}
                 </div>
 
                 <div>
@@ -189,11 +242,21 @@ const TeacherAddStudent = () => {
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setEmail(value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        email: validateEmail(value),
+                      }));
+                    }}
                     placeholder="Enter email address"
                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
                     required
                   />
+                  {errors.email && (
+                    <p className="mt-1 text-xs text-rose-600">{errors.email}</p>
+                  )}
                 </div>
 
                 <div>
@@ -203,10 +266,20 @@ const TeacherAddStudent = () => {
                   <input
                     type="date"
                     value={dob}
-                    onChange={(e) => setDob(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setDob(value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        dob: validateRequired(value, "Date of birth"),
+                      }));
+                    }}
                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
                     required
                   />
+                  {errors.dob && (
+                    <p className="mt-1 text-xs text-rose-600">{errors.dob}</p>
+                  )}
                 </div>
 
                 <div>
@@ -237,10 +310,20 @@ const TeacherAddStudent = () => {
                     type="text"
                     value={grade}
                     placeholder="Enter Student Grade"
-                    onChange={(e) => setGrade(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setGrade(value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        grade: validateRequired(value, "Grade"),
+                      }));
+                    }}
                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
                     required
                   />
+                  {errors.grade && (
+                    <p className="mt-1 text-xs text-rose-600">{errors.grade}</p>
+                  )}
                 </div>
 
                 <div>
@@ -250,11 +333,21 @@ const TeacherAddStudent = () => {
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setPassword(value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        password: validateRequired(value, "Password"),
+                      }));
+                    }}
                     placeholder="********"
                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
                     required
                   />
+                  {errors.password && (
+                    <p className="mt-1 text-xs text-rose-600">{errors.password}</p>
+                  )}
                   <div className="flex items-center mt-2">
                     <input
                       type="checkbox"

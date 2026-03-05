@@ -5,6 +5,7 @@ import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 import { getToastVariant } from "../../utils/toastVariant";
+import { validateAmountPaid, validateNumber, validateRequired } from "../../utils/validators";
 
 const override = css`
   display: block;
@@ -20,6 +21,7 @@ const Allstudents = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [popupMessage, setPopupMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedCourseId, setSelectedCourseId] = useState("");
@@ -152,8 +154,33 @@ const Allstudents = () => {
     setShowPopup(true);
   };
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const updateFeeField = (name, value) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "totalFee") {
+      setFormErrors((prev) => ({
+        ...prev,
+        totalFee: validateNumber(value, { min: 0, label: "Total fee" }),
+        amountPaid:
+          formData.paid === "yes"
+            ? validateAmountPaid(formData.amountPaid, value, { required: true })
+            : "",
+      }));
+    }
+    if (name === "feeMonth") {
+      setFormErrors((prev) => ({
+        ...prev,
+        feeMonth: validateRequired(value, "Fee month"),
+      }));
+    }
+    if (name === "amountPaid") {
+      setFormErrors((prev) => ({
+        ...prev,
+        amountPaid:
+          formData.paid === "yes"
+            ? validateAmountPaid(value, formData.totalFee, { required: true })
+            : "",
+      }));
+    }
   };
 
   const handlePaidChange = (value) => {
@@ -161,6 +188,13 @@ const Allstudents = () => {
       ...prev,
       paid: value,
       amountPaid: value === "pending" ? "0" : prev.amountPaid,
+    }));
+    setFormErrors((prev) => ({
+      ...prev,
+      amountPaid:
+        value === "yes"
+          ? validateAmountPaid(formData.amountPaid, formData.totalFee, { required: true })
+          : "",
     }));
   };
 
@@ -181,6 +215,18 @@ const Allstudents = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const nextErrors = {
+      totalFee: validateNumber(formData.totalFee, { min: 0, label: "Total fee" }),
+      feeMonth: validateRequired(formData.feeMonth, "Fee month"),
+      amountPaid:
+        formData.paid === "yes"
+          ? validateAmountPaid(formData.amountPaid, formData.totalFee, { required: true })
+          : "",
+    };
+    setFormErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      return;
+    }
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
@@ -251,6 +297,7 @@ const Allstudents = () => {
         paid: "pending",
         amountPaid: "0",
       });
+      setFormErrors({});
       setIsFormOpen(false);
   };
 
@@ -523,10 +570,14 @@ const Allstudents = () => {
                   id="totalFee"
                   name="totalFee"
                   value={formData.totalFee}
-                  onChange={handleChange}
+                  onChange={(e) => updateFeeField("totalFee", e.target.value)}
                   className="mt-1"
                   required
+                  inputMode="decimal"
                 />
+                {formErrors.totalFee && (
+                  <p className="mt-1 text-xs text-rose-600">{formErrors.totalFee}</p>
+                )}
               </div>
 
               <div className="mb-4">
@@ -535,7 +586,7 @@ const Allstudents = () => {
                 </label>
                 <select
                   className="mt-1 w-full"
-                  onChange={(e) => setFormData({ ...formData, feeMonth: e.target.value })}
+                  onChange={(e) => updateFeeField("feeMonth", e.target.value)}
                   value={formData.feeMonth}
                   required
                 >
@@ -546,6 +597,9 @@ const Allstudents = () => {
                     </option>
                   ))}
                 </select>
+                {formErrors.feeMonth && (
+                  <p className="mt-1 text-xs text-rose-600">{formErrors.feeMonth}</p>
+                )}
               </div>
 
               <div className="mb-4">
@@ -585,11 +639,15 @@ const Allstudents = () => {
                   id="amountPaid"
                   name="amountPaid"
                   value={formData.amountPaid}
-                  onChange={handleChange}
+                  onChange={(e) => updateFeeField("amountPaid", e.target.value)}
                   className="mt-1"
                   required={formData.paid === "yes"}
                   disabled={formData.paid === "pending"}
+                  inputMode="decimal"
                 />
+                {formErrors.amountPaid && (
+                  <p className="mt-1 text-xs text-rose-600">{formErrors.amountPaid}</p>
+                )}
               </div>
 
               <div className="flex justify-end gap-2">

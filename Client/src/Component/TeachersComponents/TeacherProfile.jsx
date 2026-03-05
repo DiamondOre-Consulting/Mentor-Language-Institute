@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useApi } from "../../api/useApi";
 import { getToastVariant } from "../../utils/toastVariant";
+import {
+  normalizeDigits,
+  validateEmail,
+  validatePhone,
+  validateRequired,
+} from "../../utils/validators";
 
 const TeacherProfile = ({ teacherData, onProfileUpdated }) => {
   const { put } = useApi();
@@ -8,6 +14,7 @@ const TeacherProfile = ({ teacherData, onProfileUpdated }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [popupMessage, setPopupMessage] = useState(null);
+  const [errors, setErrors] = useState({});
   const [formValues, setFormValues] = useState({
     name: "",
     phone: "",
@@ -31,7 +38,17 @@ const TeacherProfile = ({ teacherData, onProfileUpdated }) => {
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
-    setFormValues((prev) => ({ ...prev, [name]: value }));
+    const nextValue = name === "phone" ? normalizeDigits(value).slice(0, 10) : value;
+    setFormValues((prev) => ({ ...prev, [name]: nextValue }));
+    if (name === "name") {
+      setErrors((prev) => ({ ...prev, name: validateRequired(nextValue, "Name") }));
+    }
+    if (name === "email") {
+      setErrors((prev) => ({ ...prev, email: validateEmail(nextValue) }));
+    }
+    if (name === "phone") {
+      setErrors((prev) => ({ ...prev, phone: validatePhone(nextValue) }));
+    }
   };
 
   const resetForm = () => {
@@ -55,6 +72,16 @@ const TeacherProfile = ({ teacherData, onProfileUpdated }) => {
     event.preventDefault();
     setLoading(true);
     setPopupMessage(null);
+    const nextErrors = {
+      name: validateRequired(formValues.name, "Name"),
+      email: validateEmail(formValues.email),
+      phone: validatePhone(formValues.phone),
+    };
+    setErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      setLoading(false);
+      return;
+    }
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -204,6 +231,9 @@ const TeacherProfile = ({ teacherData, onProfileUpdated }) => {
                     className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5"
                     required
                   />
+                  {errors.name && (
+                    <p className="mt-1 text-xs text-rose-600">{errors.name}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-900">
@@ -217,6 +247,9 @@ const TeacherProfile = ({ teacherData, onProfileUpdated }) => {
                     className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5"
                     required
                   />
+                  {errors.email && (
+                    <p className="mt-1 text-xs text-rose-600">{errors.email}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-900">
@@ -229,7 +262,12 @@ const TeacherProfile = ({ teacherData, onProfileUpdated }) => {
                     onChange={handleInputChange}
                     className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5"
                     required
+                    inputMode="numeric"
+                    maxLength={10}
                   />
+                  {errors.phone && (
+                    <p className="mt-1 text-xs text-rose-600">{errors.phone}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block mb-2 text-sm font-medium text-gray-900">

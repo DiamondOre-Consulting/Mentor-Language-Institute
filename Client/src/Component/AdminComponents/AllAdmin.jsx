@@ -4,6 +4,7 @@ import { useApi } from "../../api/useApi";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { toast } from "sonner";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { normalizeDigits, validatePhone, validateRequired } from "../../utils/validators";
 
 const AllAdmin = () => {
   const [allAdmin, setAllAdmin] = useState([]);
@@ -18,6 +19,7 @@ const AllAdmin = () => {
     phone: "",
     password: "",
   });
+  const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const handleGetAllAdmin = async () => {
     try {
@@ -53,11 +55,27 @@ const AllAdmin = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEditData({ ...editData, [name]: value });
+    const nextValue =
+      name === "phone" ? normalizeDigits(value).slice(0, 10) : value;
+    setEditData({ ...editData, [name]: nextValue });
+    if (name === "name") {
+      setErrors((prev) => ({ ...prev, name: validateRequired(nextValue, "Name") }));
+    }
+    if (name === "phone") {
+      setErrors((prev) => ({ ...prev, phone: validatePhone(nextValue) }));
+    }
   };
 
   const handleEditAdmin = async (e) => {
     e.preventDefault();
+    const nextErrors = {
+      name: validateRequired(editData.name, "Name"),
+      phone: validatePhone(editData.phone),
+    };
+    setErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      return;
+    }
     try {
       await put({
         url: `/admin-confi/edit-admin/${id}`,
@@ -133,6 +151,9 @@ const AllAdmin = () => {
                   placeholder="Username"
                   className="w-full p-2 border rounded"
                 />
+                {errors.name && (
+                  <p className="text-xs text-rose-600">{errors.name}</p>
+                )}
                 <input
                   type="text"
                   name="phone"
@@ -140,7 +161,12 @@ const AllAdmin = () => {
                   onChange={handleInputChange}
                   placeholder="Phone"
                   className="w-full p-2 border rounded"
+                  inputMode="numeric"
+                  maxLength={10}
                 />
+                {errors.phone && (
+                  <p className="text-xs text-rose-600">{errors.phone}</p>
+                )}
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}

@@ -4,6 +4,12 @@ import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 import { IoClose } from "react-icons/io5";
 import { getToastVariant } from "../../utils/toastVariant";
+import {
+  normalizeDigits,
+  validateEmail,
+  validatePhone,
+  validateRequired,
+} from "../../utils/validators";
 
 const override = css`
   display: block;
@@ -23,6 +29,7 @@ const AdminEditTeacher = ({ teacherDetails, closingModel, id, onUpdated }) => {
   const [popupMessage, setPopupMessage] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
   const toastVariant = getToastVariant(popupMessage);
 
   const token = localStorage.getItem("token");
@@ -43,6 +50,16 @@ const AdminEditTeacher = ({ teacherDetails, closingModel, id, onUpdated }) => {
     setLoading(true);
     e.preventDefault();
     setPopupMessage(null);
+    const nextErrors = {
+      name: validateRequired(name, "Name"),
+      phone: validatePhone(phone),
+      email: validateEmail(email),
+    };
+    setErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      setLoading(false);
+      return;
+    }
     console.log(id, name, phone, password, dob)
     try {
       const payload = {
@@ -125,11 +142,21 @@ const AdminEditTeacher = ({ teacherDetails, closingModel, id, onUpdated }) => {
                     name="name"
                     id="name"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setName(value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        name: validateRequired(value, "Name"),
+                      }));
+                    }}
                     placeholder="Enter Your Name"
                     className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                     required=""
                   />
+                  {errors.name && (
+                    <p className="mt-1 text-xs text-rose-600">{errors.name}</p>
+                  )}
                 </div>
 
 
@@ -139,11 +166,23 @@ const AdminEditTeacher = ({ teacherDetails, closingModel, id, onUpdated }) => {
                     name="phone"
                     id="phone"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => {
+                      const value = normalizeDigits(e.target.value).slice(0, 10);
+                      setPhone(value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        phone: validatePhone(value),
+                      }));
+                    }}
                     placeholder="Enter Your Phone Number"
                     className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                     required=""
+                    inputMode="numeric"
+                    maxLength={10}
                   />
+                  {errors.phone && (
+                    <p className="mt-1 text-xs text-rose-600">{errors.phone}</p>
+                  )}
                 </div>
                 <div>
                   <input
@@ -151,11 +190,21 @@ const AdminEditTeacher = ({ teacherDetails, closingModel, id, onUpdated }) => {
                     name="email"
                     id="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setEmail(value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        email: validateEmail(value),
+                      }));
+                    }}
                     placeholder="Enter Email"
                     className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                     required=""
                   />
+                  {errors.email && (
+                    <p className="mt-1 text-xs text-rose-600">{errors.email}</p>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between w-full p-2 border border-gray-500 rounded-md">

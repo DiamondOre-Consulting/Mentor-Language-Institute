@@ -4,6 +4,14 @@ import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
 import { getToastVariant } from "../../utils/toastVariant";
+import {
+  normalizeDigits,
+  validateAmountPaid,
+  validateEmail,
+  validateNumber,
+  validatePhone,
+  validateRequired,
+} from "../../utils/validators";
 
 const override = css`
   display: block;
@@ -18,6 +26,10 @@ const Register = () => {
   const [allCourses, setAllCourses] = useState([]);
   const [courseId, setCourseId] = useState("");
   const { get, post, put } = useApi();
+  const [courseErrors, setCourseErrors] = useState({});
+  const [teacherErrors, setTeacherErrors] = useState({});
+  const [studentErrors, setStudentErrors] = useState({});
+  const [paymentErrors, setPaymentErrors] = useState({});
 
   const handleTabClick = (index) => {
     setActiveTab(index);
@@ -50,6 +62,19 @@ const Register = () => {
   const handleAddCourse = async (e) => {
     setLoading(true);
     e.preventDefault();
+    const nextErrors = {
+      classTitle: validateRequired(formValues.classTitle, "Class title"),
+      totalHours: validateNumber(formValues.totalHours, {
+        min: 1,
+        label: "Total hours",
+      }),
+      grade: validateRequired(formValues.grade, "Grade"),
+    };
+    setCourseErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const token = localStorage.getItem("token");
@@ -158,10 +183,146 @@ const Register = () => {
   ];
   const toastVariant = getToastVariant(popupMessage);
 
+  const updateCourseField = (field, value) => {
+    setFormValues((prev) => ({ ...prev, [field]: value }));
+    if (field === "classTitle") {
+      setCourseErrors((prev) => ({
+        ...prev,
+        classTitle: validateRequired(value, "Class title"),
+      }));
+    }
+    if (field === "totalHours") {
+      setCourseErrors((prev) => ({
+        ...prev,
+        totalHours: validateNumber(value, { min: 1, label: "Total hours" }),
+      }));
+    }
+    if (field === "grade") {
+      setCourseErrors((prev) => ({
+        ...prev,
+        grade: validateRequired(value, "Grade"),
+      }));
+    }
+  };
+
+  const updateTeacherField = (field, value) => {
+    if (field === "name") {
+      setName(value);
+      setTeacherErrors((prev) => ({
+        ...prev,
+        name: validateRequired(value, "Name"),
+      }));
+      return;
+    }
+    if (field === "phone") {
+      const next = normalizeDigits(value).slice(0, 10);
+      setPhone(next);
+      setTeacherErrors((prev) => ({
+        ...prev,
+        phone: validatePhone(next),
+      }));
+      return;
+    }
+    if (field === "password") {
+      setPassword(value);
+      setTeacherErrors((prev) => ({
+        ...prev,
+        password: validateRequired(value, "Password"),
+      }));
+      return;
+    }
+    if (field === "dob") {
+      setdob(value);
+      setTeacherErrors((prev) => ({
+        ...prev,
+        dob: validateRequired(value, "Date of birth"),
+      }));
+      return;
+    }
+    if (field === "email") {
+      setTeacherEmail(value);
+      setTeacherErrors((prev) => ({
+        ...prev,
+        email: validateEmail(value),
+      }));
+    }
+  };
+
+  const updateStudentField = (field, value) => {
+    if (field === "userName") {
+      setUserName(value);
+      setStudentErrors((prev) => ({
+        ...prev,
+        userName: validateRequired(value, "Username"),
+      }));
+      return;
+    }
+    if (field === "name") {
+      setName(value);
+      setStudentErrors((prev) => ({
+        ...prev,
+        name: validateRequired(value, "Name"),
+      }));
+      return;
+    }
+    if (field === "phone") {
+      const next = normalizeDigits(value).slice(0, 10);
+      setPhone(next);
+      setStudentErrors((prev) => ({
+        ...prev,
+        phone: validatePhone(next),
+      }));
+      return;
+    }
+    if (field === "email") {
+      setEmail(value);
+      setStudentErrors((prev) => ({
+        ...prev,
+        email: validateEmail(value),
+      }));
+      return;
+    }
+    if (field === "grade") {
+      setGrade(value);
+      setStudentErrors((prev) => ({
+        ...prev,
+        grade: validateRequired(value, "Grade"),
+      }));
+      return;
+    }
+    if (field === "dob") {
+      setdob(value);
+      setStudentErrors((prev) => ({
+        ...prev,
+        dob: validateRequired(value, "Date of birth"),
+      }));
+      return;
+    }
+    if (field === "password") {
+      setPassword(value);
+      setStudentErrors((prev) => ({
+        ...prev,
+        password: validateRequired(value, "Password"),
+      }));
+    }
+  };
+
   const handleteacherRegister = async (e) => {
     setLoading(true);
     e.preventDefault();
     setPopupMessage(null);
+    const nextErrors = {
+      name: validateRequired(name, "Name"),
+      phone: validatePhone(phone),
+      email: validateEmail(teacherEmail),
+      password: validateRequired(password, "Password"),
+      dob: validateRequired(dob, "Date of birth"),
+    };
+    setTeacherErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const token = localStorage.getItem("token");
@@ -232,6 +393,40 @@ const Register = () => {
     setLoading(true);
     e.preventDefault();
     setPopupMessage(null);
+    const nextErrors = {
+      userName: validateRequired(userName, "Username"),
+      name: validateRequired(name, "Name"),
+      phone: validatePhone(phone),
+      email: validateEmail(email),
+      grade: validateRequired(grade, "Grade"),
+      dob: validateRequired(dob, "Date of birth"),
+      password: validateRequired(password, "Password"),
+    };
+    setStudentErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      setLoading(false);
+      return;
+    }
+    const paymentNextErrors = courseId
+      ? {
+          totalFee: validateNumber(studentPayment.totalFee, {
+            min: 0,
+            label: "Total fee",
+          }),
+          feeMonth: validateRequired(studentPayment.feeMonth, "Fee month"),
+          amountPaid:
+            studentPayment.paid === "yes"
+              ? validateAmountPaid(studentPayment.amountPaid, studentPayment.totalFee, {
+                  required: true,
+                })
+              : "",
+        }
+      : {};
+    setPaymentErrors(paymentNextErrors);
+    if (Object.values(paymentNextErrors).some(Boolean)) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const token = localStorage.getItem("token");
@@ -376,15 +571,39 @@ const Register = () => {
 
   const handleStudentPaymentChange = (e) => {
     const { name, value } = e.target;
-    setStudentPayment((prev) => ({ ...prev, [name]: value }));
+    setStudentPayment((prev) => {
+      const next = { ...prev, [name]: value };
+      const nextErrors = {
+        totalFee: validateNumber(next.totalFee, { min: 0, label: "Total fee" }),
+        feeMonth: validateRequired(next.feeMonth, "Fee month"),
+        amountPaid:
+          next.paid === "yes"
+            ? validateAmountPaid(next.amountPaid, next.totalFee, { required: true })
+            : "",
+      };
+      setPaymentErrors(nextErrors);
+      return next;
+    });
   };
 
   const handleStudentPaidChange = (value) => {
-    setStudentPayment((prev) => ({
-      ...prev,
-      paid: value,
-      amountPaid: value === "pending" ? "0" : prev.amountPaid,
-    }));
+    setStudentPayment((prev) => {
+      const next = {
+        ...prev,
+        paid: value,
+        amountPaid: value === "pending" ? "0" : prev.amountPaid,
+      };
+      const nextErrors = {
+        totalFee: validateNumber(next.totalFee, { min: 0, label: "Total fee" }),
+        feeMonth: validateRequired(next.feeMonth, "Fee month"),
+        amountPaid:
+          next.paid === "yes"
+            ? validateAmountPaid(next.amountPaid, next.totalFee, { required: true })
+            : "",
+      };
+      setPaymentErrors(nextErrors);
+      return next;
+    });
   };
 
   const fetchAllcourses = async () => {
@@ -481,11 +700,16 @@ const Register = () => {
                           name="userName"
                           id="userName"
                           value={userName}
-                          onChange={(e) => setUserName(e.target.value)}
+                            onChange={(e) => updateStudentField("userName", e.target.value)}
                           placeholder="Please Enter a unique userName"
                           className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 "
-                          required=""
-                        />
+                            required=""
+                          />
+                          {studentErrors.userName && (
+                            <p className="mt-1 text-xs text-rose-600">
+                              {studentErrors.userName}
+                            </p>
+                          )}
                       </div>
                       <div>
                         <label className="block w-full mb-2 text-sm font-medium text-gray-900">
@@ -495,11 +719,16 @@ const Register = () => {
                           type="text"
                           name="name"
                           value={name}
-                          onChange={(e) => setName(e.target.value)}
+                          onChange={(e) => updateStudentField("name", e.target.value)}
                           className=" bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
                           placeholder="Enter Student Name"
                           required=""
                         />
+                        {studentErrors.name && (
+                          <p className="mt-1 text-xs text-rose-600">
+                            {studentErrors.name}
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -510,11 +739,16 @@ const Register = () => {
                           type="text"
                           name="grade"
                           value={grade}
-                          onChange={(e) => setGrade(e.target.value)}
+                          onChange={(e) => updateStudentField("grade", e.target.value)}
                           className=" bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
                           placeholder="Enter Grade"
                           required=""
                         />
+                        {studentErrors.grade && (
+                          <p className="mt-1 text-xs text-rose-600">
+                            {studentErrors.grade}
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -525,11 +759,16 @@ const Register = () => {
                           type="email"
                           name="email"
                           value={email}
-                          onChange={(e) => setEmail(e.target.value)}
+                          onChange={(e) => updateStudentField("email", e.target.value)}
                           className=" bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
                           placeholder="Enter email address"
                           required=""
                         />
+                        {studentErrors.email && (
+                          <p className="mt-1 text-xs text-rose-600">
+                            {studentErrors.email}
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -540,11 +779,18 @@ const Register = () => {
                           type="tel"
                           name="phone"
                           value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
+                          onChange={(e) => updateStudentField("phone", e.target.value)}
                           placeholder="Enter Phone No"
                           className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      "
                           required=""
+                          inputMode="numeric"
+                          maxLength={10}
                         />
+                        {studentErrors.phone && (
+                          <p className="mt-1 text-xs text-rose-600">
+                            {studentErrors.phone}
+                          </p>
+                        )}
                       </div>
                       <div className="">
                         <label
@@ -558,9 +804,14 @@ const Register = () => {
                           id="dob"
                           value={dob}
                           className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 rounded-lg outline-none  focus:ring-0"
-                          onChange={(e) => setdob(e.target.value)} // Capture the date input
+                          onChange={(e) => updateStudentField("dob", e.target.value)} // Capture the date input
                           required
                         />
+                        {studentErrors.dob && (
+                          <p className="mt-1 text-xs text-rose-600">
+                            {studentErrors.dob}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <label className="block mb-2 text-sm font-medium text-gray-900">
@@ -568,7 +819,13 @@ const Register = () => {
                         </label>
                         <select
                           value={courseId}
-                          onChange={(e) => setCourseId(e.target.value)}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setCourseId(value);
+                            if (!value) {
+                              setPaymentErrors({});
+                            }
+                          }}
                           className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
                         >
                           <option value="">-- No Course --</option>
@@ -593,7 +850,13 @@ const Register = () => {
                               className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg w-full p-2.5"
                               placeholder="Enter total fee"
                               required
+                              inputMode="decimal"
                             />
+                            {paymentErrors.totalFee && (
+                              <p className="mt-1 text-xs text-rose-600">
+                                {paymentErrors.totalFee}
+                              </p>
+                            )}
                           </div>
                           <div>
                             <label className="block mb-2 text-sm font-medium text-gray-900">
@@ -613,6 +876,11 @@ const Register = () => {
                                 </option>
                               ))}
                             </select>
+                            {paymentErrors.feeMonth && (
+                              <p className="mt-1 text-xs text-rose-600">
+                                {paymentErrors.feeMonth}
+                              </p>
+                            )}
                           </div>
                           <div>
                             <label className="block mb-2 text-sm font-medium text-gray-900">
@@ -654,7 +922,13 @@ const Register = () => {
                               placeholder="Enter amount paid"
                               required={studentPayment.paid === "yes"}
                               disabled={studentPayment.paid === "pending"}
+                              inputMode="decimal"
                             />
+                            {paymentErrors.amountPaid && (
+                              <p className="mt-1 text-xs text-rose-600">
+                                {paymentErrors.amountPaid}
+                              </p>
+                            )}
                           </div>
                         </>
                       )}
@@ -666,11 +940,16 @@ const Register = () => {
                           type={showPassword ? "text" : "password"}
                           name="password"
                           value={password}
-                          onChange={(e) => setPassword(e.target.value)}
+                          onChange={(e) => updateStudentField("password", e.target.value)}
                           placeholder="********"
                           className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      "
                           required=""
                         />
+                        {studentErrors.password && (
+                          <p className="mt-1 text-xs text-rose-600">
+                            {studentErrors.password}
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center mt-2">
                         <input
@@ -717,11 +996,16 @@ const Register = () => {
                           type="text"
                           name="name"
                           value={name}
-                          onChange={(e) => setName(e.target.value)}
+                          onChange={(e) => updateTeacherField("name", e.target.value)}
                           className=" bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      "
                           placeholder="Enter Teacher Name"
                           required=""
                         />
+                        {teacherErrors.name && (
+                          <p className="mt-1 text-xs text-rose-600">
+                            {teacherErrors.name}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <label className="block mb-2 text-sm font-medium text-gray-900 ">
@@ -731,11 +1015,18 @@ const Register = () => {
                           type="tel"
                           name="phone"
                           value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
+                          onChange={(e) => updateTeacherField("phone", e.target.value)}
                           placeholder="Enter Phone No"
                           className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      "
                           required=""
+                          inputMode="numeric"
+                          maxLength={10}
                         />
+                        {teacherErrors.phone && (
+                          <p className="mt-1 text-xs text-rose-600">
+                            {teacherErrors.phone}
+                          </p>
+                        )}
                       </div>
                       <div className="">
                         <label
@@ -749,9 +1040,14 @@ const Register = () => {
                           id="dob"
                           value={dob}
                           className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 rounded-lg outline-none  focus:ring-0"
-                          onChange={(e) => setdob(e.target.value)} // Capture the date input
+                          onChange={(e) => updateTeacherField("dob", e.target.value)} // Capture the date input
                           required
                         />
+                        {teacherErrors.dob && (
+                          <p className="mt-1 text-xs text-rose-600">
+                            {teacherErrors.dob}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <label className="block mb-2 text-sm font-medium text-gray-900 ">
@@ -761,11 +1057,16 @@ const Register = () => {
                           type="email"
                           name="teacherEmail"
                           value={teacherEmail}
-                          onChange={(e) => setTeacherEmail(e.target.value)}
+                          onChange={(e) => updateTeacherField("email", e.target.value)}
                           placeholder="Enter Email"
                           className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      "
                           required=""
                         />
+                        {teacherErrors.email && (
+                          <p className="mt-1 text-xs text-rose-600">
+                            {teacherErrors.email}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <label className="block mb-2 text-sm font-medium text-gray-900 ">
@@ -775,11 +1076,16 @@ const Register = () => {
                           type={showPassword ? "text" : "password"}
                           name="password"
                           value={password}
-                          onChange={(e) => setPassword(e.target.value)}
+                          onChange={(e) => updateTeacherField("password", e.target.value)}
                           placeholder="********"
                           className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5      "
                           required=""
                         />
+                        {teacherErrors.password && (
+                          <p className="mt-1 text-xs text-rose-600">
+                            {teacherErrors.password}
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center mt-2">
                         <input
@@ -825,15 +1131,20 @@ const Register = () => {
                         >
                           Class Title
                         </label>
-                        <input
-                          type="text"
-                          name="classTitle"
-                          onChange={handleInputChange}
-                          value={formValues.classTitle}
+                          <input
+                            type="text"
+                            name="classTitle"
+                            onChange={(e) => updateCourseField("classTitle", e.target.value)}
+                            value={formValues.classTitle}
                           className=" bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full p-2.5      "
-                          placeholder="Enter Course Title"
-                          required=""
-                        />
+                            placeholder="Enter Course Title"
+                            required=""
+                          />
+                          {courseErrors.classTitle && (
+                            <p className="mt-1 text-xs text-rose-600">
+                              {courseErrors.classTitle}
+                            </p>
+                          )}
                       </div>
                       <div>
                         <label className="block mb-2 text-sm font-medium text-gray-900 ">
@@ -842,7 +1153,7 @@ const Register = () => {
                         <select
                           name="grade"
                           value={formValues.grade}
-                          onChange={handleInputChange}
+                          onChange={(e) => updateCourseField("grade", e.target.value)}
                           className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full p-2.5"
                           required=""
                         >
@@ -863,12 +1174,17 @@ const Register = () => {
                         <input
                           type="text"
                           name="totalHours"
-                          onChange={handleInputChange}
+                          onChange={(e) => updateCourseField("totalHours", e.target.value)}
                           value={formValues.totalHours}
                           placeholder="Enter Total Hours"
                           className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full p-2.5      "
                           required=""
                         />
+                        {courseErrors.totalHours && (
+                          <p className="mt-1 text-xs text-rose-600">
+                            {courseErrors.totalHours}
+                          </p>
+                        )}
                       </div>
                       {/* <div>
                                                 <label className="block mb-2 text-sm font-medium text-gray-900 ">Schedule</label>

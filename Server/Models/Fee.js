@@ -29,6 +29,13 @@ const feeSchema = new mongoose.Schema({
       },
     ],
     default: [],
+    validate: {
+      validator: (items) => {
+        const months = (items || []).map((entry) => Number(entry?.feeMonth)).filter(Number.isFinite);
+        return new Set(months).size === months.length;
+      },
+      message: "Fee month entries must be unique per course.",
+    },
   },
   createdAt: {
     type: Date,

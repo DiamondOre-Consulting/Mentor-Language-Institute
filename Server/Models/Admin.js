@@ -28,6 +28,8 @@ const adminSchema = new mongoose.Schema({
   phone: {
     type: String,
     required: true,
+    trim: true,
+    match: [/^\d{10}$/, "Phone number must be 10 digits."],
   },
   password: {
     type: String,

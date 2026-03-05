@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../../../components/ui/dialog";
+import { validateRequired } from "../../../utils/validators";
 
 const override = css`
   display: block;
@@ -26,15 +27,25 @@ const StudentLogin = () => {
   const [password, SetPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [resetIdentifier, setResetIdentifier] = useState("");
   const [resetStatus, setResetStatus] = useState("");
+  const [resetError, setResetError] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
 
   const handleStudentLogin = async (e) => {
     e.preventDefault();
     setError(null);
+    const nextErrors = {
+      userName: validateRequired(userName, "Username"),
+      password: validateRequired(password, "Password"),
+    };
+    setFieldErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      return;
+    }
     setLoading(true);
 
     try {
@@ -75,11 +86,13 @@ const StudentLogin = () => {
 
   const handleResetRequest = async () => {
     if (!resetIdentifier.trim()) {
+      setResetError("Email/phone/username is required.");
       setResetStatus("Please enter your email/phone/username.");
       return;
     }
     setResetLoading(true);
     setResetStatus("");
+    setResetError("");
     try {
       const response = await post({
         url: "/auth/request-password-reset",
@@ -128,7 +141,14 @@ const StudentLogin = () => {
                 type="text"
                 name="userName"
                 value={userName}
-                onChange={(e) => setUserName(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setUserName(value);
+                  setFieldErrors((prev) => ({
+                    ...prev,
+                    userName: validateRequired(value, "Username"),
+                  }));
+                }}
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="none"
@@ -137,6 +157,11 @@ const StudentLogin = () => {
                 placeholder="Enter UserName"
                 required
               />
+              {fieldErrors.userName && (
+                <p className="mt-1 text-xs text-rose-600">
+                  {fieldErrors.userName}
+                </p>
+              )}
             </div>
             <div className="mb-4">
               <label
@@ -151,11 +176,23 @@ const StudentLogin = () => {
                   type={showPassword ? "text" : "password"}
                   placeholder="Password"
                   value={password}
-                  onChange={(e) => SetPassword(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    SetPassword(value);
+                    setFieldErrors((prev) => ({
+                      ...prev,
+                      password: validateRequired(value, "Password"),
+                    }));
+                  }}
                   name="password"
                   autoComplete="new-password"
                 />
               </div>
+              {fieldErrors.password && (
+                <p className="mt-1 text-xs text-rose-600">
+                  {fieldErrors.password}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-between">
@@ -190,6 +227,7 @@ const StudentLogin = () => {
                 onClick={() => {
                   setResetIdentifier("");
                   setResetStatus("");
+                  setResetError("");
                   setResetOpen(true);
                 }}
                 className="text-xs mt-2 text-indigo-500 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -224,10 +262,17 @@ const StudentLogin = () => {
             <input
               type="text"
               value={resetIdentifier}
-              onChange={(e) => setResetIdentifier(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setResetIdentifier(value);
+                setResetError(
+                  value.trim() ? "" : "Email/phone/username is required."
+                );
+              }}
               placeholder="Email, phone, or username"
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
             />
+            {resetError && <p className="text-xs text-rose-600">{resetError}</p>}
             {resetStatus && (
               <p className="text-xs text-slate-600">{resetStatus}</p>
             )}
@@ -257,5 +302,3 @@ const StudentLogin = () => {
 };
 
 export default StudentLogin;
-
-

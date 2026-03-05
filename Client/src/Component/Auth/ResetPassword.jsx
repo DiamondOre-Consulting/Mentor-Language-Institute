@@ -12,6 +12,7 @@ const ResetPassword = () => {
   const [confirm, setConfirm] = useState("");
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const loginPath = role === "student" ? "/student-login" : "/login";
   const invalidLink = !token || !["admin", "teacher", "student"].includes(role);
@@ -23,12 +24,20 @@ const ResetPassword = () => {
       setStatus("Reset link is invalid or missing.");
       return;
     }
-    if (!password || password.length < 6) {
-      setStatus("Password must be at least 6 characters.");
-      return;
-    }
-    if (password !== confirm) {
-      setStatus("Passwords do not match.");
+    const nextErrors = {
+      password:
+        !password || password.length < 6
+          ? "Password must be at least 6 characters."
+          : "",
+      confirm:
+        !confirm
+          ? "Confirm password is required."
+          : password !== confirm
+            ? "Passwords do not match."
+            : "",
+    };
+    setErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
       return;
     }
 
@@ -72,11 +81,26 @@ const ResetPassword = () => {
           <input
             type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setPassword(value);
+              setErrors((prev) => ({
+                ...prev,
+                password:
+                  !value || value.length < 6
+                    ? "Password must be at least 6 characters."
+                    : "",
+                confirm:
+                  confirm && value !== confirm ? "Passwords do not match." : prev.confirm,
+              }));
+            }}
             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
             placeholder="Enter new password"
             required
           />
+          {errors.password && (
+            <p className="mt-1 text-xs text-rose-600">{errors.password}</p>
+          )}
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">
@@ -85,11 +109,26 @@ const ResetPassword = () => {
           <input
             type="password"
             value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setConfirm(value);
+              setErrors((prev) => ({
+                ...prev,
+                confirm:
+                  !value
+                    ? "Confirm password is required."
+                    : value !== password
+                      ? "Passwords do not match."
+                      : "",
+              }));
+            }}
             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
             placeholder="Confirm new password"
             required
           />
+          {errors.confirm && (
+            <p className="mt-1 text-xs text-rose-600">{errors.confirm}</p>
+          )}
         </div>
         {status && <p className="text-xs text-slate-600">{status}</p>}
         <button
