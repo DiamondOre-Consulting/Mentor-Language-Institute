@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import logo from "..//..//..//assets/logo.png";
 import { Link } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -11,13 +12,103 @@ import {
 import { Dialog, DialogContent } from "../../../components/ui/dialog";
 import StudentProfile from "./StudentProfile";
 import { logout } from "../../../api/auth";
+import { useApi } from "../../../api/useApi";
 
 const StudentNav = ({ student, onProfileUpdated }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const { get, put } = useApi();
 
   const handleLogout = () => {
     logout("/student-login");
   };
+
+  const formatTimestamp = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await get({
+        url: "/students/notifications/unread-count",
+      }).unwrap();
+      if (response.status === 200) {
+        setUnreadCount(response.data?.count || 0);
+      }
+    } catch (error) {
+      console.error("Failed to fetch notification count:", error);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      setNotifLoading(true);
+      const response = await get({
+        url: "/students/notifications?limit=6",
+      }).unwrap();
+      if (response.status === 200) {
+        setNotifications(response.data || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
+  const markAllRead = async () => {
+    try {
+      await put({
+        url: "/students/notifications/mark-all-read",
+      }).unwrap();
+      setUnreadCount(0);
+      setNotifications((prev) =>
+        prev.map((item) => ({ ...item, readAt: item.readAt || new Date().toISOString() }))
+      );
+    } catch (error) {
+      console.error("Failed to mark all read:", error);
+    }
+  };
+
+  const markRead = async (id) => {
+    try {
+      await put({
+        url: "/students/notifications/mark-read",
+        data: { ids: [id] },
+      }).unwrap();
+      setNotifications((prev) =>
+        prev.map((item) =>
+          item._id === id ? { ...item, readAt: item.readAt || new Date().toISOString() } : item
+        )
+      );
+      setUnreadCount((prev) => Math.max(prev - 1, 0));
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 60000);
+    return () => clearInterval(interval);
+  }, [get]);
+
+  useEffect(() => {
+    if (notifOpen) {
+      fetchNotifications();
+    }
+  }, [notifOpen, get]);
 
   const initials = student?.name
     ? student.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
@@ -61,6 +152,101 @@ const StudentNav = ({ student, onProfileUpdated }) => {
 
         {/* Right side actions */}
         <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
+          {/* Notifications */}
+          <DropdownMenu open={notifOpen} onOpenChange={setNotifOpen}>
+            <DropdownMenuTrigger asChild>
+              <button
+                style={{
+                  position: "relative",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "2.5rem",
+                  height: "2.5rem",
+                  borderRadius: "999px",
+                  border: "1.5px solid #fed7aa",
+                  background: "#fff",
+                  color: "#c2410c",
+                  cursor: "pointer",
+                }}
+                aria-label="Notifications"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                {unreadCount > 0 && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "-2px",
+                      right: "-2px",
+                      background: "#ef4444",
+                      color: "#fff",
+                      fontSize: "0.65rem",
+                      fontWeight: 700,
+                      borderRadius: "999px",
+                      padding: "0 6px",
+                      lineHeight: "1.2",
+                    }}
+                  >
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80 p-0">
+              <div className="flex items-center justify-between px-3 py-2">
+                <DropdownMenuLabel className="p-0">Notifications</DropdownMenuLabel>
+                <button
+                  type="button"
+                  onClick={markAllRead}
+                  className="text-xs font-semibold text-orange-600 hover:text-orange-700"
+                >
+                  Mark all read
+                </button>
+              </div>
+              <DropdownMenuSeparator />
+              <div className="max-h-80 overflow-y-auto">
+                {notifLoading && (
+                  <div className="px-4 py-6 text-center text-sm text-slate-500">
+                    Loading notifications...
+                  </div>
+                )}
+                {!notifLoading && notifications.length === 0 && (
+                  <div className="px-4 py-6 text-center text-sm text-slate-500">
+                    No notifications yet.
+                  </div>
+                )}
+                {!notifLoading &&
+                  notifications.map((note) => (
+                    <DropdownMenuItem
+                      key={note._id}
+                      className="flex flex-col items-start gap-1 px-4 py-3"
+                    >
+                      <div className="flex w-full items-start justify-between gap-2">
+                        <p className="text-sm font-semibold text-slate-800">
+                          {note.title}
+                        </p>
+                        {!note.readAt && (
+                          <button
+                            type="button"
+                            onClick={() => markRead(note._id)}
+                            className="text-[11px] font-semibold text-orange-600 hover:text-orange-700"
+                          >
+                            Mark read
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-600">{note.message}</p>
+                      <span className="text-[11px] text-slate-400">
+                        {formatTimestamp(note.createdAt)}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
           {/* Student name chip */}
           {student?.name && (
             <div

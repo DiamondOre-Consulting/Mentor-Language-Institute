@@ -19,6 +19,7 @@ import { getAssignmentForTeacher } from "../utils/classTeachers.js";
 import { normalizeAttendanceMode } from "../utils/attendanceMode.js";
 import { generateInvoiceNumber, generateInvoicePdfBuffer } from "../services/invoiceService.js";
 import { sendEmail } from "../services/emailService.js";
+import { createNotificationsForStudents } from "../services/notificationService.js";
 import { isValidEmail, normalizeEmail } from "../utils/studentValidation.js";
 import {
   normalizeFeeMonth,
@@ -628,6 +629,29 @@ router.put(
             }
           }
         }
+      }
+
+      try {
+        const feeMonthLabel = formatFeeMonthLabel(normalizedFeeMonth);
+        const title = `Enrolled in ${classExists.classTitle}`;
+        const message = normalizedPaid
+          ? `You have been enrolled in ${classExists.classTitle}. Payment received for ${feeMonthLabel} and invoice sent.`
+          : `You have been enrolled in ${classExists.classTitle}. Payment is pending for ${feeMonthLabel}.`;
+        await createNotificationsForStudents({
+          studentIds: [studentExists._id],
+          type: "COURSE_ENROLLED",
+          title,
+          message,
+          classId: classExists._id,
+          feeMonth: normalizedFeeMonth,
+          payload: {
+            classTitle: classExists.classTitle,
+            feeMonth: normalizedFeeMonth,
+            paid: normalizedPaid,
+          },
+        });
+      } catch (notifyError) {
+        console.error("Failed to notify student enrollment:", notifyError);
       }
 
       return res.status(200).json({
@@ -1312,6 +1336,30 @@ router.post("/schedule-class/:id",TeacherAuthenticateToken,async (req, res) => {
         await attendanceDoc.save();
       }
 
+      try {
+        const modeLabel = normalizedMode === "online" ? "Online" : "Offline";
+        const timeLabel =
+          normalizedTimeSlots.slots.length > 0
+            ? ` at ${normalizedTimeSlots.slots.join(", ")}`
+            : "";
+        await createNotificationsForStudents({
+          studentIds,
+          type: "CLASS_SCHEDULED",
+          title: `${modeLabel} class scheduled`,
+          message: `${classDoc.classTitle} is scheduled on ${date}${timeLabel}.`,
+          classId: classDoc._id,
+          payload: {
+            classTitle: classDoc.classTitle,
+            date,
+            timeSlots: normalizedTimeSlots.slots,
+            mode: normalizedMode,
+            teacherId: req.user.userId,
+          },
+        });
+      } catch (notifyError) {
+        console.error("Failed to notify class schedule:", notifyError);
+      }
+
       res.status(200).json({ message: "New class is scheduled" });
     } catch (error) {
       console.log("Something went wrong!!! ");
@@ -1512,6 +1560,7 @@ router.put("/schedule-class/:id", TeacherAuthenticateToken, async (req, res) => 
 
     const session = classDoc.dailyClasses[sessionIndex];
     const existingSlots = Array.isArray(session.timeSlots) ? session.timeSlots : [];
+    const previousSlots = [...existingSlots];
     const lockedSlots = existingSlots.filter((slot) => isSlotLocked(date, slot));
 
     for (const lockedSlot of lockedSlots) {
@@ -1548,10 +1597,126 @@ router.put("/schedule-class/:id", TeacherAuthenticateToken, async (req, res) => 
 
     await classDoc.save();
 
+    try {
+      const modeLabel = normalizedMode === "online" ? "Online" : "Offline";
+      const timeLabel =
+        normalizedTimeSlots.slots.length > 0
+          ? ` at ${normalizedTimeSlots.slots.join(", ")}`
+          : "";
+      await createNotificationsForStudents({
+        studentIds: classDoc.enrolledStudents || [],
+        type: "CLASS_RESCHEDULED",
+        title: `${modeLabel} class rescheduled`,
+        message: `${classDoc.classTitle} schedule updated for ${date}${timeLabel}.`,
+        classId: classDoc._id,
+        payload: {
+          classTitle: classDoc.classTitle,
+          date,
+          previousSlots,
+          timeSlots: normalizedTimeSlots.slots,
+          mode: normalizedMode,
+          teacherId: req.user.userId,
+        },
+      });
+    } catch (notifyError) {
+      console.error("Failed to notify schedule update:", notifyError);
+    }
+
     return res.status(200).json({ message: "Schedule updated successfully." });
   } catch (error) {
     console.error("Schedule update failed:", error);
     res.status(500).json({ message: "Unable to update schedule." });
+  }
+});
+
+// CANCEL A SCHEDULED CLASS (teacher access)
+router.delete("/schedule-class/:id", TeacherAuthenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { date, mode, timeSlots } = req.body;
+    const normalizedMode = normalizeAttendanceMode(mode) || "offline";
+
+    if (!date) {
+      return res.status(400).json({ message: "date is required." });
+    }
+
+    const assignment = await ClassTeachers.findOne({
+      classId: id,
+      teacherId: req.user.userId,
+      active: true,
+    });
+    if (!assignment) {
+      return res.status(403).json({ message: "Unauthorized." });
+    }
+
+    const classDoc = await Classes.findById(id);
+    if (!classDoc) {
+      return res.status(404).json({ message: "Class not found." });
+    }
+    await pruneExpiredDailyClasses(classDoc, req.user.userId);
+
+    const sessionIndex = (classDoc.dailyClasses || []).findIndex(
+      (entry) =>
+        entry.classDate === date &&
+        String(entry.teacherId) === String(req.user.userId) &&
+        (normalizeAttendanceMode(entry.mode) || "offline") === normalizedMode
+    );
+
+    if (sessionIndex < 0) {
+      return res.status(404).json({ message: "Scheduled class not found." });
+    }
+
+    const session = classDoc.dailyClasses[sessionIndex];
+    const existingSlots = Array.isArray(session.timeSlots) ? session.timeSlots : [];
+    const slotsToRemove =
+      Array.isArray(timeSlots) && timeSlots.length > 0
+        ? timeSlots
+        : existingSlots;
+
+    const lockedToRemove = slotsToRemove.filter((slot) => isSlotLocked(date, slot));
+    if (lockedToRemove.length > 0) {
+      return res.status(403).json({
+        message: "You cannot cancel slots within 3 hours of their start time.",
+      });
+    }
+
+    const nextSlots = existingSlots.filter((slot) => !slotsToRemove.includes(slot));
+
+    if (nextSlots.length > 0) {
+      session.timeSlots = nextSlots;
+      session.numberOfClasses = String(nextSlots.length);
+    } else {
+      classDoc.dailyClasses.splice(sessionIndex, 1);
+    }
+
+    await classDoc.save();
+
+    try {
+      const removedLabel = slotsToRemove.length
+        ? ` (${slotsToRemove.join(", ")})`
+        : "";
+      await createNotificationsForStudents({
+        studentIds: classDoc.enrolledStudents || [],
+        type: "CLASS_CANCELLED",
+        title: "Class cancelled",
+        message: `${classDoc.classTitle} on ${date}${removedLabel} has been cancelled.`,
+        classId: classDoc._id,
+        payload: {
+          classTitle: classDoc.classTitle,
+          date,
+          cancelledSlots: slotsToRemove,
+          mode: normalizedMode,
+          teacherId: req.user.userId,
+        },
+      });
+    } catch (notifyError) {
+      console.error("Failed to notify class cancellation:", notifyError);
+    }
+
+    return res.status(200).json({ message: "Scheduled class cancelled." });
+  } catch (error) {
+    console.error("Cancel schedule failed:", error);
+    res.status(500).json({ message: "Unable to cancel schedule." });
   }
 });
 

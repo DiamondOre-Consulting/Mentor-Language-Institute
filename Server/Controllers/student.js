@@ -14,6 +14,7 @@ import Attendance from "../Models/Attendance.js";
 import Fee from "../Models/Fee.js";
 import ClassTeachers from "../Models/ClassTeachers.js";
 import PaymentRequest from "../Models/PaymentRequest.js";
+import Notification from "../Models/Notification.js";
 import { createRefreshTokenRecord, setAccessCookie, setRefreshCookie, signAccessToken } from "../utils/authTokens.js";
 import {
   isGradeMatch,
@@ -200,6 +201,82 @@ router.get("/my-profile", StudentAuthenticateToken, async (req, res) => {
   } catch (error) {
     console.log("Something went wrong!!! ");
     res.status(500).json(error);
+  }
+});
+
+// STUDENT NOTIFICATIONS
+router.get("/notifications", StudentAuthenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const page = Number(req.query.page || 1);
+    const limit = Math.min(Number(req.query.limit || 20), 50);
+    const unread = String(req.query.unread || "").toLowerCase() === "true";
+
+    const query = { userId };
+    if (unread) {
+      query.readAt = null;
+    }
+
+    const notifications = await Notification.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    res.status(200).json(notifications);
+  } catch (error) {
+    console.error("Failed to fetch notifications:", error);
+    res.status(500).json({ message: "Failed to fetch notifications." });
+  }
+});
+
+router.get("/notifications/unread-count", StudentAuthenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const count = await Notification.countDocuments({
+      userId,
+      readAt: null,
+    });
+    res.status(200).json({ count });
+  } catch (error) {
+    console.error("Failed to count notifications:", error);
+    res.status(500).json({ message: "Failed to count notifications." });
+  }
+});
+
+router.put("/notifications/mark-read", StudentAuthenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const { ids = [] } = req.body || {};
+    const normalizedIds = Array.isArray(ids)
+      ? ids.map((id) => String(id)).filter(Boolean)
+      : [];
+    if (normalizedIds.length === 0) {
+      return res.status(400).json({ message: "Notification ids are required." });
+    }
+
+    const result = await Notification.updateMany(
+      { _id: { $in: normalizedIds }, userId },
+      { $set: { readAt: new Date() } }
+    );
+
+    res.status(200).json({ updated: result.modifiedCount || 0 });
+  } catch (error) {
+    console.error("Failed to mark notifications as read:", error);
+    res.status(500).json({ message: "Failed to update notifications." });
+  }
+});
+
+router.put("/notifications/mark-all-read", StudentAuthenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const result = await Notification.updateMany(
+      { userId, readAt: null },
+      { $set: { readAt: new Date() } }
+    );
+    res.status(200).json({ updated: result.modifiedCount || 0 });
+  } catch (error) {
+    console.error("Failed to mark all notifications as read:", error);
+    res.status(500).json({ message: "Failed to update notifications." });
   }
 });
 

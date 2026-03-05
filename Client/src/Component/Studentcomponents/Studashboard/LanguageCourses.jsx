@@ -441,22 +441,29 @@ const LanguageCourses = () => {
           </div>
           <Button
             size="sm"
-            className="h-9 w-full bg-orange-500 hover:bg-orange-600 shadow-sm rounded-lg text-xs font-semibold tracking-wide"
-            onClick={() => handleEnrollClick(course._id)}
+            className={`h-9 w-full rounded-lg text-xs font-semibold tracking-wide shadow-sm ${
+              isEnrolled
+                ? "bg-slate-200 text-slate-600 cursor-not-allowed hover:bg-slate-200"
+                : "bg-orange-500 hover:bg-orange-600"
+            }`}
+            disabled={isEnrolled}
+            onClick={() => !isEnrolled && handleEnrollClick(course._id)}
           >
-            Explore Plan
-            <svg
-              className="ml-1.5 h-3.5 w-3.5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="5" y1="12" x2="19" y2="12" />
-              <polyline points="12 5 19 12 12 19" />
-            </svg>
+            {isEnrolled ? "Enrolled" : "Explore Plan"}
+            {!isEnrolled && (
+              <svg
+                className="ml-1.5 h-3.5 w-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            )}
           </Button>
         </CardContent>
       </Card>

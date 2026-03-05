@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
@@ -182,6 +182,58 @@ const Register = () => {
     "December",
   ];
   const toastVariant = getToastVariant(popupMessage);
+
+  const normalizeGradeValue = (value) => {
+    if (value === null || value === undefined) return "";
+    const str = String(value).trim().toLowerCase();
+    if (!str) return "";
+    const match = str.match(/\d+/);
+    if (!match) return str;
+    const num = parseInt(match[0], 10);
+    if (!Number.isFinite(num)) return "";
+    return String(num);
+  };
+
+  const toGradeLabel = (value) => {
+    const normalized = normalizeGradeValue(value);
+    if (!normalized) return "";
+    const num = Number(normalized);
+    if (!Number.isFinite(num)) {
+      return String(value).trim();
+    }
+    const mod100 = num % 100;
+    if (mod100 >= 11 && mod100 <= 13) return `${num}th`;
+    switch (num % 10) {
+      case 1:
+        return `${num}st`;
+      case 2:
+        return `${num}nd`;
+      case 3:
+        return `${num}rd`;
+      default:
+        return `${num}th`;
+    }
+  };
+
+  const deriveGradeFromText = (text) => {
+    if (!text) return "";
+    const str = String(text).toLowerCase();
+    const match = str.match(/\b(6|7|8|9|10|11|12)(?:st|nd|rd|th)?\b/);
+    if (!match) return "";
+    return toGradeLabel(match[1]);
+  };
+
+  const resolveCourseGradeLabel = (course) =>
+    toGradeLabel(course?.grade) || deriveGradeFromText(course?.classTitle);
+
+  const filteredCourses = useMemo(() => {
+    if (!grade.trim()) return allCourses;
+    const gradeValue = normalizeGradeValue(grade);
+    return allCourses.filter(
+      (course) =>
+        normalizeGradeValue(resolveCourseGradeLabel(course)) === gradeValue
+    );
+  }, [allCourses, grade]);
 
   const updateCourseField = (field, value) => {
     setFormValues((prev) => ({ ...prev, [field]: value }));
@@ -637,6 +689,15 @@ const Register = () => {
     fetchAllcourses();
   }, []);
 
+  useEffect(() => {
+    if (!courseId) return;
+    const stillValid = filteredCourses.some((course) => course?._id === courseId);
+    if (!stillValid) {
+      setCourseId("");
+      setPaymentErrors({});
+    }
+  }, [courseId, filteredCourses]);
+
   return (
     <div className="">
       {loading && (
@@ -829,12 +890,17 @@ const Register = () => {
                           className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
                         >
                           <option value="">-- No Course --</option>
-                          {allCourses?.map((course) => (
+                          {filteredCourses?.map((course) => (
                             <option key={course?._id} value={course?._id}>
                               {course?.classTitle}
                             </option>
                           ))}
                         </select>
+                        {grade.trim() && filteredCourses.length === 0 && (
+                          <p className="mt-2 text-xs text-amber-700">
+                            No courses available for grade {grade}.
+                          </p>
+                        )}
                       </div>
                       {courseId && (
                         <>

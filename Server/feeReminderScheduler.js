@@ -3,6 +3,7 @@ import twilio from "twilio";
 import Students from "./Models/Students.js";
 import Classes from "./Models/Classes.js";
 import Fee from "./Models/Fee.js";
+import Notification from "./Models/Notification.js";
 import { normalizeFeeMonth } from "./utils/fee.js";
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -13,11 +14,11 @@ const client =
   accountSid && authToken ? twilio(accountSid, authToken) : null;
 
 const feeReminderScheduler = () => {
-  if (!client || !fromNumber) {
+  const smsEnabled = !!(client && fromNumber);
+  if (!smsEnabled) {
     console.warn(
-      "Fee reminder scheduler is disabled. Missing Twilio configuration."
+      "Fee reminder SMS is disabled. Missing Twilio configuration."
     );
-    return;
   }
 
   cron.schedule(
@@ -27,7 +28,9 @@ const feeReminderScheduler = () => {
     try {
       const students = await Students.find({}, { password: 0 });
 
-      const currentMonth = new Date().getMonth() + 1; // Get current month (1-12)
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1; // Get current month (1-12)
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       // const currentYear = new Date().getFullYear(); // Get current year
 
       for (const student of students) {
@@ -50,21 +53,48 @@ const feeReminderScheduler = () => {
                 _id: oneFeeDetail.classId,
               });
               const phoneNumber = student.phone;
-              if (!phoneNumber) {
-                continue;
-              }
               const classTitle = singleClass?.classTitle || "your class";
               const messageMain = `Reminder: Your fee of ${classTitle} is due for this month. Please pay as soon as possible.`;
+
+              try {
+                const exists = await Notification.exists({
+                  userId: student._id,
+                  type: "PAYMENT_DUE",
+                  classId: oneFeeDetail.classId,
+                  feeMonth: currentMonth,
+                  createdAt: { $gte: todayStart },
+                });
+                if (!exists) {
+                  await Notification.create({
+                    userId: student._id,
+                    role: "student",
+                    type: "PAYMENT_DUE",
+                    title: `Payment due for ${classTitle}`,
+                    message: messageMain,
+                    classId: oneFeeDetail.classId,
+                    feeMonth: currentMonth,
+                    payload: {
+                      classTitle,
+                      feeMonth: currentMonth,
+                      totalFee: oneFeeDetail.totalFee,
+                    },
+                  });
+                }
+              } catch (notifyError) {
+                console.error("Failed to create payment due notification:", notifyError);
+              }
               //
               // res.status(200).json(message)
-              client.messages
-                .create({
-                  body: messageMain,
-                  from: fromNumber,
-                  to: `${defaultCountryCode}${phoneNumber}`,
-                })
-                .then((message) => console.log(message.sid))
-                .catch((error) => console.error("Error sending SMS:", error));
+              if (smsEnabled && phoneNumber) {
+                client.messages
+                  .create({
+                    body: messageMain,
+                    from: fromNumber,
+                    to: `${defaultCountryCode}${phoneNumber}`,
+                  })
+                  .then((message) => console.log(message.sid))
+                  .catch((error) => console.error("Error sending SMS:", error));
+              }
               // break; // Stop checking other fees for this student
             }
           } else {

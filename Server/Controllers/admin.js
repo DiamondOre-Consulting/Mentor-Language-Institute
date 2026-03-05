@@ -18,6 +18,7 @@ import { deriveGradeFromText, isGradeMatch, resolveCourseGrade, toGradeLabel } f
 import { normalizeCommissionRateValue } from "../utils/classTeachers.js";
 import { generateInvoiceNumber, generateInvoicePdfBuffer } from "../services/invoiceService.js";
 import { sendEmail } from "../services/emailService.js";
+import { createNotification } from "../services/notificationService.js";
 import { createRefreshTokenRecord, setAccessCookie, setRefreshCookie, signAccessToken } from "../utils/authTokens.js";
 import { deleteAllCoursesCascade } from "../utils/deleteCourseCascade.js";
 import { deleteAllStudentsCascade, deleteStudentCascade } from "../utils/deleteStudentCascade.js";
@@ -1361,6 +1362,30 @@ router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res)
       }
     }
 
+    try {
+      const feeMonthLabel = formatFeeMonthLabel(normalizedFeeMonth);
+      const title = `Enrolled in ${classExists.classTitle}`;
+      const message = normalizedPaid
+        ? `You have been enrolled in ${classExists.classTitle}. Payment received for ${feeMonthLabel} and invoice sent.`
+        : `You have been enrolled in ${classExists.classTitle}. Payment is pending for ${feeMonthLabel}.`;
+      await createNotification({
+        userId: studentExists._id,
+        role: "student",
+        type: "COURSE_ENROLLED",
+        title,
+        message,
+        classId: classExists._id,
+        feeMonth: normalizedFeeMonth,
+        payload: {
+          classTitle: classExists.classTitle,
+          feeMonth: normalizedFeeMonth,
+          paid: normalizedPaid,
+        },
+      });
+    } catch (notifyError) {
+      console.error("Failed to notify student enrollment:", notifyError);
+    }
+
     return res.status(200).json({
       message: `${studentExists.name} enrolled in ${classExists.classTitle} successfully.`,
     });
@@ -1657,6 +1682,27 @@ router.put(
       request.decisionAt = new Date();
       await request.save();
 
+      try {
+        const feeMonthLabel = formatFeeMonthLabel(normalizedFeeMonth);
+        await createNotification({
+          userId: studentExists._id,
+          role: "student",
+          type: "PAYMENT_REQUEST_APPROVED",
+          title: `Enrollment approved for ${classExists.classTitle}`,
+          message: `Your enrollment request has been approved. Fee month: ${feeMonthLabel}. Invoice sent to your email.`,
+          classId: classExists._id,
+          feeMonth: normalizedFeeMonth,
+          payload: {
+            classTitle: classExists.classTitle,
+            feeMonth: normalizedFeeMonth,
+            totalFee: normalizedTotalFee,
+            amountPaid: normalizedAmountPaid ?? 0,
+          },
+        });
+      } catch (notifyError) {
+        console.error("Failed to notify request approval:", notifyError);
+      }
+
       return res.status(200).json({
         message: "Payment request approved. Student enrolled and invoice sent.",
       });
@@ -1697,6 +1743,28 @@ router.put(
       await Classes.findByIdAndUpdate(request.classId, {
         $pull: { appliedStudents: request.studentId },
       });
+
+      try {
+        const classDoc = await Classes.findById(request.classId);
+        const classTitle = classDoc?.classTitle || "your course";
+        const reasonText = request.rejectionReason
+          ? ` Reason: ${request.rejectionReason}`
+          : "";
+        await createNotification({
+          userId: request.studentId,
+          role: "student",
+          type: "PAYMENT_REQUEST_REJECTED",
+          title: `Enrollment request rejected`,
+          message: `Your enrollment request for ${classTitle} was rejected.${reasonText}`,
+          classId: request.classId,
+          payload: {
+            classTitle,
+            reason: request.rejectionReason || "",
+          },
+        });
+      } catch (notifyError) {
+        console.error("Failed to notify request rejection:", notifyError);
+      }
 
       return res.status(200).json({ message: "Payment request rejected." });
     } catch (error) {
@@ -1930,6 +1998,33 @@ router.put(
             });
           }
         }
+      }
+
+      try {
+        const feeMonthLabel = formatFeeMonthLabel(normalizedFeeMonth);
+        const title = normalizedPaid
+          ? `Payment received for ${classExists.classTitle}`
+          : `Payment updated for ${classExists.classTitle}`;
+        const message = normalizedPaid
+          ? `We received your payment for ${classExists.classTitle} (${feeMonthLabel}).`
+          : `Your payment status was updated for ${classExists.classTitle} (${feeMonthLabel}).`;
+        await createNotification({
+          userId: student._id,
+          role: "student",
+          type: normalizedPaid ? "PAYMENT_RECEIVED" : "PAYMENT_STATUS_UPDATED",
+          title,
+          message,
+          classId: classExists._id,
+          feeMonth: normalizedFeeMonth,
+          payload: {
+            classTitle: classExists.classTitle,
+            feeMonth: normalizedFeeMonth,
+            paid: normalizedPaid,
+            amountPaid: normalizedAmountPaid ?? 0,
+          },
+        });
+      } catch (notifyError) {
+        console.error("Failed to notify payment update:", notifyError);
       }
 
       res.status(200).json({
