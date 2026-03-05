@@ -170,6 +170,11 @@ body {
   background: linear-gradient(90deg, #f97316, #fbbf24);
 }
 
+.course-title {
+  font-family: "Sora", "Inter", sans-serif !important;
+  letter-spacing: -0.005em;
+}
+
 /* ── Premium Edu Shell ─────────────────────────────────────── */
 .premium-edu {
   min-height: 100vh;
@@ -636,4 +641,3 @@ button:active, a[role="button"]:active {
   [data-sr] { animation: none !important; transition: none !important; }
   .sr-hidden { opacity: 1 !important; }
 }
-

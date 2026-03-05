@@ -21,6 +21,7 @@ const Allstudents = () => {
   const [popupMessage, setPopupMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [showPopup, setShowPopup] = useState(false);
   const [status, setStatus] = useState(null);
@@ -139,6 +140,8 @@ const Allstudents = () => {
   };
 
   const openForm = (studentId) => {
+    const student = allStudents.find((item) => item._id === studentId) || null;
+    setSelectedStudent(student);
     setSelectedStudentId(studentId);
     setIsFormOpen(true);
   };
@@ -241,6 +244,7 @@ const Allstudents = () => {
   const closeForm = () => {
     setSelectedStudentId("");
     setSelectedCourseId("");
+    setSelectedStudent(null);
       setFormData({
         totalFee: "",
         feeMonth: "",
@@ -249,6 +253,16 @@ const Allstudents = () => {
       });
       setIsFormOpen(false);
   };
+
+  const normalizeGrade = (value) =>
+    String(value || "")
+      .trim()
+      .toLowerCase();
+
+  const filteredCoursesForStudent = allCourses.filter((course) => {
+    if (!selectedStudent?.grade || !course?.grade) return false;
+    return normalizeGrade(course.grade) === normalizeGrade(selectedStudent.grade);
+  });
 
   const detailsctiveaccount = async (e) => {
     e.preventDefault();
@@ -477,7 +491,7 @@ const Allstudents = () => {
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
                 <label htmlFor="courses" className="block text-sm font-medium text-slate-700">
-                  All Courses
+                  Courses (Grade {selectedStudent?.grade || "N/A"})
                 </label>
                 <select
                   className="mt-1 w-full"
@@ -486,11 +500,17 @@ const Allstudents = () => {
                   required
                 >
                   <option value="">Select Course</option>
-                  {allCourses.map((course, index) => (
-                    <option key={index} value={course._id}>
-                      {course.classTitle}
+                  {filteredCoursesForStudent.length === 0 ? (
+                    <option value="" disabled>
+                      No courses available for this grade
                     </option>
-                  ))}
+                  ) : (
+                    filteredCoursesForStudent.map((course, index) => (
+                      <option key={index} value={course._id}>
+                        {course.classTitle}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 

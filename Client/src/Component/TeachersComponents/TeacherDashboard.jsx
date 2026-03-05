@@ -9,6 +9,7 @@ import TeacherAddStudent from "./TeacherAddStudent";
 import TeacherAllStudents from "./TeacherAllStudents";
 import TeacherEditStudent from "./TeacherEditStudent";
 import MarkAttendance from "./MarkAttendance";
+import ScheduledClasses from "./ScheduledClasses";
 
 const TeacherDashboard = ({ teacherData, onProfileUpdated }) => {
   const navigate = useNavigate();
@@ -28,6 +29,10 @@ const TeacherDashboard = ({ teacherData, onProfileUpdated }) => {
           <Routes>
             <Route index element={<TeacherHome teacherData={teacherData} />} />
             <Route path="mark-attendance" element={<MarkAttendance />} />
+            <Route
+              path="scheduled-classes"
+              element={<ScheduledClasses teacherData={teacherData} />}
+            />
             <Route
               path="myaccount"
               element={

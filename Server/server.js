@@ -6,6 +6,7 @@ import morgan from "morgan";
 import { createServer } from "http";
 import path from "path";
 import feeReminderScheduler from "./feeReminderScheduler.js";
+import scheduleCleanup from "./scheduleCleanup.js";
 
 dotenv.config();
 
@@ -59,6 +60,7 @@ app.use("/api/teachers", TeacherController);
 app.use("/api/auth", AuthController);
 
 feeReminderScheduler();
+scheduleCleanup();
 
 app.get("/", (req, res) => {
   res.send("Hello Mentor Language Institute");

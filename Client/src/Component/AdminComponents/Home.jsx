@@ -28,6 +28,7 @@ const Home = () => {
   const [userName, setUserName] = useState("");
   const [formData, setFormData] = useState({
     name: "",
+    email: "",
     phone: "",
     password: "",
   });
@@ -123,23 +124,37 @@ const Home = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("No token found");
+        navigate("/admin-login");
+        return;
+      }
+
       const response = await post({
         url: "/admin-confi/signup-admin",
         data: formData,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }).unwrap();
 
       if (response.status === 201) {
         setPopupMessage("New Admin Has Been Created Successfully!");
         setIsFormOpen(false);
-        setFormData({ name: "", phone: "", password: "" });
+        setFormData({ name: "", email: "", phone: "", password: "" });
         setUserName(response.data.newAdmin.username);
       }
     } catch (error) {
-      if (error.response) {
-        const status = error.response.status;
-        if (status === 409) {
-          setPopupMessage("Admin Already Exists");
-        }
+      const status = error?.response?.status || error?.status;
+      if (status === 409) {
+        setPopupMessage("Admin Already Exists");
+      } else if (status === 400) {
+        setPopupMessage(error?.response?.data?.message || "Please fill all required fields.");
+      } else if (status === 401 || status === 403) {
+        setPopupMessage("Unauthorized. Please log in again.");
+      } else {
+        setPopupMessage("Failed to create admin.");
       }
     }
   };
@@ -334,6 +349,19 @@ const Home = () => {
                 value={formData.name}
                 onChange={handleChange}
                 required
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                autoComplete="off"
               />
             </div>
 

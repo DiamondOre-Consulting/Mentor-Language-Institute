@@ -61,6 +61,197 @@ const buildModeConflictMatch = (normalizedMode) => {
   return { mode: "online" };
 };
 
+const normalizeTimeSlots = (slots, expectedCount) => {
+  const normalized = Array.isArray(slots)
+    ? slots.map((item) => String(item || "").trim()).filter(Boolean)
+    : [];
+
+  if (expectedCount === 0) {
+    return { ok: true, slots: [] };
+  }
+
+  if (expectedCount > 0 && normalized.length !== expectedCount) {
+    return {
+      ok: false,
+      message: "Please provide a time for each scheduled class slot.",
+    };
+  }
+
+  if (normalized.length === 0) {
+    return { ok: true, slots: [] };
+  }
+
+  const seen = new Set();
+  for (const slot of normalized) {
+    if (!/^\d{2}:\d{2}$/.test(slot)) {
+      return {
+        ok: false,
+        message: "Time slots must be in HH:MM format.",
+      };
+    }
+    const [hh, mm] = slot.split(":").map(Number);
+    if (
+      !Number.isFinite(hh) ||
+      !Number.isFinite(mm) ||
+      hh < 0 ||
+      hh > 23 ||
+      mm < 0 ||
+      mm > 59
+    ) {
+      return {
+        ok: false,
+        message: "Time slots must be valid 24-hour times.",
+      };
+    }
+    if (seen.has(slot)) {
+      return {
+        ok: false,
+        message: "Each scheduled class must have a unique time.",
+      };
+    }
+    seen.add(slot);
+  }
+
+  return { ok: true, slots: normalized };
+};
+
+const parseClassDateParts = (dateStr = "") => {
+  const parts = String(dateStr).split(/[-/]/).map((part) => part.trim());
+  if (parts.length < 3) return null;
+
+  let yearPart = "";
+  let monthPart = "";
+  let dayPart = "";
+
+  if (parts[0].length === 4) {
+    yearPart = parts[0];
+    monthPart = parts[1];
+    dayPart = parts[2];
+  } else {
+    dayPart = parts[0];
+    monthPart = parts[1];
+    yearPart = parts[2];
+  }
+
+  const year = Number(yearPart);
+  const month = Number(monthPart);
+  const day = Number(dayPart);
+
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day) ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > 31
+  ) {
+    return null;
+  }
+
+  return { year, month, day };
+};
+
+const toStartOfDay = (parts) => {
+  if (!parts) return null;
+  const date = new Date(parts.year, parts.month - 1, parts.day);
+  if (Number.isNaN(date.getTime())) return null;
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+const isSlotLocked = (dateStr, slot, hours = 3) => {
+  if (!slot || !/^\d{2}:\d{2}$/.test(slot)) return false;
+  const parts = parseClassDateParts(dateStr);
+  if (!parts) return false;
+  const [hh, mm] = slot.split(":").map(Number);
+  if (!Number.isFinite(hh) || !Number.isFinite(mm)) return false;
+  const dt = new Date(parts.year, parts.month - 1, parts.day, hh, mm, 0, 0);
+  if (Number.isNaN(dt.getTime())) return false;
+  const lockTime = new Date(dt.getTime() - hours * 60 * 60 * 1000);
+  return new Date() >= lockTime;
+};
+
+const isSlotExpired = (dateStr, slot) => {
+  if (!slot || !/^\d{2}:\d{2}$/.test(slot)) return false;
+  const parts = parseClassDateParts(dateStr);
+  if (!parts) return false;
+  const [hh, mm] = slot.split(":").map(Number);
+  if (!Number.isFinite(hh) || !Number.isFinite(mm)) return false;
+  const dt = new Date(parts.year, parts.month - 1, parts.day, hh, mm, 0, 0);
+  if (Number.isNaN(dt.getTime())) return false;
+  return new Date() > dt;
+};
+
+const pruneExpiredDailyClasses = async (classDoc, teacherId) => {
+  if (!classDoc) return false;
+  let changed = false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const nextDailyClasses = (classDoc.dailyClasses || []).filter((entry) => {
+    if (teacherId && entry.teacherId && String(entry.teacherId) !== String(teacherId)) {
+      return true;
+    }
+
+    const slots = Array.isArray(entry.timeSlots) ? entry.timeSlots : [];
+    if (slots.length > 0) {
+      const remainingSlots = slots.filter((slot) => !isSlotExpired(entry.classDate, slot));
+      if (remainingSlots.length !== slots.length) {
+        entry.timeSlots = remainingSlots;
+        entry.numberOfClasses = String(remainingSlots.length);
+        changed = true;
+      }
+      return remainingSlots.length > 0;
+    }
+
+    const parts = parseClassDateParts(entry.classDate);
+    if (!parts) {
+      return true;
+    }
+    const entryDate = toStartOfDay(parts);
+    if (entryDate && entryDate < today) {
+      changed = true;
+      return false;
+    }
+    return true;
+  });
+
+  if (nextDailyClasses.length !== (classDoc.dailyClasses || []).length) {
+    classDoc.dailyClasses = nextDailyClasses;
+    changed = true;
+  }
+
+  if (changed) {
+    await classDoc.save();
+  }
+
+  return changed;
+};
+
+const validateNonPastClassDate = (dateStr) => {
+  const parts = parseClassDateParts(dateStr);
+  const scheduledDate = toStartOfDay(parts);
+  if (!scheduledDate) {
+    return {
+      ok: false,
+      message: "Invalid date format. Use DD-MM-YYYY or YYYY-MM-DD.",
+    };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (scheduledDate < today) {
+    return {
+      ok: false,
+      message: "Class date cannot be in the past. Please select today or a future date.",
+    };
+  }
+
+  return { ok: true };
+};
+
 const teacherHasStudentAccess = async (teacherId, studentId) => {
   const directAccess = await Teachers.exists({
     _id: teacherId,
@@ -852,6 +1043,10 @@ router.get("/my-classes", TeacherAuthenticateToken, async (req, res) => {
         .json({ message: "No classes has been assigned to you" });
     }
 
+    for (const classDoc of allMyClasses) {
+      await pruneExpiredDailyClasses(classDoc, userId);
+    }
+
     res.status(200).json(allMyClasses);
   } catch (error) {
     console.log("Something went wrong!!! ");
@@ -885,6 +1080,8 @@ router.get("/my-classes/:id", TeacherAuthenticateToken, async (req, res) => {
     );
     getClassById.dailyClasses = normalizedDailyClasses;
 
+    await pruneExpiredDailyClasses(getClassById, req.user.userId);
+
     res.status(200).json(getClassById);
   } catch (error) {
     console.log("Something went wrong!!! ");
@@ -896,23 +1093,33 @@ router.get("/my-classes/:id", TeacherAuthenticateToken, async (req, res) => {
 router.post("/schedule-class/:id",TeacherAuthenticateToken,async (req, res) => {
     try {
       const { id } = req.params;
-      const { date, numberOfClasses, mode } = req.body;
+      const { date, numberOfClasses, mode, timeSlots } = req.body;
       const normalizedMode = normalizeAttendanceMode(mode) || "offline";
       if (!date || numberOfClasses === undefined || numberOfClasses === null) {
         return res.status(400).json({
           message: "date and numberOfClasses are required.",
         });
       }
-      const parsedDate = parseClassDate(date);
-      if (!parsedDate) {
-        return res.status(400).json({
-          message: "Invalid date format. Use DD-MM-YYYY or YYYY-MM-DD.",
-        });
+      const dateValidation = validateNonPastClassDate(date);
+      if (!dateValidation.ok) {
+        return res.status(400).json({ message: dateValidation.message });
       }
       const normalizedClasses = Number(numberOfClasses);
       if (!Number.isFinite(normalizedClasses) || normalizedClasses < 0) {
         return res.status(400).json({
           message: "numberOfClasses must be a valid non-negative number.",
+        });
+      }
+      const normalizedTimeSlots = normalizeTimeSlots(timeSlots, normalizedClasses);
+      if (!normalizedTimeSlots.ok) {
+        return res.status(400).json({ message: normalizedTimeSlots.message });
+      }
+      const lockedSlots = normalizedTimeSlots.slots.filter((slot) =>
+        isSlotLocked(date, slot)
+      );
+      if (lockedSlots.length > 0) {
+        return res.status(403).json({
+          message: "You cannot schedule slots within 3 hours of their start time.",
         });
       }
 
@@ -929,6 +1136,7 @@ router.post("/schedule-class/:id",TeacherAuthenticateToken,async (req, res) => {
       if (!classDoc) {
         return res.status(404).json({ message: "Class not found." });
       }
+      await pruneExpiredDailyClasses(classDoc, req.user.userId);
 
       const existingSessionForDate = (classDoc.dailyClasses || []).find(
         (entry) =>
@@ -971,14 +1179,30 @@ router.post("/schedule-class/:id",TeacherAuthenticateToken,async (req, res) => {
       );
 
       if (existingSessionIndex >= 0) {
+        const existingSlots = Array.isArray(
+          classDoc.dailyClasses[existingSessionIndex].timeSlots
+        )
+          ? classDoc.dailyClasses[existingSessionIndex].timeSlots
+          : [];
+        const duplicateSlots = normalizedTimeSlots.slots.filter((slot) =>
+          existingSlots.includes(slot)
+        );
+        if (duplicateSlots.length > 0) {
+          return res.status(409).json({
+            message: "One or more time slots already exist for this class date.",
+          });
+        }
+        const mergedSlots = [...existingSlots, ...normalizedTimeSlots.slots];
+        classDoc.dailyClasses[existingSessionIndex].timeSlots = mergedSlots;
         classDoc.dailyClasses[existingSessionIndex].numberOfClasses =
-          String(normalizedClasses);
+          String(mergedSlots.length);
       } else {
         classDoc.dailyClasses.push({
           classDate: date,
           numberOfClasses: String(normalizedClasses),
           teacherId: req.user.userId,
           mode: normalizedMode,
+          timeSlots: normalizedTimeSlots.slots,
         });
       }
 
@@ -1189,6 +1413,91 @@ router.put("/update-attendance/:id1/:id2",
   }
 );
 
+router.put("/schedule-class/:id", TeacherAuthenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { date, mode, timeSlots } = req.body;
+    const normalizedMode = normalizeAttendanceMode(mode) || "offline";
+
+    if (!date || !Array.isArray(timeSlots)) {
+      return res.status(400).json({
+        message: "date and timeSlots are required.",
+      });
+    }
+
+    const dateValidation = validateNonPastClassDate(date);
+    if (!dateValidation.ok) {
+      return res.status(400).json({ message: dateValidation.message });
+    }
+
+    const normalizedTimeSlots = normalizeTimeSlots(timeSlots, timeSlots.length);
+    if (!normalizedTimeSlots.ok) {
+      return res.status(400).json({ message: normalizedTimeSlots.message });
+    }
+    if (normalizedTimeSlots.slots.length === 0) {
+      return res.status(400).json({ message: "At least one time slot is required." });
+    }
+
+    const assignment = await ClassTeachers.findOne({
+      classId: id,
+      teacherId: req.user.userId,
+      active: true,
+    });
+    if (!assignment) {
+      return res.status(403).json({ message: "Unauthorized." });
+    }
+
+    const classDoc = await Classes.findById(id);
+    if (!classDoc) {
+      return res.status(404).json({ message: "Class not found." });
+    }
+    await pruneExpiredDailyClasses(classDoc, req.user.userId);
+
+    const sessionIndex = (classDoc.dailyClasses || []).findIndex(
+      (entry) =>
+        entry.classDate === date &&
+        String(entry.teacherId) === String(req.user.userId) &&
+        (normalizeAttendanceMode(entry.mode) || "offline") === normalizedMode
+    );
+
+    if (sessionIndex < 0) {
+      return res.status(404).json({ message: "Scheduled class not found." });
+    }
+
+    const session = classDoc.dailyClasses[sessionIndex];
+    const existingSlots = Array.isArray(session.timeSlots) ? session.timeSlots : [];
+    const lockedSlots = existingSlots.filter((slot) => isSlotLocked(date, slot));
+
+    for (const lockedSlot of lockedSlots) {
+      if (!normalizedTimeSlots.slots.includes(lockedSlot)) {
+        return res.status(403).json({
+          message: "Locked slots cannot be removed or changed.",
+        });
+      }
+    }
+
+    const lockedSet = new Set(lockedSlots);
+    const lockedViolations = normalizedTimeSlots.slots.filter(
+      (slot) => !lockedSet.has(slot) && isSlotLocked(date, slot)
+    );
+    if (lockedViolations.length > 0) {
+      return res.status(403).json({
+        message: "You cannot set slots within 3 hours of their start time.",
+      });
+    }
+
+    session.timeSlots = normalizedTimeSlots.slots;
+    session.numberOfClasses = String(normalizedTimeSlots.slots.length);
+
+    await classDoc.save();
+
+    return res.status(200).json({ message: "Schedule updated successfully." });
+  } catch (error) {
+    console.error("Schedule update failed:", error);
+    res.status(500).json({ message: "Unable to update schedule." });
+  }
+});
+
 // BULK MARK ATTENDANCE FOR A CLASS DATE
 router.post(
   "/attendance/bulk/:classId",
@@ -1211,6 +1520,10 @@ router.post(
         return res
           .status(400)
           .json({ message: "classDate and numberOfClasses are required." });
+      }
+      const dateValidation = validateNonPastClassDate(classDate);
+      if (!dateValidation.ok) {
+        return res.status(400).json({ message: dateValidation.message });
       }
 
       const classDoc = await Classes.findById(classId).select(
@@ -1534,6 +1847,10 @@ router.post(
         .status(400)
         .json({ message: "Missing classDate or numberOfClassesTaken." });
     }
+    const dateValidation = validateNonPastClassDate(classDate);
+    if (!dateValidation.ok) {
+      return res.status(400).json({ message: dateValidation.message });
+    }
 
     const student = await Students.findById(studentId).populate("classes");
 
@@ -1669,6 +1986,12 @@ router.put(
       const normalizedMode = normalizeAttendanceMode(mode);
       if (mode !== undefined && normalizedMode === null) {
         return res.status(400).json({ message: "Invalid mode. Use online or offline." });
+      }
+      if (classDate) {
+        const dateValidation = validateNonPastClassDate(classDate);
+        if (!dateValidation.ok) {
+          return res.status(400).json({ message: dateValidation.message });
+        }
       }
 
       // Find attendance doc by studentId (and other filters if you want)

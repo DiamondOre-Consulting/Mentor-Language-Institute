@@ -56,6 +56,10 @@ const classSchema = new mongoose.Schema({
           enum: ["online", "offline"],
           default: "offline",
         },
+        timeSlots: {
+          type: [String],
+          default: [],
+        },
         isHeld: {
           type: Boolean,
           default: false,

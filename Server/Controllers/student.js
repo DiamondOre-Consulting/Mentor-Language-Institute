@@ -241,8 +241,9 @@ router.put("/update-profile", StudentAuthenticateToken, async (req, res) => {
 
 router.get("/all-courses", StudentAuthenticateToken, async (req, res) => {
   try {
-    const student = await Students.findById(req.user.userId).select("grade");
+    const student = await Students.findById(req.user.userId).select("grade classes");
     const studentGrade = normalizeGradeValue(student?.grade);
+    const enrolledSet = new Set((student?.classes || []).map((id) => String(id)));
     console.log("=== STUDENT ALL-COURSES DEBUG ===");
     console.log("Student userId:", req.user.userId);
     const allCourses = await Classes.find({}).lean();
@@ -279,7 +280,15 @@ router.get("/all-courses", StudentAuthenticateToken, async (req, res) => {
     console.log("Filtered courses for grade:", filteredCourses.length);
     console.log("================================");
 
-    res.status(200).json(filteredCourses);
+    const sanitizedCourses = filteredCourses.map((course) => {
+      const isEnrolled = enrolledSet.has(String(course._id));
+      if (!isEnrolled) {
+        return { ...course, dailyClasses: [], isEnrolled };
+      }
+      return { ...course, isEnrolled };
+    });
+
+    res.status(200).json(sanitizedCourses);
   } catch (error) {
     console.log("Something went wrong!!! ");
     res.status(500).json(error);
@@ -301,10 +310,10 @@ router.get("/all-courses/:id", StudentAuthenticateToken, async (req, res) => {
         await singleCourse.save();
       }
     }
+    const isEnrolled = (student?.classes || []).some(
+      (classId) => String(classId) === String(id)
+    );
     if (!isGradeMatch(singleCourse?.grade, student?.grade)) {
-      const isEnrolled = (student?.classes || []).some(
-        (classId) => String(classId) === String(id)
-      );
       if (!isEnrolled) {
         return res
           .status(404)
@@ -316,7 +325,16 @@ router.get("/all-courses/:id", StudentAuthenticateToken, async (req, res) => {
       active: true,
     }).populate({ path: "teacherId", select: "-password" });
 
-    res.status(200).json({ ...singleCourse.toObject(), teachers });
+    const coursePayload = {
+      ...singleCourse.toObject(),
+      teachers,
+      isEnrolled,
+    };
+    if (!isEnrolled) {
+      coursePayload.dailyClasses = [];
+    }
+
+    res.status(200).json(coursePayload);
   } catch (error) {
     console.log("Something went wrong!!! ");
     res.status(500).json(error);

@@ -15,15 +15,71 @@ import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
  
 
+const parseClassDateParts = (dateStr = "") => {
+  const parts = String(dateStr).split(/[-/]/).map((part) => part.trim());
+  if (parts.length < 3) return null;
+
+  let yearPart = "";
+  let monthPart = "";
+  let dayPart = "";
+
+  if (parts[0].length === 4) {
+    yearPart = parts[0];
+    monthPart = parts[1];
+    dayPart = parts[2];
+  } else {
+    dayPart = parts[0];
+    monthPart = parts[1];
+    yearPart = parts[2];
+  }
+
+  const year = Number(yearPart);
+  const month = Number(monthPart);
+  const day = Number(dayPart);
+
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day) ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > 31
+  ) {
+    return null;
+  }
+
+  return { year, month, day };
+};
+
+const isSlotLocked = (dateStr, slot, hours = 3) => {
+  if (!slot || !/^\d{2}:\d{2}$/.test(slot)) return false;
+  const parts = parseClassDateParts(dateStr);
+  if (!parts) return false;
+  const [hh, mm] = slot.split(":").map(Number);
+  if (!Number.isFinite(hh) || !Number.isFinite(mm)) return false;
+  const dt = new Date(parts.year, parts.month - 1, parts.day, hh, mm, 0, 0);
+  if (Number.isNaN(dt.getTime())) return false;
+  const lockTime = new Date(dt.getTime() - hours * 60 * 60 * 1000);
+  return new Date() >= lockTime;
+};
+
 const TeacherHome = ({ teacherData }) => {
   const navigate = useNavigate();
   const { get, post, put } = useApi();
+  const todayIso = (() => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    return now.toISOString().slice(0, 10);
+  })();
   const [showPopup, setShowPopup] = useState(false);
   const [showScheduleClass, setShowScheduleClass] = useState(false);
   const [classesData, setClassesData] = useState([]);
   const [selectedClassId, setSelectedClassId] = useState("");
   const [date, setDate] = useState(null);
   const [numberOfClasses, setNumberOfClasses] = useState(0);
+  const [scheduleMode, setScheduleMode] = useState("offline");
+  const [timeSlots, setTimeSlots] = useState([]);
   const [oneClassDetails, setOneClassDetails] = useState("");
   const [loading, setLoading] = useState(true);
   const [updateHoursInput, setUpdateHoursInput] = useState(0);
@@ -103,13 +159,49 @@ const TeacherHome = ({ teacherData }) => {
     }
   }, [selectedClassId]);
 
+  useEffect(() => {
+    if (showScheduleClass) {
+      setDate(null);
+      setNumberOfClasses(0);
+      setScheduleMode("offline");
+      setTimeSlots([]);
+    }
+  }, [showScheduleClass]);
+
   const handleScheduleClass = async () => {
     try {
       setShowLoader(true);
+      const slotsCount = Number(numberOfClasses) || 0;
+      const trimmedSlots = timeSlots.map((slot) => String(slot || "").trim());
+      if (slotsCount > 0) {
+        const filled = trimmedSlots.filter(Boolean);
+        if (filled.length !== slotsCount) {
+          alert("Please select a time for each class slot.");
+          setShowLoader(false);
+          return;
+        }
+        const unique = new Set(filled);
+        if (unique.size !== filled.length) {
+          alert("Each class slot must have a different time.");
+          setShowLoader(false);
+          return;
+        }
+        const lockedSlots = filled.filter((slot) => isSlotLocked(date, slot));
+        if (lockedSlots.length > 0) {
+          alert("You cannot schedule a slot within 3 hours of its start time.");
+          setShowLoader(false);
+          return;
+        }
+      }
 
       const response = await post({
         url: `/teachers/schedule-class/${selectedClassId}`,
-        data: { date, numberOfClasses },
+        data: {
+          date,
+          numberOfClasses,
+          mode: scheduleMode,
+          timeSlots: trimmedSlots,
+        },
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -181,6 +273,28 @@ const TeacherHome = ({ teacherData }) => {
     } catch (error) {
       console.error("Failed to update hours:", error);
     }
+  };
+
+  const existingSession = (oneClassDetails?.dailyClasses || []).find(
+    (entry) =>
+      entry.classDate === date &&
+      (entry.mode || "offline") === scheduleMode
+  );
+  const lockedNewSlots = timeSlots.filter((slot) => isSlotLocked(date, slot));
+
+  const handleNumberOfClassesChange = (value) => {
+    const count = Math.max(0, Number(value) || 0);
+    setNumberOfClasses(count);
+    setTimeSlots((prev) => {
+      const next = [...prev];
+      if (next.length > count) {
+        return next.slice(0, count);
+      }
+      while (next.length < count) {
+        next.push("");
+      }
+      return next;
+    });
   };
 
   return (
@@ -371,27 +485,100 @@ const TeacherHome = ({ teacherData }) => {
             <DialogDescription>{oneClassDetails.classTitle}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {existingSession?.timeSlots?.length > 0 && (
+              <div className="rounded-xl border border-orange-100 bg-orange-50/60 p-3 text-xs text-slate-600">
+                <p className="font-semibold text-slate-700">
+                  Existing slots for this date & mode
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {existingSession.timeSlots.map((slot, idx) => (
+                    <span
+                      key={`${slot}-${idx}`}
+                      className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                        isSlotLocked(date, slot)
+                          ? "border-rose-200 bg-rose-50 text-rose-700"
+                          : "border-orange-200 bg-white text-orange-700"
+                      }`}
+                    >
+                      {slot}
+                    </span>
+                  ))}
+                </div>
+                <p className="mt-2 text-[11px] text-slate-500">
+                  New timings you add will be appended (existing timings are kept).
+                </p>
+              </div>
+            )}
             <div className="grid gap-2">
               <Label>Select Date</Label>
               <Input
                 type="date"
                 value={date ? date.split("-").reverse().join("-") : ""}
                 onChange={handleDateChange}
+                min={todayIso}
               />
+            </div>
+            <div className="grid gap-2">
+              <Label>Class Mode</Label>
+              <select
+                value={scheduleMode}
+                onChange={(e) => setScheduleMode(e.target.value)}
+                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+              >
+                <option value="offline">Offline</option>
+                <option value="online">Online</option>
+              </select>
             </div>
             <div className="grid gap-2">
               <Label>Number of Classes</Label>
               <Input
                 type="number"
                 value={numberOfClasses}
-                onChange={(e) => setNumberOfClasses(e.target.value)}
+                onChange={(e) => handleNumberOfClassesChange(e.target.value)}
                 placeholder="Enter number of classes"
               />
             </div>
+            {Number(numberOfClasses) > 0 && (
+              <div className="grid gap-3">
+                <Label>Class Timings</Label>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {timeSlots.map((slot, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm"
+                    >
+                      <span className="text-xs font-semibold text-slate-500">
+                        Slot {idx + 1}
+                      </span>
+                      <input
+                        type="time"
+                        value={slot}
+                        onChange={(e) =>
+                          setTimeSlots((prev) => {
+                            const next = [...prev];
+                            next[idx] = e.target.value;
+                            return next;
+                          })
+                        }
+                        className="rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-slate-700"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-slate-500">
+                  Choose different timings for each class slot.
+                </p>
+              </div>
+            )}
+            {lockedNewSlots.length > 0 && (
+              <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                One or more selected slots are within 3 hours of start time.
+              </div>
+            )}
           </div>
           <DialogFooter className="mt-4">
             <Button onClick={handleScheduleClass} disabled={showLoader}>
-              {showLoader ? "Scheduling..." : "Schedule Class"}
+              {showLoader ? "Scheduling..." : existingSession ? "Add Slots" : "Schedule Class"}
             </Button>
           </DialogFooter>
         </DialogContent>

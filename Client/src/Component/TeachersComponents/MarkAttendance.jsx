@@ -4,6 +4,11 @@ import { useApi } from "../../api/useApi";
 const MarkAttendance = () => {
   const { get, post } = useApi();
   const token = localStorage.getItem("token");
+  const todayIso = (() => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    return now.toISOString().slice(0, 10);
+  })();
   const [classes, setClasses] = useState([]);
   const [selectedClassId, setSelectedClassId] = useState("");
   const [studentList, setStudentList] = useState([]);
@@ -213,6 +218,7 @@ const MarkAttendance = () => {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
+            min={todayIso}
             className="border px-3 py-1 rounded-md w-full sm:w-auto"
           />
 

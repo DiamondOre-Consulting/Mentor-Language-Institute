@@ -41,11 +41,9 @@ const Login = ({ defaultTab }) => {
   };
 
   const [activeTab, setActiveTab] = useState(resolveDefaultTab);
-  const [teacherLoginMode, setTeacherLoginMode] = useState("email");
   const [teacherIdentifier, setTeacherIdentifier] = useState("");
   const [adminIdentifier, setAdminIdentifier] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
-  const [studentLoginMode, setStudentLoginMode] = useState("email");
   const [studentIdentifier, setStudentIdentifier] = useState("");
   const [studentPassword, setStudentPassword] = useState("");
   const [teacherPassword, setTeacherPassword] = useState("");
@@ -115,8 +113,6 @@ const Login = ({ defaultTab }) => {
         url: "/teachers/login-teacher",
         data: {
           identifier: teacherIdentifier,
-          email: teacherLoginMode === "email" ? teacherIdentifier : undefined,
-          phone: teacherLoginMode === "phone" ? teacherIdentifier : undefined,
           password: teacherPassword,
         },
       }).unwrap();
@@ -159,8 +155,6 @@ const Login = ({ defaultTab }) => {
         url: "/students/login",
         data: {
           identifier: studentIdentifier,
-          email: studentLoginMode === "email" ? studentIdentifier : undefined,
-          phone: studentLoginMode === "phone" ? studentIdentifier : undefined,
           password: studentPassword,
         },
       }).unwrap();
@@ -308,7 +302,7 @@ const Login = ({ defaultTab }) => {
                             autoCorrect="off"
                             autoCapitalize="none"
                             spellCheck={false}
-                            placeholder="Enter Email"
+                            placeholder="Enter Email or Username"
                             className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                             required=""
                           />
@@ -426,7 +420,7 @@ const Login = ({ defaultTab }) => {
                       >
                         <div>
                           <input
-                            type={teacherLoginMode === "phone" ? "tel" : "email"}
+                            type="text"
                             name="teacherIdentifier"
                             value={teacherIdentifier}
                             onChange={(e) => setTeacherIdentifier(e.target.value)}
@@ -434,30 +428,11 @@ const Login = ({ defaultTab }) => {
                             autoCorrect="off"
                             autoCapitalize="none"
                             spellCheck={false}
-                            placeholder={
-                              teacherLoginMode === "phone"
-                                ? "Enter Phone Number"
-                                : "Enter Email"
-                            }
+                            placeholder="Enter Mail or Mobile number"
                             className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                             required=""
                           />
                         </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setTeacherLoginMode((prev) => {
-                              const next = prev === "email" ? "phone" : "email";
-                              setTeacherIdentifier("");
-                              return next;
-                            })
-                          }
-                          className="text-xs text-indigo-600 hover:text-indigo-700"
-                        >
-                          {teacherLoginMode === "email"
-                            ? "Forgot email? Use phone instead"
-                            : "Use email instead"}
-                        </button>
                         <div>
                           <label htmlFor="password" className="sr-only">
                             Password
@@ -572,7 +547,7 @@ const Login = ({ defaultTab }) => {
                       >
                         <div>
                           <input
-                            type={studentLoginMode === "phone" ? "tel" : "email"}
+                            type="text"
                             name="studentIdentifier"
                             value={studentIdentifier}
                             onChange={(e) =>
@@ -582,30 +557,11 @@ const Login = ({ defaultTab }) => {
                             autoCorrect="off"
                             autoCapitalize="none"
                             spellCheck={false}
-                            placeholder={
-                              studentLoginMode === "phone"
-                                ? "Enter Phone Number"
-                                : "Enter Email"
-                            }
+                            placeholder="Enter Mail or Mobile number"
                             className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                             required=""
                           />
                         </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setStudentLoginMode((prev) => {
-                              const next = prev === "email" ? "phone" : "email";
-                              setStudentIdentifier("");
-                              return next;
-                            })
-                          }
-                          className="text-xs text-indigo-600 hover:text-indigo-700"
-                        >
-                          {studentLoginMode === "email"
-                            ? "Forgot email? Use phone instead"
-                            : "Use email instead"}
-                        </button>
                         <div>
                           <label htmlFor="password" className="sr-only">
                             Password
@@ -690,7 +646,7 @@ const Login = ({ defaultTab }) => {
           <DialogHeader>
             <DialogTitle>Reset password</DialogTitle>
             <DialogDescription>
-              Enter your email, phone number, or username and we will send a reset link.
+              Enter your email, phone number and we will send a reset link.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -700,10 +656,10 @@ const Login = ({ defaultTab }) => {
               onChange={(e) => setResetIdentifier(e.target.value)}
               placeholder={
                 resetRole === "admin"
-                  ? "Email or username"
+                  ? "Email"
                   : resetRole === "teacher"
                     ? "Email or phone"
-                    : "Email, phone, or username"
+                    : "Email, phone "
               }
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
             />

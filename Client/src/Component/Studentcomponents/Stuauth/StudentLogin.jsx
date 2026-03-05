@@ -217,7 +217,7 @@ const StudentLogin = () => {
           <DialogHeader>
             <DialogTitle>Reset password</DialogTitle>
             <DialogDescription>
-              Enter your email, phone number, or username and we will send a reset link.
+              Enter your email, phone number and we will send a reset link.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">

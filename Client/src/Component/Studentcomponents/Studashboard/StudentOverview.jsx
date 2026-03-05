@@ -6,11 +6,71 @@ const toNumber = (value) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const parseClassDateParts = (dateStr = "") => {
+  const parts = String(dateStr).split(/[-/]/).map((part) => part.trim());
+  if (parts.length < 3) return null;
+
+  let yearPart = "";
+  let monthPart = "";
+  let dayPart = "";
+
+  if (parts[0].length === 4) {
+    yearPart = parts[0];
+    monthPart = parts[1];
+    dayPart = parts[2];
+  } else {
+    dayPart = parts[0];
+    monthPart = parts[1];
+    yearPart = parts[2];
+  }
+
+  const year = Number(yearPart);
+  const month = Number(monthPart);
+  const day = Number(dayPart);
+
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day) ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > 31
+  ) {
+    return null;
+  }
+
+  return { year, month, day };
+};
+
+const toDateFromParts = (parts) => {
+  if (!parts) return null;
+  const date = new Date(parts.year, parts.month - 1, parts.day);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const toDateSafe = (value) => {
+  const parts = parseClassDateParts(value);
+  const parsed = toDateFromParts(parts);
+  if (parsed) return parsed;
+  const fallback = new Date(value);
+  return Number.isNaN(fallback.getTime()) ? null : fallback;
+};
+
 const formatDate = (value) => {
   if (!value) return "TBA";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "TBA";
+  const date = toDateSafe(value);
+  if (!date) return "TBA";
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+};
+
+const formatTime = (value) => {
+  if (!value) return "TBA";
+  const [hh, mm] = String(value).split(":").map(Number);
+  if (!Number.isFinite(hh) || !Number.isFinite(mm)) return value;
+  const date = new Date();
+  date.setHours(hh, mm, 0, 0);
+  return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 };
 
 const getProfileCompletion = (student) => {
@@ -74,6 +134,7 @@ const StatCard = ({ icon, label, value, color = "#f97316", delay = 0 }) => (
 const StudentOverview = ({ student }) => {
   const { get } = useApi();
   const [loading, setLoading] = useState(false);
+  const [expandedSessionKey, setExpandedSessionKey] = useState(null);
   const [summary, setSummary] = useState({
     enrolledCount: 0,
     appliedCount: 0,
@@ -124,7 +185,10 @@ const StudentOverview = ({ student }) => {
         const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
         const upcomingSessions = scheduleEntries
-          .map((e) => { const d = new Date(e.classDate); return Number.isNaN(d.getTime()) ? null : { ...e, dateValue: d }; })
+          .map((e) => {
+            const d = toDateSafe(e.classDate);
+            return d ? { ...e, dateValue: d } : null;
+          })
           .filter(Boolean)
           .filter((e) => e.dateValue >= todayStart)
           .sort((a, b) => a.dateValue - b.dateValue)
@@ -278,42 +342,95 @@ const StudentOverview = ({ student }) => {
               </div>
             )}
             {summary.upcomingSessions.map((session, i) => (
-              <div
-                key={`${session.courseTitle}-${session.classDate}`}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "0.75rem 0.875rem",
-                  background: "#fff7ed",
-                  border: "1px solid #fed7aa",
-                  borderRadius: "0.75rem",
-                  gap: "0.75rem",
-                  animation: `fadeUp 0.3s ${i * 0.05}s ease both`,
-                }}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <p style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.85rem", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {session.courseTitle}
-                  </p>
-                  <p style={{ fontSize: "0.72rem", color: "#78716c", margin: "2px 0 0" }}>
-                    {session.numberOfClasses ? `${session.numberOfClasses} class(es)` : "Session"}
-                  </p>
-                </div>
-                <span
+              <div key={`${session.courseTitle}-${session.classDate}`}>
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    const key = `${session.courseTitle}-${session.classDate}-${i}`;
+                    setExpandedSessionKey((prev) => (prev === key ? null : key));
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      const key = `${session.courseTitle}-${session.classDate}-${i}`;
+                      setExpandedSessionKey((prev) => (prev === key ? null : key));
+                    }
+                  }}
                   style={{
-                    flexShrink: 0,
-                    background: "linear-gradient(135deg, #f97316, #fb923c)",
-                    color: "#fff",
-                    borderRadius: "999px",
-                    padding: "0.2rem 0.625rem",
-                    fontSize: "0.68rem",
-                    fontWeight: 700,
-                    whiteSpace: "nowrap",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "0.75rem 0.875rem",
+                    background: "#fff7ed",
+                    border: "1px solid #fed7aa",
+                    borderRadius: "0.75rem",
+                    gap: "0.75rem",
+                    cursor: "pointer",
+                    animation: `fadeUp 0.3s ${i * 0.05}s ease both`,
                   }}
                 >
-                  {session.label}
-                </span>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.85rem", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {session.courseTitle}
+                    </p>
+                    <p style={{ fontSize: "0.72rem", color: "#78716c", margin: "2px 0 0" }}>
+                      {session.numberOfClasses ? `${session.numberOfClasses} class(es)` : "Session"}
+                    </p>
+                  </div>
+                  <span
+                    style={{
+                      flexShrink: 0,
+                      background: "linear-gradient(135deg, #f97316, #fb923c)",
+                      color: "#fff",
+                      borderRadius: "999px",
+                      padding: "0.2rem 0.625rem",
+                      fontSize: "0.68rem",
+                      fontWeight: 700,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {session.label}
+                  </span>
+                </div>
+
+                {expandedSessionKey === `${session.courseTitle}-${session.classDate}-${i}` && (
+                  <div
+                    style={{
+                      marginTop: "0.5rem",
+                      padding: "0.65rem 0.75rem",
+                      background: "#ffffff",
+                      border: "1px solid #fed7aa",
+                      borderRadius: "0.65rem",
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    {Array.isArray(session.timeSlots) && session.timeSlots.length > 0 ? (
+                      session.timeSlots.map((slot, idx) => (
+                        <span
+                          key={`${session.classDate}-${slot}-${idx}`}
+                          style={{
+                            background: "#ffedd5",
+                            color: "#9a3412",
+                            border: "1px solid #fdba74",
+                            borderRadius: "999px",
+                            padding: "0.2rem 0.6rem",
+                            fontSize: "0.7rem",
+                            fontWeight: 700,
+                          }}
+                        >
+                          {formatTime(slot)}
+                        </span>
+                      ))
+                    ) : (
+                      <span style={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+                        Time TBA
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>

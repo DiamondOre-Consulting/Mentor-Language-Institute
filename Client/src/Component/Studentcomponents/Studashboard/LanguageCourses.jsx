@@ -27,10 +27,54 @@ const toNumber = (value) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const parseClassDateParts = (dateStr = "") => {
+  const parts = String(dateStr).split(/[-/]/).map((part) => part.trim());
+  if (parts.length < 3) return null;
+
+  let yearPart = "";
+  let monthPart = "";
+  let dayPart = "";
+
+  if (parts[0].length === 4) {
+    yearPart = parts[0];
+    monthPart = parts[1];
+    dayPart = parts[2];
+  } else {
+    dayPart = parts[0];
+    monthPart = parts[1];
+    yearPart = parts[2];
+  }
+
+  const year = Number(yearPart);
+  const month = Number(monthPart);
+  const day = Number(dayPart);
+
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day) ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > 31
+  ) {
+    return null;
+  }
+
+  return { year, month, day };
+};
+
+const toDateFromParts = (parts) => {
+  if (!parts) return null;
+  const date = new Date(parts.year, parts.month - 1, parts.day);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
 const formatDate = (value) => {
   if (!value) return "TBA";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "TBA";
+  const parts = parseClassDateParts(value);
+  const date = toDateFromParts(parts);
+  if (!date) return "TBA";
   return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -46,8 +90,8 @@ const getScheduleSummary = (course) => {
   );
   const upcoming = entries
     .map((entry) => {
-      const date = new Date(entry.classDate);
-      if (Number.isNaN(date.getTime())) return null;
+      const date = toDateFromParts(parseClassDateParts(entry.classDate));
+      if (!date) return null;
       return { ...entry, date };
     })
     .filter(Boolean)
@@ -212,7 +256,8 @@ const LanguageCourses = () => {
     fetchAllcourses();
   }, []);
 
-  const scheduleSummary = getScheduleSummary(Eachcourse);
+  const canViewSchedule = Boolean(Eachcourse?.isEnrolled);
+  const scheduleSummary = canViewSchedule ? getScheduleSummary(Eachcourse) : { totalSessions: 0, upcoming: [] };
   const mentorNames = getMentorNames(Eachcourse);
 
   const handleApplyCourse = async (courseId) => {
@@ -304,10 +349,18 @@ const LanguageCourses = () => {
   };
 
   const CourseCard = ({ course }) => {
-    const schedule = getScheduleSummary(course);
+    const isEnrolled = Boolean(course?.isEnrolled);
+    const schedule = isEnrolled ? getScheduleSummary(course) : { totalSessions: 0, upcoming: [] };
+    const scheduleLabel = course.classSchedule?.trim() || "Flexible / TBA";
+    const nextSession = isEnrolled ? (schedule.upcoming?.[0]?.label || "TBA") : "Enroll to view";
+    const sessionCountLabel = isEnrolled
+      ? schedule.totalSessions
+        ? `${schedule.totalSessions} sessions`
+        : "TBA"
+      : "Enroll to view";
 
     return (
-      <Card className="group relative flex h-full min-h-[14rem] flex-col overflow-hidden rounded-xl border border-orange-100/70 bg-white/95 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-md">
+      <Card className="group relative flex h-full min-h-[16rem] flex-col overflow-hidden rounded-xl border border-orange-100/70 bg-white/95 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-md">
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-200" />
         <CardHeader className="relative z-10 pb-2 pt-4 px-4 sm:px-5">
           <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -315,19 +368,31 @@ const LanguageCourses = () => {
               {course.grade || "General"}
             </span>
             <span className="text-[10px] font-medium text-slate-500">
-              {schedule.totalSessions ? `${schedule.totalSessions} sessions` : "TBA"}
+              {sessionCountLabel}
             </span>
           </div>
-          <CardTitle className="text-sm font-bold leading-tight text-slate-900 sm:text-base line-clamp-2 group-hover:text-orange-600 transition-colors">
+          <CardTitle className="course-title text-sm font-semibold leading-tight text-slate-900 sm:text-base line-clamp-2 group-hover:text-orange-600 transition-colors">
             {course.classTitle}
           </CardTitle>
         </CardHeader>
         <CardContent className="relative z-10 mt-auto flex flex-col gap-3 pb-4 px-4 sm:px-5">
-          <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-[11px]">
+          <div className="grid grid-cols-3 gap-2 rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-[11px]">
             <div className="flex flex-col">
               <span className="text-[9px] uppercase tracking-wide text-slate-400">Duration</span>
               <span className="font-semibold text-slate-700">{course.totalHours || "--"} hrs</span>
             </div>
+            <div className="flex flex-col">
+              <span className="text-[9px] uppercase tracking-wide text-slate-400">Schedule</span>
+              <span className="font-semibold text-slate-700 line-clamp-1">{scheduleLabel}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[9px] uppercase tracking-wide text-slate-400">Next</span>
+              <span className="font-semibold text-slate-700">{nextSession}</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-500">
+            <span>Branch: {course.branch || "Main"}</span>
+            <span>Added: {formatDate(course.createdAt)}</span>
           </div>
           <Button
             size="sm"
@@ -428,7 +493,7 @@ const LanguageCourses = () => {
               {[
                 { icon: "🎓", label: "Grade", value: Eachcourse?.grade || "All levels" },
                 { icon: "⏱️", label: "Duration", value: Eachcourse?.totalHours ? `${Eachcourse.totalHours} hrs` : "TBA" },
-                { icon: "📅", label: "Sessions", value: scheduleSummary.totalSessions || "TBA" },
+                { icon: "📅", label: "Sessions", value: canViewSchedule ? (scheduleSummary.totalSessions || "TBA") : "Enroll to view" },
                 { icon: "🏫", label: "Branch", value: Eachcourse?.branch || "Main" },
               ].map((stat) => (
                 <div
@@ -454,7 +519,13 @@ const LanguageCourses = () => {
                 </div>
               )}
 
-              {scheduleSummary.upcoming.length > 0 && (
+              {!canViewSchedule && (
+                <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "0.875rem", padding: "0.875rem 1rem", fontSize: "0.8rem", color: "#64748b" }}>
+                  Enroll to view scheduled session dates and timings.
+                </div>
+              )}
+
+              {canViewSchedule && scheduleSummary.upcoming.length > 0 && (
                 <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "0.875rem", padding: "0.875rem 1rem" }}>
                   <p style={{ fontSize: "0.62rem", textTransform: "uppercase", letterSpacing: "0.07em", color: "#9ca3af", fontWeight: 600, marginBottom: "0.5rem" }}>📆 Upcoming Sessions</p>
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>

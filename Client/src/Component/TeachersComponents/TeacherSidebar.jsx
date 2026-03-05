@@ -15,6 +15,7 @@ import { Sheet, SheetContent, SheetTrigger } from "../../components/ui/sheet";
 const navItems = [
   { label: "Home", to: "/teacher-dashboard/", icon: "home" },
   { label: "Mark Attendance", to: "/teacher-dashboard/mark-attendance", icon: "attendance" },
+  { label: "Scheduled Classes", to: "/teacher-dashboard/scheduled-classes", icon: "calendar" },
   { label: "All Students", to: "/teacher-dashboard/all-students", icon: "students" },
   { label: "Add Student", to: "/teacher-dashboard/add-student", icon: "add" },
   { label: "My Account", to: "/teacher-dashboard/myaccount", icon: "profile" },
@@ -49,6 +50,24 @@ const renderIcon = (icon) => {
         viewBox="0 0 20 20"
       >
         <path d="m17.418 3.623-.018-.008a6.713 6.713 0 0 0-2.4-.569V2h1a1 1 0 1 0 0-2h-2a1 1 0 0 0-1 1v2H9.89A6.977 6.977 0 0 1 12 8v5h-2V8A5 5 0 1 0 0 8v6a1 1 0 0 0 1 1h8v4a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-4h6a1 1 0 0 0 1-1V8a5 5 0 0 0-2.582-4.377ZM6 12H4a1 1 0 0 1 0-2h2a1 1 0 0 1 0 2Z" />
+      </svg>
+    );
+  }
+
+  if (icon === "calendar") {
+    return (
+      <svg
+        className="h-5 w-5"
+        aria-hidden="true"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          fillRule="evenodd"
+          d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a2 2 0 0 1 2 2v2H3V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1Zm14 8H3v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-9Zm-5 3a1 1 0 0 1 0 2h-2v2a1 1 0 1 1-2 0v-2H9a1 1 0 0 1 0-2h2V11a1 1 0 1 1 2 0v2h2Z"
+          clipRule="evenodd"
+        />
       </svg>
     );
   }
