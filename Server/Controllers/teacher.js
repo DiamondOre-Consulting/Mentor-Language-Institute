@@ -27,7 +27,7 @@ import {
   formatFeeMonthLabel,
 } from "../utils/fee.js";
 import { findStudentUniquenessConflict } from "../utils/studentValidation.js";
-import { createRefreshTokenRecord, setRefreshCookie, signAccessToken } from "../utils/authTokens.js";
+import { createRefreshTokenRecord, setAccessCookie, setRefreshCookie, signAccessToken } from "../utils/authTokens.js";
 import { deleteStudentCascade } from "../utils/deleteStudentCascade.js";
 import { isValidPhone, normalizePhone } from "../utils/phone.js";
 
@@ -331,6 +331,7 @@ router.post("/login-teacher", async (req, res) => {
       userId: user._id,
       role: "teacher",
     });
+    setAccessCookie(res, token);
     setRefreshCookie(res, refreshToken);
 
     return res.status(200).json({ token });

@@ -1,8 +1,12 @@
 import jwt from "jsonwebtoken";
+import { getCookieValue } from "../utils/cookies.js";
 
 const AdminAuthenticateToken = (req, res, next) => {
   // Get the JWT token from the request headers
-  const token = req.headers.authorization?.split(" ")[1];
+  const headerToken = req.headers.authorization?.split(" ")[1];
+  const cookieToken = getCookieValue(req, "ml_access");
+  const token = headerToken || cookieToken;
+
   if (!token) {
     return res.status(401).json({ message: "Authorization token not found" });
   }
@@ -17,6 +21,15 @@ const AdminAuthenticateToken = (req, res, next) => {
     // Proceed to the next middleware or route handler
     next();
   } catch (error) {
+    if (cookieToken && cookieToken !== token) {
+      try {
+        const decoded = jwt.verify(cookieToken, process.env.ADMIN_JWT_SECRET);
+        req.user = decoded;
+        return next();
+      } catch (cookieError) {
+        // fall through
+      }
+    }
     return res.status(401).json({ message: "Invalid token" });
   }
 };

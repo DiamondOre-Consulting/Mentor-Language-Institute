@@ -1,14 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useApi } from "../../api/useApi";
-import { ClipLoader } from "react-spinners";
-import { css } from "@emotion/react";
-
-const override = css`
-  display: block;
-  margin: 0 auto;
-  border-color: red;
-`;
+import EmptyState from "../Common/EmptyState";
+import { TableSkeleton } from "../Common/ListSkeleton";
 
 const monthNumberToName = (monthNumber) => {
   if (typeof monthNumber === "string") {
@@ -46,28 +39,19 @@ const buildKey = ({ studentId, classId, feeMonth }) =>
   `${studentId}-${classId}-${feeMonth}`;
 
 const PendingPayments = () => {
-  const navigate = useNavigate();
   const { get, put } = useApi();
   const [pendingPayments, setPendingPayments] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const [isBusy, setIsBusy] = useState(false);
   const [amounts, setAmounts] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [message, setMessage] = useState("");
 
   const fetchPendingPayments = async () => {
     try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
+      setIsFetching(true);
       const response = await get({
         url: "/admin-confi/pending-payments",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       }).unwrap();
 
       if (response.status === 200) {
@@ -85,7 +69,7 @@ const PendingPayments = () => {
     } catch (error) {
       console.error("Error fetching pending payments:", error);
     } finally {
-      setLoading(false);
+      setIsFetching(false);
     }
   };
 
@@ -121,14 +105,8 @@ const PendingPayments = () => {
     }
 
     try {
-      setLoading(true);
+      setIsBusy(true);
       setMessage("");
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
       const response = await put({
         url: `/admin-confi/update-fee/${item.classId}/${item.studentId}`,
         data: {
@@ -136,9 +114,6 @@ const PendingPayments = () => {
           paid: true,
           amountPaid: amountValue,
           totalFee: item.totalFee,
-        },
-        headers: {
-          Authorization: `Bearer ${token}`,
         },
       }).unwrap();
 
@@ -155,7 +130,7 @@ const PendingPayments = () => {
           "Unable to update payment right now."
       );
     } finally {
-      setLoading(false);
+      setIsBusy(false);
     }
   };
 
@@ -203,6 +178,9 @@ const PendingPayments = () => {
         </div>
       )}
 
+      {isFetching ? (
+        <TableSkeleton rows={6} cols={6} />
+      ) : filteredPayments.length > 0 ? (
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
@@ -265,33 +243,26 @@ const PendingPayments = () => {
                     <td className="px-4 py-3">
                       <button
                         onClick={() => markAsPaid(item)}
-                        className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+                        disabled={isBusy}
+                        className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
                       >
-                        Mark Paid &amp; Send Invoice
+                        {isBusy ? "Updating..." : "Mark Paid & Send Invoice"}
                       </button>
                     </td>
                   </tr>
                 );
               })}
-              {filteredPayments.length === 0 && (
-                <tr>
-                  <td
-                    className="px-4 py-8 text-center text-slate-500"
-                    colSpan={6}
-                  >
-                    No pending payments found.
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
       </div>
-
-      {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <ClipLoader color="#FFA500" loading={loading} css={override} size={70} />
-        </div>
+      ) : (
+        <EmptyState
+          title="No pending payments"
+          description="You're all caught up. New pending payments will appear here."
+          actionLabel="Refresh"
+          onAction={fetchPendingPayments}
+        />
       )}
     </div>
   );

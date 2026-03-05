@@ -2,16 +2,10 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { useApi } from "../../api/useApi";
-import { ClipLoader } from "react-spinners";
-import { css } from "@emotion/react";
+import EmptyState from "../Common/EmptyState";
+import { CardSkeletonGrid } from "../Common/ListSkeleton";
 import { getToastVariant } from "../../utils/toastVariant";
 import { validateAmountPaid, validateNumber, validateRequired } from "../../utils/validators";
-
-const override = css`
-  display: block;
-  margin: 0 auto;
-  border-color: red;
-`;
 
 const Allstudents = () => {
   const navigate = useNavigate();
@@ -20,7 +14,8 @@ const Allstudents = () => {
   const [allCourses, setAllCourses] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [popupMessage, setPopupMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const [isBusy, setIsBusy] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -58,80 +53,48 @@ const Allstudents = () => {
   });
 
   useEffect(() => {
-    const fetchAllStudents = async () => {
-      setLoading(true);
+    let active = true;
+    const loadData = async () => {
+      setIsFetching(true);
       try {
-        const token = localStorage.getItem("token");
+        const [studentsResponse, coursesResponse] = await Promise.all([
+          get({ url: "/admin-confi/all-students" }).unwrap(),
+          get({ url: "/admin-confi/all-classes" }).unwrap(),
+        ]);
 
-        if (!token) {
-          navigate("/admin-login");
-          return;
+        if (!active) return;
+        if (studentsResponse.status === 200) {
+          setAllStudents(studentsResponse.data);
         }
-
-        const response = await get({
-          url: "/admin-confi/all-students",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }).unwrap();
-
-        if (response.status === 200) {
-          setAllStudents(response.data);
+        if (coursesResponse.status === 200) {
+          setAllCourses(coursesResponse.data);
         }
       } catch (error) {
-        console.error("Error fetching students:", error);
+        console.error("Error fetching student data:", error);
       } finally {
-        setLoading(false);
+        if (active) setIsFetching(false);
       }
     };
 
-    fetchAllStudents();
-  }, [navigate]);
-
-  useEffect(() => {
-    const fetchAllcourses = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-          navigate("/login");
-          return;
-        }
-
-        const response = await get({
-          url: "/admin-confi/all-classes",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }).unwrap();
-
-        if (response.status === 200) {
-          setAllCourses(response.data);
-        }
-      } catch (error) {
-        console.error("Error fetching courses:", error);
-      } finally {
-        setLoading(false);
-      }
+    loadData();
+    return () => {
+      active = false;
     };
-
-    fetchAllcourses();
-  }, [navigate]);
+  }, [get]);
 
   useEffect(() => {
     const hasOpenModal =
       isFormOpen ||
       showPopup ||
       !!popupMessage ||
-      loading ||
+      isBusy ||
       showDeletePopup ||
       showDeleteAllPopup;
     document.body.style.overflow = hasOpenModal ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [isFormOpen, showPopup, popupMessage, loading, showDeletePopup, showDeleteAllPopup]);
+  }, [isFormOpen, showPopup, popupMessage, isBusy, showDeletePopup, showDeleteAllPopup]);
 
   const filteredStudents = allStudents.filter((student) =>
     student.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -228,12 +191,7 @@ const Allstudents = () => {
       return;
     }
     try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-      if (!token) {
-        return;
-      }
-
+      setIsBusy(true);
       const { totalFee, feeMonth, paid, amountPaid } = formData;
       const monthNumber = monthNameToNumber[feeMonth];
       const isPaid = paid === "yes";
@@ -246,9 +204,6 @@ const Allstudents = () => {
           feeMonth: monthNumber,
           paid: isPaid,
           amountPaid: normalizedAmountPaid,
-        },
-        headers: {
-          Authorization: `Bearer ${token}`,
         },
       }).unwrap();
 
@@ -283,7 +238,7 @@ const Allstudents = () => {
       }
       setIsFormOpen(false);
     } finally {
-      setLoading(false);
+      setIsBusy(false);
     }
   };
 
@@ -315,18 +270,10 @@ const Allstudents = () => {
     e.preventDefault();
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
+      setIsBusy(true);
       const deactiveResponse = await put({
         url: `/admin-confi/deactivate-account/${setuId}`,
         data: { status },
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       }).unwrap();
 
       if (deactiveResponse.status === 201) {
@@ -341,17 +288,16 @@ const Allstudents = () => {
       }
     } catch (error) {
       console.error("Error deactivating account:", error);
+    } finally {
+      setIsBusy(false);
     }
   };
 
   const deleteStudent = async () => {
     try {
-      const token = localStorage.getItem("token");
+      setIsBusy(true);
       const response = await del({
         url: `/admin-confi/delete-student/${deleteId}`,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       }).unwrap();
 
       if (response.status === 200) {
@@ -361,6 +307,8 @@ const Allstudents = () => {
       }
     } catch (error) {
       console.log("");
+    } finally {
+      setIsBusy(false);
     }
   };
 
@@ -379,18 +327,9 @@ const Allstudents = () => {
 
   const deleteAllStudents = async () => {
     try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
+      setIsBusy(true);
       const response = await del({
         url: "/admin-confi/delete-all-students?confirm=true",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       }).unwrap();
 
       if (response.status === 200) {
@@ -401,7 +340,7 @@ const Allstudents = () => {
     } catch (error) {
       setPopupMessage("Failed to delete all students.");
     } finally {
-      setLoading(false);
+      setIsBusy(false);
     }
   };
 
@@ -451,85 +390,92 @@ const Allstudents = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredStudents.map((student) => (
-            <div
-              key={student._id}
-              className={`rounded-2xl border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${student.deactivated
-                ? "border-rose-200 bg-rose-50"
-                : "border-slate-200 bg-white"
-                }`}
-            >
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div>
-                  <h5 className="text-lg font-semibold text-slate-800">{student.name}</h5>
-                  <p className="text-sm text-slate-600">Phone: {student.phone}</p>
-                </div>
-
-                <button
-                  onClick={() => openPopup(student._id, student.name)}
-                  className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-medium text-rose-600 hover:bg-rose-100"
-                >
-                  Status
-                </button>
-              </div>
-
-              <div className="mb-4">
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${student.deactivated
-                    ? "bg-rose-100 text-rose-700"
-                    : "bg-emerald-100 text-emerald-700"
+        {isFetching ? (
+          <CardSkeletonGrid count={6} />
+        ) : (
+          <>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {filteredStudents.map((student) => (
+                <div
+                  key={student._id}
+                  className={`rounded-2xl border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${student.deactivated
+                    ? "border-rose-200 bg-rose-50"
+                    : "border-slate-200 bg-white"
                     }`}
                 >
-                  {student.deactivated ? "Deactivated" : "Active"}
-                </span>
-              </div>
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <div>
+                      <h5 className="text-lg font-semibold text-slate-800">{student.name}</h5>
+                      <p className="text-sm text-slate-600">Phone: {student.phone}</p>
+                    </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  className="rounded-lg bg-orange-500 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-600"
-                  onClick={() => openForm(student._id)}
-                >
-                  Enroll
-                </button>
+                    <button
+                      onClick={() => openPopup(student._id, student.name)}
+                      className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-medium text-rose-600 hover:bg-rose-100"
+                    >
+                      Status
+                    </button>
+                  </div>
 
-                <button
-                  className="rounded-lg bg-rose-500 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-600"
-                  onClick={() => openDeletePopup(student._id)}
-                >
-                  Delete
-                </button>
+                  <div className="mb-4">
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${student.deactivated
+                        ? "bg-rose-100 text-rose-700"
+                        : "bg-emerald-100 text-emerald-700"
+                        }`}
+                    >
+                      {student.deactivated ? "Deactivated" : "Active"}
+                    </span>
+                  </div>
 
-                <Link
-                  to={`/admin-dashboard/student/${student._id}`}
-                  className="rounded-lg bg-blue-500 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-blue-600"
-                >
-                  Edit
-                </Link>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      className="rounded-lg bg-orange-500 px-3 py-2 text-xs font-semibold text-white hover:bg-orange-600"
+                      onClick={() => openForm(student._id)}
+                    >
+                      Enroll
+                    </button>
 
-                <Link
-                  to={`/admin-dashboard/allstudents/${student._id}`}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-center text-xs font-semibold text-slate-700 hover:bg-slate-100"
-                >
-                  View
-                </Link>
-              </div>
+                    <button
+                      className="rounded-lg bg-rose-500 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-600"
+                      onClick={() => openDeletePopup(student._id)}
+                    >
+                      Delete
+                    </button>
+
+                    <Link
+                      to={`/admin-dashboard/student/${student._id}`}
+                      className="rounded-lg bg-blue-500 px-3 py-2 text-center text-xs font-semibold text-white hover:bg-blue-600"
+                    >
+                      Edit
+                    </Link>
+
+                    <Link
+                      to={`/admin-dashboard/allstudents/${student._id}`}
+                      className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-center text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                    >
+                      View
+                    </Link>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {!loading && filteredStudents.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
-            No students found for this search.
-          </div>
+            {!isFetching && filteredStudents.length === 0 && (
+              <EmptyState
+                title={searchQuery ? "No matching students" : "No students yet"}
+                description={
+                  searchQuery
+                    ? "Try adjusting your search or clear the filter."
+                    : "Start by registering a student to see them here."
+                }
+                actionLabel="Register Student"
+                onAction={() => navigate("/admin-dashboard/register")}
+              />
+            )}
+          </>
         )}
       </div>
-
-      {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <ClipLoader color="#FFA500" loading={loading} css={override} size={70} />
-        </div>
-      )}
 
       {isFormOpen && ReactDOM.createPortal(
         <div className="app-modal-overlay app-modal-overlay--top app-modal-overlay--scroll">
@@ -660,9 +606,10 @@ const Allstudents = () => {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600"
+                  disabled={isBusy}
+                  className="rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Submit
+                  {isBusy ? "Submitting..." : "Submit"}
                 </button>
               </div>
             </form>
@@ -698,9 +645,10 @@ const Allstudents = () => {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600"
+                  disabled={isBusy}
+                  className="rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Submit
+                  {isBusy ? "Saving..." : "Submit"}
                 </button>
               </div>
             </form>
@@ -766,9 +714,10 @@ const Allstudents = () => {
             <div className="flex justify-center gap-3">
               <button
                 onClick={deleteStudent}
-                className="rounded-lg bg-rose-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-rose-700 transition"
+                disabled={isBusy}
+                className="rounded-lg bg-rose-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-rose-700 transition disabled:cursor-not-allowed disabled:opacity-70"
               >
-                Yes, Delete
+                {isBusy ? "Deleting..." : "Yes, Delete"}
               </button>
               <button
                 onClick={() => setShowDeletePopup(false)}
@@ -827,9 +776,10 @@ const Allstudents = () => {
             <div className="flex justify-center gap-3">
               <button
                 onClick={deleteAllStudents}
-                className="rounded-lg bg-rose-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-rose-700 transition"
+                disabled={isBusy}
+                className="rounded-lg bg-rose-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-rose-700 transition disabled:cursor-not-allowed disabled:opacity-70"
               >
-                Yes, Delete All
+                {isBusy ? "Deleting..." : "Yes, Delete All"}
               </button>
               <button
                 onClick={closeDeleteAllPopup}

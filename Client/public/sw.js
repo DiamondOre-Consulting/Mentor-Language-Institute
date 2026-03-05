@@ -2,6 +2,7 @@ const CACHE_NAME = "mentor-pwa-cache-v1";
 const APP_SHELL = [
   "/",
   "/index.html",
+  "/offline.html",
   "/manifest.webmanifest",
   "/pwa-192.png",
   "/pwa-512.png",
@@ -41,12 +42,12 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put("/index.html", copy));
           return response;
         })
-        .catch(() => caches.match("/index.html"))
+        .catch(() => caches.match("/offline.html"))
     );
     return;
   }
 
-  if (url.origin === self.location.origin) {
+  if (url.origin === self.location.origin && !url.pathname.startsWith("/api")) {
     event.respondWith(
       caches.match(event.request).then((cached) => {
         if (cached) return cached;

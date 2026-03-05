@@ -90,10 +90,7 @@ const Login = ({ defaultTab }) => {
 
       if (response.status === 200) {
         // console.log(response.data)
-        const token = response.data.token;
-        // Store the token in local storage
-
-        localStorage.setItem("token", token);
+        localStorage.setItem("token", "session");
         // console.log("Logged in successfully as Admin");
         navigate("/admin-dashboard");
       } else {
@@ -140,10 +137,7 @@ const Login = ({ defaultTab }) => {
       }).unwrap();
 
       if (response.status === 200) {
-        const token = response.data.token;
-
-        // console.log(token)
-        localStorage.setItem("token", token);
+        localStorage.setItem("token", "session");
         // console.log("Logged in successfully as Teacher");
         navigate("/teacher-dashboard");
       } else {
@@ -190,8 +184,7 @@ const Login = ({ defaultTab }) => {
       }).unwrap();
 
       if (response.status === 200) {
-        const token = response.data.token;
-        localStorage.setItem("token", token);
+        localStorage.setItem("token", "session");
         navigate("/main-dashboard");
       } else {
         setError("Login Details Are Wrong!!");

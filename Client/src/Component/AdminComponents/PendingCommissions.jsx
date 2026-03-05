@@ -1,39 +1,23 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom";
-import { useNavigate } from "react-router-dom";
 import { useApi } from "../../api/useApi";
-import { ClipLoader } from "react-spinners";
-import { css } from "@emotion/react";
-
-const override = css`
-  display: block;
-  margin: 0 auto;
-  border-color: red;
-`;
+import EmptyState from "../Common/EmptyState";
+import { TableSkeleton } from "../Common/ListSkeleton";
 
 const PendingCommissions = () => {
-  const navigate = useNavigate();
   const { get, post, del } = useApi();
   const [commissions, setCommissions] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const [isBusy, setIsBusy] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [message, setMessage] = useState("");
   const [showDeleteAllPopup, setShowDeleteAllPopup] = useState(false);
 
   const fetchCommissions = async (refresh = false) => {
     try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
+      setIsFetching(true);
       const response = await get({
         url: `/admin-confi/pending-commissions${refresh ? "?refresh=true" : ""}`,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       }).unwrap();
 
       if (response.status === 200) {
@@ -44,7 +28,7 @@ const PendingCommissions = () => {
       console.error("Error fetching pending commissions:", error);
       setMessage("Failed to load pending commissions.");
     } finally {
-      setLoading(false);
+      setIsFetching(false);
     }
   };
 
@@ -69,21 +53,12 @@ const PendingCommissions = () => {
 
   const handleUpdate = async (commissionId) => {
     try {
-      setLoading(true);
+      setIsBusy(true);
       setMessage("");
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
       const response = await post({
         url: `/admin-confi/update-monthly-commission/${commissionId}`,
         data: {
           paid: true,
-        },
-        headers: {
-          Authorization: `Bearer ${token}`,
         },
       }).unwrap();
 
@@ -97,7 +72,7 @@ const PendingCommissions = () => {
       console.error("Error updating commission:", error);
       setMessage("Failed to update commission.");
     } finally {
-      setLoading(false);
+      setIsBusy(false);
     }
   };
 
@@ -111,19 +86,10 @@ const PendingCommissions = () => {
 
   const deleteAllCommissions = async () => {
     try {
-      setLoading(true);
+      setIsBusy(true);
       setMessage("");
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
       const response = await del({
         url: "/admin-confi/delete-all-commissions?confirm=true",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       }).unwrap();
 
       if (response.status === 200) {
@@ -135,7 +101,7 @@ const PendingCommissions = () => {
       console.error("Error deleting commissions:", error);
       setMessage("Failed to delete all commissions.");
     } finally {
-      setLoading(false);
+      setIsBusy(false);
     }
   };
 
@@ -176,14 +142,16 @@ const PendingCommissions = () => {
             <button
               type="button"
               onClick={() => fetchCommissions(true)}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              disabled={isFetching}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
             >
               Refresh
             </button>
             <button
               type="button"
               onClick={openDeleteAllPopup}
-              className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-600 hover:bg-rose-100"
+              disabled={isBusy}
+              className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-600 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-70"
             >
               Delete All
             </button>
@@ -197,47 +165,50 @@ const PendingCommissions = () => {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                  Teacher
-                </th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                  Course
-                </th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                  Month
-                </th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                  Classes
-                </th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                  Offline Commission
-                </th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                  Online Commission
-                </th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                  Total Commission
-                </th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredCommissions.map((item) => (
-                <tr key={item._id} className="hover:bg-orange-50/40">
-                  <td className="px-4 py-3">
-                    <div className="font-semibold text-slate-800">
-                      {item?.teacherId?.name || "Unknown"}
-                    </div>
+      {isFetching ? (
+        <TableSkeleton rows={6} cols={9} />
+      ) : filteredCommissions.length > 0 ? (
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-200 text-sm">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                    Teacher
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                    Course
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                    Month
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                    Classes
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                    Offline Commission
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                    Online Commission
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                    Total Commission
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredCommissions.map((item) => (
+                  <tr key={item._id} className="hover:bg-orange-50/40">
+                    <td className="px-4 py-3">
+                      <div className="font-semibold text-slate-800">
+                        {item?.teacherId?.name || "Unknown"}
+                      </div>
                       <div className="text-xs text-slate-500">
                         {item?.teacherId?.phone || "No phone"}
                       </div>
@@ -268,32 +239,25 @@ const PendingCommissions = () => {
                     <td className="px-4 py-3">
                       <button
                         onClick={() => handleUpdate(item._id)}
-                        className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+                        disabled={isBusy}
+                        className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
                       >
-                        Mark Paid
+                        {isBusy ? "Updating..." : "Mark Paid"}
                       </button>
                     </td>
-                </tr>
-              ))}
-              {filteredCommissions.length === 0 && (
-                <tr>
-                  <td
-                    className="px-4 py-8 text-center text-slate-500"
-                    colSpan={9}
-                  >
-                    No pending commissions found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
-
-      {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <ClipLoader color="#FFA500" loading={loading} css={override} size={70} />
-        </div>
+      ) : (
+        <EmptyState
+          title="No pending commissions"
+          description="You're all caught up. Refresh to check for new entries."
+          actionLabel="Refresh"
+          onAction={() => fetchCommissions(true)}
+        />
       )}
 
       {showDeleteAllPopup &&
@@ -329,9 +293,10 @@ const PendingCommissions = () => {
               <div className="flex justify-center gap-2">
                 <button
                   onClick={deleteAllCommissions}
-                  className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700"
+                  disabled={isBusy}
+                  className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Yes, Delete All
+                  {isBusy ? "Deleting..." : "Yes, Delete All"}
                 </button>
                 <button
                   onClick={closeDeleteAllPopup}

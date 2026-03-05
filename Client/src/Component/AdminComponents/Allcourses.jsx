@@ -2,18 +2,13 @@ import React, { useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { useApi } from "../../api/useApi";
-import { ClipLoader } from "react-spinners";
-import { css } from "@emotion/react";
-
-const override = css`
-  display: block;
-  margin: 0 auto;
-  border-color: red;
-`;
+import EmptyState from "../Common/EmptyState";
+import { CardSkeletonGrid } from "../Common/ListSkeleton";
 
 const Allcourses = () => {
   const [allCourses, setAllCourses] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const [isBusy, setIsBusy] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [gradeFilter, setGradeFilter] = useState("");
   const [popup, setPopUp] = useState(false);
@@ -24,19 +19,9 @@ const Allcourses = () => {
 
   const fetchAllcourses = async () => {
     try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
+      setIsFetching(true);
       const response = await get({
         url: "/admin-confi/all-classes",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       }).unwrap();
 
       if (response.status === 200) {
@@ -45,21 +30,21 @@ const Allcourses = () => {
     } catch (error) {
       console.error("Error fetching courses:", error);
     } finally {
-      setLoading(false);
+      setIsFetching(false);
     }
   };
 
   useEffect(() => {
     fetchAllcourses();
-  }, [navigate]);
+  }, [get]);
 
   useEffect(() => {
-    const hasOpenModal = popup || loading || showDeleteAllPopup;
+    const hasOpenModal = popup || isBusy || showDeleteAllPopup;
     document.body.style.overflow = hasOpenModal ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [popup, loading, showDeleteAllPopup]);
+  }, [popup, isBusy, showDeleteAllPopup]);
 
   const normalizeGradeValue = (value) => {
     if (value === null || value === undefined) return "";
@@ -142,18 +127,9 @@ const Allcourses = () => {
 
   const deleteAllCourses = async () => {
     try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
+      setIsBusy(true);
       const response = await del({
         url: "/admin-confi/delete-all-courses?confirm=true",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       }).unwrap();
 
       if (response.status === 200) {
@@ -163,7 +139,7 @@ const Allcourses = () => {
     } catch (error) {
       console.error("Error deleting all courses:", error);
     } finally {
-      setLoading(false);
+      setIsBusy(false);
     }
   };
 
@@ -171,17 +147,9 @@ const Allcourses = () => {
     e.preventDefault();
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
+      setIsBusy(true);
       const deleteCourse = await del({
         url: `/admin-confi/delete-course/${courseid}`,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       }).unwrap();
 
       if (deleteCourse.status === 200) {
@@ -192,6 +160,8 @@ const Allcourses = () => {
       }
     } catch (error) {
       console.error("Error deleting course:", error);
+    } finally {
+      setIsBusy(false);
     }
   };
 
@@ -276,7 +246,8 @@ const Allcourses = () => {
               <button
                 type="button"
                 onClick={openDeleteAllPopup}
-                className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-100"
+                disabled={isBusy}
+                className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 Delete All
               </button>
@@ -284,88 +255,94 @@ const Allcourses = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredCourses.map((course) => (
-            <article
-              key={course._id}
-              className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-lg"
-            >
-              <div className="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-orange-200/20 blur-xl transition group-hover:bg-orange-300/30" />
+        {isFetching ? (
+          <CardSkeletonGrid count={6} />
+        ) : (
+          <>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {filteredCourses.map((course) => (
+                <article
+                  key={course._id}
+                  className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-lg"
+                >
+                  <div className="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-orange-200/20 blur-xl transition group-hover:bg-orange-300/30" />
 
-              <div className="relative">
-                <div className="mb-3 flex items-start justify-between gap-3">
-                  <div>
-                    <h2 className="line-clamp-2 text-lg font-bold leading-snug text-slate-800">{course?.classTitle}</h2>
-                    <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Grade: {resolveCourseGradeLabel(course) || "N/A"}
-                    </p>
+                  <div className="relative">
+                    <div className="mb-3 flex items-start justify-between gap-3">
+                      <div>
+                        <h2 className="line-clamp-2 text-lg font-bold leading-snug text-slate-800">{course?.classTitle}</h2>
+                        <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Grade: {resolveCourseGradeLabel(course) || "N/A"}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => openPopup(course._id)}
+                        className="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-600 transition hover:bg-rose-100"
+                        aria-label="Delete course"
+                      >
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" />
+                          <line x1="4" y1="7" x2="20" y2="7" />
+                          <line x1="10" y1="11" x2="10" y2="17" />
+                          <line x1="14" y1="11" x2="14" y2="17" />
+                          <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                          <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-xl border border-orange-100 bg-orange-50 px-3 py-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-orange-700">Duration</p>
+                        <p className="mt-1 text-sm font-bold text-slate-800">{course?.totalHours} hrs</p>
+                      </div>
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-600">Enrolled</p>
+                        <p className="mt-1 text-sm font-bold text-slate-800">{course.enrolledStudents.length} students</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <Link
+                        to={`/admin-dashboard/allcourses/${course?._id}`}
+                        className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-orange-500"
+                      >
+                        View Details
+                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="m9 6 6 6-6 6" />
+                        </svg>
+                      </Link>
+                      <Link
+                        to={`/admin-dashboard/course-edit/${course?._id}`}
+                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-orange-200 hover:text-orange-600"
+                      >
+                        Edit
+                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M12 20h9" />
+                          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                        </svg>
+                      </Link>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => openPopup(course._id)}
-                    className="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-600 transition hover:bg-rose-100"
-                    aria-label="Delete course"
-                  >
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                      <path stroke="none" d="M0 0h24v24H0z" />
-                      <line x1="4" y1="7" x2="20" y2="7" />
-                      <line x1="10" y1="11" x2="10" y2="17" />
-                      <line x1="14" y1="11" x2="14" y2="17" />
-                      <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
-                      <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
-                    </svg>
-                  </button>
-                </div>
+                </article>
+              ))}
+            </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-xl border border-orange-100 bg-orange-50 px-3 py-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-orange-700">Duration</p>
-                    <p className="mt-1 text-sm font-bold text-slate-800">{course?.totalHours} hrs</p>
-                  </div>
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-600">Enrolled</p>
-                    <p className="mt-1 text-sm font-bold text-slate-800">{course.enrolledStudents.length} students</p>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <Link
-                    to={`/admin-dashboard/allcourses/${course?._id}`}
-                    className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-orange-500"
-                  >
-                    View Details
-                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="m9 6 6 6-6 6" />
-                    </svg>
-                  </Link>
-                  <Link
-                    to={`/admin-dashboard/course-edit/${course?._id}`}
-                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-orange-200 hover:text-orange-600"
-                  >
-                    Edit
-                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 20h9" />
-                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-                    </svg>
-                  </Link>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-
-        {!loading && filteredCourses.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
-            <h3 className="text-lg font-semibold text-slate-700">No courses found</h3>
-            <p className="mt-1 text-sm text-slate-500">Try a different keyword in the search field.</p>
-          </div>
+            {!isFetching && filteredCourses.length === 0 && (
+              <EmptyState
+                title={searchQuery || gradeFilter ? "No matching courses" : "No courses yet"}
+                description={
+                  searchQuery || gradeFilter
+                    ? "Try adjusting filters or search terms."
+                    : "Create your first course to start building the catalog."
+                }
+                actionLabel="Create Course"
+                onAction={() => navigate("/admin-dashboard/register")}
+              />
+            )}
+          </>
         )}
       </section>
-
-      {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <ClipLoader color={"#FFA500"} loading={loading} css={override} size={70} />
-        </div>
-      )}
 
       {popup &&
         ReactDOM.createPortal(
@@ -395,9 +372,10 @@ const Allcourses = () => {
               <div className="flex justify-center gap-2">
                 <button
                   onClick={deleteCourse}
-                  className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700"
+                  disabled={isBusy}
+                  className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Yes, Delete
+                  {isBusy ? "Deleting..." : "Yes, Delete"}
                 </button>
                 <button
                   onClick={closePopup}
@@ -445,9 +423,10 @@ const Allcourses = () => {
               <div className="flex justify-center gap-2">
                 <button
                   onClick={deleteAllCourses}
-                  className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700"
+                  disabled={isBusy}
+                  className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Yes, Delete All
+                  {isBusy ? "Deleting..." : "Yes, Delete All"}
                 </button>
                 <button
                   onClick={closeDeleteAllPopup}

@@ -14,17 +14,9 @@ const UserVerify = ({ routeName }) => {
         routeName === "admin-confi" || routeName === "teachers"
           ? "/login"
           : "/student-login";
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setAuthorized(false);
-        setLoading(false);
-        navigate(redirectTo);
-        return;
-      }
       try {
         await get({
           url: `/${routeName}/my-profile`,
-          headers: { Authorization: `Bearer ${token}` },
         }).unwrap();
         setAuthorized(true);
         setLoading(false);
@@ -36,7 +28,7 @@ const UserVerify = ({ routeName }) => {
     };
 
     fetchUserProfile();
-  }, []);
+  }, [get, navigate, routeName]);
 
   if (loading) {
     return (

@@ -16,6 +16,29 @@ const refreshSecret =
 
 const accessExpiresIn = process.env.ACCESS_TOKEN_EXPIRES_IN || "1h";
 const refreshExpiresDays = Number(process.env.REFRESH_TOKEN_EXPIRES_DAYS || 7);
+const accessCookieName = "ml_access";
+
+const parseDurationToMs = (value) => {
+  if (!value) return null;
+  if (typeof value === "number") return value * 1000;
+  const match = String(value).trim().match(/^(\d+)([smhd])$/i);
+  if (!match) return null;
+  const amount = Number(match[1]);
+  const unit = match[2].toLowerCase();
+  if (!Number.isFinite(amount)) return null;
+  switch (unit) {
+    case "s":
+      return amount * 1000;
+    case "m":
+      return amount * 60 * 1000;
+    case "h":
+      return amount * 60 * 60 * 1000;
+    case "d":
+      return amount * 24 * 60 * 60 * 1000;
+    default:
+      return null;
+  }
+};
 
 export const hashToken = (token) =>
   crypto.createHash("sha256").update(token).digest("hex");
@@ -128,3 +151,28 @@ export const clearRefreshCookie = (res) => {
     maxAge: 0,
   });
 };
+
+export const setAccessCookie = (res, token) => {
+  const isProduction = process.env.NODE_ENV === "production";
+  const maxAge = parseDurationToMs(accessExpiresIn);
+  res.cookie(accessCookieName, token, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    path: "/api",
+    maxAge: maxAge || undefined,
+  });
+};
+
+export const clearAccessCookie = (res) => {
+  const isProduction = process.env.NODE_ENV === "production";
+  res.cookie(accessCookieName, "", {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    path: "/api",
+    maxAge: 0,
+  });
+};
+
+export const accessCookieNameValue = accessCookieName;

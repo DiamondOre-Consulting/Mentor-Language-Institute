@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Offline - Mentor Language Institute</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: #f8fafc;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      .card {
+        max-width: 420px;
+        background: #ffffff;
+        padding: 32px;
+        border-radius: 16px;
+        box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+        border: 1px solid #e2e8f0;
+        text-align: center;
+      }
+      h1 {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+      }
+      p {
+        font-size: 0.95rem;
+        color: #475569;
+      }
+      button {
+        margin-top: 1rem;
+        border: 0;
+        background: #f97316;
+        color: #fff;
+        font-weight: 600;
+        padding: 10px 16px;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>You are offline</h1>
+      <p>
+        We could not reach the network. Check your connection and try again.
+      </p>
+      <button onclick="window.location.reload()">Retry</button>
+    </div>
+  </body>
+</html>

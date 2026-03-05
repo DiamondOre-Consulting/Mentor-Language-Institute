@@ -58,9 +58,7 @@ const StudentLogin = () => {
       }).unwrap();
 
       if (response.status === 200) {
-        const token = response.data.token;
-        // Store the token in local storage
-        localStorage.setItem("token", token);
+        localStorage.setItem("token", "session");
         navigate("/main-dashboard");
       } else {
         setError("Login Details Are Wrong!!");

@@ -1,5 +1,4 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useJwt } from 'react-jwt'
 import insta from '..//..//../assets/instagram.png'
 import facebook from '..//..//../assets/facebook.png'
 import whatsapp from '..//..//../assets/whatsapp.png'
@@ -8,18 +7,7 @@ import youtube from '..//..//../assets/youtube.png'
 
 const Footer = () => {
     const navigate = useNavigate();
-    const token = localStorage.getItem("token");
-    const { decodedToken } = useJwt(token || "No decoded Token Found yet");
-
     const handleSignup = () => {
-        if (token && decodedToken?.role === 'admin') {
-            navigate('/admin-dashboard');
-            return;
-        }
-        if (token && decodedToken?.role === 'teacher') {
-            navigate('/teacher-dashboard');
-            return;
-        }
         navigate('/login');
     }
 

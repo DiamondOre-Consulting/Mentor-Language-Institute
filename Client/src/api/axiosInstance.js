@@ -8,18 +8,6 @@ if (!axios.__mlConfigured) {
   axios.defaults.baseURL = baseURL;
   axios.defaults.withCredentials = true;
 
-  axios.interceptors.request.use(
-    (config) => {
-      const token = localStorage.getItem("token");
-      if (token && !config.headers?.Authorization) {
-        config.headers = config.headers ?? {};
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
-
   let isRefreshing = false;
   let refreshPromise = null;
 
@@ -47,11 +35,10 @@ if (!axios.__mlConfigured) {
           refreshPromise = axios
             .post("/auth/refresh")
             .then((res) => {
-              const newToken = res?.data?.token;
-              if (newToken) {
-                localStorage.setItem("token", newToken);
+              if (res?.data?.token) {
+                localStorage.setItem("token", "session");
               }
-              return newToken;
+              return res?.data?.token;
             })
             .finally(() => {
               isRefreshing = false;
@@ -60,9 +47,8 @@ if (!axios.__mlConfigured) {
         }
 
         const newToken = await refreshPromise;
-        if (newToken) {
-          originalRequest.headers = originalRequest.headers ?? {};
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        if (originalRequest.headers?.Authorization) {
+          delete originalRequest.headers.Authorization;
         }
         return axios(originalRequest);
       } catch (refreshError) {

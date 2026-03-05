@@ -9,9 +9,11 @@ import { getCookieValue } from "../utils/cookies.js";
 import { sendEmail } from "../services/emailService.js";
 import { isValidEmail, normalizeEmail } from "../utils/studentValidation.js";
 import {
+  clearAccessCookie,
   clearRefreshCookie,
   hashToken,
   rotateRefreshToken,
+  setAccessCookie,
   setRefreshCookie,
   signAccessToken,
   verifyRefreshToken,
@@ -166,6 +168,7 @@ router.post("/refresh", async (req, res) => {
     const accessPayload = buildAccessPayload(user, payload.role);
     const accessToken = signAccessToken(accessPayload, payload.role);
     const nextRefreshToken = await rotateRefreshToken(existing);
+    setAccessCookie(res, accessToken);
     setRefreshCookie(res, nextRefreshToken);
 
     return res.status(200).json({ token: accessToken });
@@ -185,6 +188,7 @@ router.post("/logout", async (req, res) => {
         { revokedAt: new Date() }
       );
     }
+    clearAccessCookie(res);
     clearRefreshCookie(res);
     return res.status(200).json({ message: "Logged out." });
   } catch (error) {

@@ -14,7 +14,7 @@ import Attendance from "../Models/Attendance.js";
 import Fee from "../Models/Fee.js";
 import ClassTeachers from "../Models/ClassTeachers.js";
 import PaymentRequest from "../Models/PaymentRequest.js";
-import { createRefreshTokenRecord, setRefreshCookie, signAccessToken } from "../utils/authTokens.js";
+import { createRefreshTokenRecord, setAccessCookie, setRefreshCookie, signAccessToken } from "../utils/authTokens.js";
 import {
   isGradeMatch,
   normalizeGradeValue,
@@ -176,6 +176,7 @@ router.post("/login", async (req, res) => {
       userId: user._id,
       role: "student",
     });
+    setAccessCookie(res, token);
     setRefreshCookie(res, refreshToken);
 
     return res.status(200).json({ token });

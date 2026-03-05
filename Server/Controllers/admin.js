@@ -18,7 +18,7 @@ import { deriveGradeFromText, isGradeMatch, resolveCourseGrade, toGradeLabel } f
 import { normalizeCommissionRateValue } from "../utils/classTeachers.js";
 import { generateInvoiceNumber, generateInvoicePdfBuffer } from "../services/invoiceService.js";
 import { sendEmail } from "../services/emailService.js";
-import { createRefreshTokenRecord, setRefreshCookie, signAccessToken } from "../utils/authTokens.js";
+import { createRefreshTokenRecord, setAccessCookie, setRefreshCookie, signAccessToken } from "../utils/authTokens.js";
 import { deleteAllCoursesCascade } from "../utils/deleteCourseCascade.js";
 import { deleteAllStudentsCascade, deleteStudentCascade } from "../utils/deleteStudentCascade.js";
 import {
@@ -243,6 +243,7 @@ router.post("/login-admin", async (req, res) => {
       userId: user._id,
       role: "admin",
     });
+    setAccessCookie(res, token);
     setRefreshCookie(res, refreshToken);
 
     return res.status(200).json({ token });
