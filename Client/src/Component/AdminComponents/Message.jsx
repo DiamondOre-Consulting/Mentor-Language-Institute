@@ -53,6 +53,8 @@ const monthNameToNumber = {
 };
 
 const months = Object.keys(monthNameToNumber);
+const currentYear = new Date().getFullYear();
+const yearOptions = Array.from({ length: 5 }, (_, index) => currentYear - 2 + index);
 const monthNumberToName = Object.entries(monthNameToNumber).reduce((acc, [name, num]) => {
   acc[num] = name;
   return acc;
@@ -88,6 +90,7 @@ const Message = () => {
   const [formData, setFormData] = useState({
     totalFee: "",
     feeMonth: "",
+    feeYear: String(currentYear),
     amountPaid: "",
     rejectionReason: "",
   });
@@ -176,11 +179,15 @@ const Message = () => {
       : paidOnDate
         ? paidOnDate.toLocaleDateString("en-US", { month: "long" })
         : "";
+    const yearValue =
+      Number(request?.feeYear) ||
+      (paidOnDate ? paidOnDate.getFullYear() : currentYear);
     const paymentProvided = hasPaymentDetails(request);
     setSelectedRequest(request);
     setFormData({
       totalFee: paymentProvided ? request?.amount ?? "" : "",
       feeMonth: paymentProvided ? monthLabel || "" : "",
+      feeYear: String(yearValue),
       amountPaid: paymentProvided ? request?.amount ?? "" : "",
       rejectionReason: "",
     });
@@ -193,6 +200,7 @@ const Message = () => {
     setFormData({
       totalFee: "",
       feeMonth: "",
+      feeYear: String(currentYear),
       amountPaid: "",
       rejectionReason: "",
     });
@@ -208,6 +216,12 @@ const Message = () => {
       const nextErrors = {
         totalFee: validateNumber(next.totalFee, { min: 0, label: "Total fee" }),
         feeMonth: validateRequired(next.feeMonth, "Fee month"),
+        feeYear: validateNumber(next.feeYear, {
+          min: 2000,
+          max: 2100,
+          integer: true,
+          label: "Fee year",
+        }),
         amountPaid: validateAmountPaid(next.amountPaid, next.totalFee, {
           required: true,
         }),
@@ -227,7 +241,7 @@ const Message = () => {
         return;
       }
 
-      const { totalFee, feeMonth, amountPaid } = formData;
+      const { totalFee, feeMonth, feeYear, amountPaid } = formData;
       const totalValue = Number(totalFee) || 0;
       const paidValue = Number(amountPaid) || 0;
       const paymentStatus =
@@ -239,6 +253,12 @@ const Message = () => {
       const nextErrors = {
         totalFee: validateNumber(totalFee, { min: 0, label: "Total fee" }),
         feeMonth: validateRequired(feeMonth, "Fee month"),
+        feeYear: validateNumber(feeYear, {
+          min: 2000,
+          max: 2100,
+          integer: true,
+          label: "Fee year",
+        }),
         amountPaid: validateAmountPaid(amountPaid, totalFee, { required: true }),
       };
       setFormErrors(nextErrors);
@@ -253,6 +273,7 @@ const Message = () => {
         data: {
           totalFee: Number(totalFee),
           feeMonth: monthNumber,
+          feeYear: Number(feeYear),
           amountPaid: Number(amountPaid),
         },
         headers: {
@@ -448,7 +469,7 @@ const Message = () => {
                     </p>
                     {request?.feeMonth && (
                       <p className="text-xs text-slate-500">
-                        Fee Month: {monthNumberToName[Number(request.feeMonth)] || "N/A"}
+                        Fee Period: {monthNumberToName[Number(request.feeMonth)] || "N/A"} {request?.feeYear || currentYear}
                       </p>
                     )}
                   </div>
@@ -612,6 +633,32 @@ const Message = () => {
                   {formErrors.feeMonth && (
                     <p className="mt-1 text-xs text-rose-600">
                       {formErrors.feeMonth}
+                    </p>
+                  )}
+                </div>
+                <div className="mb-4">
+                  <label
+                    htmlFor="feeYear"
+                    className="block text-sm font-medium text-slate-700"
+                  >
+                    Fee Year
+                  </label>
+                  <select
+                    className="mt-1 w-full"
+                    onChange={handleChange}
+                    value={formData.feeYear}
+                    name="feeYear"
+                    required
+                  >
+                    {yearOptions.map((yearValue) => (
+                      <option key={yearValue} value={yearValue}>
+                        {yearValue}
+                      </option>
+                    ))}
+                  </select>
+                  {formErrors.feeYear && (
+                    <p className="mt-1 text-xs text-rose-600">
+                      {formErrors.feeYear}
                     </p>
                   )}
                 </div>

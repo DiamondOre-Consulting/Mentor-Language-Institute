@@ -45,10 +45,13 @@ const Allstudents = () => {
     "November",
     "December",
   ];
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 5 }, (_, index) => currentYear - 2 + index);
 
   const [formData, setFormData] = useState({
     totalFee: "",
     feeMonth: "",
+    feeYear: String(currentYear),
     paid: "pending",
     amountPaid: "0",
   });
@@ -164,6 +167,17 @@ const Allstudents = () => {
         feeMonth: validateRequired(value, "Fee month"),
       }));
     }
+    if (name === "feeYear") {
+      setFormErrors((prev) => ({
+        ...prev,
+        feeYear: validateNumber(value, {
+          min: 2000,
+          max: 2100,
+          integer: true,
+          label: "Fee year",
+        }),
+      }));
+    }
     if (name === "amountPaid") {
       setFormErrors((prev) => ({
         ...prev,
@@ -210,6 +224,12 @@ const Allstudents = () => {
     const nextErrors = {
       totalFee: validateNumber(formData.totalFee, { min: 0, label: "Total fee" }),
       feeMonth: validateRequired(formData.feeMonth, "Fee month"),
+      feeYear: validateNumber(formData.feeYear, {
+        min: 2000,
+        max: 2100,
+        integer: true,
+        label: "Fee year",
+      }),
       amountPaid:
         formData.paid === "yes"
           ? validateAmountPaid(formData.amountPaid, formData.totalFee, { required: true })
@@ -221,7 +241,7 @@ const Allstudents = () => {
     }
     try {
       setIsBusy(true);
-      const { totalFee, feeMonth, paid, amountPaid } = formData;
+      const { totalFee, feeMonth, feeYear, paid, amountPaid } = formData;
       const monthNumber = monthNameToNumber[feeMonth];
       const isPaid = paid === "yes";
       const normalizedAmountPaid = isPaid ? Number(amountPaid) : 0;
@@ -240,6 +260,7 @@ const Allstudents = () => {
         data: {
           totalFee: Number(totalFee),
           feeMonth: monthNumber,
+          feeYear: Number(feeYear),
           paid: isPaid,
           amountPaid: normalizedAmountPaid,
         },
@@ -289,6 +310,7 @@ const Allstudents = () => {
       setFormData({
         totalFee: "",
         feeMonth: "",
+        feeYear: String(currentYear),
         paid: "pending",
         amountPaid: "0",
       });
@@ -597,6 +619,27 @@ const Allstudents = () => {
                 </select>
                 {formErrors.feeMonth && (
                   <p className="mt-1 text-xs text-rose-600">{formErrors.feeMonth}</p>
+                )}
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="feeYear" className="block text-sm font-medium text-slate-700">
+                  Fee Year
+                </label>
+                <select
+                  className="mt-1 w-full"
+                  onChange={(e) => updateFeeField("feeYear", e.target.value)}
+                  value={formData.feeYear}
+                  required
+                >
+                  {yearOptions.map((yearValue) => (
+                    <option key={yearValue} value={yearValue}>
+                      {yearValue}
+                    </option>
+                  ))}
+                </select>
+                {formErrors.feeYear && (
+                  <p className="mt-1 text-xs text-rose-600">{formErrors.feeYear}</p>
                 )}
               </div>
 

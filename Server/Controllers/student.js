@@ -22,7 +22,7 @@ import {
   resolveCourseGrade,
   toGradeLabel,
 } from "../utils/grade.js";
-import { normalizeFeeMonth } from "../utils/fee.js";
+import { normalizeFeeMonths, normalizeFeeYear } from "../utils/fee.js";
 import {
   findStudentUniquenessConflict,
   isValidEmail,
@@ -296,7 +296,7 @@ router.get("/payment-requests", StudentAuthenticateToken, async (req, res) => {
 
     const requests = await PaymentRequest.find(query)
       .sort({ createdAt: -1 })
-      .select("classId feeMonth status requestType createdAt")
+      .select("classId feeMonth feeYear status requestType createdAt")
       .lean();
 
     res.status(200).json(requests);
@@ -578,7 +578,17 @@ router.post(
         const alreadyEnrolled = (student.classes || []).some(
           (classId) => String(classId) === String(id)
         );
-        const normalizedFeeMonth = normalizeFeeMonth(req.body?.feeMonth);
+        const now = new Date();
+        const requestedMonths = alreadyEnrolled
+          ? normalizeFeeMonths(req.body?.feeMonths ?? req.body?.feeMonth)
+          : [];
+        const providedYear = normalizeFeeYear(req.body?.feeYear);
+        if (req.body?.feeYear && !providedYear) {
+          return res.status(400).json({
+            message: "Fee year must be a valid year (e.g., 2026).",
+          });
+        }
+        const normalizedFeeYear = providedYear || now.getFullYear();
         if (!alreadyEnrolled) {
           const resolvedCourseGrade = resolveCourseGrade(classExists);
           if (resolvedCourseGrade && !classExists.grade) {
@@ -590,24 +600,48 @@ router.post(
               .status(403)
               .json({ message: "Student grade does not match this course." });
           }
-        } else if (!normalizedFeeMonth) {
+        } else if (!requestedMonths.length) {
           return res.status(400).json({
             message: "Fee month is required for fee payment requests.",
           });
         }
 
-        const existingPending = await PaymentRequest.findOne({
-          studentId: userId,
-          classId: id,
-          status: "pending",
-          ...(alreadyEnrolled
-            ? { requestType: "fee_payment", feeMonth: normalizedFeeMonth }
-            : {}),
-        });
-        if (existingPending) {
-          return res.status(409).json({
-            message: "Payment request already submitted for this course.",
+        let monthsToCreate = [];
+        let skippedMonths = [];
+        if (alreadyEnrolled) {
+          const existingPending = await PaymentRequest.find({
+            studentId: userId,
+            classId: id,
+            status: "pending",
+            requestType: "fee_payment",
+            feeMonth: { $in: requestedMonths },
+            feeYear:
+              normalizedFeeYear === now.getFullYear()
+                ? { $in: [normalizedFeeYear, null] }
+                : normalizedFeeYear,
+          }).select("feeMonth");
+          const pendingSet = new Set(
+            (existingPending || []).map((row) => Number(row?.feeMonth)).filter(Number.isInteger)
+          );
+          monthsToCreate = requestedMonths.filter((month) => !pendingSet.has(month));
+          skippedMonths = requestedMonths.filter((month) => pendingSet.has(month));
+          if (!monthsToCreate.length) {
+            return res.status(409).json({
+              message: "Payment request already submitted for selected month(s).",
+            });
+          }
+        } else {
+          const existingPending = await PaymentRequest.findOne({
+            studentId: userId,
+            classId: id,
+            status: "pending",
+            requestType: "enrollment",
           });
+          if (existingPending) {
+            return res.status(409).json({
+              message: "Payment request already submitted for this course.",
+            });
+          }
         }
 
         let screenshotUrl = "";
@@ -630,11 +664,9 @@ router.post(
           }
         }
 
-        const request = await PaymentRequest.create({
+        const basePayload = {
           studentId: userId,
           classId: id,
-          requestType: alreadyEnrolled ? "fee_payment" : "enrollment",
-          feeMonth: alreadyEnrolled ? normalizedFeeMonth : null,
           paymentMethod: hasPaymentDetails ? String(paymentMethod).trim() : "",
           transactionId: hasPaymentDetails ? String(transactionId).trim() : "",
           amount: parsedAmount,
@@ -643,7 +675,26 @@ router.post(
           phone: hasPaymentDetails ? String(phone).trim() : "",
           notes: notes ? String(notes).trim() : "",
           screenshotUrl,
-        });
+        };
+
+        let createdRequests = [];
+        if (alreadyEnrolled) {
+          const payloads = monthsToCreate.map((month) => ({
+            ...basePayload,
+            requestType: "fee_payment",
+            feeMonth: month,
+            feeYear: normalizedFeeYear,
+          }));
+          createdRequests = await PaymentRequest.insertMany(payloads);
+        } else {
+          const request = await PaymentRequest.create({
+            ...basePayload,
+            requestType: "enrollment",
+            feeMonth: null,
+            feeYear: null,
+          });
+          createdRequests = [request];
+        }
 
         if (!alreadyEnrolled) {
           await Students.findByIdAndUpdate(userId, {
@@ -656,7 +707,10 @@ router.post(
 
         return res.status(201).json({
           message: "Payment request submitted successfully.",
-          requestId: request._id,
+          requestIds: createdRequests.map((r) => r._id),
+          createdMonths: alreadyEnrolled ? monthsToCreate : [],
+          skippedMonths: alreadyEnrolled ? skippedMonths : [],
+          feeYear: alreadyEnrolled ? normalizedFeeYear : null,
         });
       } catch (error) {
         console.error("Payment request error:", error);

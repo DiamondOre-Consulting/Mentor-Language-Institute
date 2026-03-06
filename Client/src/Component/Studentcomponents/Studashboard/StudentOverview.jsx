@@ -108,6 +108,13 @@ const monthNumberToLabel = (value) => {
   return monthNames[num - 1];
 };
 
+const monthYearLabel = (month, year) => {
+  const monthLabel = monthNumberToLabel(month);
+  const yearValue = Number(year);
+  if (!Number.isInteger(yearValue)) return monthLabel;
+  return `${monthLabel} ${yearValue}`;
+};
+
 const getProfileCompletion = (student) => {
   if (!student) return 0;
   const fields = ["name", "email", "phone", "grade", "dob", "userName"];
@@ -173,6 +180,9 @@ const StudentOverview = ({ student }) => {
   const [pendingFees, setPendingFees] = useState([]);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
+  const [availableFeeMonths, setAvailableFeeMonths] = useState([]);
+  const [selectedFeeMonths, setSelectedFeeMonths] = useState([]);
+  const [selectedFeeYear, setSelectedFeeYear] = useState(new Date().getFullYear());
   const [paymentForm, setPaymentForm] = useState({
     paymentMethod: "UPI",
     transactionId: "",
@@ -265,11 +275,13 @@ const StudentOverview = ({ student }) => {
         }
         const pendingRequestKeys = new Set();
         const pendingRequestClasses = new Set();
+        const currentYear = new Date().getFullYear();
         pendingRequestRows.forEach((row) => {
           const classKey = String(row?.classId || "");
           const monthKey = Number(row?.feeMonth);
+          const yearKey = Number(row?.feeYear) || currentYear;
           if (classKey && Number.isInteger(monthKey)) {
-            pendingRequestKeys.add(`${classKey}-${monthKey}`);
+            pendingRequestKeys.add(`${classKey}-${monthKey}-${yearKey}`);
           } else if (classKey) {
             pendingRequestClasses.add(classKey);
           }
@@ -331,37 +343,45 @@ const StudentOverview = ({ student }) => {
           const detailFees = Array.isArray(feeData.detailFee)
             ? feeData.detailFee
             : [];
-          const currentDetail = detailFees.find(
-            (fee) => Number(fee?.feeMonth) === currentMonth
-          );
-          if (currentDetail) {
-            const paidSoFar = toNumber(currentDetail.amountPaid);
+          const pendingMonthSet = new Set();
+          const detailMonthSet = new Set();
+          detailFees.forEach((fee) => {
+            const monthValue = Number(fee?.feeMonth);
+            if (!Number.isInteger(monthValue)) return;
+            const yearValue = Number(fee?.feeYear) || currentYear;
+            detailMonthSet.add(`${monthValue}-${yearValue}`);
+            const paidSoFar = toNumber(fee.amountPaid);
             const balanceDue = Math.max(0, total - paidSoFar);
             const isFullyPaid = total > 0 && paidSoFar >= total;
-            if (!isFullyPaid) {
-              const key = `${String(classId)}-${Number(currentMonth)}`;
+            if (total > 0 && !isFullyPaid) {
+              const key = `${String(classId)}-${Number(monthValue)}-${yearValue}`;
               const awaitingApproval =
                 pendingRequestKeys.has(key) || pendingRequestClasses.has(String(classId));
+              pendingMonthSet.add(`${monthValue}-${yearValue}`);
               pendingItems.push({
                 classId,
                 classTitle,
-                feeMonth: currentDetail.feeMonth,
-                feeMonthLabel: monthNumberToLabel(currentDetail.feeMonth),
+                feeMonth: monthValue,
+                feeYear: yearValue,
+                feeMonthLabel: monthYearLabel(monthValue, yearValue),
                 totalFee: total,
                 paidSoFar,
                 balanceDue,
                 awaitingApproval,
               });
             }
-          } else if (total > 0) {
-            const key = `${String(classId)}-${Number(currentMonth)}`;
+          });
+          const currentKey = `${currentMonth}-${currentYear}`;
+          if (total > 0 && !detailMonthSet.has(currentKey)) {
+            const key = `${String(classId)}-${Number(currentMonth)}-${currentYear}`;
             const awaitingApproval =
               pendingRequestKeys.has(key) || pendingRequestClasses.has(String(classId));
             pendingItems.push({
               classId,
               classTitle,
               feeMonth: currentMonth,
-              feeMonthLabel: monthNumberToLabel(currentMonth),
+              feeYear: currentYear,
+              feeMonthLabel: monthYearLabel(currentMonth, currentYear),
               totalFee: total,
               paidSoFar: 0,
               balanceDue: total,
@@ -395,6 +415,36 @@ const StudentOverview = ({ student }) => {
     setSelectedPayment(item);
     setPaymentMessage("");
     setPaymentErrors({});
+    const currentYear = new Date().getFullYear();
+    const yearValue = Number(item?.feeYear) || currentYear;
+    setSelectedFeeYear(yearValue);
+    const classMonths = pendingFees
+      .filter(
+        (fee) =>
+          String(fee.classId) === String(item.classId) &&
+          Number(fee.feeYear) === yearValue
+      )
+      .map((fee) => ({
+        value: Number(fee.feeMonth),
+        label: fee.feeMonthLabel,
+        disabled: fee.awaitingApproval,
+      }))
+      .filter((fee) => Number.isInteger(fee.value));
+    const uniqueMonths = new Map();
+    classMonths.forEach((entry) => {
+      if (!uniqueMonths.has(entry.value)) {
+        uniqueMonths.set(entry.value, entry);
+      }
+    });
+    const options = Array.from(uniqueMonths.values()).sort(
+      (a, b) => a.value - b.value
+    );
+    setAvailableFeeMonths(options);
+    setSelectedFeeMonths(
+      options.some((opt) => opt.value === Number(item.feeMonth) && !opt.disabled)
+        ? [Number(item.feeMonth)]
+        : options.filter((opt) => !opt.disabled).map((opt) => opt.value).slice(0, 1)
+    );
     setPaymentForm({
       paymentMethod: "UPI",
       transactionId: "",
@@ -408,9 +458,31 @@ const StudentOverview = ({ student }) => {
     setPaymentDialogOpen(true);
   };
 
+  const toggleFeeMonth = (monthValue) => {
+    setSelectedFeeMonths((prev) => {
+      if (prev.includes(monthValue)) {
+        return prev.filter((value) => value !== monthValue);
+      }
+      return [...prev, monthValue].sort((a, b) => a - b);
+    });
+  };
+
+  const handlePaymentDialogChange = (open) => {
+    setPaymentDialogOpen(open);
+    if (!open) {
+      setSelectedFeeMonths([]);
+      setAvailableFeeMonths([]);
+      setSelectedFeeYear(new Date().getFullYear());
+    }
+  };
+
   const submitPayment = async (e) => {
     e?.preventDefault?.();
     if (!selectedPayment) return;
+    if (!selectedFeeMonths.length) {
+      setPaymentMessage("Please select at least one month.");
+      return;
+    }
     const totalFee = selectedPayment.totalFee || 0;
     const nextErrors = buildPaymentErrors(paymentForm, totalFee);
     setPaymentErrors(nextErrors);
@@ -435,14 +507,13 @@ const StudentOverview = ({ student }) => {
       formData.append("paidOn", paymentForm.paidOn);
       formData.append("payerName", paymentForm.payerName);
       formData.append("phone", paymentForm.phone);
-      if (selectedPayment?.feeMonth) {
-        formData.append("feeMonth", String(selectedPayment.feeMonth));
-      }
+      formData.append("feeMonths", JSON.stringify(selectedFeeMonths));
+      formData.append("feeYear", String(selectedFeeYear));
       if (paymentForm.screenshot) {
         formData.append("screenshot", paymentForm.screenshot);
       }
-      const feeNote = selectedPayment.feeMonthLabel
-        ? `Fee month: ${selectedPayment.feeMonthLabel}`
+      const feeNote = selectedFeeMonths.length
+        ? `Fee months: ${selectedFeeMonths.map((month) => monthYearLabel(month, selectedFeeYear)).join(", ")}`
         : "";
       const combinedNotes = [paymentForm.notes, feeNote]
         .map((v) => String(v || "").trim())
@@ -466,11 +537,13 @@ const StudentOverview = ({ student }) => {
         setPendingFees((prev) =>
           prev.map((item) =>
             item.classId === selectedPayment.classId &&
-            Number(item.feeMonth) === Number(selectedPayment.feeMonth)
+            Number(item.feeYear) === Number(selectedFeeYear) &&
+            selectedFeeMonths.includes(Number(item.feeMonth))
               ? { ...item, awaitingApproval: true }
               : item
           )
         );
+        setSelectedFeeMonths([]);
       }
     } catch (error) {
       const status = error?.response?.status;
@@ -486,6 +559,24 @@ const StudentOverview = ({ student }) => {
       setPaymentSubmitting(false);
     }
   };
+
+  const selectedBalance = selectedPayment
+    ? pendingFees
+      .filter(
+        (fee) =>
+          String(fee.classId) === String(selectedPayment.classId) &&
+          Number(fee.feeYear) === Number(selectedFeeYear) &&
+          selectedFeeMonths.includes(Number(fee.feeMonth))
+      )
+      .reduce((sum, fee) => sum + toNumber(fee.balanceDue), 0)
+    : 0;
+  const totalAmount =
+    selectedFeeMonths.length > 0
+      ? toNumber(paymentForm.amount) * selectedFeeMonths.length
+      : 0;
+  const selectedMonthsLabel = selectedFeeMonths.length
+    ? selectedFeeMonths.map((month) => monthYearLabel(month, selectedFeeYear)).join(", ")
+    : "None selected";
 
   const cardStyle = {
     background: "#fff",
@@ -708,7 +799,7 @@ const StudentOverview = ({ student }) => {
             ) : (
               pendingFees.slice(0, 4).map((item, idx) => (
                 <div
-                  key={`${item.classId}-${item.feeMonth}-${idx}`}
+                  key={`${item.classId}-${item.feeMonth}-${item.feeYear}-${idx}`}
                   style={{
                     border: "1px solid #fed7aa",
                     background: "#fff7ed",
@@ -844,7 +935,7 @@ const StudentOverview = ({ student }) => {
         </div>
       </div>
 
-      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+      <Dialog open={paymentDialogOpen} onOpenChange={handlePaymentDialogChange}>
         <DialogContent style={{ maxWidth: "min(95vw, 720px)" }}>
           <DialogHeader>
             <DialogTitle>Pay Pending Fee</DialogTitle>
@@ -869,7 +960,7 @@ const StudentOverview = ({ student }) => {
               />
               <p className="text-xs font-semibold text-orange-700">Scan QR to Pay</p>
               <p className="mt-1 text-[11px] text-slate-500">
-                Balance: ₹ {selectedPayment?.balanceDue || 0}
+                Balance: ₹ {selectedFeeMonths.length ? selectedBalance : (selectedPayment?.balanceDue || 0)}
               </p>
             </div>
 
@@ -887,6 +978,45 @@ const StudentOverview = ({ student }) => {
                 >
                   <option value="UPI">UPI</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Fee Months
+                </label>
+                {availableFeeMonths.length ? (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {availableFeeMonths.map((option) => {
+                      const checked = selectedFeeMonths.includes(option.value);
+                      return (
+                        <label
+                          key={option.value}
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
+                            option.disabled
+                              ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
+                              : checked
+                                ? "border-orange-300 bg-orange-50 text-orange-700"
+                                : "border-slate-200 bg-white text-slate-600"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="h-3 w-3"
+                            disabled={option.disabled}
+                            checked={checked}
+                            onChange={() => toggleFeeMonth(option.value)}
+                          />
+                          {option.label || monthNumberToLabel(option.value)}
+                        </label>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="mt-1 text-xs text-slate-500">No pending months available.</p>
+                )}
+                <p className="mt-2 text-[11px] text-slate-500">
+                  Selected: {selectedMonthsLabel}
+                </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
@@ -910,7 +1040,7 @@ const StudentOverview = ({ student }) => {
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    Amount Paid
+                    Amount Paid (per month)
                   </label>
                   <input
                     type="number"
@@ -921,6 +1051,11 @@ const StudentOverview = ({ student }) => {
                       setPaymentForm((prev) => ({ ...prev, amount: e.target.value }))
                     }
                   />
+                  {selectedFeeMonths.length > 1 && (
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      Total for {selectedFeeMonths.length} months: ₹ {totalAmount}
+                    </p>
+                  )}
                   {paymentErrors.amount && (
                     <p className="mt-1 text-[11px] text-rose-600">
                       {paymentErrors.amount}
@@ -1023,7 +1158,7 @@ const StudentOverview = ({ student }) => {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setPaymentDialogOpen(false)}
+                  onClick={() => handlePaymentDialogChange(false)}
                 >
                   Cancel
                 </Button>

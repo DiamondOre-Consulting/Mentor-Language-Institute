@@ -164,6 +164,7 @@ const Register = () => {
   const [studentPayment, setStudentPayment] = useState({
     totalFee: "",
     feeMonth: "",
+    feeYear: String(new Date().getFullYear()),
     paid: "pending",
     amountPaid: "0",
   });
@@ -181,6 +182,8 @@ const Register = () => {
     "November",
     "December",
   ];
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 5 }, (_, index) => currentYear - 2 + index);
   const toastVariant = getToastVariant(popupMessage);
 
   const normalizeGradeValue = (value) => {
@@ -466,6 +469,12 @@ const Register = () => {
             label: "Total fee",
           }),
           feeMonth: validateRequired(studentPayment.feeMonth, "Fee month"),
+          feeYear: validateNumber(studentPayment.feeYear, {
+            min: 2000,
+            max: 2100,
+            integer: true,
+            label: "Fee year",
+          }),
           amountPaid:
             studentPayment.paid === "yes"
               ? validateAmountPaid(studentPayment.amountPaid, studentPayment.totalFee, {
@@ -496,8 +505,8 @@ const Register = () => {
       }
 
       if (courseId) {
-        if (!studentPayment.totalFee || !studentPayment.feeMonth) {
-          setPopupMessage("Please enter fee amount and month for enrollment.");
+        if (!studentPayment.totalFee || !studentPayment.feeMonth || !studentPayment.feeYear) {
+          setPopupMessage("Please enter fee amount, month, and year for enrollment.");
           setLoading(false);
           return;
         }
@@ -558,6 +567,7 @@ const Register = () => {
               data: {
                 totalFee: Number(studentPayment.totalFee),
                 feeMonth: feeMonthNumber,
+                feeYear: Number(studentPayment.feeYear),
                 paid: studentPayment.paid,
                 amountPaid: normalizedAmountPaid,
               },
@@ -595,6 +605,7 @@ const Register = () => {
         setStudentPayment({
           totalFee: "",
           feeMonth: "",
+          feeYear: String(currentYear),
           paid: "pending",
           amountPaid: "0",
         });
@@ -628,6 +639,12 @@ const Register = () => {
       const nextErrors = {
         totalFee: validateNumber(next.totalFee, { min: 0, label: "Total fee" }),
         feeMonth: validateRequired(next.feeMonth, "Fee month"),
+        feeYear: validateNumber(next.feeYear, {
+          min: 2000,
+          max: 2100,
+          integer: true,
+          label: "Fee year",
+        }),
         amountPaid:
           next.paid === "yes"
             ? validateAmountPaid(next.amountPaid, next.totalFee, { required: true })
@@ -648,6 +665,12 @@ const Register = () => {
       const nextErrors = {
         totalFee: validateNumber(next.totalFee, { min: 0, label: "Total fee" }),
         feeMonth: validateRequired(next.feeMonth, "Fee month"),
+        feeYear: validateNumber(next.feeYear, {
+          min: 2000,
+          max: 2100,
+          integer: true,
+          label: "Fee year",
+        }),
         amountPaid:
           next.paid === "yes"
             ? validateAmountPaid(next.amountPaid, next.totalFee, { required: true })
@@ -945,6 +968,29 @@ const Register = () => {
                             {paymentErrors.feeMonth && (
                               <p className="mt-1 text-xs text-rose-600">
                                 {paymentErrors.feeMonth}
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <label className="block mb-2 text-sm font-medium text-gray-900">
+                              Fee Year
+                            </label>
+                            <select
+                              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg w-full p-2.5"
+                              name="feeYear"
+                              value={studentPayment.feeYear}
+                              onChange={handleStudentPaymentChange}
+                              required
+                            >
+                              {yearOptions.map((yearValue) => (
+                                <option key={yearValue} value={yearValue}>
+                                  {yearValue}
+                                </option>
+                              ))}
+                            </select>
+                            {paymentErrors.feeYear && (
+                              <p className="mt-1 text-xs text-rose-600">
+                                {paymentErrors.feeYear}
                               </p>
                             )}
                           </div>

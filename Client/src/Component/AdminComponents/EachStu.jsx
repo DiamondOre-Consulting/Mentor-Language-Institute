@@ -21,7 +21,8 @@ const EachStu = () => {
   const [attendenceDetails, setAttendenceDetails] = useState(null);
   const [feedetails, setFeeDetails] = useState(null);
   const [selectedCourseId, setSelectedCourseId] = useState(null);
-  const [selectedMonth, setSelectedMonth] = useState("");
+  const [selectedMonths, setSelectedMonths] = useState([]);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [amount, setAmount] = useState("");
   const [paidStatus, setPaidStatus] = useState("pending");
   const [totalFee, setTotalFee] = useState("");
@@ -41,6 +42,8 @@ const EachStu = () => {
     "November",
     "December",
   ];
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 5 }, (_, index) => currentYear - 2 + index);
 
   useEffect(() => {
     const fetchStudentDetails = async () => {
@@ -171,23 +174,30 @@ const EachStu = () => {
   const buildFeeDetails = (feeData) => {
     if (!feeData) return null;
     const currentMonth = new Date().getMonth() + 1;
+    const currentYearValue = new Date().getFullYear();
     const totalFeeValue = Number(feeData?.totalFee || 0);
     const rawDetails = Array.isArray(feeData?.detailFee) ? feeData.detailFee : [];
-    const hasCurrentMonth = rawDetails.some(
-      (fee) => Number(fee?.feeMonth) === currentMonth
-    );
+    const hasCurrentMonth = rawDetails.some((fee) => {
+      const monthValue = Number(fee?.feeMonth);
+      const yearValue = Number(fee?.feeYear) || currentYearValue;
+      return monthValue === currentMonth && yearValue === currentYearValue;
+    });
 
     const normalizedDetails = rawDetails.map((fee) => ({
       ...fee,
       __monthNumber: Number(fee?.feeMonth),
-      feeMonth: normalizeMonthLabel(fee?.feeMonth),
+      __yearNumber: Number(fee?.feeYear) || currentYearValue,
+      feeYear: Number(fee?.feeYear) || currentYearValue,
+      feeMonth: `${normalizeMonthLabel(fee?.feeMonth)} ${Number(fee?.feeYear) || currentYearValue}`,
       amountPaid: Number(fee?.amountPaid || 0),
     }));
 
     if (totalFeeValue > 0 && !hasCurrentMonth) {
       normalizedDetails.push({
-        feeMonth: normalizeMonthLabel(currentMonth),
+        feeMonth: `${normalizeMonthLabel(currentMonth)} ${currentYearValue}`,
         __monthNumber: currentMonth,
+        __yearNumber: currentYearValue,
+        feeYear: currentYearValue,
         amountPaid: 0,
         paid: false,
         _virtual: true,
@@ -195,7 +205,12 @@ const EachStu = () => {
     }
 
     normalizedDetails.sort(
-      (a, b) => Number(a.__monthNumber || 0) - Number(b.__monthNumber || 0)
+      (a, b) => {
+        if (Number(a.__yearNumber || 0) !== Number(b.__yearNumber || 0)) {
+          return Number(a.__yearNumber || 0) - Number(b.__yearNumber || 0);
+        }
+        return Number(a.__monthNumber || 0) - Number(b.__monthNumber || 0);
+      }
     );
 
     return {
@@ -248,7 +263,7 @@ const EachStu = () => {
 
   const handleFeeUpdate = async () => {
     try {
-      if (!selectedMonth || !paidStatus) {
+      if (!selectedMonths.length || !paidStatus) {
         alert("Please fill in all fields.");
         return;
       }
@@ -257,7 +272,7 @@ const EachStu = () => {
       const effectivePaid =
         isPaid && Number(totalFee) > 0 && normalizedAmount >= Number(totalFee);
       const nextErrors = {
-        feeMonth: validateRequired(selectedMonth, "Fee month"),
+        feeMonth: selectedMonths.length ? "" : validateRequired("", "Fee month"),
         amountPaid: isPaid
           ? validateAmountPaid(amount, totalFee, { required: true })
           : "",
@@ -275,7 +290,10 @@ const EachStu = () => {
       const response = await put({
         url: `/admin-confi/update-fee/${selectedCourseId}/${id}`,
         data: {
-          feeMonth: monthNameToNumber[selectedMonth],
+          feeMonths: selectedMonths
+            .map((month) => monthNameToNumber[month])
+            .filter((value) => Number.isInteger(value)),
+          feeYear: selectedYear,
           paid: isPaid,
           amountPaid: normalizedAmount,
           totalFee: totalFee,
@@ -288,26 +306,37 @@ const EachStu = () => {
       if (response?.status === 200) {
         // console.log("Fee updated successfully");
         const updatedFeeDetails = [...(feedetails?.detailFee || [])];
-        const existingIndex = updatedFeeDetails.findIndex(
-          (fee) => fee.feeMonth === selectedMonth
-        );
-        if (existingIndex >= 0) {
-          updatedFeeDetails[existingIndex] = {
-            ...updatedFeeDetails[existingIndex],
-            feeMonth: selectedMonth,
-            amountPaid: normalizedAmount,
-            paid: effectivePaid,
-          };
-        } else {
-          updatedFeeDetails.push({
-            feeMonth: selectedMonth,
-            amountPaid: normalizedAmount,
-            paid: effectivePaid,
-          });
-        }
+        selectedMonths.forEach((month) => {
+          const monthNumber = monthNameToNumber[month];
+          const existingIndex = updatedFeeDetails.findIndex(
+            (fee) =>
+              Number(fee.__monthNumber) === Number(monthNumber) &&
+              Number(fee.__yearNumber) === Number(selectedYear)
+          );
+          if (existingIndex >= 0) {
+            updatedFeeDetails[existingIndex] = {
+              ...updatedFeeDetails[existingIndex],
+              feeMonth: `${month} ${selectedYear}`,
+              feeYear: selectedYear,
+              __yearNumber: selectedYear,
+              amountPaid: normalizedAmount,
+              paid: effectivePaid,
+            };
+          } else {
+            updatedFeeDetails.push({
+              feeMonth: `${month} ${selectedYear}`,
+              feeYear: selectedYear,
+              __monthNumber: monthNumber,
+              __yearNumber: selectedYear,
+              amountPaid: normalizedAmount,
+              paid: effectivePaid,
+            });
+          }
+        });
         setFeeDetails({ ...feedetails, detailFee: updatedFeeDetails });
         setAmount("");
         setPaidStatus("pending");
+        setSelectedMonths([]);
       }
     } catch (error) {
       console.error("Error updating fee:", error);
@@ -520,20 +549,34 @@ const EachStu = () => {
                           <tr className="bg-white border-b  ">
                               <td className="px-6 py-4 font-medium text-gray-900">
                                 <select
+                                  multiple
                                   className="rounded-md border border-slate-300 bg-white px-2 py-1"
+                                  value={selectedMonths}
                                   onChange={(e) => {
-                                    const value = e.target.value;
-                                    setSelectedMonth(value);
+                                    const values = Array.from(e.target.selectedOptions).map(
+                                      (option) => option.value
+                                    );
+                                    setSelectedMonths(values);
                                     setFeeErrors((prev) => ({
                                       ...prev,
-                                      feeMonth: validateRequired(value, "Fee month"),
+                                      feeMonth: values.length ? "" : validateRequired("", "Fee month"),
                                     }));
                                   }}
                                 >
-                                  <option>Select Month</option>
                                   {months.map((month, index) => (
                                     <option key={index} value={month}>
                                       {month}
+                                    </option>
+                                  ))}
+                                </select>
+                                <select
+                                  className="mt-2 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
+                                  value={selectedYear}
+                                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                                >
+                                  {yearOptions.map((yearValue) => (
+                                    <option key={yearValue} value={yearValue}>
+                                      {yearValue}
                                     </option>
                                   ))}
                                 </select>
@@ -548,7 +591,7 @@ const EachStu = () => {
                                 <input
                                   type="text"
                                   className="w-full rounded-md border border-slate-300 bg-white px-2 py-1 sm:w-auto"
-                                  placeholder="Enter Amount"
+                                  placeholder="Amount per month"
                                   value={amount}
                                   onChange={(e) => {
                                     const value = e.target.value;

@@ -216,23 +216,30 @@ const Coursedet = () => {
   const buildFeeDetails = (feeData) => {
     if (!feeData) return null;
     const currentMonth = new Date().getMonth() + 1;
+    const currentYearValue = new Date().getFullYear();
     const totalFeeValue = Number(feeData?.totalFee || 0);
     const rawDetails = Array.isArray(feeData?.detailFee) ? feeData.detailFee : [];
-    const hasCurrentMonth = rawDetails.some(
-      (fee) => Number(fee?.feeMonth) === currentMonth
-    );
+    const hasCurrentMonth = rawDetails.some((fee) => {
+      const monthValue = Number(fee?.feeMonth);
+      const yearValue = Number(fee?.feeYear) || currentYearValue;
+      return monthValue === currentMonth && yearValue === currentYearValue;
+    });
 
     const normalizedDetails = rawDetails.map((fee) => ({
       ...fee,
       __monthNumber: Number(fee?.feeMonth),
-      feeMonth: normalizeMonthLabel(fee?.feeMonth),
+      __yearNumber: Number(fee?.feeYear) || currentYearValue,
+      feeYear: Number(fee?.feeYear) || currentYearValue,
+      feeMonth: `${normalizeMonthLabel(fee?.feeMonth)} ${Number(fee?.feeYear) || currentYearValue}`,
       amountPaid: Number(fee?.amountPaid || 0),
     }));
 
     if (totalFeeValue > 0 && !hasCurrentMonth) {
       normalizedDetails.push({
-        feeMonth: normalizeMonthLabel(currentMonth),
+        feeMonth: `${normalizeMonthLabel(currentMonth)} ${currentYearValue}`,
         __monthNumber: currentMonth,
+        __yearNumber: currentYearValue,
+        feeYear: currentYearValue,
         amountPaid: 0,
         paid: false,
         _virtual: true,
@@ -240,7 +247,12 @@ const Coursedet = () => {
     }
 
     normalizedDetails.sort(
-      (a, b) => Number(a.__monthNumber || 0) - Number(b.__monthNumber || 0)
+      (a, b) => {
+        if (Number(a.__yearNumber || 0) !== Number(b.__yearNumber || 0)) {
+          return Number(a.__yearNumber || 0) - Number(b.__yearNumber || 0);
+        }
+        return Number(a.__monthNumber || 0) - Number(b.__monthNumber || 0);
+      }
     );
 
     return {

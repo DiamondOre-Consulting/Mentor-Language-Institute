@@ -21,6 +21,9 @@ const feeSchema = new mongoose.Schema({
         feeMonth: {
             type: Number,
         },
+        feeYear: {
+          type: Number,
+        },
         paid: {
             type: Boolean,
             default: null
@@ -33,10 +36,16 @@ const feeSchema = new mongoose.Schema({
     default: [],
     validate: {
       validator: (items) => {
-        const months = (items || []).map((entry) => Number(entry?.feeMonth)).filter(Number.isFinite);
-        return new Set(months).size === months.length;
+        const keys = (items || []).map((entry) => {
+          const month = Number(entry?.feeMonth);
+          const year = Number(entry?.feeYear);
+          const safeMonth = Number.isFinite(month) ? month : "na";
+          const safeYear = Number.isFinite(year) ? year : "na";
+          return `${safeMonth}-${safeYear}`;
+        });
+        return new Set(keys).size === keys.length;
       },
-      message: "Fee month entries must be unique per course.",
+      message: "Fee month entries must be unique per course and year.",
     },
   },
   createdAt: {

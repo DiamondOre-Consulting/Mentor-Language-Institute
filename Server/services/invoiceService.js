@@ -22,6 +22,14 @@ const formatMonth = (monthNumber) => {
   return monthNames[monthNumber - 1];
 };
 
+const formatMonthYear = (monthNumber, year) => {
+  if (!Number.isInteger(monthNumber) || monthNumber < 1 || monthNumber > 12) {
+    return year ? String(year) : "N/A";
+  }
+  const safeYear = Number.isInteger(year) ? year : new Date().getFullYear();
+  return `${formatMonth(monthNumber)} ${safeYear}`;
+};
+
 const formatDate = (date) => {
   const value = date instanceof Date ? date : new Date(date);
   return value.toLocaleDateString("en-IN", {
@@ -63,6 +71,7 @@ export const generateInvoicePdfBuffer = ({
   studentEmail,
   classTitle,
   feeMonth,
+  feeYear,
   totalFee,
   amountPaid,
   currency = "INR",
@@ -161,9 +170,14 @@ export const generateInvoicePdfBuffer = ({
     document.text(`Course: ${classTitle || "Course"}`, rightColumnX, document.y + 4, {
       width: columnWidth,
     });
-    document.text(`Fee Month: ${formatMonth(feeMonth)}`, rightColumnX, document.y + 2, {
+    document.text(
+      `Fee Month: ${formatMonthYear(feeMonth, feeYear)}`,
+      rightColumnX,
+      document.y + 2,
+      {
       width: columnWidth,
-    });
+      }
+    );
     document.text(`Currency: ${getCurrencySymbol(currency)}`, rightColumnX, document.y + 2, {
       width: columnWidth,
     });
@@ -227,7 +241,7 @@ export const generateInvoicePdfBuffer = ({
     drawRow(tableTop, tableColumns, { isHeader: true });
     drawRow(tableTop + rowHeight, [
       classTitle || "Course Fee",
-      formatMonth(feeMonth),
+      formatMonthYear(feeMonth, feeYear),
       formatCurrency(safeTotalFee, currency),
     ]);
 

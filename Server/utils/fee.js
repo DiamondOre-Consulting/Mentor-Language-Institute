@@ -74,12 +74,88 @@ export const normalizeFeeMonth = (value) => {
   return null;
 };
 
+export const normalizeFeeYear = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+  const parsed =
+    typeof value === "string" ? Number(value.trim()) : Number(value);
+  if (!Number.isInteger(parsed)) {
+    return null;
+  }
+  if (parsed < 2000 || parsed > 2100) {
+    return null;
+  }
+  return parsed;
+};
+
+export const normalizeFeeMonths = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return [];
+  }
+
+  const collect = (input) => {
+    const months = [];
+    const add = (entry) => {
+      const normalized = normalizeFeeMonth(entry);
+      if (normalized) {
+        months.push(normalized);
+      }
+    };
+
+    if (Array.isArray(input)) {
+      input.forEach(add);
+      return months;
+    }
+
+    if (typeof input === "string") {
+      const trimmed = input.trim();
+      if (!trimmed) return months;
+      if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) {
+            parsed.forEach(add);
+            return months;
+          }
+        } catch {
+          // fall through to split parser
+        }
+      }
+      trimmed
+        .split(/[\s,|]+/)
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+        .forEach(add);
+      return months;
+    }
+
+    add(input);
+    return months;
+  };
+
+  const months = collect(value);
+  return Array.from(new Set(months)).sort((a, b) => a - b);
+};
+
 export const formatFeeMonthLabel = (monthNumber) => {
   if (!Number.isInteger(monthNumber) || monthNumber < 1 || monthNumber > 12) {
     return "N/A";
   }
   return new Date(2020, monthNumber - 1, 1).toLocaleString("en-IN", {
     month: "long",
+  });
+};
+
+export const formatFeePeriodLabel = (monthNumber, feeYear) => {
+  const normalizedYear = normalizeFeeYear(feeYear);
+  if (!Number.isInteger(monthNumber) || monthNumber < 1 || monthNumber > 12) {
+    return normalizedYear ? String(normalizedYear) : "N/A";
+  }
+  const yearValue = normalizedYear || new Date().getFullYear();
+  return new Date(yearValue, monthNumber - 1, 1).toLocaleString("en-IN", {
+    month: "long",
+    year: "numeric",
   });
 };
 

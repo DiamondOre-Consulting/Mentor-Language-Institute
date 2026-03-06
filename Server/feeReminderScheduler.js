@@ -1,26 +1,11 @@
 import cron from "node-cron";
-import twilio from "twilio";
 import Students from "./Models/Students.js";
 import Classes from "./Models/Classes.js";
 import Fee from "./Models/Fee.js";
 import Notification from "./Models/Notification.js";
-import { normalizeFeeMonth } from "./utils/fee.js";
-
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const fromNumber = process.env.TWILIO_FROM_NUMBER;
-const defaultCountryCode = process.env.TWILIO_DEFAULT_COUNTRY_CODE || "+91";
-const client =
-  accountSid && authToken ? twilio(accountSid, authToken) : null;
+import { normalizeFeeMonth, normalizeFeeYear, formatFeePeriodLabel } from "./utils/fee.js";
 
 const feeReminderScheduler = () => {
-  const smsEnabled = !!(client && fromNumber);
-  if (!smsEnabled) {
-    console.warn(
-      "Fee reminder SMS is disabled. Missing Twilio configuration."
-    );
-  }
-
   cron.schedule(
     "0 10 * * *",
     async () => {
@@ -30,6 +15,7 @@ const feeReminderScheduler = () => {
 
       const now = new Date();
       const currentMonth = now.getMonth() + 1; // Get current month (1-12)
+      const currentYear = now.getFullYear();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       // const currentYear = new Date().getFullYear(); // Get current year
 
@@ -44,7 +30,11 @@ const feeReminderScheduler = () => {
           }
           if (oneFeeDetail.detailFee && Array.isArray(oneFeeDetail.detailFee)) {
             const detailFeeForCurrentMonth = oneFeeDetail.detailFee.find(
-              (detail) => normalizeFeeMonth(detail.feeMonth) === currentMonth
+              (detail) => {
+                const monthValue = normalizeFeeMonth(detail.feeMonth);
+                const yearValue = normalizeFeeYear(detail.feeYear) || currentYear;
+                return monthValue === currentMonth && yearValue === currentYear;
+              }
             );
 
             if (!detailFeeForCurrentMonth || !detailFeeForCurrentMonth.paid) {
@@ -52,9 +42,9 @@ const feeReminderScheduler = () => {
               const singleClass = await Classes.findById({
                 _id: oneFeeDetail.classId,
               });
-              const phoneNumber = student.phone;
               const classTitle = singleClass?.classTitle || "your class";
-              const messageMain = `Reminder: Your fee of ${classTitle} is due for this month. Please pay as soon as possible.`;
+              const periodLabel = formatFeePeriodLabel(currentMonth, currentYear);
+              const messageMain = `Reminder: Your fee of ${classTitle} is due for ${periodLabel}. Please pay as soon as possible.`;
 
               try {
                 const exists = await Notification.exists({
@@ -62,6 +52,7 @@ const feeReminderScheduler = () => {
                   type: "PAYMENT_DUE",
                   classId: oneFeeDetail.classId,
                   feeMonth: currentMonth,
+                  feeYear: currentYear,
                   createdAt: { $gte: todayStart },
                 });
                 if (!exists) {
@@ -73,9 +64,11 @@ const feeReminderScheduler = () => {
                     message: messageMain,
                     classId: oneFeeDetail.classId,
                     feeMonth: currentMonth,
+                    feeYear: currentYear,
                     payload: {
                       classTitle,
                       feeMonth: currentMonth,
+                      feeYear: currentYear,
                       totalFee: oneFeeDetail.totalFee,
                     },
                   });
@@ -85,16 +78,6 @@ const feeReminderScheduler = () => {
               }
               //
               // res.status(200).json(message)
-              if (smsEnabled && phoneNumber) {
-                client.messages
-                  .create({
-                    body: messageMain,
-                    from: fromNumber,
-                    to: `${defaultCountryCode}${phoneNumber}`,
-                  })
-                  .then((message) => console.log(message.sid))
-                  .catch((error) => console.error("Error sending SMS:", error));
-              }
               // break; // Stop checking other fees for this student
             }
           } else {

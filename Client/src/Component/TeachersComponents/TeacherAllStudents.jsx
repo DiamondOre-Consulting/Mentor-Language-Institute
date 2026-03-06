@@ -60,10 +60,13 @@ const TeacherAllStudents = () => {
     "November",
     "December",
   ];
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 5 }, (_, index) => currentYear - 2 + index);
 
   const [formData, setFormData] = useState({
     totalFee: "",
     feeMonth: "",
+    feeYear: String(currentYear),
     paid: "pending",
     amountPaid: "0",
   });
@@ -71,6 +74,12 @@ const TeacherAllStudents = () => {
   const buildFormErrors = (data) => ({
     totalFee: validateNumber(data.totalFee, { min: 0, label: "Total fee" }),
     feeMonth: validateRequired(data.feeMonth, "Fee month"),
+    feeYear: validateNumber(data.feeYear, {
+      min: 2000,
+      max: 2100,
+      integer: true,
+      label: "Fee year",
+    }),
     amountPaid:
       data.paid === "yes"
         ? validateAmountPaid(data.amountPaid, data.totalFee, { required: true })
@@ -275,7 +284,7 @@ const TeacherAllStudents = () => {
         return;
       }
 
-      const { totalFee, feeMonth, paid, amountPaid } = formData;
+      const { totalFee, feeMonth, feeYear, paid, amountPaid } = formData;
       const nextErrors = buildFormErrors(formData);
       setFormErrors(nextErrors);
       if (Object.values(nextErrors).some(Boolean)) {
@@ -291,6 +300,7 @@ const TeacherAllStudents = () => {
         data: {
           totalFee: Number(totalFee),
           feeMonth: monthNumber,
+          feeYear: Number(feeYear),
           paid: isPaid,
           amountPaid: normalizedAmountPaid,
         },
@@ -343,6 +353,7 @@ const TeacherAllStudents = () => {
     setFormData({
       totalFee: "",
       feeMonth: "",
+      feeYear: String(currentYear),
       paid: "pending",
       amountPaid: "0",
     });
@@ -686,6 +697,32 @@ const TeacherAllStudents = () => {
                   {formErrors.feeMonth && (
                     <p className="mt-1 text-xs text-rose-600">
                       {formErrors.feeMonth}
+                    </p>
+                  )}
+                </div>
+                <div className="mb-4">
+                  <label
+                    htmlFor="feeYear"
+                    className="block text-sm font-medium text-slate-700"
+                  >
+                    Fee Year
+                  </label>
+                  <select
+                    className="mt-1 w-full"
+                    onChange={handleChange}
+                    value={formData.feeYear}
+                    name="feeYear"
+                    required
+                  >
+                    {yearOptions.map((yearValue) => (
+                      <option key={yearValue} value={yearValue}>
+                        {yearValue}
+                      </option>
+                    ))}
+                  </select>
+                  {formErrors.feeYear && (
+                    <p className="mt-1 text-xs text-rose-600">
+                      {formErrors.feeYear}
                     </p>
                   )}
                 </div>

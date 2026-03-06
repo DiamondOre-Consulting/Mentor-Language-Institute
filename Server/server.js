@@ -5,10 +5,14 @@ import mongoose from "mongoose";
 import morgan from "morgan";
 import { createServer } from "http";
 import path from "path";
+import { fileURLToPath } from "url";
 import feeReminderScheduler from "./feeReminderScheduler.js";
 import scheduleCleanup from "./scheduleCleanup.js";
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 const allowedOrigins = (process.env.CLIENT_ORIGINS ||
   "http://localhost:5173,https://www.mentorlanguageinstitute.com")
@@ -40,8 +44,16 @@ app.use(morgan("dev"));
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 
+const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
+if (!mongoUri) {
+  console.error(
+    "Missing MongoDB connection string. Set MONGO_URI (or MONGODB_URI) in .env."
+  );
+  process.exit(1);
+}
+
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(mongoUri)
   .then(() => {
     console.log("Connected to MongoDB");
   })

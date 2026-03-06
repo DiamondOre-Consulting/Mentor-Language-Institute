@@ -36,6 +36,11 @@ const notificationSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+    feeYear: {
+      type: Number,
+      default: null,
+      index: true,
+    },
     payload: {
       type: mongoose.Schema.Types.Mixed,
       default: {},
@@ -50,6 +55,6 @@ const notificationSchema = new mongoose.Schema(
 );
 
 notificationSchema.index({ userId: 1, readAt: 1, createdAt: -1 });
-notificationSchema.index({ userId: 1, type: 1, classId: 1, feeMonth: 1, createdAt: -1 });
+notificationSchema.index({ userId: 1, type: 1, classId: 1, feeMonth: 1, feeYear: 1, createdAt: -1 });
 
 export default mongoose.model("Notification", notificationSchema);

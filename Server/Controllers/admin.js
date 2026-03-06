@@ -25,9 +25,11 @@ import { deleteAllCoursesCascade } from "../utils/deleteCourseCascade.js";
 import { deleteAllStudentsCascade, deleteStudentCascade } from "../utils/deleteStudentCascade.js";
 import {
   normalizeFeeMonth,
+  normalizeFeeMonths,
+  normalizeFeeYear,
   normalizePaidStatus,
   parseFeeAmount,
-  formatFeeMonthLabel,
+  formatFeePeriodLabel,
   computePaymentState,
 } from "../utils/fee.js";
 import {
@@ -1122,7 +1124,7 @@ router.get("/all-students/:id", AdminAuthenticateToken, async (req, res) => {
 router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res) => {
   try {
     const { id1, id2 } = req.params;
-    const { totalFee, feeMonth, paid, amountPaid } = req.body;
+    const { totalFee, feeMonth, feeYear, paid, amountPaid } = req.body;
     const normalizedPaid = normalizePaidStatus(paid);
     if (normalizedPaid === null) {
       return res.status(400).json({
@@ -1143,6 +1145,13 @@ router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res)
         message: "Fee month must be a valid month number (1-12).",
       });
     }
+    const providedYear = normalizeFeeYear(feeYear);
+    if (feeYear !== undefined && feeYear !== null && feeYear !== "" && !providedYear) {
+      return res.status(400).json({
+        message: "Fee year must be a valid year (e.g., 2026).",
+      });
+    }
+    const normalizedFeeYear = providedYear || new Date().getFullYear();
 
     const normalizedAmountPaidInput = parseFeeAmount(amountPaid);
     const normalizedAmountPaid =
@@ -1241,17 +1250,31 @@ router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res)
         });
       }
 
+      const currentYear = new Date().getFullYear();
+      const invoiceYearMatch =
+        normalizedFeeYear === currentYear
+          ? { $in: [normalizedFeeYear, null] }
+          : normalizedFeeYear;
+      const resolveDetailYear = (detail) => {
+        const yearValue = normalizeFeeYear(detail?.feeYear);
+        if (yearValue) return yearValue;
+        return normalizedFeeYear === currentYear ? currentYear : null;
+      };
       const existingDetail = feeRecord.detailFee.find(
-        (detail) => normalizeFeeMonth(detail.feeMonth) === normalizedFeeMonth
+        (detail) =>
+          normalizeFeeMonth(detail.feeMonth) === normalizedFeeMonth &&
+          resolveDetailYear(detail) === normalizedFeeYear
       );
       const wasPaid = existingDetail?.paid === true;
 
       if (existingDetail) {
         existingDetail.paid = effectivePaid;
         existingDetail.amountPaid = normalizedAmountPaid ?? 0;
+        existingDetail.feeYear = normalizedFeeYear;
       } else {
         feeRecord.detailFee.push({
           feeMonth: normalizedFeeMonth,
+          feeYear: normalizedFeeYear,
           paid: effectivePaid,
           amountPaid: normalizedAmountPaid ?? 0,
         });
@@ -1281,9 +1304,14 @@ router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res)
       if (hasPayment) {
         const studentEmail = studentExists.email;
         const issuedAt = new Date();
+        const invoiceYearMatch =
+          normalizedFeeYear === currentYear
+            ? { $in: [normalizedFeeYear, null] }
+            : normalizedFeeYear;
         let invoiceRecord = await Invoice.findOne({
           feeId: feeRecord._id,
           feeMonth: normalizedFeeMonth,
+          feeYear: invoiceYearMatch,
           studentId: id2,
         });
 
@@ -1298,6 +1326,7 @@ router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res)
                 studentId: id2,
                 feeId: feeRecord._id,
                 feeMonth: normalizedFeeMonth,
+                feeYear: normalizedFeeYear,
                 totalFee: normalizedTotalFee,
                 amountPaid: normalizedAmountPaid ?? 0,
                 sentToEmail: studentEmail,
@@ -1311,6 +1340,7 @@ router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res)
                   studentId: id2,
                   feeId: feeRecord._id,
                   feeMonth: normalizedFeeMonth,
+                  feeYear: normalizedFeeYear,
                   totalFee: normalizedTotalFee,
                   amountPaid: normalizedAmountPaid ?? 0,
                   sentToEmail: studentEmail,
@@ -1323,19 +1353,20 @@ router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res)
 
           if (invoiceRecord && invoiceRecord.emailStatus !== "sent") {
             try {
-              const pdfBuffer = await generateInvoicePdfBuffer({
-                invoiceNumber: invoiceRecord.invoiceNumber,
-                issuedAt,
-                studentName: studentExists.name,
-                studentEmail,
-                classTitle: classExists.classTitle,
-                feeMonth: normalizedFeeMonth,
-                totalFee: normalizedTotalFee,
-                amountPaid: normalizedAmountPaid ?? 0,
-                currency: process.env.INVOICE_CURRENCY || "INR",
-              });
+                const pdfBuffer = await generateInvoicePdfBuffer({
+                  invoiceNumber: invoiceRecord.invoiceNumber,
+                  issuedAt,
+                  studentName: studentExists.name,
+                  studentEmail,
+                  classTitle: classExists.classTitle,
+                  feeMonth: normalizedFeeMonth,
+                  feeYear: normalizedFeeYear,
+                  totalFee: normalizedTotalFee,
+                  amountPaid: normalizedAmountPaid ?? 0,
+                  currency: process.env.INVOICE_CURRENCY || "INR",
+                });
 
-              const feeMonthLabel = formatFeeMonthLabel(normalizedFeeMonth);
+              const feeMonthLabel = formatFeePeriodLabel(normalizedFeeMonth, normalizedFeeYear);
               const subject = `Invoice ${invoiceRecord.invoiceNumber} for ${classExists.classTitle}`;
               const text = `Hi ${studentExists.name},\n\nThank you for your payment. Please find your invoice (${invoiceRecord.invoiceNumber}) attached.\n\nCourse: ${classExists.classTitle}\nFee Month: ${feeMonthLabel}\nTotal Fee: ${normalizedTotalFee}\nAmount Paid: ${normalizedAmountPaid}\n\nRegards,\nMentor Language Institute`;
               const html = `
@@ -1381,7 +1412,7 @@ router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res)
     }
 
     try {
-      const feeMonthLabel = formatFeeMonthLabel(normalizedFeeMonth);
+      const feeMonthLabel = formatFeePeriodLabel(normalizedFeeMonth, normalizedFeeYear);
       const title = `Enrolled in ${classExists.classTitle}`;
       const message =
         paymentStatus === "paid"
@@ -1397,9 +1428,11 @@ router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res)
         message,
         classId: classExists._id,
         feeMonth: normalizedFeeMonth,
+        feeYear: normalizedFeeYear,
         payload: {
           classTitle: classExists.classTitle,
           feeMonth: normalizedFeeMonth,
+          feeYear: normalizedFeeYear,
           paid: effectivePaid,
           amountPaid: normalizedAmountPaid ?? 0,
           paymentStatus,
@@ -1452,7 +1485,7 @@ router.put(
   async (req, res) => {
     try {
       const { id } = req.params;
-      const { totalFee, feeMonth, amountPaid } = req.body || {};
+      const { totalFee, feeMonth, feeYear, amountPaid } = req.body || {};
 
       const request = await PaymentRequest.findById(id);
       if (!request) {
@@ -1526,6 +1559,16 @@ router.put(
           message: "Fee month must be a valid month number (1-12).",
         });
       }
+      const fallbackYear = request.paidOn
+        ? request.paidOn.getFullYear()
+        : null;
+      const providedYear = normalizeFeeYear(feeYear ?? request.feeYear ?? fallbackYear);
+      if (feeYear !== undefined && feeYear !== null && feeYear !== "" && !providedYear) {
+        return res.status(400).json({
+          message: "Fee year must be a valid year (e.g., 2026).",
+        });
+      }
+      const normalizedFeeYear = providedYear || new Date().getFullYear();
 
       const normalizedTotalFee =
         totalFee !== undefined && totalFee !== null && totalFee !== ""
@@ -1592,17 +1635,27 @@ router.put(
           });
         }
 
+        const currentYear = new Date().getFullYear();
+        const resolveDetailYear = (detail) => {
+          const yearValue = normalizeFeeYear(detail?.feeYear);
+          if (yearValue) return yearValue;
+          return normalizedFeeYear === currentYear ? currentYear : null;
+        };
         const existingDetail = feeRecord.detailFee.find(
-          (detail) => normalizeFeeMonth(detail.feeMonth) === normalizedFeeMonth
+          (detail) =>
+            normalizeFeeMonth(detail.feeMonth) === normalizedFeeMonth &&
+            resolveDetailYear(detail) === normalizedFeeYear
         );
         const wasPaid = existingDetail?.paid === true;
 
         if (existingDetail) {
           existingDetail.paid = effectivePaid;
           existingDetail.amountPaid = normalizedAmountPaid ?? 0;
+          existingDetail.feeYear = normalizedFeeYear;
         } else {
           feeRecord.detailFee.push({
             feeMonth: normalizedFeeMonth,
+            feeYear: normalizedFeeYear,
             paid: effectivePaid,
             amountPaid: normalizedAmountPaid ?? 0,
           });
@@ -1631,11 +1684,16 @@ router.put(
         if (hasPayment) {
           const studentEmail = studentExists.email;
           const issuedAt = new Date();
-          let invoiceRecord = await Invoice.findOne({
-            feeId: feeRecord._id,
-            feeMonth: normalizedFeeMonth,
-            studentId: request.studentId,
-          });
+        const invoiceYearMatch =
+          normalizedFeeYear === currentYear
+            ? { $in: [normalizedFeeYear, null] }
+            : normalizedFeeYear;
+        let invoiceRecord = await Invoice.findOne({
+          feeId: feeRecord._id,
+          feeMonth: normalizedFeeMonth,
+          feeYear: invoiceYearMatch,
+          studentId: request.studentId,
+        });
 
           if (!(invoiceRecord?.emailStatus === "sent" && wasPaid)) {
             let invoiceNumber = invoiceRecord?.invoiceNumber;
@@ -1648,6 +1706,7 @@ router.put(
                   studentId: request.studentId,
                   feeId: feeRecord._id,
                   feeMonth: normalizedFeeMonth,
+                  feeYear: normalizedFeeYear,
                   totalFee: normalizedTotalFee,
                   amountPaid: normalizedAmountPaid ?? 0,
                   sentToEmail: studentEmail,
@@ -1661,6 +1720,7 @@ router.put(
                     studentId: request.studentId,
                     feeId: feeRecord._id,
                     feeMonth: normalizedFeeMonth,
+                    feeYear: normalizedFeeYear,
                     totalFee: normalizedTotalFee,
                     amountPaid: normalizedAmountPaid ?? 0,
                     sentToEmail: studentEmail,
@@ -1680,12 +1740,13 @@ router.put(
                   studentEmail,
                   classTitle: classExists.classTitle,
                   feeMonth: normalizedFeeMonth,
+                  feeYear: normalizedFeeYear,
                   totalFee: normalizedTotalFee,
                   amountPaid: normalizedAmountPaid ?? 0,
                   currency: process.env.INVOICE_CURRENCY || "INR",
                 });
 
-                const feeMonthLabel = formatFeeMonthLabel(normalizedFeeMonth);
+                const feeMonthLabel = formatFeePeriodLabel(normalizedFeeMonth, normalizedFeeYear);
                 const subject = `Invoice ${invoiceRecord.invoiceNumber} for ${classExists.classTitle}`;
                 const text = `Hi ${studentExists.name},\n\nThank you for your payment. Please find your invoice (${invoiceRecord.invoiceNumber}) attached.\n\nCourse: ${classExists.classTitle}\nFee Month: ${feeMonthLabel}\nTotal Fee: ${normalizedTotalFee}\nAmount Paid: ${normalizedAmountPaid}\n\nRegards,\nMentor Language Institute`;
                 const html = `
@@ -1733,10 +1794,13 @@ router.put(
       request.status = "approved";
       request.adminId = req.user.userId;
       request.decisionAt = new Date();
+      if (request.requestType === "fee_payment") {
+        request.feeYear = normalizedFeeYear;
+      }
       await request.save();
 
       try {
-        const feeMonthLabel = formatFeeMonthLabel(normalizedFeeMonth);
+        const feeMonthLabel = formatFeePeriodLabel(normalizedFeeMonth, normalizedFeeYear);
         const balanceDue = Math.max(
           0,
           Number(normalizedTotalFee) - Number(normalizedAmountPaid ?? 0)
@@ -1767,9 +1831,11 @@ router.put(
           message: approvalMessage,
           classId: classExists._id,
           feeMonth: normalizedFeeMonth,
+          feeYear: normalizedFeeYear,
           payload: {
             classTitle: classExists.classTitle,
             feeMonth: normalizedFeeMonth,
+            feeYear: normalizedFeeYear,
             totalFee: normalizedTotalFee,
             amountPaid: normalizedAmountPaid ?? 0,
             balanceDue,
@@ -1869,7 +1935,7 @@ router.put(
   async (req, res) => {
     try {
       const { id1, id2 } = req.params;
-      const { feeMonth, paid, amountPaid, totalFee: totalFeeInput } = req.body;
+      const { feeMonth, feeMonths, feeYear, paid, amountPaid, totalFee: totalFeeInput } = req.body;
       const normalizedPaid = normalizePaidStatus(paid);
       if (normalizedPaid === null) {
         return res.status(400).json({
@@ -1877,12 +1943,19 @@ router.put(
         });
       }
 
-      const normalizedFeeMonth = normalizeFeeMonth(feeMonth);
-      if (!normalizedFeeMonth) {
+      const requestedMonths = normalizeFeeMonths(feeMonths ?? feeMonth);
+      if (!requestedMonths.length) {
         return res.status(400).json({
           message: "Fee month must be a valid month number (1-12).",
         });
       }
+      const providedYear = normalizeFeeYear(feeYear);
+      if (feeYear !== undefined && feeYear !== null && feeYear !== "" && !providedYear) {
+        return res.status(400).json({
+          message: "Fee year must be a valid year (e.g., 2026).",
+        });
+      }
+      const normalizedFeeYear = providedYear || new Date().getFullYear();
 
       const normalizedAmountPaidInput = parseFeeAmount(amountPaid);
       const normalizedAmountPaid =
@@ -1972,21 +2045,34 @@ router.put(
       const effectivePaid = paymentState.isPaid;
       const paymentStatus = paymentState.status;
 
-      const existingDetail = fee.detailFee.find(
-        (detail) => normalizeFeeMonth(detail.feeMonth) === normalizedFeeMonth
-      );
-      const wasPaid = existingDetail?.paid === true;
+      const currentYear = new Date().getFullYear();
+      const resolveDetailYear = (detail) => {
+        const yearValue = normalizeFeeYear(detail?.feeYear);
+        if (yearValue) return yearValue;
+        return normalizedFeeYear === currentYear ? currentYear : null;
+      };
+      const wasPaidByMonth = new Map();
+      requestedMonths.forEach((monthValue) => {
+        const existingDetail = fee.detailFee.find(
+          (detail) =>
+            normalizeFeeMonth(detail.feeMonth) === monthValue &&
+            resolveDetailYear(detail) === normalizedFeeYear
+        );
+        wasPaidByMonth.set(monthValue, existingDetail?.paid === true);
 
-      if (existingDetail) {
-        existingDetail.paid = effectivePaid;
-        existingDetail.amountPaid = normalizedAmountPaid ?? 0;
-      } else {
-        fee.detailFee.push({
-          feeMonth: normalizedFeeMonth,
-          paid: effectivePaid,
-          amountPaid: normalizedAmountPaid ?? 0,
-        });
-      }
+        if (existingDetail) {
+          existingDetail.paid = effectivePaid;
+          existingDetail.amountPaid = normalizedAmountPaid ?? 0;
+          existingDetail.feeYear = normalizedFeeYear;
+        } else {
+          fee.detailFee.push({
+            feeMonth: monthValue,
+            feeYear: normalizedFeeYear,
+            paid: effectivePaid,
+            amountPaid: normalizedAmountPaid ?? 0,
+          });
+        }
+      });
 
       if (normalizedTotalFee !== null) {
         fee.totalFee = normalizedTotalFee;
@@ -1995,71 +2081,73 @@ router.put(
 
       if (hasPayment) {
         const studentEmail = student.email;
-        const issuedAt = new Date();
-        let invoiceRecord = await Invoice.findOne({
-          feeId: fee._id,
-          feeMonth: normalizedFeeMonth,
-          studentId: id2,
-        });
-
-        if (invoiceRecord?.emailStatus === "sent" && wasPaid) {
-          return res.status(200).json({
-            message: `Fee for ${normalizedFeeMonth} is updated successfully.`,
-            fee,
+        for (const monthValue of requestedMonths) {
+          const issuedAt = new Date();
+          let invoiceRecord = await Invoice.findOne({
+            feeId: fee._id,
+            feeMonth: monthValue,
+            feeYear: invoiceYearMatch,
+            studentId: id2,
           });
-        }
 
-        let invoiceNumber = invoiceRecord?.invoiceNumber;
-        if (!invoiceRecord) {
-          invoiceNumber = generateInvoiceNumber(issuedAt);
-          try {
-            invoiceRecord = await Invoice.create({
-              invoiceNumber,
-              classId: id1,
-              studentId: id2,
-              feeId: fee._id,
-              feeMonth: normalizedFeeMonth,
-              totalFee: effectiveTotalFee,
-              amountPaid: normalizedAmountPaid ?? 0,
-              sentToEmail: studentEmail,
-            });
-          } catch (error) {
-            if (error?.code === 11000) {
-              invoiceNumber = generateInvoiceNumber(new Date());
+          if (invoiceRecord?.emailStatus === "sent" && wasPaidByMonth.get(monthValue)) {
+            continue;
+          }
+
+          let invoiceNumber = invoiceRecord?.invoiceNumber;
+          if (!invoiceRecord) {
+            invoiceNumber = generateInvoiceNumber(issuedAt);
+            try {
               invoiceRecord = await Invoice.create({
                 invoiceNumber,
                 classId: id1,
                 studentId: id2,
                 feeId: fee._id,
-                feeMonth: normalizedFeeMonth,
+                feeMonth: monthValue,
+                feeYear: normalizedFeeYear,
                 totalFee: effectiveTotalFee,
                 amountPaid: normalizedAmountPaid ?? 0,
                 sentToEmail: studentEmail,
               });
-            } else {
-              throw error;
+            } catch (error) {
+              if (error?.code === 11000) {
+                invoiceNumber = generateInvoiceNumber(new Date());
+                invoiceRecord = await Invoice.create({
+                  invoiceNumber,
+                  classId: id1,
+                  studentId: id2,
+                  feeId: fee._id,
+                  feeMonth: monthValue,
+                  feeYear: normalizedFeeYear,
+                  totalFee: effectiveTotalFee,
+                  amountPaid: normalizedAmountPaid ?? 0,
+                  sentToEmail: studentEmail,
+                });
+              } else {
+                throw error;
+              }
             }
           }
-        }
 
-        if (invoiceRecord && invoiceRecord.emailStatus !== "sent") {
-          try {
-            const pdfBuffer = await generateInvoicePdfBuffer({
-              invoiceNumber,
-              issuedAt,
-              studentName: student.name,
-              studentEmail,
-              classTitle: classExists.classTitle,
-              feeMonth: normalizedFeeMonth,
-              totalFee: effectiveTotalFee,
-              amountPaid: normalizedAmountPaid ?? 0,
-              currency: process.env.INVOICE_CURRENCY || "INR",
-            });
+          if (invoiceRecord && invoiceRecord.emailStatus !== "sent") {
+            try {
+                const pdfBuffer = await generateInvoicePdfBuffer({
+                  invoiceNumber,
+                  issuedAt,
+                  studentName: student.name,
+                  studentEmail,
+                  classTitle: classExists.classTitle,
+                  feeMonth: monthValue,
+                  feeYear: normalizedFeeYear,
+                  totalFee: effectiveTotalFee,
+                  amountPaid: normalizedAmountPaid ?? 0,
+                  currency: process.env.INVOICE_CURRENCY || "INR",
+                });
 
-            const feeMonthLabel = formatFeeMonthLabel(normalizedFeeMonth);
-            const subject = `Invoice ${invoiceNumber} for ${classExists.classTitle}`;
-            const text = `Hi ${student.name},\n\nThank you for your payment. Please find your invoice (${invoiceNumber}) attached.\n\nCourse: ${classExists.classTitle}\nFee Month: ${feeMonthLabel}\nTotal Fee: ${effectiveTotalFee}\nAmount Paid: ${normalizedAmountPaid}\n\nRegards,\nMentor Language Institute`;
-            const html = `
+              const feeMonthLabel = formatFeePeriodLabel(monthValue, normalizedFeeYear);
+              const subject = `Invoice ${invoiceNumber} for ${classExists.classTitle}`;
+              const text = `Hi ${student.name},\n\nThank you for your payment. Please find your invoice (${invoiceNumber}) attached.\n\nCourse: ${classExists.classTitle}\nFee Month: ${feeMonthLabel}\nTotal Fee: ${effectiveTotalFee}\nAmount Paid: ${normalizedAmountPaid}\n\nRegards,\nMentor Language Institute`;
+              const html = `
               <div style="font-family:Arial, sans-serif; line-height:1.6; color:#111;">
                 <p>Hi ${student.name},</p>
                 <p>Thank you for your payment. Please find your invoice attached.</p>
@@ -2072,36 +2160,36 @@ router.put(
               </div>
             `;
 
-            await sendEmail({
-              to: studentEmail,
-              subject,
-              text,
-              html,
-              attachments: [
-                {
-                  filename: `Invoice-${invoiceNumber}.pdf`,
-                  content: pdfBuffer,
-                  contentType: "application/pdf",
-                },
-              ],
-            });
+              await sendEmail({
+                to: studentEmail,
+                subject,
+                text,
+                html,
+                attachments: [
+                  {
+                    filename: `Invoice-${invoiceNumber}.pdf`,
+                    content: pdfBuffer,
+                    contentType: "application/pdf",
+                  },
+                ],
+              });
 
-            await Invoice.findByIdAndUpdate(invoiceRecord._id, {
-              emailStatus: "sent",
-              sentToEmail: studentEmail,
-            });
-          } catch (emailError) {
-            console.error("Invoice email failed:", emailError);
-            await Invoice.findByIdAndUpdate(invoiceRecord._id, {
-              emailStatus: "failed",
-              emailError: emailError?.message || "Email delivery failed.",
-            });
+              await Invoice.findByIdAndUpdate(invoiceRecord._id, {
+                emailStatus: "sent",
+                sentToEmail: studentEmail,
+              });
+            } catch (emailError) {
+              console.error("Invoice email failed:", emailError);
+              await Invoice.findByIdAndUpdate(invoiceRecord._id, {
+                emailStatus: "failed",
+                emailError: emailError?.message || "Email delivery failed.",
+              });
+            }
           }
         }
       }
 
       try {
-        const feeMonthLabel = formatFeeMonthLabel(normalizedFeeMonth);
         const balanceDue = Math.max(
           0,
           Number(effectiveTotalFee) - Number(normalizedAmountPaid ?? 0)
@@ -2112,41 +2200,48 @@ router.put(
             : paymentStatus === "partial"
               ? `Partial payment received for ${classExists.classTitle}`
               : `Payment updated for ${classExists.classTitle}`;
-        const message =
-          paymentStatus === "paid"
-            ? `We received your payment for ${classExists.classTitle} (${feeMonthLabel}).`
-            : paymentStatus === "partial"
-              ? `We received a partial payment of ${normalizedAmountPaid}. Remaining balance: ${balanceDue}. (${feeMonthLabel}).`
-              : `Your payment status was updated for ${classExists.classTitle} (${feeMonthLabel}).`;
-        await createNotification({
-          userId: student._id,
-          role: "student",
-          type:
+        for (const monthValue of requestedMonths) {
+          const feeMonthLabel = formatFeePeriodLabel(monthValue, normalizedFeeYear);
+          const message =
             paymentStatus === "paid"
-              ? "PAYMENT_RECEIVED"
+              ? `We received your payment for ${classExists.classTitle} (${feeMonthLabel}).`
               : paymentStatus === "partial"
-                ? "PAYMENT_PARTIAL"
-                : "PAYMENT_STATUS_UPDATED",
-          title,
-          message,
-          classId: classExists._id,
-          feeMonth: normalizedFeeMonth,
-          payload: {
-            classTitle: classExists.classTitle,
-            feeMonth: normalizedFeeMonth,
-            paid: effectivePaid,
-            amountPaid: normalizedAmountPaid ?? 0,
-            balanceDue,
-            paymentStatus,
-          },
-        });
+                ? `We received a partial payment of ${normalizedAmountPaid}. Remaining balance: ${balanceDue}. (${feeMonthLabel}).`
+                : `Your payment status was updated for ${classExists.classTitle} (${feeMonthLabel}).`;
+          await createNotification({
+            userId: student._id,
+            role: "student",
+            type:
+              paymentStatus === "paid"
+                ? "PAYMENT_RECEIVED"
+                : paymentStatus === "partial"
+                  ? "PAYMENT_PARTIAL"
+                  : "PAYMENT_STATUS_UPDATED",
+            title,
+            message,
+            classId: classExists._id,
+            feeMonth: monthValue,
+            feeYear: normalizedFeeYear,
+            payload: {
+              classTitle: classExists.classTitle,
+              feeMonth: monthValue,
+              feeYear: normalizedFeeYear,
+              paid: effectivePaid,
+              amountPaid: normalizedAmountPaid ?? 0,
+              balanceDue,
+              paymentStatus,
+            },
+          });
+        }
       } catch (notifyError) {
         console.error("Failed to notify payment update:", notifyError);
       }
 
       res.status(200).json({
-        message: `Fee for ${normalizedFeeMonth} is updated successfully.`,
+        message: `Fee updated successfully.`,
         fee,
+        updatedMonths: requestedMonths,
+        feeYear: normalizedFeeYear,
       });
     } catch (error) {
       console.log("Something went wrong!!! ", error);
@@ -2417,12 +2512,18 @@ router.post("/add-monthly-commission", AdminAuthenticateToken, async (req, res) 
       try {
         const now = new Date();
         const currentMonth = now.getMonth() + 1;
-        const { month, classId } = req.query || {};
+        const { month, year, classId } = req.query || {};
         const requestedMonth = month !== undefined && month !== null && String(month).trim() !== ""
           ? normalizeFeeMonth(month)
           : null;
         if (month !== undefined && month !== null && String(month).trim() !== "" && !requestedMonth) {
           return res.status(400).json({ success: false, message: "Invalid month filter." });
+        }
+        const requestedYear = year !== undefined && year !== null && String(year).trim() !== ""
+          ? normalizeFeeYear(year)
+          : null;
+        if (year !== undefined && year !== null && String(year).trim() !== "" && !requestedYear) {
+          return res.status(400).json({ success: false, message: "Invalid year filter." });
         }
 
         if (classId && !mongoose.isValidObjectId(classId)) {
@@ -2430,6 +2531,7 @@ router.post("/add-monthly-commission", AdminAuthenticateToken, async (req, res) 
         }
 
         const targetMonth = requestedMonth || currentMonth;
+        const targetYear = requestedYear || now.getFullYear();
         const feeQuery = {};
         if (classId) {
           feeQuery.classId = classId;
@@ -2442,21 +2544,24 @@ router.post("/add-monthly-commission", AdminAuthenticateToken, async (req, res) 
 
       const pendingPayments = [];
 
-        const pushPending = (feeDoc, detail, monthValue) => {
-          if (!feeDoc?.studentId?.name || !feeDoc?.classId?.classTitle) {
-            return;
-          }
-          const totalFee = Number(feeDoc?.totalFee ?? 0);
-          if (!Number.isFinite(totalFee) || totalFee <= 0) {
-            return;
-          }
-          const normalizedMonth = normalizeFeeMonth(monthValue);
-          if (!normalizedMonth) {
-            return;
-          }
-          if (normalizedMonth !== targetMonth) {
-            return;
-          }
+      const pushPending = (feeDoc, detail, monthValue, yearValue) => {
+        if (!feeDoc?.studentId?.name || !feeDoc?.classId?.classTitle) {
+          return;
+        }
+        const totalFee = Number(feeDoc?.totalFee ?? 0);
+        if (!Number.isFinite(totalFee) || totalFee <= 0) {
+          return;
+        }
+        const normalizedMonth = normalizeFeeMonth(monthValue);
+        if (!normalizedMonth) {
+          return;
+        }
+        if (normalizedMonth !== targetMonth) {
+          return;
+        }
+        if (yearValue !== targetYear) {
+          return;
+        }
         const amountPaid = Number(detail?.amountPaid ?? 0);
         if (Number.isFinite(amountPaid) && amountPaid >= totalFee) {
           return;
@@ -2468,6 +2573,7 @@ router.post("/add-monthly-commission", AdminAuthenticateToken, async (req, res) 
           studentId: feeDoc?.studentId?._id || feeDoc?.studentId,
           totalFee,
           feeMonth: normalizedMonth,
+          feeYear: targetYear,
           amountPaid: Number.isFinite(amountPaid) ? amountPaid : 0,
           paid: detail?.paid === true,
           studentName: feeDoc?.studentId?.name,
@@ -2479,15 +2585,22 @@ router.post("/add-monthly-commission", AdminAuthenticateToken, async (req, res) 
 
       for (const feeDoc of fees) {
         const detailFee = Array.isArray(feeDoc?.detailFee) ? feeDoc.detailFee : [];
-          const currentDetail = detailFee.find(
-            (detail) => normalizeFeeMonth(detail?.feeMonth) === targetMonth
-          );
-          if (currentDetail) {
-            pushPending(feeDoc, currentDetail, targetMonth);
-          } else {
-            pushPending(feeDoc, { amountPaid: 0, paid: false }, targetMonth);
+        const currentDetail = detailFee.find((detail) => {
+          const detailMonth = normalizeFeeMonth(detail?.feeMonth);
+          if (detailMonth !== targetMonth) return false;
+          const detailYear = normalizeFeeYear(detail?.feeYear);
+          if (detailYear) return detailYear === targetYear;
+          return targetYear === now.getFullYear();
+        });
+        if (currentDetail) {
+          const detailYear = normalizeFeeYear(currentDetail?.feeYear) || (targetYear === now.getFullYear() ? targetYear : null);
+          if (detailYear) {
+            pushPending(feeDoc, currentDetail, targetMonth, detailYear);
           }
+        } else {
+          pushPending(feeDoc, { amountPaid: 0, paid: false }, targetMonth, targetYear);
         }
+      }
 
       pendingPayments.sort((a, b) => {
         const nameA = (a.studentName || "").toLowerCase();
@@ -2496,6 +2609,9 @@ router.post("/add-monthly-commission", AdminAuthenticateToken, async (req, res) 
         const classA = (a.classTitle || "").toLowerCase();
         const classB = (b.classTitle || "").toLowerCase();
         if (classA !== classB) return classA.localeCompare(classB);
+        if (Number(a.feeYear || 0) !== Number(b.feeYear || 0)) {
+          return Number(a.feeYear || 0) - Number(b.feeYear || 0);
+        }
         return Number(a.feeMonth || 0) - Number(b.feeMonth || 0);
       });
 

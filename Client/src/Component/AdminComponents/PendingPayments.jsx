@@ -35,8 +35,8 @@ const monthNumberToName = (monthNumber) => {
   return months[monthNumber - 1];
 };
 
-const buildKey = ({ studentId, classId, feeMonth }) =>
-  `${studentId}-${classId}-${feeMonth}`;
+const buildKey = ({ studentId, classId, feeMonth, feeYear }) =>
+  `${studentId}-${classId}-${feeMonth}-${feeYear || "na"}`;
 
 const PendingPayments = () => {
   const { get, put } = useApi();
@@ -45,10 +45,13 @@ const PendingPayments = () => {
   const [isFetching, setIsFetching] = useState(true);
   const [busyKey, setBusyKey] = useState(null);
   const [amounts, setAmounts] = useState({});
+  const [selectedMonths, setSelectedMonths] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [message, setMessage] = useState("");
   const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedCourse, setSelectedCourse] = useState("");
 
   const monthOptions = [
@@ -66,28 +69,36 @@ const PendingPayments = () => {
     { value: 12, label: "December" },
   ];
 
+  const yearOptions = Array.from({ length: 5 }, (_, index) => currentYear - 2 + index);
+
   const fetchPendingPayments = async () => {
     try {
       setIsFetching(true);
-      const response = await get({
-        url: "/admin-confi/pending-payments",
-        params: {
-          month: selectedMonth,
-          classId: selectedCourse || undefined,
-        },
-      }).unwrap();
+        const response = await get({
+          url: "/admin-confi/pending-payments",
+          params: {
+            month: selectedMonth,
+            year: selectedYear,
+            classId: selectedCourse || undefined,
+          },
+        }).unwrap();
 
       if (response.status === 200) {
         const pending = response.data?.pendingPayments || [];
         setPendingPayments(pending);
         const nextAmounts = {};
+        const nextSelectedMonths = {};
         pending.forEach((item) => {
           const key = buildKey(item);
           if (nextAmounts[key] === undefined) {
             nextAmounts[key] = item.totalFee ?? "";
           }
+          if (!nextSelectedMonths[key]) {
+            nextSelectedMonths[key] = [Number(item.feeMonth)].filter(Number.isInteger);
+          }
         });
         setAmounts(nextAmounts);
+        setSelectedMonths(nextSelectedMonths);
       }
     } catch (error) {
       console.error("Error fetching pending payments:", error);
@@ -98,7 +109,7 @@ const PendingPayments = () => {
 
   useEffect(() => {
     fetchPendingPayments();
-  }, [selectedMonth, selectedCourse]);
+  }, [selectedMonth, selectedYear, selectedCourse]);
 
   const fetchCourses = async () => {
     try {
@@ -136,11 +147,23 @@ const PendingPayments = () => {
     setAmounts((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleMonthsChange = (key, value) => {
+    setSelectedMonths((prev) => ({ ...prev, [key]: value }));
+  };
+
   const markAsPaid = async (item) => {
     const key = buildKey(item);
     const amountValue = Number(amounts[key]);
     if (!amounts[key] || Number.isNaN(amountValue) || amountValue <= 0) {
       setMessage("Please enter a valid amount before marking paid.");
+      return;
+    }
+    const months = selectedMonths[key]?.length
+      ? selectedMonths[key]
+      : [Number(item.feeMonth)].filter(Number.isInteger);
+    const yearValue = Number(item?.feeYear) || selectedYear || currentYear;
+    if (!months.length) {
+      setMessage("Please select at least one month to process.");
       return;
     }
 
@@ -150,7 +173,8 @@ const PendingPayments = () => {
       const response = await put({
         url: `/admin-confi/update-fee/${item.classId}/${item.studentId}`,
         data: {
-          feeMonth: item.feeMonth,
+          feeMonths: months,
+          feeYear: yearValue,
           paid: true,
           amountPaid: amountValue,
           totalFee: item.totalFee,
@@ -219,6 +243,18 @@ const PendingPayments = () => {
                 </select>
 
                 <select
+                  className="flex-1 sm:w-28 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all shadow-sm font-medium"
+                  value={String(selectedYear)}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                >
+                  {yearOptions.map((yearValue) => (
+                    <option key={yearValue} value={yearValue}>
+                      {yearValue}
+                    </option>
+                  ))}
+                </select>
+
+                <select
                   className="flex-1 sm:w-44 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all shadow-sm font-medium"
                   value={selectedCourse}
                   onChange={(e) => setSelectedCourse(e.target.value)}
@@ -246,7 +282,7 @@ const PendingPayments = () => {
       )}
 
       {isFetching ? (
-        <TableSkeleton rows={6} cols={8} />
+        <TableSkeleton rows={6} cols={7} />
       ) : filteredPayments.length > 0 ? (
         <>
           {/* Desktop View (Table) */}
@@ -257,9 +293,10 @@ const PendingPayments = () => {
                   <tr className="bg-slate-50/80">
                     <th scope="col" className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500 w-1/4">Student Info</th>
                     <th scope="col" className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Course & Month</th>
+                    <th scope="col" className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Apply Months</th>
                     <th scope="col" className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Fees (Total/Paid)</th>
                     <th scope="col" className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-500">Status</th>
-                    <th scope="col" className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-500">Update Amount</th>
+                    <th scope="col" className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-500">Amount / Month</th>
                     <th scope="col" className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-500 w-[180px]">Action</th>
                   </tr>
                 </thead>
@@ -270,6 +307,7 @@ const PendingPayments = () => {
                     const paidSoFar = Number(item.amountPaid || 0);
                     const balanceDue = Math.max(0, totalFee - paidSoFar);
                     const statusLabel = paidSoFar > 0 ? "Partial" : "Pending";
+                    const feeYearLabel = Number(item.feeYear) || selectedYear || currentYear;
 
                     return (
                       <tr key={key} className="hover:bg-slate-50/50 transition-colors duration-150 group">
@@ -285,9 +323,28 @@ const PendingPayments = () => {
                           <div className="flex flex-col">
                             <span className="text-sm font-semibold text-slate-800">{item.classTitle}</span>
                             <span className="text-xs font-medium text-orange-600 bg-orange-50 w-fit px-2 py-0.5 rounded-full mt-1">
-                              {monthNumberToName(item.feeMonth)}
+                              {monthNumberToName(item.feeMonth)} {feeYearLabel}
                             </span>
                           </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <select
+                            multiple
+                            className="w-40 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-medium focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 outline-none"
+                            value={(selectedMonths[key] || []).map(String)}
+                            onChange={(e) =>
+                              handleMonthsChange(
+                                key,
+                                Array.from(e.target.selectedOptions).map((opt) => Number(opt.value))
+                              )
+                            }
+                          >
+                            {monthOptions.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <div className="flex flex-col items-end">
@@ -316,6 +373,7 @@ const PendingPayments = () => {
                               onChange={(e) => handleAmountChange(key, e.target.value)}
                             />
                           </div>
+                          <div className="mt-1 text-[10px] text-slate-400">Per month</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
                           <button
@@ -348,6 +406,7 @@ const PendingPayments = () => {
               const paidSoFar = Number(item.amountPaid || 0);
               const balanceDue = Math.max(0, totalFee - paidSoFar);
               const statusLabel = paidSoFar > 0 ? "Partial" : "Pending";
+              const feeYearLabel = Number(item.feeYear) || selectedYear || currentYear;
 
               return (
                 <div key={key} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4 hover:border-orange-200 transition-colors">
@@ -373,7 +432,7 @@ const PendingPayments = () => {
                     </div>
                     <div>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Fee Month</p>
-                      <p className="text-xs font-semibold text-orange-600">{monthNumberToName(item.feeMonth)}</p>
+                      <p className="text-xs font-semibold text-orange-600">{monthNumberToName(item.feeMonth)} {feeYearLabel}</p>
                     </div>
                     <div>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Total Fee</p>
@@ -386,6 +445,26 @@ const PendingPayments = () => {
                   </div>
 
                   <div className="space-y-3 pt-1">
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Apply Months</p>
+                      <select
+                        multiple
+                        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all"
+                        value={(selectedMonths[key] || []).map(String)}
+                        onChange={(e) =>
+                          handleMonthsChange(
+                            key,
+                            Array.from(e.target.selectedOptions).map((opt) => Number(opt.value))
+                          )
+                        }
+                      >
+                        {monthOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400 text-sm font-bold">₹</div>
                       <input
@@ -397,6 +476,7 @@ const PendingPayments = () => {
                         onChange={(e) => handleAmountChange(key, e.target.value)}
                       />
                     </div>
+                    <p className="text-[10px] text-slate-400">Amount per month</p>
                     <button
                       onClick={() => markAsPaid(item)}
                       disabled={busyKey !== null}

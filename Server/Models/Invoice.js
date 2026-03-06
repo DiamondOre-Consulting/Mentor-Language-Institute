@@ -26,6 +26,11 @@ const invoiceSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    feeYear: {
+      type: Number,
+      required: true,
+      default: () => new Date().getFullYear(),
+    },
     totalFee: {
       type: Number,
       required: true,

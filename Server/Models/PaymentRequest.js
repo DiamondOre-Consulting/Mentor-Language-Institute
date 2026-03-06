@@ -68,6 +68,12 @@ const paymentRequestSchema = new mongoose.Schema({
     max: 12,
     default: null,
   },
+  feeYear: {
+    type: Number,
+    min: 2000,
+    max: 2100,
+    default: null,
+  },
   adminId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Admin",
