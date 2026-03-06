@@ -89,7 +89,10 @@ const PendingPayments = () => {
         pending.forEach((item) => {
           const key = buildKey(item);
           if (nextAmounts[key] === undefined) {
-            nextAmounts[key] = item.totalFee ?? "";
+            const totalFee = Number(item.totalFee || 0);
+            const paidSoFar = Number(item.amountPaid || 0);
+            const balanceDue = Math.max(0, totalFee - paidSoFar);
+            nextAmounts[key] = balanceDue > 0 ? balanceDue : "";
           }
         });
         setAmounts(nextAmounts);

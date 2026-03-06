@@ -1273,6 +1273,8 @@ router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res)
         return normalizedFeeYear === currentYear ? currentYear : null;
       };
       const wasPaidByMonth = new Map();
+      const accumulationErrors = [];
+
       requestedMonths.forEach((monthValue) => {
         const existingDetail = feeRecord.detailFee.find(
           (detail) =>
@@ -1281,19 +1283,36 @@ router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res)
         );
         wasPaidByMonth.set(monthValue, existingDetail?.paid === true);
 
+        const currentPaid = Number(existingDetail?.amountPaid || 0);
+        const newTotalPaid = currentPaid + (perMonthAmountPaid ?? 0);
+
+        if (newTotalPaid > normalizedTotalFee) {
+          accumulationErrors.push(
+            `Total paid for ${formatFeePeriodLabel(monthValue, normalizedFeeYear)} cannot exceed total fee (due: ${normalizedTotalFee - currentPaid}).`
+          );
+          return;
+        }
+
+        const paymentState = computePaymentState(normalizedTotalFee, newTotalPaid);
+        const effectivePaid = paymentState.isPaid;
+
         if (existingDetail) {
           existingDetail.paid = effectivePaid;
-          existingDetail.amountPaid = perMonthAmountPaid ?? 0;
+          existingDetail.amountPaid = newTotalPaid;
           existingDetail.feeYear = normalizedFeeYear;
         } else {
           feeRecord.detailFee.push({
             feeMonth: monthValue,
             feeYear: normalizedFeeYear,
             paid: effectivePaid,
-            amountPaid: perMonthAmountPaid ?? 0,
+            amountPaid: newTotalPaid,
           });
         }
       });
+
+      if (accumulationErrors.length > 0) {
+        return res.status(400).json({ message: accumulationErrors.join(" ") });
+      }
 
       feeRecord.totalFee = normalizedTotalFee;
       await feeRecord.save();
@@ -1364,9 +1383,13 @@ router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res)
               }
             }
           } else {
-            // Fix #7/#8: Ensure subsequent payments update existing invoice amounts and status
-            invoiceRecord.amountPaid = perMonthAmountPaid ?? 0;
-            invoiceRecord.status = (perMonthAmountPaid ?? 0) >= normalizedTotalFee ? "paid" : (perMonthAmountPaid ?? 0) > 0 ? "partial" : "pending";
+            // Fix: Ensure subsequent payments update existing invoice amounts and status correctly (accumulate)
+            const currentInvoicePaid = Number(invoiceRecord.amountPaid || 0);
+            const newInvoiceTotalPaid = currentInvoicePaid + (perMonthAmountPaid ?? 0);
+
+            invoiceRecord.amountPaid = newInvoiceTotalPaid;
+            invoiceRecord.totalFee = normalizedTotalFee; // Ensure totalFee is current
+            invoiceRecord.status = newInvoiceTotalPaid >= normalizedTotalFee ? "paid" : newInvoiceTotalPaid > 0 ? "partial" : "pending";
             // Set emailStatus to pending so the latest version is explicitly sent
             invoiceRecord.emailStatus = "pending";
             await invoiceRecord.save();
@@ -1388,8 +1411,9 @@ router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res)
               });
 
               const feeMonthLabel = formatFeePeriodLabel(monthValue, normalizedFeeYear);
+              const totalPaidToDate = Number(feeRecord.detailFee.find(d => normalizeFeeMonth(d.feeMonth) === monthValue && resolveDetailYear(d) === normalizedFeeYear)?.amountPaid || 0);
               const subject = `Invoice ${invoiceRecord.invoiceNumber} for ${classExists.classTitle}`;
-              const text = `Hi ${studentExists.name},\n\nThank you for your payment. Please find your invoice (${invoiceRecord.invoiceNumber}) attached.\n\nCourse: ${classExists.classTitle}\nFee Month: ${feeMonthLabel}\nTotal Fee: ${normalizedTotalFee}\nAmount Paid: ${perMonthAmountPaid}\n\nRegards,\nMentor Language Institute`;
+              const text = `Hi ${studentExists.name},\n\nThank you for your payment. Please find your invoice (${invoiceRecord.invoiceNumber}) attached.\n\nCourse: ${classExists.classTitle}\nFee Month: ${feeMonthLabel}\nTotal Fee: ${normalizedTotalFee}\nAmount Paid (this transaction): ${perMonthAmountPaid}\nTotal Paid to date: ${totalPaidToDate}\n\nRegards,\nMentor Language Institute`;
               const html = `
               <div style="font-family:Arial, sans-serif; line-height:1.6; color:#111;">
                 <p>Hi ${studentExists.name},</p>
@@ -1398,7 +1422,8 @@ router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res)
                 <p><strong>Course:</strong> ${classExists.classTitle}<br/>
                 <strong>Fee Month:</strong> ${feeMonthLabel}<br/>
                 <strong>Total Fee:</strong> ${normalizedTotalFee}<br/>
-                <strong>Amount Paid:</strong> ${perMonthAmountPaid}</p>
+                <strong>Amount Paid (this transaction):</strong> ${perMonthAmountPaid}<br/>
+                <strong>Total Paid to date:</strong> ${Number(feeRecord.detailFee.find(d => normalizeFeeMonth(d.feeMonth) === monthValue && resolveDetailYear(d) === normalizedFeeYear)?.amountPaid || 0)}</p>
                 <p>Regards,<br/>Mentor Language Institute</p>
               </div>
             `;
@@ -1678,16 +1703,29 @@ router.put(
         );
         const wasPaid = existingDetail?.paid === true;
 
+        const currentPaid = Number(existingDetail?.amountPaid || 0);
+        const newTotalPaid = currentPaid + (normalizedAmountPaid ?? 0);
+
+        if (newTotalPaid > normalizedTotalFee) {
+          return res.status(400).json({
+            message: `Amount paid cannot exceed total fee (due: ${normalizedTotalFee - currentPaid}).`,
+          });
+        }
+
+        const paymentState = computePaymentState(normalizedTotalFee, newTotalPaid);
+        const effectivePaid = paymentState.isPaid;
+        const paymentStatus = paymentState.status;
+
         if (existingDetail) {
           existingDetail.paid = effectivePaid;
-          existingDetail.amountPaid = normalizedAmountPaid ?? 0;
+          existingDetail.amountPaid = newTotalPaid;
           existingDetail.feeYear = normalizedFeeYear;
         } else {
           feeRecord.detailFee.push({
             feeMonth: normalizedFeeMonth,
             feeYear: normalizedFeeYear,
             paid: effectivePaid,
-            amountPaid: normalizedAmountPaid ?? 0,
+            amountPaid: newTotalPaid,
           });
         }
 
@@ -1765,9 +1803,13 @@ router.put(
               }
             }
           } else {
-            // Fix #7/#8: Update existing invoice
-            invoiceRecord.amountPaid = normalizedAmountPaid ?? 0;
-            invoiceRecord.status = paymentStatus;
+            // Fix: Update existing invoice with accumulated amount
+            const currentInvoicePaid = Number(invoiceRecord.amountPaid || 0);
+            const newInvoiceTotalPaid = currentInvoicePaid + (normalizedAmountPaid ?? 0);
+
+            invoiceRecord.amountPaid = newInvoiceTotalPaid;
+            invoiceRecord.totalFee = normalizedTotalFee;
+            invoiceRecord.status = newInvoiceTotalPaid >= normalizedTotalFee ? "paid" : newInvoiceTotalPaid > 0 ? "partial" : "pending";
             invoiceRecord.emailStatus = "pending";
             await invoiceRecord.save();
           }
@@ -1788,8 +1830,9 @@ router.put(
               });
 
               const feeMonthLabel = formatFeePeriodLabel(normalizedFeeMonth, normalizedFeeYear);
+              const totalPaidToDate = Number(feeRecord.detailFee.find(d => normalizeFeeMonth(d.feeMonth) === normalizedFeeMonth && resolveDetailYear(d) === normalizedFeeYear)?.amountPaid || 0);
               const subject = `Invoice ${invoiceRecord.invoiceNumber} for ${classExists.classTitle}`;
-              const text = `Hi ${studentExists.name},\n\nThank you for your payment. Please find your invoice (${invoiceRecord.invoiceNumber}) attached.\n\nCourse: ${classExists.classTitle}\nFee Month: ${feeMonthLabel}\nTotal Fee: ${normalizedTotalFee}\nAmount Paid: ${normalizedAmountPaid}\n\nRegards,\nMentor Language Institute`;
+              const text = `Hi ${studentExists.name},\n\nThank you for your payment. Please find your invoice (${invoiceRecord.invoiceNumber}) attached.\n\nCourse: ${classExists.classTitle}\nFee Month: ${feeMonthLabel}\nTotal Fee: ${normalizedTotalFee}\nAmount Paid (this transaction): ${normalizedAmountPaid}\nTotal Paid to date: ${totalPaidToDate}\n\nRegards,\nMentor Language Institute`;
               const html = `
               <div style="font-family:Arial, sans-serif; line-height:1.6; color:#111;">
                 <p>Hi ${studentExists.name},</p>
@@ -1798,7 +1841,8 @@ router.put(
                 <p><strong>Course:</strong> ${classExists.classTitle}<br/>
                 <strong>Fee Month:</strong> ${feeMonthLabel}<br/>
                 <strong>Total Fee:</strong> ${normalizedTotalFee}<br/>
-                <strong>Amount Paid:</strong> ${normalizedAmountPaid}</p>
+                <strong>Amount Paid (this transaction):</strong> ${normalizedAmountPaid}<br/>
+                <strong>Total Paid to date:</strong> ${totalPaidToDate}</p>
                 <p>Regards,<br/>Mentor Language Institute</p>
               </div>
             `;
@@ -1840,49 +1884,55 @@ router.put(
       await request.save();
 
       try {
-        const feeMonthLabel = formatFeePeriodLabel(normalizedFeeMonth, normalizedFeeYear);
-        const balanceDue = Math.max(
-          0,
-          Number(normalizedTotalFee) - Number(normalizedAmountPaid ?? 0)
-        );
-        const approvalMessage = treatAsFeePayment
-          ? paymentStatus === "paid"
-            ? `Your payment for ${classExists.classTitle} (${feeMonthLabel}) has been recorded.`
-            : paymentStatus === "partial"
-              ? `Partial payment recorded for ${classExists.classTitle} (${feeMonthLabel}). Balance due: ${balanceDue}.`
-              : `Payment recorded for ${classExists.classTitle} (${feeMonthLabel}). Pending balance remains.`
-          : paymentStatus === "paid"
-            ? `Your enrollment request has been approved. Fee month: ${feeMonthLabel}. Invoice sent to your email.`
-            : paymentStatus === "partial"
-              ? `Your enrollment request has been approved. Fee month: ${feeMonthLabel}. Partial payment recorded. Balance due: ${balanceDue}.`
-              : `Your enrollment request has been approved. Fee month: ${feeMonthLabel}. Payment pending.`;
-        await createNotification({
-          userId: studentExists._id,
-          role: "student",
-          type:
-            paymentStatus === "paid"
-              ? "PAYMENT_REQUEST_APPROVED"
-              : paymentStatus === "partial"
-                ? "PAYMENT_PARTIAL"
-                : "PAYMENT_REQUEST_APPROVED",
-          title: treatAsFeePayment
-            ? `Payment updated for ${classExists.classTitle}`
-            : `Enrollment approved for ${classExists.classTitle}`,
-          message: approvalMessage,
-          classId: classExists._id,
-          feeMonth: normalizedFeeMonth,
-          feeYear: normalizedFeeYear,
-          payload: {
-            classTitle: classExists.classTitle,
-            feeMonth: normalizedFeeMonth,
+        for (const monthId of [normalizedFeeMonth]) { // For approval, it's a single month
+          const monthDetail = feeRecord.detailFee.find(d => normalizeFeeMonth(d.feeMonth) === monthId && resolveDetailYear(d) === normalizedFeeYear);
+          const monthPaidTotal = Number(monthDetail?.amountPaid || 0);
+          const monthState = computePaymentState(normalizedTotalFee, monthPaidTotal);
+          const monthStatus = monthState.status;
+          const monthEffectivePaid = monthState.isPaid;
+          const balanceDue = Math.max(0, Number(normalizedTotalFee) - monthPaidTotal);
+          const feeMonthLabel = formatFeePeriodLabel(monthId, normalizedFeeYear);
+
+          const approvalMessage = treatAsFeePayment
+            ? monthStatus === "paid"
+              ? `Your payment for ${classExists.classTitle} (${feeMonthLabel}) has been recorded.`
+              : monthStatus === "partial"
+                ? `Partial payment recorded for ${classExists.classTitle} (${feeMonthLabel}). Balance due: ${balanceDue}.`
+                : `Payment recorded for ${classExists.classTitle} (${feeMonthLabel}). Pending balance remains.`
+            : monthStatus === "paid"
+              ? `Your enrollment request has been approved. Fee month: ${feeMonthLabel}. Invoice sent to your email.`
+              : monthStatus === "partial"
+                ? `Your enrollment request has been approved. Fee month: ${feeMonthLabel}. Partial payment recorded. Balance due: ${balanceDue}.`
+                : `Your enrollment request has been approved. Fee month: ${feeMonthLabel}. Payment pending.`;
+
+          await createNotification({
+            userId: studentExists._id,
+            role: "student",
+            type:
+              monthStatus === "paid"
+                ? "PAYMENT_REQUEST_APPROVED"
+                : monthStatus === "partial"
+                  ? "PAYMENT_PARTIAL"
+                  : "PAYMENT_REQUEST_APPROVED",
+            title: treatAsFeePayment
+              ? `Payment updated for ${classExists.classTitle}`
+              : `Enrollment approved for ${classExists.classTitle}`,
+            message: approvalMessage,
+            classId: classExists._id,
+            feeMonth: monthId,
             feeYear: normalizedFeeYear,
-            totalFee: normalizedTotalFee,
-            amountPaid: normalizedAmountPaid ?? 0,
-            balanceDue,
-            paymentStatus,
-            paid: effectivePaid,
-          },
-        });
+            payload: {
+              classTitle: classExists.classTitle,
+              feeMonth: monthId,
+              feeYear: normalizedFeeYear,
+              totalFee: normalizedTotalFee,
+              amountPaid: monthPaidTotal,
+              balanceDue,
+              paymentStatus: monthStatus,
+              paid: monthEffectivePaid,
+            },
+          });
+        }
       } catch (notifyError) {
         console.error("Failed to notify request approval:", notifyError);
       }
@@ -2118,19 +2168,36 @@ router.put(
         );
         wasPaidByMonth.set(monthValue, existingDetail?.paid === true);
 
+        const currentPaid = Number(existingDetail?.amountPaid || 0);
+        const newTotalPaid = currentPaid + (perMonthAmountPaid ?? 0);
+
+        if (newTotalPaid > effectiveTotalFee) {
+          accumulationErrors.push(
+            `Total paid for ${formatFeePeriodLabel(monthValue, normalizedFeeYear)} cannot exceed total fee (due: ${effectiveTotalFee - currentPaid}).`
+          );
+          return;
+        }
+
+        const paymentState = computePaymentState(effectiveTotalFee, newTotalPaid);
+        const effectivePaid = paymentState.isPaid;
+
         if (existingDetail) {
           existingDetail.paid = effectivePaid;
-          existingDetail.amountPaid = perMonthAmountPaid ?? 0;
+          existingDetail.amountPaid = newTotalPaid;
           existingDetail.feeYear = normalizedFeeYear;
         } else {
           fee.detailFee.push({
             feeMonth: monthValue,
             feeYear: normalizedFeeYear,
             paid: effectivePaid,
-            amountPaid: perMonthAmountPaid ?? 0,
+            amountPaid: newTotalPaid,
           });
         }
       });
+
+      if (accumulationErrors.length > 0) {
+        return res.status(400).json({ message: accumulationErrors.join(" ") });
+      }
 
       if (normalizedTotalFee !== null) {
         fee.totalFee = normalizedTotalFee;
@@ -2170,6 +2237,7 @@ router.put(
                 totalFee: effectiveTotalFee,
                 amountPaid: perMonthAmountPaid ?? 0,
                 sentToEmail: studentEmail,
+                status: (perMonthAmountPaid ?? 0) >= effectiveTotalFee ? "paid" : (perMonthAmountPaid ?? 0) > 0 ? "partial" : "pending"
               });
             } catch (error) {
               if (error?.code === 11000) {
@@ -2184,11 +2252,22 @@ router.put(
                   totalFee: effectiveTotalFee,
                   amountPaid: perMonthAmountPaid ?? 0,
                   sentToEmail: studentEmail,
+                  status: (perMonthAmountPaid ?? 0) >= effectiveTotalFee ? "paid" : (perMonthAmountPaid ?? 0) > 0 ? "partial" : "pending"
                 });
               } else {
                 throw error;
               }
             }
+          } else {
+            // Fix: Update existing invoice with accumulated amount
+            const currentInvoicePaid = Number(invoiceRecord.amountPaid || 0);
+            const newInvoiceTotalPaid = currentInvoicePaid + (perMonthAmountPaid ?? 0);
+
+            invoiceRecord.amountPaid = newInvoiceTotalPaid;
+            invoiceRecord.totalFee = effectiveTotalFee;
+            invoiceRecord.status = newInvoiceTotalPaid >= effectiveTotalFee ? "paid" : newInvoiceTotalPaid > 0 ? "partial" : "pending";
+            invoiceRecord.emailStatus = "pending";
+            await invoiceRecord.save();
           }
 
           if (invoiceRecord && invoiceRecord.emailStatus !== "sent") {
@@ -2207,8 +2286,9 @@ router.put(
               });
 
               const feeMonthLabel = formatFeePeriodLabel(monthValue, normalizedFeeYear);
+              const totalPaidToDate = Number(fee.detailFee.find(d => normalizeFeeMonth(d.feeMonth) === monthValue && resolveDetailYear(d) === normalizedFeeYear)?.amountPaid || 0);
               const subject = `Invoice ${invoiceNumber} for ${classExists.classTitle}`;
-              const text = `Hi ${student.name},\n\nThank you for your payment. Please find your invoice (${invoiceNumber}) attached.\n\nCourse: ${classExists.classTitle}\nFee Month: ${feeMonthLabel}\nTotal Fee: ${effectiveTotalFee}\nAmount Paid: ${perMonthAmountPaid}\n\nRegards,\nMentor Language Institute`;
+              const text = `Hi ${student.name},\n\nThank you for your payment. Please find your invoice (${invoiceNumber}) attached.\n\nCourse: ${classExists.classTitle}\nFee Month: ${feeMonthLabel}\nTotal Fee: ${effectiveTotalFee}\nAmount Paid (this transaction): ${perMonthAmountPaid}\nTotal Paid to date: ${totalPaidToDate}\n\nRegards,\nMentor Language Institute`;
               const html = `
               <div style="font-family:Arial, sans-serif; line-height:1.6; color:#111;">
                 <p>Hi ${student.name},</p>
@@ -2217,7 +2297,8 @@ router.put(
                 <p><strong>Course:</strong> ${classExists.classTitle}<br/>
                 <strong>Fee Month:</strong> ${feeMonthLabel}<br/>
                 <strong>Total Fee:</strong> ${effectiveTotalFee}<br/>
-                <strong>Amount Paid:</strong> ${perMonthAmountPaid}</p>
+                <strong>Amount Paid (this transaction):</strong> ${perMonthAmountPaid}<br/>
+                <strong>Total Paid to date:</strong> ${totalPaidToDate}</p>
                 <p>Regards,<br/>Mentor Language Institute</p>
               </div>
             `;
@@ -2252,31 +2333,36 @@ router.put(
       }
 
       try {
-        const balanceDue = Math.max(
-          0,
-          Number(effectiveTotalFee) - Number(perMonthAmountPaid ?? 0)
-        );
-        const title =
-          paymentStatus === "paid"
-            ? `Payment received for ${classExists.classTitle}`
-            : paymentStatus === "partial"
-              ? `Partial payment received for ${classExists.classTitle}`
-              : `Payment updated for ${classExists.classTitle}`;
         for (const monthValue of requestedMonths) {
+          const monthDetail = fee.detailFee.find(d => normalizeFeeMonth(d.feeMonth) === monthValue && resolveDetailYear(d) === normalizedFeeYear);
+          const monthPaidTotal = Number(monthDetail?.amountPaid || 0);
+          const monthStore = computePaymentState(effectiveTotalFee, monthPaidTotal);
+          const monthStatus = monthStore.status;
+          const monthEffectivePaid = monthStore.isPaid;
+          const balanceDue = Math.max(0, Number(effectiveTotalFee) - monthPaidTotal);
           const feeMonthLabel = formatFeePeriodLabel(monthValue, normalizedFeeYear);
+
+          const title =
+            monthStatus === "paid"
+              ? `Payment received for ${classExists.classTitle}`
+              : monthStatus === "partial"
+                ? `Partial payment received for ${classExists.classTitle}`
+                : `Payment updated for ${classExists.classTitle}`;
+
           const message =
-            paymentStatus === "paid"
+            monthStatus === "paid"
               ? `We received your payment for ${classExists.classTitle} (${feeMonthLabel}).`
-              : paymentStatus === "partial"
-                ? `We received a partial payment of ${perMonthAmountPaid}. Remaining balance: ${balanceDue}. (${feeMonthLabel}).`
+              : monthStatus === "partial"
+                ? `We received a partial payment. Total paid: ${monthPaidTotal}. Remaining balance: ${balanceDue}. (${feeMonthLabel}).`
                 : `Your payment status was updated for ${classExists.classTitle} (${feeMonthLabel}).`;
+
           await createNotification({
             userId: student._id,
             role: "student",
             type:
-              paymentStatus === "paid"
+              monthStatus === "paid"
                 ? "PAYMENT_RECEIVED"
-                : paymentStatus === "partial"
+                : monthStatus === "partial"
                   ? "PAYMENT_PARTIAL"
                   : "PAYMENT_STATUS_UPDATED",
             title,
@@ -2288,10 +2374,10 @@ router.put(
               classTitle: classExists.classTitle,
               feeMonth: monthValue,
               feeYear: normalizedFeeYear,
-              paid: effectivePaid,
-              amountPaid: perMonthAmountPaid ?? 0,
+              paid: monthEffectivePaid,
+              amountPaid: monthPaidTotal,
               balanceDue,
-              paymentStatus,
+              paymentStatus: monthStatus,
             },
           });
         }
