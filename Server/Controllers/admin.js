@@ -43,6 +43,41 @@ dotenv.config();
 
 const router = express.Router();
 
+const isDebugLoggingEnabled =
+  String(process.env.LOG_LEVEL || "").toLowerCase() === "debug";
+
+const debugLog = (...args) => {
+  if (isDebugLoggingEnabled) {
+    console.log(...args);
+  }
+};
+
+const isTransactionUnsupportedError = (error) => {
+  const msg = String(error?.message || "");
+  return (
+    msg.includes("Transaction numbers are only allowed on a replica set member or mongos") ||
+    msg.includes("Transaction support is not enabled")
+  );
+};
+
+const withOptionalTransaction = async (work) => {
+  const session = await mongoose.startSession();
+  try {
+    let output;
+    await session.withTransaction(async () => {
+      output = await work(session);
+    });
+    return output;
+  } catch (error) {
+    if (isTransactionUnsupportedError(error)) {
+      return work(null);
+    }
+    throw error;
+  } finally {
+    await session.endSession();
+  }
+};
+
 const normalizeRateInput = (value) => {
   if (value === undefined || value === null || value === "") return null;
   return normalizeCommissionRateValue(value);
@@ -727,57 +762,90 @@ router.post("/add-new-class", AdminAuthenticateToken, async (req, res) => {
 // GET ALL CLASSES
 router.get("/all-classes", AdminAuthenticateToken, async (req, res) => {
   try {
-    console.log("=== ADMIN ALL-CLASSES DEBUG ===");
-    const allClasses = await Classes.find({})
-      .select(
-        "classTitle totalHours grade enrolledStudents appliedStudents dailyClasses createdAt"
-      )
-      .lean();
-    const gradeBackfills = [];
-    const normalizedClasses = allClasses.map((course) => {
-      if (course?.grade) return course;
-      const inferred = resolveCourseGrade(course);
-      if (inferred) {
-        gradeBackfills.push({ id: course._id, grade: inferred });
-        return { ...course, grade: inferred };
-      }
-      return course;
-    });
-    if (gradeBackfills.length > 0) {
-      await Promise.all(
-        gradeBackfills.map((item) =>
-          Classes.findByIdAndUpdate(
-            item.id,
-            { $set: { grade: item.grade } },
-            { new: false }
-          )
-        )
-      );
-    }
-    const classIds = normalizedClasses.map((c) => c._id);
-    const assignments = await ClassTeachers.find({
-      classId: { $in: classIds },
-      active: true,
-    }).populate({ path: "teacherId", select: "-password" });
-    const assignmentsByClass = assignments.reduce((acc, assignment) => {
-      const key = String(assignment.classId);
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(assignment);
-      return acc;
-    }, {});
+    const classTeachersCollection = ClassTeachers.collection.name;
+    const teachersCollection = Teachers.collection.name;
 
-    const responseClasses = normalizedClasses.map((course) => ({
+    const allClasses = await Classes.aggregate([
+      {
+        $project: {
+          classTitle: 1,
+          totalHours: 1,
+          grade: 1,
+          enrolledStudents: 1,
+          appliedStudents: 1,
+          dailyClasses: 1,
+          createdAt: 1,
+          branch: 1,
+        },
+      },
+      {
+        $lookup: {
+          from: classTeachersCollection,
+          let: { classId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$classId", "$$classId"] },
+                    { $eq: ["$active", true] },
+                  ],
+                },
+              },
+            },
+            {
+              $lookup: {
+                from: teachersCollection,
+                localField: "teacherId",
+                foreignField: "_id",
+                as: "teacherDoc",
+              },
+            },
+            {
+              $unwind: {
+                path: "$teacherDoc",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                classId: 1,
+                teacherId: {
+                  _id: "$teacherDoc._id",
+                  branch: "$teacherDoc.branch",
+                  role: "$teacherDoc.role",
+                  name: "$teacherDoc.name",
+                  phone: "$teacherDoc.phone",
+                  email: "$teacherDoc.email",
+                  dob: "$teacherDoc.dob",
+                  myStudents: "$teacherDoc.myStudents",
+                  myScheduledClasses: "$teacherDoc.myScheduledClasses",
+                  createdAt: "$teacherDoc.createdAt",
+                },
+                commissionRate: 1,
+                offlineCommissionRate: 1,
+                onlineCommissionRate: 1,
+                active: 1,
+                createdAt: 1,
+              },
+            },
+          ],
+          as: "teachers",
+        },
+      },
+    ]);
+
+    const responseClasses = allClasses.map((course) => ({
       ...course,
-      teachers: assignmentsByClass[String(course._id)] || [],
+      grade: course?.grade || resolveCourseGrade(course) || "",
     }));
 
-    console.log("Courses found for admin:", responseClasses.length);
-    console.log("================================");
-
+    debugLog("Admin all-classes count:", responseClasses.length);
     return res.status(200).json(responseClasses);
   } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
+    console.error("Failed to fetch classes:", error);
+    res.status(500).json({ message: "Failed to fetch classes." });
   }
 });
 
@@ -785,18 +853,41 @@ router.get("/all-classes", AdminAuthenticateToken, async (req, res) => {
 router.get("/teacher-classes/:teacherId", AdminAuthenticateToken, async (req, res) => {
   try {
     const { teacherId } = req.params;
-    const assignments = await ClassTeachers.find({
-      teacherId,
-      active: true,
-    }).select("classId");
-    const classIds = assignments.map((a) => a.classId);
+    if (!mongoose.isValidObjectId(teacherId)) {
+      return res.status(400).json({ message: "Invalid teacher id." });
+    }
 
-    const query = { _id: { $in: classIds } };
-    const classes = await Classes.find(query);
+    const classesCollection = Classes.collection.name;
+    const classes = await ClassTeachers.aggregate([
+      {
+        $match: {
+          teacherId: new mongoose.Types.ObjectId(teacherId),
+          active: true,
+        },
+      },
+      {
+        $lookup: {
+          from: classesCollection,
+          localField: "classId",
+          foreignField: "_id",
+          as: "classDoc",
+        },
+      },
+      {
+        $unwind: {
+          path: "$classDoc",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $replaceRoot: { newRoot: "$classDoc" },
+      },
+    ]);
+
     return res.status(200).json(classes);
   } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
+    console.error("Failed to fetch teacher classes:", error);
+    res.status(500).json({ message: "Failed to fetch teacher classes." });
   }
 });
 
@@ -804,29 +895,145 @@ router.get("/teacher-classes/:teacherId", AdminAuthenticateToken, async (req, re
 router.get("/all-classes/:id", AdminAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const singleClass = await Classes.findById(id);
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid class id." });
+    }
+
+    const classTeachersCollection = ClassTeachers.collection.name;
+    const teachersCollection = Teachers.collection.name;
+    const studentsCollection = Students.collection.name;
+    const classId = new mongoose.Types.ObjectId(id);
+
+    const classDocs = await Classes.aggregate([
+      {
+        $match: { _id: classId },
+      },
+      {
+        $lookup: {
+          from: studentsCollection,
+          let: { studentIds: "$enrolledStudents" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $in: ["$_id", "$$studentIds"] },
+              },
+            },
+            {
+              $project: {
+                password: 0,
+                resetPasswordTokenHash: 0,
+                resetPasswordExpiresAt: 0,
+                __v: 0,
+              },
+            },
+          ],
+          as: "enrolledStudentDocs",
+        },
+      },
+      {
+        $lookup: {
+          from: studentsCollection,
+          let: { studentIds: "$appliedStudents" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $in: ["$_id", "$$studentIds"] },
+              },
+            },
+            {
+              $project: {
+                password: 0,
+                resetPasswordTokenHash: 0,
+                resetPasswordExpiresAt: 0,
+                __v: 0,
+              },
+            },
+          ],
+          as: "appliedStudentDocs",
+        },
+      },
+      {
+        $lookup: {
+          from: classTeachersCollection,
+          let: { classId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$classId", "$$classId"] },
+                    { $eq: ["$active", true] },
+                  ],
+                },
+              },
+            },
+            {
+              $lookup: {
+                from: teachersCollection,
+                localField: "teacherId",
+                foreignField: "_id",
+                as: "teacherDoc",
+              },
+            },
+            {
+              $unwind: {
+                path: "$teacherDoc",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                classId: 1,
+                teacherId: {
+                  _id: "$teacherDoc._id",
+                  branch: "$teacherDoc.branch",
+                  role: "$teacherDoc.role",
+                  name: "$teacherDoc.name",
+                  phone: "$teacherDoc.phone",
+                  email: "$teacherDoc.email",
+                  dob: "$teacherDoc.dob",
+                  myStudents: "$teacherDoc.myStudents",
+                  myScheduledClasses: "$teacherDoc.myScheduledClasses",
+                  createdAt: "$teacherDoc.createdAt",
+                },
+                commissionRate: 1,
+                offlineCommissionRate: 1,
+                onlineCommissionRate: 1,
+                active: 1,
+                createdAt: 1,
+              },
+            },
+          ],
+          as: "teachers",
+        },
+      },
+      {
+        $addFields: {
+          enrolledStudents: "$enrolledStudentDocs",
+          appliedStudents: "$appliedStudentDocs",
+        },
+      },
+      {
+        $project: {
+          enrolledStudentDocs: 0,
+          appliedStudentDocs: 0,
+        },
+      },
+    ]);
+
+    const singleClass = classDocs[0];
     if (!singleClass) {
-      return res
-        .status(404)
-        .json({ message: "Course not found." });
-    }
-    if (!singleClass.grade) {
-      const inferred = resolveCourseGrade(singleClass);
-      if (inferred) {
-        singleClass.grade = inferred;
-        await singleClass.save();
-      }
+      return res.status(404).json({ message: "Course not found." });
     }
 
-    const teachers = await ClassTeachers.find({
-      classId: singleClass._id,
-      active: true,
-    }).populate({ path: "teacherId", select: "-password" });
-
-    return res.status(200).json({ ...singleClass.toObject(), teachers });
+    return res.status(200).json({
+      ...singleClass,
+      grade: singleClass?.grade || resolveCourseGrade(singleClass) || "",
+    });
   } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
+    console.error("Failed to fetch class details:", error);
+    res.status(500).json({ message: "Failed to fetch class details." });
   }
 });
 
@@ -983,12 +1190,70 @@ router.put("/edit-admin/:id", AdminAuthenticateToken, async (req, res) => {
 // GET ALL TEACHERS
 router.get("/all-teachers", AdminAuthenticateToken, async (req, res) => {
   try {
-    const allTeachers = await Teachers.find({}, { password: 0 });
+    const classTeachersCollection = ClassTeachers.collection.name;
+    const classesCollection = Classes.collection.name;
+    const allTeachers = await Teachers.aggregate([
+      {
+        $project: {
+          password: 0,
+          resetPasswordTokenHash: 0,
+          resetPasswordExpiresAt: 0,
+          __v: 0,
+        },
+      },
+      {
+        $lookup: {
+          from: classTeachersCollection,
+          let: { teacherId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$teacherId", "$$teacherId"] },
+                    { $eq: ["$active", true] },
+                  ],
+                },
+              },
+            },
+            {
+              $lookup: {
+                from: classesCollection,
+                localField: "classId",
+                foreignField: "_id",
+                as: "classDoc",
+              },
+            },
+            {
+              $unwind: {
+                path: "$classDoc",
+                preserveNullAndEmptyArrays: false,
+              },
+            },
+            {
+              $project: {
+                _id: "$classDoc._id",
+                classTitle: "$classDoc.classTitle",
+                grade: "$classDoc.grade",
+                totalHours: "$classDoc.totalHours",
+                branch: "$classDoc.branch",
+              },
+            },
+          ],
+          as: "assignedCourses",
+        },
+      },
+      {
+        $addFields: {
+          assignedCourseCount: { $size: "$assignedCourses" },
+        },
+      },
+    ]);
 
     return res.status(200).json(allTeachers);
   } catch (error) {
-    console.log("Something went wrong!!! ", error);
-    res.status(500).json(error);
+    console.error("Failed to fetch teachers:", error);
+    res.status(500).json({ message: "Failed to fetch teachers." });
   }
 });
 
@@ -996,16 +1261,19 @@ router.get("/all-teachers", AdminAuthenticateToken, async (req, res) => {
 router.get("/all-teachers/:id", AdminAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid teacher id." });
+    }
     const singleTeacher = await Teachers.findById({ _id: id }, { password: 0 });
 
     if (!singleTeacher) {
-      return res.status(409).json({ message: "Teacher not found!!!" });
+      return res.status(404).json({ message: "Teacher not found!!!" });
     }
 
     return res.status(200).json(singleTeacher);
   } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
+    console.error("Failed to fetch teacher:", error);
+    res.status(500).json({ message: "Failed to fetch teacher." });
   }
 });
 
@@ -1097,12 +1365,26 @@ router.post("/add-student", AdminAuthenticateToken, async (req, res) => {
 // GET ALL STUDENTS
 router.get("/all-students", AdminAuthenticateToken, async (req, res) => {
   try {
-    const allStudents = await Students.find({}, { password: 0 });
+    const allStudents = await Students.aggregate([
+      {
+        $project: {
+          password: 0,
+          resetPasswordTokenHash: 0,
+          resetPasswordExpiresAt: 0,
+          __v: 0,
+        },
+      },
+      {
+        $addFields: {
+          classCount: { $size: { $ifNull: ["$classes", []] } },
+        },
+      },
+    ]);
 
     return res.status(200).json(allStudents);
   } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
+    console.error("Failed to fetch students:", error);
+    res.status(500).json({ message: "Failed to fetch students." });
   }
 });
 
@@ -1110,13 +1392,26 @@ router.get("/all-students", AdminAuthenticateToken, async (req, res) => {
 router.get("/all-students/:id", AdminAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid student id." });
+    }
 
-    const singleStudent = await Students.findById({ _id: id }, { password: 0 });
+    const singleStudent = await Students.findById(
+      { _id: id },
+      {
+        password: 0,
+        resetPasswordTokenHash: 0,
+        resetPasswordExpiresAt: 0,
+      }
+    );
+    if (!singleStudent) {
+      return res.status(404).json({ message: "Student not found." });
+    }
 
     return res.status(200).json(singleStudent);
   } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
+    console.error("Failed to fetch student:", error);
+    res.status(500).json({ message: "Failed to fetch student." });
   }
 });
 
@@ -1124,6 +1419,9 @@ router.get("/all-students/:id", AdminAuthenticateToken, async (req, res) => {
 router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res) => {
   try {
     const { id1, id2 } = req.params;
+    if (!mongoose.isValidObjectId(id1) || !mongoose.isValidObjectId(id2)) {
+      return res.status(400).json({ message: "Invalid class or student id." });
+    }
     const { totalFee, feeMonth, feeMonths, feeYear, paid, amountPaid } = req.body;
     const normalizedPaid = normalizePaidStatus(paid);
     if (normalizedPaid === null) {
@@ -1500,8 +1798,8 @@ router.put("/enroll-student/:id1/:id2", AdminAuthenticateToken, async (req, res)
       message: `${studentExists.name} enrolled in ${classExists.classTitle} successfully.`,
     });
   } catch (error) {
-    console.log("Something went wrong!!! ", error);
-    res.status(500).json(error);
+    console.error("Failed to enroll student:", error);
+    res.status(500).json({ message: "Failed to enroll student." });
   }
 });
 
@@ -1539,6 +1837,9 @@ router.put(
   async (req, res) => {
     try {
       const { id } = req.params;
+      if (!mongoose.isValidObjectId(id)) {
+        return res.status(400).json({ message: "Invalid payment request id." });
+      }
       const { totalFee, feeMonth, feeYear, amountPaid } = req.body || {};
 
       const request = await PaymentRequest.findById(id);
@@ -1668,6 +1969,8 @@ router.put(
           { new: true }
         );
 
+      let feeRecord = null;
+      let resolveDetailYear = null;
       if (updateClass || treatAsFeePayment) {
         if (updateClass) {
           await ClassAccessStatus.findOneAndUpdate(
@@ -1677,7 +1980,7 @@ router.put(
           );
         }
 
-        let feeRecord = await Fee.findOne({
+        feeRecord = await Fee.findOne({
           classId: request.classId,
           studentId: request.studentId,
         });
@@ -1691,7 +1994,7 @@ router.put(
         }
 
         const currentYear = new Date().getFullYear();
-        const resolveDetailYear = (detail) => {
+        resolveDetailYear = (detail) => {
           const yearValue = normalizeFeeYear(detail?.feeYear);
           if (yearValue) return yearValue;
           return normalizedFeeYear === currentYear ? currentYear : null;
@@ -1885,7 +2188,11 @@ router.put(
 
       try {
         for (const monthId of [normalizedFeeMonth]) { // For approval, it's a single month
-          const monthDetail = feeRecord.detailFee.find(d => normalizeFeeMonth(d.feeMonth) === monthId && resolveDetailYear(d) === normalizedFeeYear);
+          const monthDetail = (feeRecord?.detailFee || []).find(
+            (d) =>
+              normalizeFeeMonth(d.feeMonth) === monthId &&
+              (resolveDetailYear ? resolveDetailYear(d) : normalizeFeeYear(d?.feeYear)) === normalizedFeeYear
+          );
           const monthPaidTotal = Number(monthDetail?.amountPaid || 0);
           const monthState = computePaymentState(normalizedTotalFee, monthPaidTotal);
           const monthStatus = monthState.status;
@@ -1963,6 +2270,9 @@ router.put(
   async (req, res) => {
     try {
       const { id } = req.params;
+      if (!mongoose.isValidObjectId(id)) {
+        return res.status(400).json({ message: "Invalid payment request id." });
+      }
       const { reason } = req.body || {};
 
       const request = await PaymentRequest.findById(id);
@@ -1975,17 +2285,27 @@ router.put(
           .json({ message: "Payment request already processed." });
       }
 
-      request.status = "rejected";
-      request.adminId = req.user.userId;
-      request.decisionAt = new Date();
-      request.rejectionReason = reason ? String(reason).trim() : "";
-      await request.save();
+      await withOptionalTransaction(async (session) => {
+        request.status = "rejected";
+        request.adminId = req.user.userId;
+        request.decisionAt = new Date();
+        request.rejectionReason = reason ? String(reason).trim() : "";
+        await request.save(session ? { session } : undefined);
 
-      await Students.findByIdAndUpdate(request.studentId, {
-        $pull: { appliedClasses: request.classId },
-      });
-      await Classes.findByIdAndUpdate(request.classId, {
-        $pull: { appliedStudents: request.studentId },
+        await Students.findByIdAndUpdate(
+          request.studentId,
+          {
+            $pull: { appliedClasses: request.classId },
+          },
+          session ? { session } : undefined
+        );
+        await Classes.findByIdAndUpdate(
+          request.classId,
+          {
+            $pull: { appliedStudents: request.studentId },
+          },
+          session ? { session } : undefined
+        );
       });
 
       try {
@@ -2017,7 +2337,7 @@ router.put(
 
       return res.status(200).json({ message: "Payment request rejected." });
     } catch (error) {
-      console.log("Something went wrong!!! ", error);
+      console.error("Failed to reject payment request:", error);
       res.status(500).json({ message: "Failed to reject payment request." });
     }
   }
@@ -2030,6 +2350,9 @@ router.put(
   async (req, res) => {
     try {
       const { id1, id2 } = req.params;
+      if (!mongoose.isValidObjectId(id1) || !mongoose.isValidObjectId(id2)) {
+        return res.status(400).json({ message: "Invalid class or student id." });
+      }
       const { feeMonth, feeMonths, feeYear, paid, amountPaid, totalFee: totalFeeInput } = req.body;
       const normalizedPaid = normalizePaidStatus(paid);
       if (normalizedPaid === null) {
@@ -2393,8 +2716,8 @@ router.put(
         feeYear: normalizedFeeYear,
       });
     } catch (error) {
-      console.log("Something went wrong!!! ", error);
-      res.status(500).json(error);
+      console.error("Failed to update fee:", error);
+      res.status(500).json({ message: "Failed to update fee." });
     }
   }
 );
@@ -2442,16 +2765,17 @@ router.get("/attendance/:id", AdminAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { attendanceDate, teacherId } = req.query; // Change req.body to req.query
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid class id." });
+    }
+    if (!attendanceDate) {
+      return res.status(400).json({ message: "attendanceDate is required." });
+    }
 
     const attendances = await Attendance.find({
       classId: id,
       "detailAttendance.classDate": attendanceDate,
-    });
-
-    if (attendances.length === 0) {
-      // Check if the length is zero
-      return res.status(403).json({ message: "No record found!!!" });
-    }
+    }).populate({ path: "studentId", select: "name phone" });
 
     const filtered = attendances.map((doc) => {
       const detailAttendance = (doc.detailAttendance || []).filter((entry) => {
@@ -2465,12 +2789,12 @@ router.get("/attendance/:id", AdminAuthenticateToken, async (req, res) => {
         ...doc.toObject(),
         detailAttendance,
       };
-    });
+    }).filter((doc) => (doc.detailAttendance || []).length > 0);
 
     res.status(200).json(filtered);
   } catch (error) {
-    console.log("Something went wrong!!! ", error); // Log the error for debugging
-    res.status(500).json({ error: "Something went wrong!!!" }); // Return a generic error message
+    console.error("Failed to fetch attendance:", error);
+    res.status(500).json({ message: "Failed to fetch attendance." });
   }
 });
 
@@ -2683,18 +3007,60 @@ router.get(
       const targetYear = requestedYear || now.getFullYear();
       const feeQuery = {};
       if (classId) {
-        feeQuery.classId = classId;
+        feeQuery.classId = new mongoose.Types.ObjectId(classId);
       }
 
-      const fees = await Fee.find(feeQuery)
-        .populate({ path: "studentId", select: "name email phone" })
-        .populate({ path: "classId", select: "classTitle" })
-        .lean();
+      const studentsCollection = Students.collection.name;
+      const classesCollection = Classes.collection.name;
+      const fees = await Fee.aggregate([
+        { $match: feeQuery },
+        {
+          $lookup: {
+            from: studentsCollection,
+            localField: "studentId",
+            foreignField: "_id",
+            as: "studentDoc",
+          },
+        },
+        {
+          $unwind: {
+            path: "$studentDoc",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: classesCollection,
+            localField: "classId",
+            foreignField: "_id",
+            as: "classDoc",
+          },
+        },
+        {
+          $unwind: {
+            path: "$classDoc",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            classId: 1,
+            studentId: 1,
+            totalFee: 1,
+            detailFee: 1,
+            studentName: "$studentDoc.name",
+            studentEmail: "$studentDoc.email",
+            studentPhone: "$studentDoc.phone",
+            classTitle: "$classDoc.classTitle",
+          },
+        },
+      ]);
 
       const pendingPayments = [];
 
       const pushPending = (feeDoc, detail, monthValue, yearValue) => {
-        if (!feeDoc?.studentId?.name || !feeDoc?.classId?.classTitle) {
+        if (!feeDoc?.studentName || !feeDoc?.classTitle) {
           return;
         }
         const totalFee = Number(feeDoc?.totalFee ?? 0);
@@ -2718,17 +3084,17 @@ router.get(
 
         pendingPayments.push({
           feeId: feeDoc?._id,
-          classId: feeDoc?.classId?._id || feeDoc?.classId,
-          studentId: feeDoc?.studentId?._id || feeDoc?.studentId,
+          classId: feeDoc?.classId,
+          studentId: feeDoc?.studentId,
           totalFee,
           feeMonth: normalizedMonth,
           feeYear: targetYear,
           amountPaid: Number.isFinite(amountPaid) ? amountPaid : 0,
           paid: detail?.paid === true,
-          studentName: feeDoc?.studentId?.name,
-          studentEmail: feeDoc?.studentId?.email,
-          studentPhone: feeDoc?.studentId?.phone,
-          classTitle: feeDoc?.classId?.classTitle,
+          studentName: feeDoc?.studentName,
+          studentEmail: feeDoc?.studentEmail,
+          studentPhone: feeDoc?.studentPhone,
+          classTitle: feeDoc?.classTitle,
         });
       };
 

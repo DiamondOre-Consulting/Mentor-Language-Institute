@@ -454,7 +454,6 @@ const PendingPayments = () => {
               const key = buildKey(item);
               const totalFee = Number(item.totalFee || 0);
               const paidSoFar = Number(item.amountPaid || 0);
-              const balanceDue = Math.max(0, totalFee - paidSoFar);
               const isPartiallyPaid = paidSoFar > 0;
               const feeYearLabel = Number(item.feeYear) || selectedYear || currentYear;
 

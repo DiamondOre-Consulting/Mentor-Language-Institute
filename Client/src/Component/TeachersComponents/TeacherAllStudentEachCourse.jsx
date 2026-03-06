@@ -12,6 +12,8 @@ const override = css`
   border-color: red;
 `;
 
+const getStudentIdValue = (value) => String(value?._id || value || "");
+
 const TeacherAllStudentEachCourse = () => {
   const navigate = useNavigate();
   const { get, put } = useApi();
@@ -50,25 +52,7 @@ const TeacherAllStudentEachCourse = () => {
         }).unwrap();
 
         if (response.status === 200) {
-          const courseData = response.data;
           setCourseDetails(response.data);
-          const enrolledStudents = courseData.enrolledStudents;
-          const enrolledStudentsDetails = [];
-
-          for (const studentIds of enrolledStudents) {
-            const studentResponse = await get({
-              url: `/teachers/student/${studentIds}`,
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }).unwrap();
-
-            if (studentResponse.status === 200) {
-              const studentData = studentResponse.data;
-              enrolledStudentsDetails.push(studentData);
-              setLoading(false);
-            }
-          }
         }
       } catch (error) {
         console.error("Error fetching course details:", error);
@@ -88,6 +72,12 @@ const TeacherAllStudentEachCourse = () => {
         console.error("Token not found");
         return;
       }
+      if (!selectedDate) {
+        setAttendanceDetails([]);
+        setStudentsDetails(studentList || []);
+        setAttendanceDetailsMap({});
+        return;
+      }
 
       const attendanceResponse = await get({
         url: `/teachers/attendance/${selectedClassId}`,
@@ -101,36 +91,41 @@ const TeacherAllStudentEachCourse = () => {
       }).unwrap();
 
       if (attendanceResponse.status === 200) {
-        setAttendanceDetails(attendanceResponse.data);
-
-        const studentIds = attendanceResponse.data.map(
-          (item) => item.studentId
+        const attendanceRows = attendanceResponse.data || [];
+        setAttendanceDetails(attendanceRows);
+        const studentMap = new Map(
+          (studentList || []).map((student) => [String(student?._id), student])
         );
-        const studentData = [];
-        for (const studentid of studentIds) {
-          const studentResponse = await get({
-            url: `/teachers/student/${studentid}`,
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }).unwrap();
-          if (studentResponse.status === 200) {
-            const data = studentResponse.data;
-            studentData.push(data);
-          }
-        }
-        setStudentsDetails(studentData);
-
+        const uniqueStudentIds = [
+          ...new Set(
+            attendanceRows
+              .map((item) => getStudentIdValue(item?.studentId))
+              .filter(Boolean)
+          ),
+        ];
+        const studentData = uniqueStudentIds
+          .map((studentId) => {
+            const fromList = studentMap.get(studentId);
+            if (fromList) return fromList;
+            const row = attendanceRows.find(
+              (item) => getStudentIdValue(item?.studentId) === studentId
+            );
+            return row?.studentId?.name ? row.studentId : null;
+          })
+          .filter(Boolean);
+        setStudentsDetails(studentData.length > 0 ? studentData : studentList || []);
         setAttendanceDetailsMap({});
       }
     } catch (error) {
       console.error("Error fetching attendance details:", error);
+      setAttendanceDetails([]);
+      setStudentsDetails(studentList || []);
     }
   };
   useEffect(() => {
     // Call fetchAttendanceDetails when selectedDate or selectedClassId changes
     fetchAttendanceDetails();
-  }, [selectedDate, selectedClassId, attendanceMode]);
+  }, [selectedDate, selectedClassId, attendanceMode, studentList]);
 
   const handleFetchStudentDetails = (studentId, studentName) => {
     setSelectedStudentName(studentName);
@@ -266,13 +261,14 @@ const TeacherAllStudentEachCourse = () => {
 
         if (studentList?.status === 200) {
           setStudentList(studentList?.data || []);
+          setStudentsDetails(studentList?.data || []);
         }
       } catch (error) {
         console.error("Error fetching student list:", error);
       }
     };
     fetchStudentData();
-  }, []);
+  }, [selectedClassId]);
 
   return (
     <div className="p-4">
@@ -354,7 +350,8 @@ const TeacherAllStudentEachCourse = () => {
               {studentDetails.map((student) => {
                 // Find the attendance details for the current student
                 const studentAttendanceDetails = attendanceDetails.find(
-                  (attendance) => attendance.studentId === student._id
+                  (attendance) =>
+                    getStudentIdValue(attendance?.studentId) === String(student?._id)
                 );
                 const studentTotalClassesTaken = studentAttendanceDetails
                   ? studentAttendanceDetails.detailAttendance

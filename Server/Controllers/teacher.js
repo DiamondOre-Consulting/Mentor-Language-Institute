@@ -41,6 +41,15 @@ dotenv.config();
 
 const router = express.Router();
 
+const isDebugLoggingEnabled =
+  String(process.env.LOG_LEVEL || "").toLowerCase() === "debug";
+
+const debugLog = (...args) => {
+  if (isDebugLoggingEnabled) {
+    console.log(...args);
+  }
+};
+
 const normalizeNumericInput = (value, { allowZero = false } = {}) => {
   const num = Number(value);
   if (!Number.isFinite(num)) return null;
@@ -348,28 +357,66 @@ router.post("/login-teacher", async (req, res) => {
 // GET ALL STUDENTS (teacher access)
 router.get("/all-students", TeacherAuthenticateToken, async (req, res) => {
   try {
-    const allStudents = await Students.find({}, { password: 0 });
+    const allStudents = await Students.aggregate([
+      {
+        $project: {
+          password: 0,
+          resetPasswordTokenHash: 0,
+          resetPasswordExpiresAt: 0,
+          __v: 0,
+        },
+      },
+      {
+        $addFields: {
+          classCount: { $size: { $ifNull: ["$classes", []] } },
+        },
+      },
+    ]);
     return res.status(200).json(allStudents);
   } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
+    console.error("Failed to fetch students:", error);
+    res.status(500).json({ message: "Failed to fetch students." });
   }
 });
 
 // GET ALL CLASSES (teacher access)
 router.get("/all-classes", TeacherAuthenticateToken, async (req, res) => {
   try {
-    const assignments = await ClassTeachers.find({
-      teacherId: req.user.userId,
-      active: true,
-    }).select("classId");
-    const classIds = assignments.map((a) => a.classId);
+    if (!mongoose.isValidObjectId(req.user.userId)) {
+      return res.status(401).json({ message: "Invalid teacher token." });
+    }
 
-    const allClasses = await Classes.find({ _id: { $in: classIds } });
+    const classesCollection = Classes.collection.name;
+    const allClasses = await ClassTeachers.aggregate([
+      {
+        $match: {
+          teacherId: new mongoose.Types.ObjectId(req.user.userId),
+          active: true,
+        },
+      },
+      {
+        $lookup: {
+          from: classesCollection,
+          localField: "classId",
+          foreignField: "_id",
+          as: "classDoc",
+        },
+      },
+      {
+        $unwind: {
+          path: "$classDoc",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $replaceRoot: { newRoot: "$classDoc" },
+      },
+    ]);
+    debugLog("Teacher classes count:", allClasses.length);
     return res.status(200).json(allClasses);
   } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
+    console.error("Failed to fetch classes:", error);
+    res.status(500).json({ message: "Failed to fetch classes." });
   }
 });
 
@@ -380,6 +427,9 @@ router.put(
   async (req, res) => {
     try {
       const { id1, id2 } = req.params;
+      if (!mongoose.isValidObjectId(id1) || !mongoose.isValidObjectId(id2)) {
+        return res.status(400).json({ message: "Invalid class or student id." });
+      }
       const { totalFee, feeMonth, feeMonths, feeYear, paid, amountPaid } = req.body;
       const normalizedPaid = normalizePaidStatus(paid);
       if (normalizedPaid === null) {
@@ -730,8 +780,8 @@ router.put(
         message: `${studentExists.name} enrolled in ${classExists.classTitle} successfully.`,
       });
     } catch (error) {
-      console.log("Something went wrong!!! ", error);
-      res.status(500).json(error);
+      console.error("Failed to enroll student:", error);
+      res.status(500).json({ message: "Failed to enroll student." });
     }
   }
 );
@@ -1150,22 +1200,24 @@ router.delete("/delete-student/:id",TeacherAuthenticateToken,async (req, res) =>
 router.get("/my-classes", TeacherAuthenticateToken, async (req, res) => {
   try {
     const { userId } = req.user;
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(401).json({ message: "Invalid teacher token." });
+    }
 
     const assignments = await ClassTeachers.find({
       teacherId: userId,
       active: true,
-    }).select("classId");
+    })
+      .select("classId")
+      .lean();
     const classIds = assignments.map((a) => a.classId);
+    if (!classIds.length) {
+      return res.status(200).json([]);
+    }
 
     const allMyClasses = await Classes.find({
       _id: { $in: classIds },
     });
-
-    if (!allMyClasses) {
-      return res
-        .status(405)
-        .json({ message: "No classes has been assigned to you" });
-    }
 
     for (const classDoc of allMyClasses) {
       await pruneExpiredDailyClasses(classDoc, userId);
@@ -1173,14 +1225,20 @@ router.get("/my-classes", TeacherAuthenticateToken, async (req, res) => {
 
     res.status(200).json(allMyClasses);
   } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
+    console.error("Failed to fetch teacher classes:", error);
+    res.status(500).json({ message: "Failed to fetch teacher classes." });
   }
 });
 
 router.get("/my-classes/:id", TeacherAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid class id." });
+    }
+    if (!mongoose.isValidObjectId(req.user.userId)) {
+      return res.status(401).json({ message: "Invalid teacher token." });
+    }
 
     const assignment = await ClassTeachers.findOne({
       classId: id,
@@ -1208,8 +1266,8 @@ router.get("/my-classes/:id", TeacherAuthenticateToken, async (req, res) => {
 
     res.status(200).json(getClassById);
   } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
+    console.error("Failed to fetch class details:", error);
+    res.status(500).json({ message: "Failed to fetch class details." });
   }
 });
 
@@ -1480,6 +1538,15 @@ router.get("/attendance/:id", TeacherAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { attendanceDate, mode } = req.query;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid class id." });
+    }
+    if (!attendanceDate) {
+      return res.status(400).json({ message: "attendanceDate is required." });
+    }
+    if (!mongoose.isValidObjectId(req.user.userId)) {
+      return res.status(401).json({ message: "Invalid teacher token." });
+    }
     const normalizedMode = normalizeAttendanceMode(mode);
     if (mode && !normalizedMode) {
       return res.status(400).json({ message: "Invalid mode. Use online or offline." });
@@ -1488,11 +1555,8 @@ router.get("/attendance/:id", TeacherAuthenticateToken, async (req, res) => {
     const attendances = await Attendance.find({
       classId: id,
       "detailAttendance.classDate": attendanceDate,
-    });
-
-    if (!attendances) {
-      return res.status(403).json({ message: "No record found!!!" });
-    }
+      "detailAttendance.teacherId": req.user.userId,
+    }).populate({ path: "studentId", select: "name phone email" });
 
     const filtered = attendances.map((doc) => {
       const detailAttendance = (doc.detailAttendance || []).filter(
@@ -1509,12 +1573,12 @@ router.get("/attendance/:id", TeacherAuthenticateToken, async (req, res) => {
         ...doc.toObject(),
         detailAttendance,
       };
-    });
+    }).filter((doc) => (doc.detailAttendance || []).length > 0);
 
     res.status(200).json(filtered);
   } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
+    console.error("Failed to fetch attendance:", error);
+    res.status(500).json({ message: "Failed to fetch attendance." });
   }
 });
 
@@ -2024,24 +2088,55 @@ router.get(
   async (req, res) => {
     try {
       const { id } = req.params;
+      if (!mongoose.isValidObjectId(id)) {
+        return res.status(400).json({ message: "Invalid class id." });
+      }
+      if (!mongoose.isValidObjectId(req.user.userId)) {
+        return res.status(401).json({ message: "Invalid teacher token." });
+      }
 
       const assignment = await getAssignmentForTeacher(id, req.user.userId);
       if (!assignment) {
         return res.status(403).json({ message: "Unauthorized." });
       }
 
-      const allStudents = await Students.find({ classes: id }, { password: 0 });
-
-      if (!allStudents) {
-        return res
-          .status(404)
-          .json({ message: "No student is enrolled in this course." });
+      const classDoc = await Classes.findById(id).select("enrolledStudents");
+      if (!classDoc) {
+        return res.status(404).json({ message: "Class not found." });
       }
 
-      res.status(200).json(allStudents);
+      const enrolledStudentIds = Array.isArray(classDoc.enrolledStudents)
+        ? classDoc.enrolledStudents
+        : [];
+      if (!enrolledStudentIds.length) {
+        return res.status(200).json([]);
+      }
+
+      const allStudents = await Students.aggregate([
+        {
+          $match: {
+            _id: { $in: enrolledStudentIds },
+          },
+        },
+        {
+          $project: {
+            password: 0,
+            resetPasswordTokenHash: 0,
+            resetPasswordExpiresAt: 0,
+            __v: 0,
+          },
+        },
+        {
+          $sort: {
+            name: 1,
+          },
+        },
+      ]);
+
+      res.status(200).json(allStudents || []);
     } catch (error) {
-      console.log("Something went wrong!!! ");
-      res.status(500).json(error);
+      console.error("Failed to fetch class students:", error);
+      res.status(500).json({ message: "Failed to fetch class students." });
     }
   }
 );
@@ -2050,16 +2145,28 @@ router.get(
 router.get("/student/:id", TeacherAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid student id." });
+    }
+    if (!mongoose.isValidObjectId(req.user.userId)) {
+      return res.status(401).json({ message: "Invalid teacher token." });
+    }
 
-    const assignments = await ClassTeachers.find({
+    const classIds = await ClassTeachers.distinct("classId", {
       teacherId: req.user.userId,
       active: true,
-    }).select("classId");
-    const classIds = assignments.map((a) => a.classId);
+    });
+    if (!classIds.length) {
+      return res.status(403).json({ message: "Unauthorized." });
+    }
 
     const student = await Students.findOne(
       { _id: id, classes: { $in: classIds } },
-      { password: 0 }
+      {
+        password: 0,
+        resetPasswordTokenHash: 0,
+        resetPasswordExpiresAt: 0,
+      }
     );
 
     if (!student) {
@@ -2068,8 +2175,8 @@ router.get("/student/:id", TeacherAuthenticateToken, async (req, res) => {
 
     res.status(200).json(student);
   } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
+    console.error("Failed to fetch student:", error);
+    res.status(500).json({ message: "Failed to fetch student." });
   }
 });
 
@@ -2078,6 +2185,12 @@ router.get("/my-commission/:id", TeacherAuthenticateToken, async (req, res) => {
   try {
     const { userId } = req.user;
     const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid class id." });
+    }
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(401).json({ message: "Invalid teacher token." });
+    }
 
     const { classDoc, commissions } = await calculateMonthlyCommission(id, userId);
 
@@ -2087,8 +2200,8 @@ router.get("/my-commission/:id", TeacherAuthenticateToken, async (req, res) => {
 
     res.status(200).json(sortCommissions(commissions));
   } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
+    console.error("Failed to fetch commission report:", error);
+    res.status(500).json({ message: "Failed to fetch commission report." });
   }
 });
 

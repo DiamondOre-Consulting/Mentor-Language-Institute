@@ -119,7 +119,7 @@ const TeacherAllStudents = () => {
     };
 
     fetchAllcourses();
-  }, [navigate, selectedMyCourseId]);
+  }, [navigate]);
 
   const fetchStudentsForMyCourse = async (courseId) => {
     if (!courseId) {

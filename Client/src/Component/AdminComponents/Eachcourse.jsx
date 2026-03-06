@@ -48,61 +48,8 @@ const Eachcourse = () => {
 
         const courseData = response.data;
         setCourseDetails(courseData);
-
-        const enrolledPromises = (courseData?.enrolledStudents || []).map(
-          (studentId) =>
-            get({
-              url: `/admin-confi/all-students/${studentId}`,
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }).unwrap()
-        );
-
-        const appliedPromises = (courseData?.appliedStudents || []).map(
-          (studentId) =>
-            get({
-              url: `/admin-confi/all-students/${studentId}`,
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }).unwrap()
-        );
-
-        const [enrolledResults, appliedResults] = await Promise.all([
-          Promise.allSettled(enrolledPromises),
-          Promise.allSettled(appliedPromises),
-        ]);
-
-        const enrolledStudentsDetails = enrolledResults
-          .filter((result) => result.status === "fulfilled")
-          .map((result) =>
-            result.value?.status === 200 ? result.value.data : null
-          )
-          .filter(Boolean);
-
-        const appliedStudentsDetails = appliedResults
-          .filter((result) => result.status === "fulfilled")
-          .map((result) =>
-            result.value?.status === 200 ? result.value.data : null
-          )
-          .filter(Boolean);
-
-        setCourseDetails((prev) => ({
-          ...prev,
-          ...courseData,
-          teachers: courseData?.teachers || prev?.teachers || [],
-          enrolledStudents:
-            enrolledStudentsDetails.length > 0
-              ? enrolledStudentsDetails
-              : prev?.enrolledStudents || courseData?.enrolledStudents || [],
-          appliedStudents:
-            appliedStudentsDetails.length > 0
-              ? appliedStudentsDetails
-              : prev?.appliedStudents || courseData?.appliedStudents || [],
-        }));
       } catch (error) {
-        console.log("");
+        console.error("Failed to fetch course details:", error);
       } finally {
         setLoading(false);
       }

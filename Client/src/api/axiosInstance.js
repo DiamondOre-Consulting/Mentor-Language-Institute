@@ -46,7 +46,7 @@ if (!axios.__mlConfigured) {
             });
         }
 
-        const newToken = await refreshPromise;
+        await refreshPromise;
         if (originalRequest.headers?.Authorization) {
           delete originalRequest.headers.Authorization;
         }

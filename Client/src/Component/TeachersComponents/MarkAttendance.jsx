@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useApi } from "../../api/useApi";
 
+const getStudentIdValue = (value) => String(value?._id || value || "");
+
 const MarkAttendance = () => {
   const { get, post } = useApi();
   const token = localStorage.getItem("token");
@@ -113,7 +115,7 @@ const MarkAttendance = () => {
             );
             return detail && Number(detail.numberOfClassesTaken || 0) > 0;
           })
-          .map((row) => String(row.studentId))
+          .map((row) => getStudentIdValue(row.studentId))
       );
 
       if (presentSet.size === 0 && students.length > 0) {

@@ -33,6 +33,41 @@ dotenv.config();
 
 const router = express.Router();
 
+const isDebugLoggingEnabled =
+  String(process.env.LOG_LEVEL || "").toLowerCase() === "debug";
+
+const debugLog = (...args) => {
+  if (isDebugLoggingEnabled) {
+    console.log(...args);
+  }
+};
+
+const isTransactionUnsupportedError = (error) => {
+  const msg = String(error?.message || "");
+  return (
+    msg.includes("Transaction numbers are only allowed on a replica set member or mongos") ||
+    msg.includes("Transaction support is not enabled")
+  );
+};
+
+const withOptionalTransaction = async (work) => {
+  const session = await mongoose.startSession();
+  try {
+    let output;
+    await session.withTransaction(async () => {
+      output = await work(session);
+    });
+    return output;
+  } catch (error) {
+    if (isTransactionUnsupportedError(error)) {
+      return work(null);
+    }
+    throw error;
+  } finally {
+    await session.endSession();
+  }
+};
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -348,33 +383,22 @@ router.put("/update-profile", StudentAuthenticateToken, async (req, res) => {
 
 router.get("/all-courses", StudentAuthenticateToken, async (req, res) => {
   try {
-    const student = await Students.findById(req.user.userId).select("grade classes");
+    if (!mongoose.isValidObjectId(req.user.userId)) {
+      return res.status(401).json({ message: "Invalid student token." });
+    }
+    const student = await Students.findById(req.user.userId)
+      .select("grade classes")
+      .lean();
+    if (!student) {
+      return res.status(404).json({ message: "Student not found." });
+    }
     const studentGrade = normalizeGradeValue(student?.grade);
     const enrolledSet = new Set((student?.classes || []).map((id) => String(id)));
-    console.log("=== STUDENT ALL-COURSES DEBUG ===");
-    console.log("Student userId:", req.user.userId);
     const allCourses = await Classes.find({}).lean();
-    const gradeBackfills = [];
     const normalizedCourses = allCourses.map((course) => {
-      if (course?.grade) return course;
-      const inferred = resolveCourseGrade(course);
-      if (inferred) {
-        gradeBackfills.push({ id: course._id, grade: inferred });
-        return { ...course, grade: inferred };
-      }
-      return course;
+      const inferredGrade = course?.grade || resolveCourseGrade(course) || "";
+      return { ...course, grade: inferredGrade };
     });
-    if (gradeBackfills.length > 0) {
-      await Promise.all(
-        gradeBackfills.map((item) =>
-          Classes.findByIdAndUpdate(
-            item.id,
-            { $set: { grade: item.grade } },
-            { new: false }
-          )
-        )
-      );
-    }
 
     const filteredCourses = normalizedCourses.filter((course) => {
       const courseGrade = normalizeGradeValue(course?.grade);
@@ -382,10 +406,11 @@ router.get("/all-courses", StudentAuthenticateToken, async (req, res) => {
       if (!studentGrade) return false;
       return courseGrade === studentGrade;
     });
-    console.log("Courses found for student:", allCourses.length);
-    console.log("Student grade:", JSON.stringify(student?.grade));
-    console.log("Filtered courses for grade:", filteredCourses.length);
-    console.log("================================");
+    debugLog(
+      "Student all-courses counts:",
+      allCourses.length,
+      filteredCourses.length
+    );
 
     const sanitizedCourses = filteredCourses.map((course) => {
       const isEnrolled = enrolledSet.has(String(course._id));
@@ -397,30 +422,30 @@ router.get("/all-courses", StudentAuthenticateToken, async (req, res) => {
 
     res.status(200).json(sanitizedCourses);
   } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
+    console.error("Failed to fetch courses:", error);
+    res.status(500).json({ message: "Failed to fetch courses." });
   }
 });
 
 router.get("/all-courses/:id", StudentAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid class id." });
+    }
+    if (!mongoose.isValidObjectId(req.user.userId)) {
+      return res.status(401).json({ message: "Invalid student token." });
+    }
     const student = await Students.findById(req.user.userId).select("grade classes");
     const singleCourse = await Classes.findById(id);
     if (!singleCourse) {
       return res.status(404).json({ message: "Course not found." });
     }
-    if (!singleCourse.grade) {
-      const inferred = resolveCourseGrade(singleCourse);
-      if (inferred) {
-        singleCourse.grade = inferred;
-        await singleCourse.save();
-      }
-    }
+    const resolvedCourseGrade = singleCourse?.grade || resolveCourseGrade(singleCourse) || "";
     const isEnrolled = (student?.classes || []).some(
       (classId) => String(classId) === String(id)
     );
-    if (!isGradeMatch(singleCourse?.grade, student?.grade)) {
+    if (!isGradeMatch(resolvedCourseGrade, student?.grade)) {
       if (!isEnrolled) {
         return res
           .status(404)
@@ -434,6 +459,7 @@ router.get("/all-courses/:id", StudentAuthenticateToken, async (req, res) => {
 
     const coursePayload = {
       ...singleCourse.toObject(),
+      grade: resolvedCourseGrade,
       teachers,
       isEnrolled,
     };
@@ -443,25 +469,28 @@ router.get("/all-courses/:id", StudentAuthenticateToken, async (req, res) => {
 
     res.status(200).json(coursePayload);
   } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
+    console.error("Failed to fetch course:", error);
+    res.status(500).json({ message: "Failed to fetch course." });
   }
 });
 
 router.get("/teacher/:id", StudentAuthenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid teacher id." });
+    }
 
     const myTeacher = await Teachers.findById({ _id: id }, { password: 0 });
 
     if (!myTeacher) {
-      return res.status(409).json({ message: "Teacher not found" });
+      return res.status(404).json({ message: "Teacher not found" });
     }
 
     res.status(200).json(myTeacher);
   } catch (error) {
-    console.log("Something went wrong!!! ");
-    res.status(500).json(error);
+    console.error("Failed to fetch teacher:", error);
+    res.status(500).json({ message: "Failed to fetch teacher." });
   }
 });
 
@@ -636,6 +665,10 @@ router.post(
               screenshotUrl = uploaded?.secure_url || "";
             } catch (uploadError) {
               console.error("Screenshot upload failed:", uploadError);
+              return res.status(502).json({
+                message:
+                  "Unable to upload payment screenshot right now. Please try again.",
+              });
             }
           }
         }
@@ -653,33 +686,43 @@ router.post(
           screenshotUrl,
         };
 
-        let createdRequests = [];
-        if (alreadyEnrolled) {
-          const request = await PaymentRequest.create({
-            ...basePayload,
-            requestType: "fee_payment",
-            feeMonth: paymentMonth,
-            feeYear: paymentYear,
-          });
-          createdRequests = [request];
-        } else {
-          const request = await PaymentRequest.create({
-            ...basePayload,
-            requestType: "enrollment",
-            feeMonth: null,
-            feeYear: null,
-          });
-          createdRequests = [request];
-        }
+        const createdRequests = await withOptionalTransaction(async (session) => {
+          const request = new PaymentRequest(
+            alreadyEnrolled
+              ? {
+                  ...basePayload,
+                  requestType: "fee_payment",
+                  feeMonth: paymentMonth,
+                  feeYear: paymentYear,
+                }
+              : {
+                  ...basePayload,
+                  requestType: "enrollment",
+                  feeMonth: null,
+                  feeYear: null,
+                }
+          );
+          await request.save(session ? { session } : undefined);
 
-        if (!alreadyEnrolled) {
-          await Students.findByIdAndUpdate(userId, {
-            $addToSet: { appliedClasses: id },
-          });
-          await Classes.findByIdAndUpdate(id, {
-            $addToSet: { appliedStudents: userId },
-          });
-        }
+          if (!alreadyEnrolled) {
+            await Students.findByIdAndUpdate(
+              userId,
+              {
+                $addToSet: { appliedClasses: id },
+              },
+              session ? { session } : undefined
+            );
+            await Classes.findByIdAndUpdate(
+              id,
+              {
+                $addToSet: { appliedStudents: userId },
+              },
+              session ? { session } : undefined
+            );
+          }
+
+          return [request];
+        });
 
         return res.status(201).json({
           message: "Payment request submitted successfully.",

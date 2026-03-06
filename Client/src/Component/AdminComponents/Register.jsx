@@ -419,11 +419,6 @@ const Register = () => {
     }
   };
 
-  const handleInputChange = (event) => {
-    const { name, value } = event.target;
-    setFormValues({ ...formValues, [name]: value });
-  };
-
   // register students
 
   const handleStudentRegister = async (e) => {

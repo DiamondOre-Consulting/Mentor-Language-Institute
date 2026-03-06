@@ -8,8 +8,6 @@ const AllTeachers = () => {
   const navigate = useNavigate();
   const { get, del } = useApi();
   const [allTeachers, setAllTeachers] = useState([]);
-  const [coursesByTeacher, setCoursesByTeacher] = useState({});
-  const [coursesLoading, setCoursesLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [popup, setPopUp] = useState(false);
   const [teacherid, setTeacherId] = useState("");
@@ -23,38 +21,6 @@ const AllTeachers = () => {
       month: "short",
       year: "numeric",
     });
-  };
-
-  const fetchCoursesForTeachers = async (teachers) => {
-    if (!teachers?.length) {
-      setCoursesByTeacher({});
-      return;
-    }
-    try {
-      setCoursesLoading(true);
-      const token = localStorage.getItem("token");
-      const results = await Promise.all(
-        teachers.map(async (teacher) => {
-          try {
-            const response = await get({
-              url: `/admin-confi/teacher-classes/${teacher?._id}`,
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }).unwrap();
-            if (response.status === 200) {
-              return [teacher._id, response.data || []];
-            }
-          } catch (error) {
-            console.error("Error fetching teacher courses:", error);
-          }
-          return [teacher._id, []];
-        })
-      );
-      setCoursesByTeacher(Object.fromEntries(results));
-    } finally {
-      setCoursesLoading(false);
-    }
   };
 
   const fetchAllTeachers = async () => {
@@ -74,7 +40,6 @@ const AllTeachers = () => {
       }).unwrap();
       if (response.status === 200) {
         setAllTeachers(response.data);
-        fetchCoursesForTeachers(response.data || []);
       }
     } catch (error) {
       console.error("Error fetching teachers:", error);
@@ -100,8 +65,8 @@ const AllTeachers = () => {
     );
   });
 
-  const totalAssignedCourses = Object.values(coursesByTeacher).reduce(
-    (sum, courses) => sum + (courses?.length || 0),
+  const totalAssignedCourses = allTeachers.reduce(
+    (sum, teacher) => sum + Number(teacher?.assignedCourseCount || 0),
     0
   );
 
@@ -134,11 +99,6 @@ const AllTeachers = () => {
         setAllTeachers((prevTeachers) =>
           prevTeachers.filter((teacher) => teacher._id !== teacherid)
         );
-        setCoursesByTeacher((prev) => {
-          const next = { ...prev };
-          delete next[teacherid];
-          return next;
-        });
         setPopUp(false);
       }
     } catch (error) {
@@ -243,7 +203,7 @@ const AllTeachers = () => {
                 <div className="rounded-2xl border border-orange-100 bg-orange-50 px-3 py-2">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-orange-600">Courses</p>
                   <p className="mt-1 text-lg font-bold text-slate-800">
-                    {coursesByTeacher?.[teacher._id]?.length || 0}
+                    {Number(teacher?.assignedCourseCount || 0)}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
@@ -259,7 +219,7 @@ const AllTeachers = () => {
                   Assigned Courses
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {(coursesByTeacher?.[teacher._id] || []).slice(0, 3).map((course) => (
+                  {(teacher?.assignedCourses || []).slice(0, 3).map((course) => (
                     <span
                       key={course?._id}
                       className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700"
@@ -267,18 +227,15 @@ const AllTeachers = () => {
                       {course?.classTitle}
                     </span>
                   ))}
-                  {(coursesByTeacher?.[teacher._id] || []).length === 0 && (
+                  {(teacher?.assignedCourses || []).length === 0 && (
                     <span className="text-xs text-slate-500">No courses assigned.</span>
                   )}
-                  {(coursesByTeacher?.[teacher._id] || []).length > 3 && (
+                  {(teacher?.assignedCourses || []).length > 3 && (
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                      +{(coursesByTeacher?.[teacher._id] || []).length - 3} more
+                      +{(teacher?.assignedCourses || []).length - 3} more
                     </span>
                   )}
                 </div>
-                {coursesLoading && (
-                  <p className="mt-2 text-xs text-slate-400">Loading assignments...</p>
-                )}
               </div>
 
               <div className="relative mt-5 flex flex-wrap items-center gap-2">

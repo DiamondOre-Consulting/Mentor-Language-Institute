@@ -101,33 +101,34 @@ const TeacherHome = ({ teacherData }) => {
     setShowUpdateHoursPopup(true);
   };
 
-  const fetchAllTeachersCourses = async () => {
+  const fetchMyClasses = async () => {
+    setLoading(true);
     try {
-      const classIds = teacherData?.myClasses;
-
-      const classesData = [];
-      for (const classId of classIds) {
-        const classResponse = await get({
-          url: `/teachers/my-classes/${classId}`,
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }).unwrap();
-        if (classResponse.status === 200) {
-          classesData.push(classResponse.data);
-        }
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
       }
-      setClassesData(classesData);
+
+      const response = await get({
+        url: "/teachers/my-classes",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
+      if (response.status === 200) {
+        setClassesData(response.data || []);
+      }
     } catch (error) {
       console.error("Error fetching teachers' classes:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (teacherData?.myClasses?.length > 0) {
-      fetchAllTeachersCourses();
-    }
-  }, [teacherData]);
+    fetchMyClasses();
+  }, [navigate]);
 
   useEffect(() => {
     const allDetails = async () => {
@@ -220,36 +221,6 @@ const TeacherHome = ({ teacherData }) => {
     }
   };
 
-  useEffect(() => {
-    const fetchAllcourses = async () => {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-          console.error("No token found");
-          navigate("/login");
-          return;
-        }
-
-        const response = await get({
-          url: "/teachers/my-classes",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }).unwrap();
-        if (response.status === 200) {
-          setClassesData(response.data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch classes", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAllcourses();
-  }, []);
-
   const handleUpdateHours = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -267,7 +238,7 @@ const TeacherHome = ({ teacherData }) => {
       }).unwrap();
 
       if (response.status === 200) {
-        fetchAllTeachersCourses();
+        fetchMyClasses();
         setShowUpdateHoursPopup(false);
       }
     } catch (error) {
