@@ -2160,6 +2160,7 @@ router.put(
         return normalizedFeeYear === currentYear ? currentYear : null;
       };
       const wasPaidByMonth = new Map();
+      const accumulationErrors = [];
       requestedMonths.forEach((monthValue) => {
         const existingDetail = fee.detailFee.find(
           (detail) =>
