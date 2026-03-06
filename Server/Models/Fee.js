@@ -4,10 +4,12 @@ const feeSchema = new mongoose.Schema({
   classId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
+    ref: "Classes",
   },
   studentId: {
     type: mongoose.Schema.Types.ObjectId,
-    required: true
+    required: true,
+    ref: "Student",
   },
   totalFee: {
     type: Number,

@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import Admin from "../Models/Admin.js";
@@ -2409,32 +2410,53 @@ router.post("/add-monthly-commission", AdminAuthenticateToken, async (req, res) 
 });
 
 // GET PENDING PAYMENTS
-router.get(
-  "/pending-payments",
-  AdminAuthenticateToken,
-  async (req, res) => {
-    try {
-      const now = new Date();
-      const currentMonth = now.getMonth() + 1;
-      const fees = await Fee.find({})
-        .populate({ path: "studentId", select: "name email phone" })
-        .populate({ path: "classId", select: "classTitle" })
-        .lean();
+  router.get(
+    "/pending-payments",
+    AdminAuthenticateToken,
+    async (req, res) => {
+      try {
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1;
+        const { month, classId } = req.query || {};
+        const requestedMonth = month !== undefined && month !== null && String(month).trim() !== ""
+          ? normalizeFeeMonth(month)
+          : null;
+        if (month !== undefined && month !== null && String(month).trim() !== "" && !requestedMonth) {
+          return res.status(400).json({ success: false, message: "Invalid month filter." });
+        }
+
+        if (classId && !mongoose.isValidObjectId(classId)) {
+          return res.status(400).json({ success: false, message: "Invalid class filter." });
+        }
+
+        const targetMonth = requestedMonth || currentMonth;
+        const feeQuery = {};
+        if (classId) {
+          feeQuery.classId = classId;
+        }
+
+        const fees = await Fee.find(feeQuery)
+          .populate({ path: "studentId", select: "name email phone" })
+          .populate({ path: "classId", select: "classTitle" })
+          .lean();
 
       const pendingPayments = [];
 
-      const pushPending = (feeDoc, detail, monthValue) => {
-        const totalFee = Number(feeDoc?.totalFee ?? 0);
-        if (!Number.isFinite(totalFee) || totalFee <= 0) {
-          return;
-        }
-        const normalizedMonth = normalizeFeeMonth(monthValue);
-        if (!normalizedMonth) {
-          return;
-        }
-        if (normalizedMonth !== currentMonth) {
-          return;
-        }
+        const pushPending = (feeDoc, detail, monthValue) => {
+          if (!feeDoc?.studentId?.name || !feeDoc?.classId?.classTitle) {
+            return;
+          }
+          const totalFee = Number(feeDoc?.totalFee ?? 0);
+          if (!Number.isFinite(totalFee) || totalFee <= 0) {
+            return;
+          }
+          const normalizedMonth = normalizeFeeMonth(monthValue);
+          if (!normalizedMonth) {
+            return;
+          }
+          if (normalizedMonth !== targetMonth) {
+            return;
+          }
         const amountPaid = Number(detail?.amountPaid ?? 0);
         if (Number.isFinite(amountPaid) && amountPaid >= totalFee) {
           return;
@@ -2457,15 +2479,15 @@ router.get(
 
       for (const feeDoc of fees) {
         const detailFee = Array.isArray(feeDoc?.detailFee) ? feeDoc.detailFee : [];
-        const currentDetail = detailFee.find(
-          (detail) => normalizeFeeMonth(detail?.feeMonth) === currentMonth
-        );
-        if (currentDetail) {
-          pushPending(feeDoc, currentDetail, currentMonth);
-        } else {
-          pushPending(feeDoc, { amountPaid: 0, paid: false }, currentMonth);
+          const currentDetail = detailFee.find(
+            (detail) => normalizeFeeMonth(detail?.feeMonth) === targetMonth
+          );
+          if (currentDetail) {
+            pushPending(feeDoc, currentDetail, targetMonth);
+          } else {
+            pushPending(feeDoc, { amountPaid: 0, paid: false }, targetMonth);
+          }
         }
-      }
 
       pendingPayments.sort((a, b) => {
         const nameA = (a.studentName || "").toLowerCase();
