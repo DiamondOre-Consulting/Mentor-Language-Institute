@@ -1,5 +1,19 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useApi } from "../../../api/useApi";
+import { Button } from "../../../components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../../../components/ui/dialog";
+import paymentQr from "../../../assets/QR.jpeg";
+import {
+  validateAmountPaid,
+  validatePhone,
+  validateRequired,
+} from "../../../utils/validators";
 
 const toNumber = (value) => {
   const parsed = Number(value);
@@ -73,6 +87,27 @@ const formatTime = (value) => {
   return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 };
 
+const monthNames = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+const monthNumberToLabel = (value) => {
+  const num = Number(value);
+  if (!Number.isInteger(num) || num < 1 || num > 12) return "N/A";
+  return monthNames[num - 1];
+};
+
 const getProfileCompletion = (student) => {
   if (!student) return 0;
   const fields = ["name", "email", "phone", "grade", "dob", "userName"];
@@ -132,9 +167,25 @@ const StatCard = ({ icon, label, value, color = "#f97316", delay = 0 }) => (
 );
 
 const StudentOverview = ({ student }) => {
-  const { get } = useApi();
+  const { get, post } = useApi();
   const [loading, setLoading] = useState(false);
   const [expandedSessionKey, setExpandedSessionKey] = useState(null);
+  const [pendingFees, setPendingFees] = useState([]);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [paymentForm, setPaymentForm] = useState({
+    paymentMethod: "UPI",
+    transactionId: "",
+    amount: "",
+    paidOn: "",
+    payerName: "",
+    phone: "",
+    notes: "",
+    screenshot: null,
+  });
+  const [paymentErrors, setPaymentErrors] = useState({});
+  const [paymentMessage, setPaymentMessage] = useState("");
+  const [paymentSubmitting, setPaymentSubmitting] = useState(false);
   const [summary, setSummary] = useState({
     enrolledCount: 0,
     appliedCount: 0,
@@ -146,6 +197,28 @@ const StudentOverview = ({ student }) => {
     balance: 0,
     upcomingSessions: [],
   });
+
+  const buildPaymentErrors = (form, totalFee) => {
+    const next = {};
+    const hasDetails = Boolean(
+      form.transactionId ||
+        form.amount ||
+        form.paidOn ||
+        form.payerName ||
+        form.phone ||
+        form.screenshot
+    );
+    if (!hasDetails) {
+      next.amount = "Please provide payment details.";
+      return next;
+    }
+    next.transactionId = validateRequired(form.transactionId, "Transaction ID");
+    next.amount = validateAmountPaid(form.amount, totalFee, { required: true });
+    next.paidOn = validateRequired(form.paidOn, "Paid on date");
+    next.payerName = validateRequired(form.payerName, "Payer name");
+    next.phone = validatePhone(form.phone);
+    return next;
+  };
 
   const profileCompletion = useMemo(() => getProfileCompletion(student), [student]);
 
@@ -177,6 +250,30 @@ const StudentOverview = ({ student }) => {
         const feeResults = await Promise.allSettled(
           classIds.map((id) => get({ url: `/students/my-fee-details/${id}`, headers }).unwrap())
         );
+        let pendingRequestRows = [];
+        try {
+          const pendingRequestResponse = await get({
+            url: "/students/payment-requests",
+            params: { status: "pending", type: "fee_payment" },
+            headers,
+          }).unwrap();
+          if (pendingRequestResponse.status === 200) {
+            pendingRequestRows = pendingRequestResponse.data || [];
+          }
+        } catch (requestError) {
+          console.error("Error fetching pending payment requests:", requestError);
+        }
+        const pendingRequestKeys = new Set();
+        const pendingRequestClasses = new Set();
+        pendingRequestRows.forEach((row) => {
+          const classKey = String(row?.classId || "");
+          const monthKey = Number(row?.feeMonth);
+          if (classKey && Number.isInteger(monthKey)) {
+            pendingRequestKeys.add(`${classKey}-${monthKey}`);
+          } else if (classKey) {
+            pendingRequestClasses.add(classKey);
+          }
+        });
 
         const scheduleEntries = courses.flatMap((c) =>
           (c?.dailyClasses || []).map((e) => ({ ...e, courseTitle: c?.classTitle || "Course" }))
@@ -204,11 +301,74 @@ const StudentOverview = ({ student }) => {
           if (d.totalClassesTaken) return t + toNumber(d.totalClassesTaken);
           return t + (d.detailAttendance || []).reduce((s, row) => s + toNumber(row.numberOfClassesTaken), 0);
         }, 0);
-        const totalFee = feeResults.reduce((t, r) => r.status !== "fulfilled" ? t : t + toNumber(r.value?.data?.totalFee), 0);
+        const totalFee = feeResults.reduce(
+          (t, r) => (r.status !== "fulfilled" ? t : t + toNumber(r.value?.data?.totalFee)),
+          0
+        );
         const totalPaid = feeResults.reduce((t, r) => {
           if (r.status !== "fulfilled") return t;
-          return t + (r.value?.data?.detailFee || []).reduce((s, f) => s + toNumber(f.amountPaid), 0);
+          return (
+            t +
+            (r.value?.data?.detailFee || []).reduce(
+              (s, f) => s + toNumber(f.amountPaid),
+              0
+            )
+          );
         }, 0);
+
+        const courseTitleMap = new Map(
+          courses.map((course) => [String(course?._id), course?.classTitle || "Course"])
+        );
+        const pendingItems = [];
+        const currentMonth = new Date().getMonth() + 1;
+        feeResults.forEach((result, index) => {
+          if (result.status !== "fulfilled") return;
+          const feeData = result.value?.data;
+          if (!feeData) return;
+          const classId = classIds[index];
+          const classTitle = courseTitleMap.get(String(classId)) || "Course";
+          const total = toNumber(feeData.totalFee);
+          const detailFees = Array.isArray(feeData.detailFee)
+            ? feeData.detailFee
+            : [];
+          const currentDetail = detailFees.find(
+            (fee) => Number(fee?.feeMonth) === currentMonth
+          );
+          if (currentDetail) {
+            const paidSoFar = toNumber(currentDetail.amountPaid);
+            const balanceDue = Math.max(0, total - paidSoFar);
+            const isFullyPaid = total > 0 && paidSoFar >= total;
+            if (!isFullyPaid) {
+              const key = `${String(classId)}-${Number(currentMonth)}`;
+              const awaitingApproval =
+                pendingRequestKeys.has(key) || pendingRequestClasses.has(String(classId));
+              pendingItems.push({
+                classId,
+                classTitle,
+                feeMonth: currentDetail.feeMonth,
+                feeMonthLabel: monthNumberToLabel(currentDetail.feeMonth),
+                totalFee: total,
+                paidSoFar,
+                balanceDue,
+                awaitingApproval,
+              });
+            }
+          } else if (total > 0) {
+            const key = `${String(classId)}-${Number(currentMonth)}`;
+            const awaitingApproval =
+              pendingRequestKeys.has(key) || pendingRequestClasses.has(String(classId));
+            pendingItems.push({
+              classId,
+              classTitle,
+              feeMonth: currentMonth,
+              feeMonthLabel: monthNumberToLabel(currentMonth),
+              totalFee: total,
+              paidSoFar: 0,
+              balanceDue: total,
+              awaitingApproval,
+            });
+          }
+        });
 
         setSummary({
           enrolledCount: classIds.length,
@@ -221,6 +381,7 @@ const StudentOverview = ({ student }) => {
           balance: Math.max(0, totalFee - totalPaid),
           upcomingSessions,
         });
+        setPendingFees(pendingItems);
       } catch (err) {
         console.error("Error building student summary:", err);
       } finally {
@@ -229,6 +390,102 @@ const StudentOverview = ({ student }) => {
     };
     fetchSummary();
   }, [student]);
+
+  const openPaymentDialog = (item) => {
+    setSelectedPayment(item);
+    setPaymentMessage("");
+    setPaymentErrors({});
+    setPaymentForm({
+      paymentMethod: "UPI",
+      transactionId: "",
+      amount: "",
+      paidOn: "",
+      payerName: "",
+      phone: "",
+      notes: "",
+      screenshot: null,
+    });
+    setPaymentDialogOpen(true);
+  };
+
+  const submitPayment = async (e) => {
+    e?.preventDefault?.();
+    if (!selectedPayment) return;
+    const totalFee = selectedPayment.totalFee || 0;
+    const nextErrors = buildPaymentErrors(paymentForm, totalFee);
+    setPaymentErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      setPaymentMessage("Please fix the highlighted fields.");
+      return;
+    }
+
+    try {
+      setPaymentSubmitting(true);
+      setPaymentMessage("");
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setPaymentMessage("Session expired. Please log in again.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("paymentMethod", paymentForm.paymentMethod || "UPI");
+      formData.append("transactionId", paymentForm.transactionId);
+      formData.append("amount", paymentForm.amount);
+      formData.append("paidOn", paymentForm.paidOn);
+      formData.append("payerName", paymentForm.payerName);
+      formData.append("phone", paymentForm.phone);
+      if (selectedPayment?.feeMonth) {
+        formData.append("feeMonth", String(selectedPayment.feeMonth));
+      }
+      if (paymentForm.screenshot) {
+        formData.append("screenshot", paymentForm.screenshot);
+      }
+      const feeNote = selectedPayment.feeMonthLabel
+        ? `Fee month: ${selectedPayment.feeMonthLabel}`
+        : "";
+      const combinedNotes = [paymentForm.notes, feeNote]
+        .map((v) => String(v || "").trim())
+        .filter(Boolean)
+        .join(" | ");
+      if (combinedNotes) {
+        formData.append("notes", combinedNotes);
+      }
+
+      const response = await post({
+        url: `/students/payment-requests/${selectedPayment.classId}`,
+        data: formData,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).unwrap();
+
+      if (response.status === 201) {
+        setPaymentMessage("Payment request submitted successfully.");
+        setPaymentDialogOpen(false);
+        setPendingFees((prev) =>
+          prev.map((item) =>
+            item.classId === selectedPayment.classId &&
+            Number(item.feeMonth) === Number(selectedPayment.feeMonth)
+              ? { ...item, awaitingApproval: true }
+              : item
+          )
+        );
+      }
+    } catch (error) {
+      const status = error?.response?.status;
+      if (status === 409) {
+        setPaymentMessage("A payment request is already pending for this course.");
+      } else {
+        setPaymentMessage(
+          error?.response?.data?.message ||
+            "Unable to submit payment right now."
+        );
+      }
+    } finally {
+      setPaymentSubmitting(false);
+    }
+  };
 
   const cardStyle = {
     background: "#fff",
@@ -436,6 +693,61 @@ const StudentOverview = ({ student }) => {
           </div>
         </div>
 
+        {/* Pending Payments */}
+        <div style={cardStyle} data-sr="fade-up" data-sr-delay="240">
+          <div style={cardHeaderStyle}>
+            <span style={{ fontSize: "1.1rem" }}>💳</span>
+            <h3 style={cardTitleStyle}>Pending Payments</h3>
+          </div>
+          <div style={{ padding: "1rem 1.25rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            {pendingFees.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "1.25rem 1rem", color: "#94a3b8" }}>
+                <div style={{ fontSize: "1.8rem", marginBottom: "0.35rem" }}>✅</div>
+                <p style={{ fontSize: "0.82rem" }}>No pending payments right now.</p>
+              </div>
+            ) : (
+              pendingFees.slice(0, 4).map((item, idx) => (
+                <div
+                  key={`${item.classId}-${item.feeMonth}-${idx}`}
+                  style={{
+                    border: "1px solid #fed7aa",
+                    background: "#fff7ed",
+                    borderRadius: "0.75rem",
+                    padding: "0.75rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "0.35rem",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem" }}>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ margin: 0, fontSize: "0.85rem", fontWeight: 700, color: "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {item.classTitle}
+                      </p>
+                      <p style={{ margin: 0, fontSize: "0.72rem", color: "#9a3412" }}>
+                        {item.feeMonthLabel} · Balance ₹ {item.balanceDue || 0}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      className="bg-orange-500 hover:bg-orange-600 text-xs font-semibold"
+                      onClick={() => openPaymentDialog(item)}
+                      disabled={item.awaitingApproval}
+                    >
+                      {item.awaitingApproval ? "Awaiting Approval" : "Pay Now"}
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+            {pendingFees.length > 4 && (
+              <p style={{ fontSize: "0.72rem", color: "#9a3412" }}>
+                Showing 4 of {pendingFees.length} pending items.
+              </p>
+            )}
+          </div>
+        </div>
+
         {/* Profile & Support */}
         <div style={cardStyle} data-sr="fade-up" data-sr-delay="300">
           <div style={cardHeaderStyle}>
@@ -531,6 +843,198 @@ const StudentOverview = ({ student }) => {
           </div>
         </div>
       </div>
+
+      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+        <DialogContent style={{ maxWidth: "min(95vw, 720px)" }}>
+          <DialogHeader>
+            <DialogTitle>Pay Pending Fee</DialogTitle>
+            <DialogDescription>
+              Submit payment details for{" "}
+              <strong>{selectedPayment?.classTitle || "your course"}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          {paymentMessage && (
+            <div className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-700">
+              {paymentMessage}
+            </div>
+          )}
+
+          <div className="grid gap-6 md:grid-cols-[220px_1fr]">
+            <div className="rounded-xl border border-orange-100 bg-orange-50/40 p-4 text-center">
+              <img
+                src={paymentQr}
+                alt="Payment QR Code"
+                className="mx-auto mb-3 w-40 rounded-lg border border-orange-200 bg-white p-1"
+              />
+              <p className="text-xs font-semibold text-orange-700">Scan QR to Pay</p>
+              <p className="mt-1 text-[11px] text-slate-500">
+                Balance: ₹ {selectedPayment?.balanceDue || 0}
+              </p>
+            </div>
+
+            <form className="space-y-3" onSubmit={submitPayment}>
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Payment Method
+                </label>
+                <select
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+                  value={paymentForm.paymentMethod}
+                  onChange={(e) =>
+                    setPaymentForm((prev) => ({ ...prev, paymentMethod: e.target.value }))
+                  }
+                >
+                  <option value="UPI">UPI</option>
+                </select>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Transaction ID
+                  </label>
+                  <input
+                    type="text"
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    value={paymentForm.transactionId}
+                    onChange={(e) =>
+                      setPaymentForm((prev) => ({ ...prev, transactionId: e.target.value }))
+                    }
+                  />
+                  {paymentErrors.transactionId && (
+                    <p className="mt-1 text-[11px] text-rose-600">
+                      {paymentErrors.transactionId}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Amount Paid
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    value={paymentForm.amount}
+                    onChange={(e) =>
+                      setPaymentForm((prev) => ({ ...prev, amount: e.target.value }))
+                    }
+                  />
+                  {paymentErrors.amount && (
+                    <p className="mt-1 text-[11px] text-rose-600">
+                      {paymentErrors.amount}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Paid On
+                  </label>
+                  <input
+                    type="date"
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    value={paymentForm.paidOn}
+                    onChange={(e) =>
+                      setPaymentForm((prev) => ({ ...prev, paidOn: e.target.value }))
+                    }
+                  />
+                  {paymentErrors.paidOn && (
+                    <p className="mt-1 text-[11px] text-rose-600">
+                      {paymentErrors.paidOn}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Payer Name
+                  </label>
+                  <input
+                    type="text"
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    value={paymentForm.payerName}
+                    onChange={(e) =>
+                      setPaymentForm((prev) => ({ ...prev, payerName: e.target.value }))
+                    }
+                  />
+                  {paymentErrors.payerName && (
+                    <p className="mt-1 text-[11px] text-rose-600">
+                      {paymentErrors.payerName}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Phone
+                  </label>
+                  <input
+                    type="tel"
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    value={paymentForm.phone}
+                    onChange={(e) =>
+                      setPaymentForm((prev) => ({ ...prev, phone: e.target.value }))
+                    }
+                  />
+                  {paymentErrors.phone && (
+                    <p className="mt-1 text-[11px] text-rose-600">
+                      {paymentErrors.phone}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Screenshot (optional)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="mt-1 w-full text-xs"
+                    onChange={(e) =>
+                      setPaymentForm((prev) => ({
+                        ...prev,
+                        screenshot: e.target.files?.[0] || null,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Notes (optional)
+                </label>
+                <textarea
+                  rows={2}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  value={paymentForm.notes}
+                  onChange={(e) =>
+                    setPaymentForm((prev) => ({ ...prev, notes: e.target.value }))
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setPaymentDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={paymentSubmitting}>
+                  {paymentSubmitting ? "Submitting..." : "Submit Payment"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };

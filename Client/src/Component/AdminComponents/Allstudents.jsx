@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { useApi } from "../../api/useApi";
@@ -28,6 +28,7 @@ const Allstudents = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [showDeleteAllPopup, setShowDeleteAllPopup] = useState(false);
+  const [gradeFilter, setGradeFilter] = useState("");
   const toastVariant = getToastVariant(popupMessage);
 
   const months = [
@@ -96,9 +97,37 @@ const Allstudents = () => {
     };
   }, [isFormOpen, showPopup, popupMessage, isBusy, showDeletePopup, showDeleteAllPopup]);
 
-  const filteredStudents = allStudents.filter((student) =>
-    student.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const normalizeGrade = (value) =>
+    String(value || "")
+      .trim()
+      .toLowerCase();
+
+  const gradeOptions = useMemo(() => {
+    const unique = new Map();
+    allStudents.forEach((student) => {
+      const raw = String(student?.grade || "").trim();
+      if (!raw) return;
+      const key = normalizeGrade(raw);
+      if (!unique.has(key)) unique.set(key, raw);
+    });
+    const entries = Array.from(unique.values());
+    return entries.sort((a, b) => {
+      const anum = parseInt(String(a).match(/\d+/)?.[0] || "999", 10);
+      const bnum = parseInt(String(b).match(/\d+/)?.[0] || "999", 10);
+      if (anum !== bnum) return anum - bnum;
+      return String(a).localeCompare(String(b));
+    });
+  }, [allStudents]);
+
+  const filteredStudents = allStudents.filter((student) => {
+    const matchesName = student.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesGrade = gradeFilter
+      ? normalizeGrade(student?.grade) === normalizeGrade(gradeFilter)
+      : true;
+    return matchesName && matchesGrade;
+  });
 
   const handleSearchInputChange = (e) => {
     setSearchQuery(e.target.value);
@@ -196,6 +225,15 @@ const Allstudents = () => {
       const monthNumber = monthNameToNumber[feeMonth];
       const isPaid = paid === "yes";
       const normalizedAmountPaid = isPaid ? Number(amountPaid) : 0;
+      const effectivePaid =
+        isPaid &&
+        Number(totalFee) > 0 &&
+        normalizedAmountPaid >= Number(totalFee);
+      const paymentStatus = effectivePaid
+        ? "paid"
+        : normalizedAmountPaid > 0
+          ? "partial"
+          : "pending";
 
       const response = await put({
         url: `/admin-confi/enroll-student/${selectedCourseId}/${selectedStudentId}`,
@@ -208,8 +246,10 @@ const Allstudents = () => {
       }).unwrap();
 
       if (response.status === 200) {
-        if (isPaid) {
+        if (paymentStatus === "paid") {
           setPopupMessage("Student enrolled and invoice sent.");
+        } else if (paymentStatus === "partial") {
+          setPopupMessage("Student enrolled with partial payment recorded.");
         } else {
           setPopupMessage("Student enrolled.");
         }
@@ -255,11 +295,6 @@ const Allstudents = () => {
       setFormErrors({});
       setIsFormOpen(false);
   };
-
-  const normalizeGrade = (value) =>
-    String(value || "")
-      .trim()
-      .toLowerCase();
 
   const filteredCoursesForStudent = allCourses.filter((course) => {
     if (!selectedStudent?.grade || !course?.grade) return false;
@@ -378,6 +413,18 @@ const Allstudents = () => {
                   onChange={handleSearchInputChange}
                 />
               </div>
+              <select
+                value={gradeFilter}
+                onChange={(e) => setGradeFilter(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm text-slate-700 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100 sm:max-w-[200px]"
+              >
+                <option value="">All grades</option>
+                {gradeOptions.map((grade) => (
+                  <option key={grade} value={grade}>
+                    Grade {grade}
+                  </option>
+                ))}
+              </select>
               <button
                 type="button"
                 onClick={openDeleteAllPopup}
@@ -407,6 +454,7 @@ const Allstudents = () => {
                     <div>
                       <h5 className="text-lg font-semibold text-slate-800">{student.name}</h5>
                       <p className="text-sm text-slate-600">Phone: {student.phone}</p>
+                      <p className="text-sm text-slate-600">Grade: {student.grade || "N/A"}</p>
                     </div>
 
                     <button
@@ -463,9 +511,13 @@ const Allstudents = () => {
 
             {!isFetching && filteredStudents.length === 0 && (
               <EmptyState
-                title={searchQuery ? "No matching students" : "No students yet"}
+                title={
+                  searchQuery || gradeFilter
+                    ? "No matching students"
+                    : "No students yet"
+                }
                 description={
-                  searchQuery
+                  searchQuery || gradeFilter
                     ? "Try adjusting your search or clear the filter."
                     : "Start by registering a student to see them here."
                 }

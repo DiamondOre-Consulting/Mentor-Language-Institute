@@ -53,6 +53,10 @@ const monthNameToNumber = {
 };
 
 const months = Object.keys(monthNameToNumber);
+const monthNumberToName = Object.entries(monthNameToNumber).reduce((acc, [name, num]) => {
+  acc[num] = name;
+  return acc;
+}, {});
 
 const hasPaymentDetails = (request) => {
   const amount = Number(request?.amount);
@@ -79,6 +83,7 @@ const Message = () => {
   const { get, put } = useApi();
   const [requests, setRequests] = useState([]);
   const [query, setQuery] = useState("");
+  const [activeType, setActiveType] = useState("enrollment");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formData, setFormData] = useState({
     totalFee: "",
@@ -133,10 +138,15 @@ const Message = () => {
   }, [isFormOpen, popupMessage, loading]);
 
   const filteredRequests = useMemo(() => {
+    const filteredByType = requests.filter((request) =>
+      activeType === "fee_payment"
+        ? request.requestType === "fee_payment"
+        : request.requestType !== "fee_payment"
+    );
     const trimmed = query.trim().toLowerCase();
-    if (!trimmed) return requests;
+    if (!trimmed) return filteredByType;
 
-    return requests.filter((request) => {
+    return filteredByType.filter((request) => {
       const student = request.studentId || {};
       const course = request.classId || {};
       return [
@@ -157,13 +167,15 @@ const Message = () => {
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(trimmed));
     });
-  }, [requests, query]);
+  }, [requests, query, activeType]);
 
   const openForm = (request) => {
     const paidOnDate = request?.paidOn ? new Date(request.paidOn) : null;
-    const monthLabel = paidOnDate
-      ? paidOnDate.toLocaleDateString("en-US", { month: "long" })
-      : "";
+    const monthLabel = request?.feeMonth
+      ? monthNumberToName[Number(request.feeMonth)] || ""
+      : paidOnDate
+        ? paidOnDate.toLocaleDateString("en-US", { month: "long" })
+        : "";
     const paymentProvided = hasPaymentDetails(request);
     setSelectedRequest(request);
     setFormData({
@@ -216,6 +228,14 @@ const Message = () => {
       }
 
       const { totalFee, feeMonth, amountPaid } = formData;
+      const totalValue = Number(totalFee) || 0;
+      const paidValue = Number(amountPaid) || 0;
+      const paymentStatus =
+        totalValue > 0 && paidValue >= totalValue
+          ? "paid"
+          : paidValue > 0
+            ? "partial"
+            : "pending";
       const nextErrors = {
         totalFee: validateNumber(totalFee, { min: 0, label: "Total fee" }),
         feeMonth: validateRequired(feeMonth, "Fee month"),
@@ -241,7 +261,19 @@ const Message = () => {
       }).unwrap();
 
       if (response.status === 200) {
-        setPopupMessage("Request approved, invoice sent, student enrolled.");
+        setPopupMessage(
+          selectedRequest?.requestType === "fee_payment"
+            ? paymentStatus === "paid"
+              ? "Fee payment approved and invoice sent."
+              : paymentStatus === "partial"
+                ? "Fee payment approved with partial amount recorded."
+                : "Fee payment approved with pending balance."
+            : paymentStatus === "paid"
+              ? "Request approved, invoice sent, student enrolled."
+              : paymentStatus === "partial"
+                ? "Request approved with partial payment recorded."
+                : "Request approved with pending payment."
+        );
         setRequests((prev) => prev.filter((req) => req._id !== selectedRequest._id));
         closeForm();
       }
@@ -318,10 +350,12 @@ const Message = () => {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-3xl sm:text-4xl font-semibold text-slate-900">
-              Enrollment Requests
+              {activeType === "fee_payment" ? "Fee Payment Requests" : "Enrollment Requests"}
             </h1>
             <p className="text-sm text-slate-500">
-              Review payment details and approve enrollment.
+              {activeType === "fee_payment"
+                ? "Review fee payment details and approve."
+                : "Review payment details and approve enrollment."}
             </p>
           </div>
           <div className="w-full sm:w-72">
@@ -335,6 +369,31 @@ const Message = () => {
               className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-200"
             />
           </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveType("enrollment")}
+            className={`rounded-full px-4 py-1 text-xs font-semibold transition ${
+              activeType === "enrollment"
+                ? "bg-orange-500 text-white shadow-sm"
+                : "border border-orange-200 text-orange-700"
+            }`}
+          >
+            Enrollment ({requests.filter((r) => r.requestType !== "fee_payment").length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveType("fee_payment")}
+            className={`rounded-full px-4 py-1 text-xs font-semibold transition ${
+              activeType === "fee_payment"
+                ? "bg-orange-500 text-white shadow-sm"
+                : "border border-orange-200 text-orange-700"
+            }`}
+          >
+            Fee Payments ({requests.filter((r) => r.requestType === "fee_payment").length})
+          </button>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
@@ -367,6 +426,14 @@ const Message = () => {
                         {request.classId?.classTitle || "Course"}
                       </h3>
                       <Badge variant="secondary">Pending</Badge>
+                      <Badge
+                        variant="outline"
+                        className="border-orange-200 text-orange-700"
+                      >
+                        {request.requestType === "fee_payment"
+                          ? "Fee Payment"
+                          : "Enrollment"}
+                      </Badge>
                       <span className="text-xs text-slate-500">
                         Request ID: {getShortId(request._id)}
                       </span>
@@ -379,6 +446,11 @@ const Message = () => {
                     <p className="text-xs text-slate-500">
                       Submitted on {formatDate(request.createdAt)}
                     </p>
+                    {request?.feeMonth && (
+                      <p className="text-xs text-slate-500">
+                        Fee Month: {monthNumberToName[Number(request.feeMonth)] || "N/A"}
+                      </p>
+                    )}
                   </div>
                   <Button size="sm" className="self-start" onClick={() => openForm(request)}>
                     Review & Approve
@@ -461,7 +533,9 @@ const Message = () => {
           <div className="app-modal-overlay app-modal-overlay--top app-modal-overlay--scroll">
             <div className="app-modal-card app-modal-card-md max-h-[90vh] overflow-y-auto">
               <h2 className="mb-4 text-lg font-semibold text-slate-800">
-                Approve Payment Request
+                {selectedRequest?.requestType === "fee_payment"
+                  ? "Approve Fee Payment"
+                  : "Approve Payment Request"}
               </h2>
               <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-sm">
                 <p className="text-xs uppercase tracking-wide text-slate-500">
@@ -602,7 +676,9 @@ const Message = () => {
                     type="submit"
                     className="rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600"
                   >
-                    Approve & Enroll
+                    {selectedRequest?.requestType === "fee_payment"
+                      ? "Approve Payment"
+                      : "Approve & Enroll"}
                   </button>
                 </div>
               </form>

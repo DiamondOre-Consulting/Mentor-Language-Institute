@@ -56,6 +56,18 @@ const paymentRequestSchema = new mongoose.Schema({
     default: "pending",
     index: true,
   },
+  requestType: {
+    type: String,
+    enum: ["enrollment", "fee_payment"],
+    default: "enrollment",
+    index: true,
+  },
+  feeMonth: {
+    type: Number,
+    min: 1,
+    max: 12,
+    default: null,
+  },
   adminId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Admin",

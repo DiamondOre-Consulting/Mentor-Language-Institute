@@ -82,3 +82,18 @@ export const formatFeeMonthLabel = (monthNumber) => {
     month: "long",
   });
 };
+
+export const computePaymentState = (totalFee, amountPaid) => {
+  const total = Number(totalFee);
+  const paid = Number(amountPaid);
+  if (!Number.isFinite(total) || total <= 0) {
+    return { isPaid: false, status: "pending" };
+  }
+  if (!Number.isFinite(paid) || paid <= 0) {
+    return { isPaid: false, status: "pending" };
+  }
+  if (paid >= total) {
+    return { isPaid: true, status: "paid" };
+  }
+  return { isPaid: false, status: "partial" };
+};

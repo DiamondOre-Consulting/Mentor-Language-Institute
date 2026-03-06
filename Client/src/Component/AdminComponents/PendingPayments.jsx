@@ -118,10 +118,8 @@ const PendingPayments = () => {
       }).unwrap();
 
       if (response?.status === 200) {
-        setPendingPayments((prev) =>
-          prev.filter((row) => buildKey(row) !== key)
-        );
-        setMessage("Payment updated and invoice sent.");
+        await fetchPendingPayments();
+        setMessage("Payment updated successfully.");
       }
     } catch (error) {
       console.error("Error updating payment:", error);
@@ -179,7 +177,7 @@ const PendingPayments = () => {
       )}
 
       {isFetching ? (
-        <TableSkeleton rows={6} cols={6} />
+        <TableSkeleton rows={6} cols={8} />
       ) : filteredPayments.length > 0 ? (
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
@@ -199,7 +197,16 @@ const PendingPayments = () => {
                   Total Fee
                 </th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                  Amount Paid
+                  Paid So Far
+                </th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                  Balance Due
+                </th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                  Total Paid
                 </th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">
                   Action
@@ -209,6 +216,11 @@ const PendingPayments = () => {
             <tbody className="divide-y divide-slate-100">
               {filteredPayments.map((item) => {
                 const key = buildKey(item);
+                const totalFee = Number(item.totalFee || 0);
+                const paidSoFar = Number(item.amountPaid || 0);
+                const balanceDue = Math.max(0, totalFee - paidSoFar);
+                const statusLabel = paidSoFar > 0 ? "Partial" : "Pending";
+                const statusClass = paidSoFar > 0 ? "text-amber-600" : "text-rose-600";
                 return (
                   <tr key={key} className="hover:bg-orange-50/40">
                     <td className="px-4 py-3">
@@ -227,7 +239,16 @@ const PendingPayments = () => {
                       {monthNumberToName(item.feeMonth)}
                     </td>
                     <td className="px-4 py-3 text-slate-700">
-                      {item.totalFee || 0}
+                      {totalFee || 0}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {paidSoFar || 0}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {balanceDue || 0}
+                    </td>
+                    <td className={`px-4 py-3 font-semibold ${statusClass}`}>
+                      {statusLabel}
                     </td>
                     <td className="px-4 py-3">
                       <input

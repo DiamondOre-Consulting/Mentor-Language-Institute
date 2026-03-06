@@ -22,6 +22,7 @@ import {
   resolveCourseGrade,
   toGradeLabel,
 } from "../utils/grade.js";
+import { normalizeFeeMonth } from "../utils/fee.js";
 import {
   findStudentUniquenessConflict,
   isValidEmail,
@@ -277,6 +278,31 @@ router.put("/notifications/mark-all-read", StudentAuthenticateToken, async (req,
   } catch (error) {
     console.error("Failed to mark all notifications as read:", error);
     res.status(500).json({ message: "Failed to update notifications." });
+  }
+});
+
+// STUDENT PAYMENT REQUESTS
+router.get("/payment-requests", StudentAuthenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.user;
+    const { status, type } = req.query;
+    const query = { studentId: userId };
+    if (status) {
+      query.status = String(status).toLowerCase();
+    }
+    if (type) {
+      query.requestType = String(type).toLowerCase();
+    }
+
+    const requests = await PaymentRequest.find(query)
+      .sort({ createdAt: -1 })
+      .select("classId feeMonth status requestType createdAt")
+      .lean();
+
+    res.status(200).json(requests);
+  } catch (error) {
+    console.error("Failed to fetch student payment requests:", error);
+    res.status(500).json({ message: "Failed to fetch payment requests." });
   }
 });
 
@@ -549,23 +575,24 @@ router.post(
           return res.status(404).json({ message: "Student not found." });
         }
 
-        const resolvedCourseGrade = resolveCourseGrade(classExists);
-        if (resolvedCourseGrade && !classExists.grade) {
-          classExists.grade = resolvedCourseGrade;
-          await classExists.save();
-        }
-        if (!isGradeMatch(resolvedCourseGrade, student?.grade)) {
-          return res
-            .status(403)
-            .json({ message: "Student grade does not match this course." });
-        }
-
         const alreadyEnrolled = (student.classes || []).some(
           (classId) => String(classId) === String(id)
         );
-        if (alreadyEnrolled) {
-          return res.status(409).json({
-            message: "You are already enrolled in this course.",
+        const normalizedFeeMonth = normalizeFeeMonth(req.body?.feeMonth);
+        if (!alreadyEnrolled) {
+          const resolvedCourseGrade = resolveCourseGrade(classExists);
+          if (resolvedCourseGrade && !classExists.grade) {
+            classExists.grade = resolvedCourseGrade;
+            await classExists.save();
+          }
+          if (!isGradeMatch(resolvedCourseGrade, student?.grade)) {
+            return res
+              .status(403)
+              .json({ message: "Student grade does not match this course." });
+          }
+        } else if (!normalizedFeeMonth) {
+          return res.status(400).json({
+            message: "Fee month is required for fee payment requests.",
           });
         }
 
@@ -573,6 +600,9 @@ router.post(
           studentId: userId,
           classId: id,
           status: "pending",
+          ...(alreadyEnrolled
+            ? { requestType: "fee_payment", feeMonth: normalizedFeeMonth }
+            : {}),
         });
         if (existingPending) {
           return res.status(409).json({
@@ -603,6 +633,8 @@ router.post(
         const request = await PaymentRequest.create({
           studentId: userId,
           classId: id,
+          requestType: alreadyEnrolled ? "fee_payment" : "enrollment",
+          feeMonth: alreadyEnrolled ? normalizedFeeMonth : null,
           paymentMethod: hasPaymentDetails ? String(paymentMethod).trim() : "",
           transactionId: hasPaymentDetails ? String(transactionId).trim() : "",
           amount: parsedAmount,
@@ -613,12 +645,14 @@ router.post(
           screenshotUrl,
         });
 
-        await Students.findByIdAndUpdate(userId, {
-          $addToSet: { appliedClasses: id },
-        });
-        await Classes.findByIdAndUpdate(id, {
-          $addToSet: { appliedStudents: userId },
-        });
+        if (!alreadyEnrolled) {
+          await Students.findByIdAndUpdate(userId, {
+            $addToSet: { appliedClasses: id },
+          });
+          await Classes.findByIdAndUpdate(id, {
+            $addToSet: { appliedStudents: userId },
+          });
+        }
 
         return res.status(201).json({
           message: "Payment request submitted successfully.",

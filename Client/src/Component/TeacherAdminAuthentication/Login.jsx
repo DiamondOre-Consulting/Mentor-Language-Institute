@@ -632,14 +632,14 @@ const Login = ({ defaultTab }) => {
                               setStudentIdentifier(value);
                               setStudentErrors((prev) => ({
                                 ...prev,
-                                identifier: validateRequired(value, "Email or mobile number"),
+                                identifier: validateRequired(value, "Email, Username or mobile number"),
                               }));
                             }}
                             autoComplete="off"
                             autoCorrect="off"
                             autoCapitalize="none"
                             spellCheck={false}
-                            placeholder="Enter Mail or Mobile number"
+                            placeholder="Enter Mail, Username or Mobile number"
                             className="bg-white border border-gray-800 text-gray-900 sm:text-sm rounded-lg focus:ring-gray-900 focus:border-gray-900 block w-full p-2.5      "
                             required=""
                           />

@@ -168,6 +168,42 @@ const EachStu = () => {
     return "";
   };
 
+  const buildFeeDetails = (feeData) => {
+    if (!feeData) return null;
+    const currentMonth = new Date().getMonth() + 1;
+    const totalFeeValue = Number(feeData?.totalFee || 0);
+    const rawDetails = Array.isArray(feeData?.detailFee) ? feeData.detailFee : [];
+    const hasCurrentMonth = rawDetails.some(
+      (fee) => Number(fee?.feeMonth) === currentMonth
+    );
+
+    const normalizedDetails = rawDetails.map((fee) => ({
+      ...fee,
+      __monthNumber: Number(fee?.feeMonth),
+      feeMonth: normalizeMonthLabel(fee?.feeMonth),
+      amountPaid: Number(fee?.amountPaid || 0),
+    }));
+
+    if (totalFeeValue > 0 && !hasCurrentMonth) {
+      normalizedDetails.push({
+        feeMonth: normalizeMonthLabel(currentMonth),
+        __monthNumber: currentMonth,
+        amountPaid: 0,
+        paid: false,
+        _virtual: true,
+      });
+    }
+
+    normalizedDetails.sort(
+      (a, b) => Number(a.__monthNumber || 0) - Number(b.__monthNumber || 0)
+    );
+
+    return {
+      ...feeData,
+      detailFee: normalizedDetails,
+    };
+  };
+
   useEffect(() => {
     const fetchFeeDetails = async () => {
       try {
@@ -181,14 +217,7 @@ const EachStu = () => {
 
           if (FeeResponse.status === 200) {
             setTotalFee(FeeResponse.data.totalFee);
-            const feeDetailsWithMonthNames = {
-              ...FeeResponse.data,
-              detailFee: FeeResponse?.data?.detailFee?.map((fee) => ({
-                ...fee,
-                feeMonth: normalizeMonthLabel(fee.feeMonth),
-              })),
-            };
-            setFeeDetails(feeDetailsWithMonthNames);
+            setFeeDetails(buildFeeDetails(FeeResponse.data));
           }
         }
       } catch (error) {
@@ -225,6 +254,8 @@ const EachStu = () => {
       }
       const isPaid = paidStatus === "yes";
       const normalizedAmount = isPaid ? Number(amount) : 0;
+      const effectivePaid =
+        isPaid && Number(totalFee) > 0 && normalizedAmount >= Number(totalFee);
       const nextErrors = {
         feeMonth: validateRequired(selectedMonth, "Fee month"),
         amountPaid: isPaid
@@ -265,13 +296,13 @@ const EachStu = () => {
             ...updatedFeeDetails[existingIndex],
             feeMonth: selectedMonth,
             amountPaid: normalizedAmount,
-            paid: isPaid,
+            paid: effectivePaid,
           };
         } else {
           updatedFeeDetails.push({
             feeMonth: selectedMonth,
             amountPaid: normalizedAmount,
-            paid: isPaid,
+            paid: effectivePaid,
           });
         }
         setFeeDetails({ ...feedetails, detailFee: updatedFeeDetails });
@@ -453,13 +484,36 @@ const EachStu = () => {
                                   })}
                                 </th>
 
-                                <td
-                                  className={`px-6 py-4 ${
-                                    fee.paid ? "text-green-500" : "text-red-400"
-                                  }`}
-                                >
-                                  {fee.paid ? "Submitted" : "Due"}
-                                </td>
+                                {(() => {
+                                  const paidSoFar = Number(fee.amountPaid || 0);
+                                  const total = Number(totalFee || 0);
+                                  return (
+                                    <td className="px-6 py-4">
+                                      {total <= 0 ? (
+                                        <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-600">
+                                          Pending
+                                        </span>
+                                      ) : paidSoFar >= total ? (
+                                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600">
+                                          Paid ✓
+                                        </span>
+                                      ) : paidSoFar > 0 ? (
+                                        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                                          <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">
+                                            Partial ✓ Paid {paidSoFar}
+                                          </span>
+                                          <span className="rounded-full bg-rose-50 px-3 py-1 text-rose-600">
+                                            Pending {Math.max(0, total - paidSoFar)}
+                                          </span>
+                                        </div>
+                                      ) : (
+                                        <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-600">
+                                          Pending {total}
+                                        </span>
+                                      )}
+                                    </td>
+                                  );
+                                })()}
                               </tr>
                             ))}
 

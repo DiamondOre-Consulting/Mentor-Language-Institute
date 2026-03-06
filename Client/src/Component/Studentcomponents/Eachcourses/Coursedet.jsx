@@ -213,6 +213,42 @@ const Coursedet = () => {
     return "";
   };
 
+  const buildFeeDetails = (feeData) => {
+    if (!feeData) return null;
+    const currentMonth = new Date().getMonth() + 1;
+    const totalFeeValue = Number(feeData?.totalFee || 0);
+    const rawDetails = Array.isArray(feeData?.detailFee) ? feeData.detailFee : [];
+    const hasCurrentMonth = rawDetails.some(
+      (fee) => Number(fee?.feeMonth) === currentMonth
+    );
+
+    const normalizedDetails = rawDetails.map((fee) => ({
+      ...fee,
+      __monthNumber: Number(fee?.feeMonth),
+      feeMonth: normalizeMonthLabel(fee?.feeMonth),
+      amountPaid: Number(fee?.amountPaid || 0),
+    }));
+
+    if (totalFeeValue > 0 && !hasCurrentMonth) {
+      normalizedDetails.push({
+        feeMonth: normalizeMonthLabel(currentMonth),
+        __monthNumber: currentMonth,
+        amountPaid: 0,
+        paid: false,
+        _virtual: true,
+      });
+    }
+
+    normalizedDetails.sort(
+      (a, b) => Number(a.__monthNumber || 0) - Number(b.__monthNumber || 0)
+    );
+
+    return {
+      ...feeData,
+      detailFee: normalizedDetails,
+    };
+  };
+
   useEffect(() => {
     const fetchFeeDetails = async () => {
       try {
@@ -234,14 +270,7 @@ const Coursedet = () => {
         }).unwrap();
         if (FeeResponse.status === 200) {
           // console.log("Fee details:", FeeResponse.data);
-          const feeDetailsWithMonthNames = {
-            ...FeeResponse.data,
-            detailFee: FeeResponse.data.detailFee.map((fee) => ({
-              ...fee,
-              feeMonth: normalizeMonthLabel(fee.feeMonth),
-            })),
-          };
-          setFeeDetails(feeDetailsWithMonthNames);
+          setFeeDetails(buildFeeDetails(FeeResponse.data));
         }
       } catch (error) {
         console.error("Error fetching Fee details:", error);
@@ -533,15 +562,27 @@ const Coursedet = () => {
                                     {fee.amountPaid}
                                   </th>
 
-                                  <td
-                                    className={`px-6 py-4 ${
-                                      fee.paid
-                                        ? "text-green-500"
-                                        : "text-red-400"
-                                    }`}
-                                  >
-                                    {fee.paid ? "Submitted" : "Due"}
-                                  </td>
+                                  {(() => {
+                                    const paidSoFar = Number(fee.amountPaid || 0);
+                                    const total = Number(feedetails?.totalFee || 0);
+                                    const isFullyPaid = total > 0 && paidSoFar >= total;
+                                    const isPartial = !isFullyPaid && paidSoFar > 0;
+                                    const statusLabel = isFullyPaid
+                                      ? "Paid"
+                                      : isPartial
+                                        ? "Partial"
+                                        : "Due";
+                                    const statusClass = isFullyPaid
+                                      ? "text-green-500"
+                                      : isPartial
+                                        ? "text-amber-500"
+                                        : "text-red-400";
+                                    return (
+                                      <td className={`px-6 py-4 ${statusClass}`}>
+                                        {statusLabel}
+                                      </td>
+                                    );
+                                  })()}
                                 </tr>
                               ))}
                           </tbody>

@@ -26,6 +26,7 @@ import {
   normalizePaidStatus,
   parseFeeAmount,
   formatFeeMonthLabel,
+  computePaymentState,
 } from "../utils/fee.js";
 import { findStudentUniquenessConflict } from "../utils/studentValidation.js";
 import { createRefreshTokenRecord, setAccessCookie, setRefreshCookie, signAccessToken } from "../utils/authTokens.js";
@@ -399,23 +400,32 @@ router.put(
         });
       }
 
-      const normalizedAmountPaid = normalizedPaid
-        ? parseFeeAmount(amountPaid)
-        : 0;
-      if (normalizedPaid && (normalizedAmountPaid === null || normalizedAmountPaid <= 0)) {
+      const normalizedAmountPaidInput = parseFeeAmount(amountPaid);
+      const normalizedAmountPaid =
+        normalizedAmountPaidInput === null ? 0 : normalizedAmountPaidInput;
+      if (normalizedPaid && normalizedAmountPaid <= 0) {
         return res.status(400).json({
           message: "Amount paid must be a valid number when payment is marked paid.",
         });
       }
-      if (
-        normalizedPaid &&
-        normalizedAmountPaid !== null &&
-        normalizedAmountPaid > normalizedTotalFee
-      ) {
+      if (normalizedAmountPaid < 0) {
+        return res.status(400).json({
+          message: "Amount paid must be a valid number.",
+        });
+      }
+      if (normalizedAmountPaid > normalizedTotalFee) {
         return res.status(400).json({
           message: "Amount paid cannot exceed total fee.",
         });
       }
+
+      const paymentState = computePaymentState(
+        normalizedTotalFee,
+        normalizedAmountPaid
+      );
+      const effectivePaid = paymentState.isPaid;
+      const paymentStatus = paymentState.status;
+      const hasPayment = normalizedAmountPaid > 0;
 
       const classExists = await Classes.findById(id1);
       if (!classExists) {
@@ -451,7 +461,7 @@ router.put(
         });
       }
 
-      if (normalizedPaid && !studentExists.email) {
+      if (hasPayment && !studentExists.email) {
         return res.status(400).json({
           message: "Student email is required to send the invoice.",
         });
@@ -499,12 +509,12 @@ router.put(
         const wasPaid = existingDetail?.paid === true;
 
         if (existingDetail) {
-          existingDetail.paid = normalizedPaid;
+          existingDetail.paid = effectivePaid;
           existingDetail.amountPaid = normalizedAmountPaid ?? 0;
         } else {
           feeRecord.detailFee.push({
             feeMonth: normalizedFeeMonth,
-            paid: normalizedPaid,
+            paid: effectivePaid,
             amountPaid: normalizedAmountPaid ?? 0,
           });
         }
@@ -529,7 +539,7 @@ router.put(
           { new: true }
         );
 
-        if (normalizedPaid) {
+        if (hasPayment) {
           const studentEmail = studentExists.email;
           const issuedAt = new Date();
           let invoiceRecord = await Invoice.findOne({
@@ -634,9 +644,12 @@ router.put(
       try {
         const feeMonthLabel = formatFeeMonthLabel(normalizedFeeMonth);
         const title = `Enrolled in ${classExists.classTitle}`;
-        const message = normalizedPaid
-          ? `You have been enrolled in ${classExists.classTitle}. Payment received for ${feeMonthLabel} and invoice sent.`
-          : `You have been enrolled in ${classExists.classTitle}. Payment is pending for ${feeMonthLabel}.`;
+        const message =
+          paymentStatus === "paid"
+            ? `You have been enrolled in ${classExists.classTitle}. Payment received for ${feeMonthLabel} and invoice sent.`
+            : paymentStatus === "partial"
+              ? `You have been enrolled in ${classExists.classTitle}. Partial payment received for ${feeMonthLabel}. Remaining balance is pending.`
+              : `You have been enrolled in ${classExists.classTitle}. Payment is pending for ${feeMonthLabel}.`;
         await createNotificationsForStudents({
           studentIds: [studentExists._id],
           type: "COURSE_ENROLLED",
@@ -647,7 +660,9 @@ router.put(
           payload: {
             classTitle: classExists.classTitle,
             feeMonth: normalizedFeeMonth,
-            paid: normalizedPaid,
+            paid: effectivePaid,
+            amountPaid: normalizedAmountPaid ?? 0,
+            paymentStatus,
           },
         });
       } catch (notifyError) {

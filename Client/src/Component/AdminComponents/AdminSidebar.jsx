@@ -96,7 +96,7 @@ const AdminSidebar = () => {
         const currentToken = localStorage.getItem("token");
         if (!currentToken) return;
         const response = await get({
-          url: "/admin-confi/payment-requests?status=pending",
+          url: "/admin-confi/payment-requests?status=pending&requestType=enrollment",
           headers: { Authorization: `Bearer ${currentToken}` },
         }).unwrap();
         if (response.status === 200) setRequestCount((response.data || []).length);
