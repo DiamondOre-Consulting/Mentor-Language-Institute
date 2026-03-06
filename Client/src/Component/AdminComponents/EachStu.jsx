@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useApi } from "../../api/useApi";
 import { ClipLoader } from "react-spinners";
 import { css } from "@emotion/react";
-import { validateAmountPaid, validateNumber, validateRequired } from "../../utils/validators";
+import { validateAmountPaid, validateNumber } from "../../utils/validators";
 
 const override = css`
   display: block;
@@ -21,29 +21,15 @@ const EachStu = () => {
   const [attendenceDetails, setAttendenceDetails] = useState(null);
   const [feedetails, setFeeDetails] = useState(null);
   const [selectedCourseId, setSelectedCourseId] = useState(null);
-  const [selectedMonths, setSelectedMonths] = useState([]);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [amount, setAmount] = useState("");
   const [paidStatus, setPaidStatus] = useState("pending");
   const [totalFee, setTotalFee] = useState("");
   const [loading, setLoading] = useState(false);
   const [feeErrors, setFeeErrors] = useState({});
-  const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-  const currentYear = new Date().getFullYear();
-  const yearOptions = Array.from({ length: 5 }, (_, index) => currentYear - 2 + index);
+  const paymentPeriodLabel = new Date().toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
 
   useEffect(() => {
     const fetchStudentDetails = async () => {
@@ -246,24 +232,9 @@ const EachStu = () => {
 
   // fee update
 
-  const monthNameToNumber = {
-    January: 1,
-    February: 2,
-    March: 3,
-    April: 4,
-    May: 5,
-    June: 6,
-    July: 7,
-    August: 8,
-    September: 9,
-    October: 10,
-    November: 11,
-    December: 12,
-  };
-
   const handleFeeUpdate = async () => {
     try {
-      if (!selectedMonths.length || !paidStatus) {
+      if (!paidStatus) {
         alert("Please fill in all fields.");
         return;
       }
@@ -272,7 +243,6 @@ const EachStu = () => {
       const effectivePaid =
         isPaid && Number(totalFee) > 0 && normalizedAmount >= Number(totalFee);
       const nextErrors = {
-        feeMonth: selectedMonths.length ? "" : validateRequired("", "Fee month"),
         amountPaid: isPaid
           ? validateAmountPaid(amount, totalFee, { required: true })
           : "",
@@ -287,13 +257,16 @@ const EachStu = () => {
         return;
       }
 
+      const now = new Date();
+      const monthNumber = now.getMonth() + 1;
+      const yearValue = now.getFullYear();
+      const monthLabel = now.toLocaleDateString("en-US", { month: "long" });
+
       const response = await put({
         url: `/admin-confi/update-fee/${selectedCourseId}/${id}`,
         data: {
-          feeMonths: selectedMonths
-            .map((month) => monthNameToNumber[month])
-            .filter((value) => Number.isInteger(value)),
-          feeYear: selectedYear,
+          feeMonth: monthNumber,
+          feeYear: yearValue,
           paid: isPaid,
           amountPaid: normalizedAmount,
           totalFee: totalFee,
@@ -306,37 +279,28 @@ const EachStu = () => {
       if (response?.status === 200) {
         // console.log("Fee updated successfully");
         const updatedFeeDetails = [...(feedetails?.detailFee || [])];
-        selectedMonths.forEach((month) => {
-          const monthNumber = monthNameToNumber[month];
-          const existingIndex = updatedFeeDetails.findIndex(
-            (fee) =>
-              Number(fee.__monthNumber) === Number(monthNumber) &&
-              Number(fee.__yearNumber) === Number(selectedYear)
-          );
-          if (existingIndex >= 0) {
-            updatedFeeDetails[existingIndex] = {
-              ...updatedFeeDetails[existingIndex],
-              feeMonth: `${month} ${selectedYear}`,
-              feeYear: selectedYear,
-              __yearNumber: selectedYear,
-              amountPaid: normalizedAmount,
-              paid: effectivePaid,
-            };
-          } else {
-            updatedFeeDetails.push({
-              feeMonth: `${month} ${selectedYear}`,
-              feeYear: selectedYear,
-              __monthNumber: monthNumber,
-              __yearNumber: selectedYear,
-              amountPaid: normalizedAmount,
-              paid: effectivePaid,
-            });
-          }
-        });
+        const existingIndex = updatedFeeDetails.findIndex(
+          (fee) =>
+            Number(fee.__monthNumber) === Number(monthNumber) &&
+            Number(fee.__yearNumber) === Number(yearValue)
+        );
+        const entry = {
+          ...(existingIndex >= 0 ? updatedFeeDetails[existingIndex] : {}),
+          feeMonth: `${monthLabel} ${yearValue}`,
+          feeYear: yearValue,
+          __monthNumber: monthNumber,
+          __yearNumber: yearValue,
+          amountPaid: normalizedAmount,
+          paid: effectivePaid,
+        };
+        if (existingIndex >= 0) {
+          updatedFeeDetails[existingIndex] = entry;
+        } else {
+          updatedFeeDetails.push(entry);
+        }
         setFeeDetails({ ...feedetails, detailFee: updatedFeeDetails });
         setAmount("");
         setPaidStatus("pending");
-        setSelectedMonths([]);
       }
     } catch (error) {
       console.error("Error updating fee:", error);
@@ -548,50 +512,19 @@ const EachStu = () => {
 
                           <tr className="bg-white border-b  ">
                               <td className="px-6 py-4 font-medium text-gray-900">
-                                <select
-                                  multiple
-                                  className="rounded-md border border-slate-300 bg-white px-2 py-1"
-                                  value={selectedMonths}
-                                  onChange={(e) => {
-                                    const values = Array.from(e.target.selectedOptions).map(
-                                      (option) => option.value
-                                    );
-                                    setSelectedMonths(values);
-                                    setFeeErrors((prev) => ({
-                                      ...prev,
-                                      feeMonth: values.length ? "" : validateRequired("", "Fee month"),
-                                    }));
-                                  }}
-                                >
-                                  {months.map((month, index) => (
-                                    <option key={index} value={month}>
-                                      {month}
-                                    </option>
-                                  ))}
-                                </select>
-                                <select
-                                  className="mt-2 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
-                                  value={selectedYear}
-                                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                                >
-                                  {yearOptions.map((yearValue) => (
-                                    <option key={yearValue} value={yearValue}>
-                                      {yearValue}
-                                    </option>
-                                  ))}
-                                </select>
-                                {feeErrors.feeMonth && (
-                                  <p className="mt-1 text-xs text-rose-600">
-                                    {feeErrors.feeMonth}
-                                  </p>
-                                )}
+                                <div className="text-sm font-semibold text-slate-700">
+                                  {paymentPeriodLabel}
+                                </div>
+                                <p className="mt-1 text-xs text-slate-500">
+                                  Payment period is recorded automatically.
+                                </p>
                               </td>
 
                               <td className="px-6 py-4 font-medium text-gray-900">
                                 <input
                                   type="text"
                                   className="w-full rounded-md border border-slate-300 bg-white px-2 py-1 sm:w-auto"
-                                  placeholder="Amount per month"
+                                  placeholder="Amount paid"
                                   value={amount}
                                   onChange={(e) => {
                                     const value = e.target.value;

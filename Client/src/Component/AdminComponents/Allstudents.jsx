@@ -5,7 +5,7 @@ import { useApi } from "../../api/useApi";
 import EmptyState from "../Common/EmptyState";
 import { CardSkeletonGrid } from "../Common/ListSkeleton";
 import { getToastVariant } from "../../utils/toastVariant";
-import { validateAmountPaid, validateNumber, validateRequired } from "../../utils/validators";
+import { validateAmountPaid, validateNumber } from "../../utils/validators";
 
 const Allstudents = () => {
   const navigate = useNavigate();
@@ -31,27 +31,8 @@ const Allstudents = () => {
   const [gradeFilter, setGradeFilter] = useState("");
   const toastVariant = getToastVariant(popupMessage);
 
-  const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-  const currentYear = new Date().getFullYear();
-  const yearOptions = Array.from({ length: 5 }, (_, index) => currentYear - 2 + index);
-
   const [formData, setFormData] = useState({
     totalFee: "",
-    feeMonth: "",
-    feeYear: String(currentYear),
     paid: "pending",
     amountPaid: "0",
   });
@@ -150,43 +131,27 @@ const Allstudents = () => {
   };
 
   const updateFeeField = (name, value) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (name === "totalFee") {
-      setFormErrors((prev) => ({
-        ...prev,
-        totalFee: validateNumber(value, { min: 0, label: "Total fee" }),
-        amountPaid:
-          formData.paid === "yes"
-            ? validateAmountPaid(formData.amountPaid, value, { required: true })
-            : "",
-      }));
-    }
-    if (name === "feeMonth") {
-      setFormErrors((prev) => ({
-        ...prev,
-        feeMonth: validateRequired(value, "Fee month"),
-      }));
-    }
-    if (name === "feeYear") {
-      setFormErrors((prev) => ({
-        ...prev,
-        feeYear: validateNumber(value, {
-          min: 2000,
-          max: 2100,
-          integer: true,
-          label: "Fee year",
-        }),
-      }));
-    }
-    if (name === "amountPaid") {
-      setFormErrors((prev) => ({
-        ...prev,
-        amountPaid:
-          formData.paid === "yes"
-            ? validateAmountPaid(value, formData.totalFee, { required: true })
-            : "",
-      }));
-    }
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+      setFormErrors((prevErrors) => {
+        const nextErrors = { ...prevErrors };
+        if (name === "totalFee") {
+          nextErrors.totalFee = validateNumber(value, { min: 0, label: "Total fee" });
+          nextErrors.amountPaid =
+            next.paid === "yes"
+              ? validateAmountPaid(next.amountPaid, value, { required: true })
+              : "";
+        }
+        if (name === "amountPaid") {
+          nextErrors.amountPaid =
+            next.paid === "yes"
+              ? validateAmountPaid(value, next.totalFee, { required: true })
+              : "";
+        }
+        return nextErrors;
+      });
+      return next;
+    });
   };
 
   const handlePaidChange = (value) => {
@@ -204,32 +169,10 @@ const Allstudents = () => {
     }));
   };
 
-  const monthNameToNumber = {
-    January: 1,
-    February: 2,
-    March: 3,
-    April: 4,
-    May: 5,
-    June: 6,
-    July: 7,
-    August: 8,
-    September: 9,
-    October: 10,
-    November: 11,
-    December: 12,
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     const nextErrors = {
       totalFee: validateNumber(formData.totalFee, { min: 0, label: "Total fee" }),
-      feeMonth: validateRequired(formData.feeMonth, "Fee month"),
-      feeYear: validateNumber(formData.feeYear, {
-        min: 2000,
-        max: 2100,
-        integer: true,
-        label: "Fee year",
-      }),
       amountPaid:
         formData.paid === "yes"
           ? validateAmountPaid(formData.amountPaid, formData.totalFee, { required: true })
@@ -241,8 +184,7 @@ const Allstudents = () => {
     }
     try {
       setIsBusy(true);
-      const { totalFee, feeMonth, feeYear, paid, amountPaid } = formData;
-      const monthNumber = monthNameToNumber[feeMonth];
+      const { totalFee, paid, amountPaid } = formData;
       const isPaid = paid === "yes";
       const normalizedAmountPaid = isPaid ? Number(amountPaid) : 0;
       const effectivePaid =
@@ -259,8 +201,6 @@ const Allstudents = () => {
         url: `/admin-confi/enroll-student/${selectedCourseId}/${selectedStudentId}`,
         data: {
           totalFee: Number(totalFee),
-          feeMonth: monthNumber,
-          feeYear: Number(feeYear),
           paid: isPaid,
           amountPaid: normalizedAmountPaid,
         },
@@ -307,20 +247,20 @@ const Allstudents = () => {
     setSelectedStudentId("");
     setSelectedCourseId("");
     setSelectedStudent(null);
-      setFormData({
-        totalFee: "",
-        feeMonth: "",
-        feeYear: String(currentYear),
-        paid: "pending",
-        amountPaid: "0",
-      });
-      setFormErrors({});
-      setIsFormOpen(false);
+    setFormData({
+      totalFee: "",
+      paid: "pending",
+      amountPaid: "0",
+    });
+    setFormErrors({});
+    setIsFormOpen(false);
   };
 
   const filteredCoursesForStudent = allCourses.filter((course) => {
     if (!selectedStudent?.grade || !course?.grade) return false;
-    return normalizeGrade(course.grade) === normalizeGrade(selectedStudent.grade);
+    const sameGrade = normalizeGrade(course.grade) === normalizeGrade(selectedStudent.grade);
+    const alreadyEnrolled = selectedStudent?.classes?.includes(course._id);
+    return sameGrade && !alreadyEnrolled;
   });
 
   const detailsctiveaccount = async (e) => {
@@ -601,49 +541,6 @@ const Allstudents = () => {
               </div>
 
               <div className="mb-4">
-                <label htmlFor="feeMonth" className="block text-sm font-medium text-slate-700">
-                  Fee Month
-                </label>
-                <select
-                  className="mt-1 w-full"
-                  onChange={(e) => updateFeeField("feeMonth", e.target.value)}
-                  value={formData.feeMonth}
-                  required
-                >
-                  <option value="">Select Month</option>
-                  {months.map((month, index) => (
-                    <option key={index} value={month}>
-                      {month}
-                    </option>
-                  ))}
-                </select>
-                {formErrors.feeMonth && (
-                  <p className="mt-1 text-xs text-rose-600">{formErrors.feeMonth}</p>
-                )}
-              </div>
-
-              <div className="mb-4">
-                <label htmlFor="feeYear" className="block text-sm font-medium text-slate-700">
-                  Fee Year
-                </label>
-                <select
-                  className="mt-1 w-full"
-                  onChange={(e) => updateFeeField("feeYear", e.target.value)}
-                  value={formData.feeYear}
-                  required
-                >
-                  {yearOptions.map((yearValue) => (
-                    <option key={yearValue} value={yearValue}>
-                      {yearValue}
-                    </option>
-                  ))}
-                </select>
-                {formErrors.feeYear && (
-                  <p className="mt-1 text-xs text-rose-600">{formErrors.feeYear}</p>
-                )}
-              </div>
-
-              <div className="mb-4">
                 <label className="block text-sm font-medium text-slate-700">
                   Payment Status
                 </label>
@@ -680,6 +577,16 @@ const Allstudents = () => {
                   id="amountPaid"
                   name="amountPaid"
                   value={formData.amountPaid}
+                  onFocus={() => {
+                    if (formData.amountPaid === "0") {
+                      updateFeeField("amountPaid", "");
+                    }
+                  }}
+                  onBlur={() => {
+                    if (formData.amountPaid === "") {
+                      updateFeeField("amountPaid", "0");
+                    }
+                  }}
                   onChange={(e) => updateFeeField("amountPaid", e.target.value)}
                   className="mt-1"
                   required={formData.paid === "yes"}

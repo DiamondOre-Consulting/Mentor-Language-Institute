@@ -68,6 +68,29 @@ export const validateAmountPaid = (amount, totalFee, { required = false } = {}) 
   return "";
 };
 
+export const validateAmountPaidForMonths = (
+  amount,
+  totalFee,
+  monthCount,
+  { required = false } = {}
+) => {
+  const baseError = validateAmountPaid(amount, totalFee, { required });
+  if (!baseError) return "";
+  const feeNum = Number(totalFee);
+  const amountNum = Number(amount);
+  const count = Number(monthCount);
+  if (
+    Number.isFinite(feeNum) &&
+    feeNum > 0 &&
+    Number.isFinite(amountNum) &&
+    count > 1 &&
+    amountNum === feeNum * count
+  ) {
+    return "";
+  }
+  return baseError;
+};
+
 export const validateScheduleHours = (newHours, totalHours, alreadyScheduled) => {
   const total = Number(totalHours);
   if (!Number.isFinite(total) || total <= 0) return "";
@@ -78,4 +101,3 @@ export const validateScheduleHours = (newHours, totalHours, alreadyScheduled) =>
   }
   return "";
 };
-

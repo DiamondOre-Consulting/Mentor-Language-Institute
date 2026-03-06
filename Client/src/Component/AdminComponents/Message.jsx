@@ -10,7 +10,6 @@ import { getToastVariant } from "../../utils/toastVariant";
 import {
   validateAmountPaid,
   validateNumber,
-  validateRequired,
 } from "../../utils/validators";
 
 const override = css`
@@ -37,26 +36,23 @@ const getShortId = (value) => {
   return `${str.slice(0, 6)}...${str.slice(-4)}`;
 };
 
-const monthNameToNumber = {
-  January: 1,
-  February: 2,
-  March: 3,
-  April: 4,
-  May: 5,
-  June: 6,
-  July: 7,
-  August: 8,
-  September: 9,
-  October: 10,
-  November: 11,
-  December: 12,
-};
-
-const months = Object.keys(monthNameToNumber);
+const months = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 const currentYear = new Date().getFullYear();
-const yearOptions = Array.from({ length: 5 }, (_, index) => currentYear - 2 + index);
-const monthNumberToName = Object.entries(monthNameToNumber).reduce((acc, [name, num]) => {
-  acc[num] = name;
+const monthNumberToName = months.reduce((acc, name, index) => {
+  acc[index + 1] = name;
   return acc;
 }, {});
 
@@ -64,12 +60,12 @@ const hasPaymentDetails = (request) => {
   const amount = Number(request?.amount);
   return Boolean(
     request?.transactionId ||
-      request?.paymentMethod ||
-      request?.paidOn ||
-      request?.payerName ||
-      request?.phone ||
-      request?.screenshotUrl ||
-      (Number.isFinite(amount) && amount > 0)
+    request?.paymentMethod ||
+    request?.paidOn ||
+    request?.payerName ||
+    request?.phone ||
+    request?.screenshotUrl ||
+    (Number.isFinite(amount) && amount > 0)
   );
 };
 
@@ -89,10 +85,9 @@ const Message = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formData, setFormData] = useState({
     totalFee: "",
-    feeMonth: "",
-    feeYear: String(currentYear),
     amountPaid: "",
     rejectionReason: "",
+    paid: "pending",
   });
   const [formErrors, setFormErrors] = useState({});
   const [popupMessage, setPopupMessage] = useState("");
@@ -140,6 +135,8 @@ const Message = () => {
     };
   }, [isFormOpen, popupMessage, loading]);
 
+  // Fix #4: Group multi-month fee payment requests by studentId + classId + approximate time
+
   const filteredRequests = useMemo(() => {
     const filteredByType = requests.filter((request) =>
       activeType === "fee_payment"
@@ -172,24 +169,42 @@ const Message = () => {
     });
   }, [requests, query, activeType]);
 
-  const openForm = (request) => {
-    const paidOnDate = request?.paidOn ? new Date(request.paidOn) : null;
-    const monthLabel = request?.feeMonth
-      ? monthNumberToName[Number(request.feeMonth)] || ""
-      : paidOnDate
-        ? paidOnDate.toLocaleDateString("en-US", { month: "long" })
-        : "";
-    const yearValue =
-      Number(request?.feeYear) ||
-      (paidOnDate ? paidOnDate.getFullYear() : currentYear);
+  const groupedRequests = useMemo(() => {
+    if (activeType === "enrollment") {
+      // Enrollment requests aren't usually multi-month batches, keep them flat
+      return filteredRequests.map(req => ({ ...req, isGroup: false, groupedIds: [req._id] }));
+    }
+
+    const groups = {};
+    filteredRequests.forEach(req => {
+      const studentId = req.studentId?._id || req.studentId;
+      const classId = req.classId?._id || req.classId;
+      // Group by day to cluster batch submissions
+      const dateKey = req.createdAt ? new Date(req.createdAt).toISOString().split('T')[0] : 'unknown';
+      const key = `${studentId}-${classId}-${dateKey}`;
+
+      if (!groups[key]) {
+        groups[key] = { ...req, isGroup: true, groupedIds: [], groupedMonths: [] };
+      }
+      groups[key].groupedIds.push(req._id);
+      if (req.feeMonth) {
+        groups[key].groupedMonths.push(req.feeMonth);
+      }
+    });
+
+    return Object.values(groups).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }, [filteredRequests, activeType]);
+
+  const openForm = (request, actionType = "approve") => {
     const paymentProvided = hasPaymentDetails(request);
-    setSelectedRequest(request);
+
+    setSelectedRequest({ ...request, actionType });
+
     setFormData({
       totalFee: paymentProvided ? request?.amount ?? "" : "",
-      feeMonth: paymentProvided ? monthLabel || "" : "",
-      feeYear: String(yearValue),
-      amountPaid: paymentProvided ? request?.amount ?? "" : "",
+      amountPaid: paymentProvided ? request?.amount ?? "" : "0", // Default to 0 for Enroll
       rejectionReason: "",
+      paid: paymentProvided ? "paid" : "pending",
     });
     setFormErrors({});
     setIsFormOpen(true);
@@ -199,10 +214,9 @@ const Message = () => {
     setSelectedRequest(null);
     setFormData({
       totalFee: "",
-      feeMonth: "",
-      feeYear: String(currentYear),
       amountPaid: "",
       rejectionReason: "",
+      paid: "pending",
     });
     setFormErrors({});
     setIsFormOpen(false);
@@ -215,13 +229,6 @@ const Message = () => {
       const next = { ...prev, [name]: value };
       const nextErrors = {
         totalFee: validateNumber(next.totalFee, { min: 0, label: "Total fee" }),
-        feeMonth: validateRequired(next.feeMonth, "Fee month"),
-        feeYear: validateNumber(next.feeYear, {
-          min: 2000,
-          max: 2100,
-          integer: true,
-          label: "Fee year",
-        }),
         amountPaid: validateAmountPaid(next.amountPaid, next.totalFee, {
           required: true,
         }),
@@ -241,7 +248,7 @@ const Message = () => {
         return;
       }
 
-      const { totalFee, feeMonth, feeYear, amountPaid } = formData;
+      const { totalFee, amountPaid } = formData;
       const totalValue = Number(totalFee) || 0;
       const paidValue = Number(amountPaid) || 0;
       const paymentStatus =
@@ -252,13 +259,6 @@ const Message = () => {
             : "pending";
       const nextErrors = {
         totalFee: validateNumber(totalFee, { min: 0, label: "Total fee" }),
-        feeMonth: validateRequired(feeMonth, "Fee month"),
-        feeYear: validateNumber(feeYear, {
-          min: 2000,
-          max: 2100,
-          integer: true,
-          label: "Fee year",
-        }),
         amountPaid: validateAmountPaid(amountPaid, totalFee, { required: true }),
       };
       setFormErrors(nextErrors);
@@ -266,36 +266,54 @@ const Message = () => {
         setLoading(false);
         return;
       }
-      const monthNumber = monthNameToNumber[feeMonth];
 
-      const response = await put({
-        url: `/admin-confi/payment-requests/${selectedRequest._id}/approve`,
-        data: {
-          totalFee: Number(totalFee),
-          feeMonth: monthNumber,
-          feeYear: Number(feeYear),
-          amountPaid: Number(amountPaid),
-        },
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }).unwrap();
+      let response;
+      if (selectedRequest.isGroup && selectedRequest.groupedIds?.length > 1) {
+        // Fix #4: Batch approval for multi-month
+        const results = await Promise.all(selectedRequest.groupedIds.map(id =>
+          put({
+            url: `/admin-confi/payment-requests/${id}/approve`,
+            data: {
+              totalFee: Number(totalFee),
+              amountPaid: Number(amountPaid),
+            },
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        ));
+        response = results[0]; // Just use first response for status check
+      } else {
+        response = await put({
+          url: `/admin-confi/payment-requests/${selectedRequest._id}/approve`,
+          data: {
+            totalFee: Number(totalFee),
+            amountPaid: Number(amountPaid),
+          },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).unwrap();
+      }
 
-      if (response.status === 200) {
+      if (response && response.status === 200) {
         setPopupMessage(
-          selectedRequest?.requestType === "fee_payment"
-            ? paymentStatus === "paid"
-              ? "Fee payment approved and invoice sent."
-              : paymentStatus === "partial"
-                ? "Fee payment approved with partial amount recorded."
-                : "Fee payment approved with pending balance."
-            : paymentStatus === "paid"
-              ? "Request approved, invoice sent, student enrolled."
-              : paymentStatus === "partial"
-                ? "Request approved with partial payment recorded."
-                : "Request approved with pending payment."
+          selectedRequest.actionType === "enroll"
+            ? "Student successfully enrolled."
+            : selectedRequest?.requestType === "fee_payment"
+              ? paymentStatus === "paid"
+                ? "Fee payment approved and invoice sent."
+                : paymentStatus === "partial"
+                  ? "Fee payment approved with partial amount recorded."
+                  : "Fee payment approved with pending balance."
+              : paymentStatus === "paid"
+                ? "Request approved, invoice sent, student enrolled."
+                : paymentStatus === "partial"
+                  ? "Request approved with partial payment recorded."
+                  : "Request approved with pending payment."
         );
-        setRequests((prev) => prev.filter((req) => req._id !== selectedRequest._id));
+
+        // Remove all processed IDs from the list
+        const processedIds = selectedRequest.isGroup ? selectedRequest.groupedIds : [selectedRequest._id];
+        setRequests((prev) => prev.filter((req) => !processedIds.includes(req._id)));
         closeForm();
       }
     } catch (error) {
@@ -396,29 +414,27 @@ const Message = () => {
           <button
             type="button"
             onClick={() => setActiveType("enrollment")}
-            className={`rounded-full px-4 py-1 text-xs font-semibold transition ${
-              activeType === "enrollment"
-                ? "bg-orange-500 text-white shadow-sm"
-                : "border border-orange-200 text-orange-700"
-            }`}
+            className={`rounded-full px-4 py-1 text-xs font-semibold transition ${activeType === "enrollment"
+              ? "bg-orange-500 text-white shadow-sm"
+              : "border border-orange-200 text-orange-700"
+              }`}
           >
             Enrollment ({requests.filter((r) => r.requestType !== "fee_payment").length})
           </button>
           <button
             type="button"
             onClick={() => setActiveType("fee_payment")}
-            className={`rounded-full px-4 py-1 text-xs font-semibold transition ${
-              activeType === "fee_payment"
-                ? "bg-orange-500 text-white shadow-sm"
-                : "border border-orange-200 text-orange-700"
-            }`}
+            className={`rounded-full px-4 py-1 text-xs font-semibold transition ${activeType === "fee_payment"
+              ? "bg-orange-500 text-white shadow-sm"
+              : "border border-orange-200 text-orange-700"
+              }`}
           >
             Fee Payments ({requests.filter((r) => r.requestType === "fee_payment").length})
           </button>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-          <span>{filteredRequests.length} pending request(s)</span>
+          <span>{groupedRequests.length} pending request(s)</span>
           {query && (
             <button
               onClick={() => setQuery("")}
@@ -429,13 +445,13 @@ const Message = () => {
           )}
         </div>
 
-        {filteredRequests.length === 0 ? (
+        {groupedRequests.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-orange-200 bg-orange-50/60 p-8 text-center text-sm text-slate-600">
             No payment requests right now.
           </div>
         ) : (
           <div className="grid gap-4">
-            {filteredRequests.map((request) => (
+            {groupedRequests.map((request) => (
               <div
                 key={request._id}
                 className="rounded-2xl border border-orange-100/70 bg-white p-4 shadow-sm sm:p-5"
@@ -456,7 +472,7 @@ const Message = () => {
                           : "Enrollment"}
                       </Badge>
                       <span className="text-xs text-slate-500">
-                        Request ID: {getShortId(request._id)}
+                        {request.isGroup && request.groupedIds.length > 1 ? `Batch of ${request.groupedIds.length} requests` : `Request ID: ${getShortId(request._id)}`}
                       </span>
                     </div>
                     <p className="text-sm text-slate-600">
@@ -467,15 +483,29 @@ const Message = () => {
                     <p className="text-xs text-slate-500">
                       Submitted on {formatDate(request.createdAt)}
                     </p>
-                    {request?.feeMonth && (
+                    {request?.feeMonth && !request.isGroup && (
                       <p className="text-xs text-slate-500">
                         Fee Period: {monthNumberToName[Number(request.feeMonth)] || "N/A"} {request?.feeYear || currentYear}
                       </p>
                     )}
+                    {request.isGroup && request.groupedMonths?.length > 0 && (
+                      <p className="text-xs text-slate-500">
+                        Fee Periods: {request.groupedMonths.map(m => monthNumberToName[Number(m)]).join(', ')} {request?.feeYear || currentYear}
+                      </p>
+                    )}
                   </div>
-                  <Button size="sm" className="self-start" onClick={() => openForm(request)}>
-                    Review & Approve
-                  </Button>
+                  <div className="flex flex-wrap gap-2 self-start">
+                    {/* Fix #1: Distinguish Enroll vs Review */}
+                    {request.requestType !== "fee_payment" && !hasPaymentDetails(request) ? (
+                      <Button size="sm" onClick={() => openForm(request, "enroll")}>
+                        Enroll
+                      </Button>
+                    ) : (
+                      <Button size="sm" onClick={() => openForm(request, "approve")}>
+                        Review & Approve
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -502,21 +532,21 @@ const Message = () => {
                     </p>
                     {hasPaymentDetails(request) ? (
                       <>
-                    <p className="mt-1 text-sm text-slate-700">
-                      Method: {request.paymentMethod || "N/A"}
-                    </p>
-                    <p className="text-sm text-slate-700">
-                      Amount: {request.amount}
-                    </p>
-                    <p className="text-sm text-slate-700">
-                      Paid on: {formatDate(request.paidOn)}
-                    </p>
-                    <p className="text-sm text-slate-700">
-                      Payer: {request.payerName || "N/A"}
-                    </p>
-                    <p className="text-sm text-slate-700">
-                      Phone: {request.phone || "N/A"}
-                    </p>
+                        <p className="mt-1 text-sm text-slate-700">
+                          Method: {request.paymentMethod || "N/A"}
+                        </p>
+                        <p className="text-sm text-slate-700">
+                          Amount: {request.amount}
+                        </p>
+                        <p className="text-sm text-slate-700">
+                          Paid on: {formatDate(request.paidOn)}
+                        </p>
+                        <p className="text-sm text-slate-700">
+                          Payer: {request.payerName || "N/A"}
+                        </p>
+                        <p className="text-sm text-slate-700">
+                          Phone: {request.phone || "N/A"}
+                        </p>
                       </>
                     ) : (
                       <p className="text-sm text-slate-700">No payment details provided.</p>
@@ -609,60 +639,6 @@ const Message = () => {
                     </p>
                   )}
                 </div>
-                <div className="mb-4">
-                  <label
-                    htmlFor="feeMonth"
-                    className="block text-sm font-medium text-slate-700"
-                  >
-                    Fee Month
-                  </label>
-                  <select
-                    className="mt-1 w-full"
-                    onChange={handleChange}
-                    value={formData.feeMonth}
-                    name="feeMonth"
-                    required
-                  >
-                    <option value="">Select Month</option>
-                    {months.map((month) => (
-                      <option key={month} value={month}>
-                        {month}
-                      </option>
-                    ))}
-                  </select>
-                  {formErrors.feeMonth && (
-                    <p className="mt-1 text-xs text-rose-600">
-                      {formErrors.feeMonth}
-                    </p>
-                  )}
-                </div>
-                <div className="mb-4">
-                  <label
-                    htmlFor="feeYear"
-                    className="block text-sm font-medium text-slate-700"
-                  >
-                    Fee Year
-                  </label>
-                  <select
-                    className="mt-1 w-full"
-                    onChange={handleChange}
-                    value={formData.feeYear}
-                    name="feeYear"
-                    required
-                  >
-                    {yearOptions.map((yearValue) => (
-                      <option key={yearValue} value={yearValue}>
-                        {yearValue}
-                      </option>
-                    ))}
-                  </select>
-                  {formErrors.feeYear && (
-                    <p className="mt-1 text-xs text-rose-600">
-                      {formErrors.feeYear}
-                    </p>
-                  )}
-                </div>
-
                 <div className="mb-5">
                   <label
                     htmlFor="amountPaid"

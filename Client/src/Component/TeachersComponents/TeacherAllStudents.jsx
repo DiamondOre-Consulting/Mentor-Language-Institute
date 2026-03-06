@@ -6,11 +6,7 @@ import { css } from "@emotion/react";
 import { useApi } from "../../api/useApi";
 import TeacherEditStudent from "./TeacherEditStudent";
 import { getToastVariant } from "../../utils/toastVariant";
-import {
-  validateAmountPaid,
-  validateNumber,
-  validateRequired,
-} from "../../utils/validators";
+import { validateAmountPaid, validateNumber } from "../../utils/validators";
 
 const override = css`
   display: block;
@@ -46,40 +42,14 @@ const TeacherAllStudents = () => {
   const [myCourseStudents, setMyCourseStudents] = useState([]);
   const [formErrors, setFormErrors] = useState({});
 
-  const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-  const currentYear = new Date().getFullYear();
-  const yearOptions = Array.from({ length: 5 }, (_, index) => currentYear - 2 + index);
-
   const [formData, setFormData] = useState({
     totalFee: "",
-    feeMonth: "",
-    feeYear: String(currentYear),
     paid: "pending",
     amountPaid: "0",
   });
 
   const buildFormErrors = (data) => ({
     totalFee: validateNumber(data.totalFee, { min: 0, label: "Total fee" }),
-    feeMonth: validateRequired(data.feeMonth, "Fee month"),
-    feeYear: validateNumber(data.feeYear, {
-      min: 2000,
-      max: 2100,
-      integer: true,
-      label: "Fee year",
-    }),
     amountPaid:
       data.paid === "yes"
         ? validateAmountPaid(data.amountPaid, data.totalFee, { required: true })
@@ -260,21 +230,6 @@ const TeacherAllStudents = () => {
     });
   };
 
-  const monthNameToNumber = {
-    January: 1,
-    February: 2,
-    March: 3,
-    April: 4,
-    May: 5,
-    June: 6,
-    July: 7,
-    August: 8,
-    September: 9,
-    October: 10,
-    November: 11,
-    December: 12,
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -284,23 +239,29 @@ const TeacherAllStudents = () => {
         return;
       }
 
-      const { totalFee, feeMonth, feeYear, paid, amountPaid } = formData;
+      const { totalFee, paid, amountPaid } = formData;
       const nextErrors = buildFormErrors(formData);
       setFormErrors(nextErrors);
       if (Object.values(nextErrors).some(Boolean)) {
         setLoading(false);
         return;
       }
-      const monthNumber = monthNameToNumber[feeMonth];
       const isPaid = paid === "yes";
       const normalizedAmountPaid = isPaid ? Number(amountPaid) : 0;
+      const effectivePaid =
+        isPaid &&
+        Number(totalFee) > 0 &&
+        normalizedAmountPaid >= Number(totalFee);
+      const paymentStatus = effectivePaid
+        ? "paid"
+        : normalizedAmountPaid > 0
+          ? "partial"
+          : "pending";
 
       const response = await put({
         url: `/teachers/enroll-student/${selectedCourseId}/${selectedStudentId}`,
         data: {
           totalFee: Number(totalFee),
-          feeMonth: monthNumber,
-          feeYear: Number(feeYear),
           paid: isPaid,
           amountPaid: normalizedAmountPaid,
         },
@@ -310,8 +271,10 @@ const TeacherAllStudents = () => {
       }).unwrap();
 
       if (response.status === 200) {
-        if (isPaid) {
+        if (paymentStatus === "paid") {
           setPopupMessage("Student enrolled and invoice sent.");
+        } else if (paymentStatus === "partial") {
+          setPopupMessage("Student enrolled with partial payment recorded.");
         } else {
           setPopupMessage("Student enrolled.");
         }
@@ -352,8 +315,6 @@ const TeacherAllStudents = () => {
     setSelectedCourseId("");
     setFormData({
       totalFee: "",
-      feeMonth: "",
-      feeYear: String(currentYear),
       paid: "pending",
       amountPaid: "0",
     });
@@ -669,60 +630,6 @@ const TeacherAllStudents = () => {
                   {formErrors.totalFee && (
                     <p className="mt-1 text-xs text-rose-600">
                       {formErrors.totalFee}
-                    </p>
-                  )}
-                </div>
-
-                <div className="mb-4">
-                  <label
-                    htmlFor="feeMonth"
-                    className="block text-sm font-medium text-slate-700"
-                  >
-                    Fee Month
-                  </label>
-                  <select
-                    className="mt-1 w-full"
-                    onChange={handleChange}
-                    value={formData.feeMonth}
-                    name="feeMonth"
-                    required
-                  >
-                    <option value="">Select Month</option>
-                    {months.map((month, index) => (
-                      <option key={index} value={month}>
-                        {month}
-                      </option>
-                    ))}
-                  </select>
-                  {formErrors.feeMonth && (
-                    <p className="mt-1 text-xs text-rose-600">
-                      {formErrors.feeMonth}
-                    </p>
-                  )}
-                </div>
-                <div className="mb-4">
-                  <label
-                    htmlFor="feeYear"
-                    className="block text-sm font-medium text-slate-700"
-                  >
-                    Fee Year
-                  </label>
-                  <select
-                    className="mt-1 w-full"
-                    onChange={handleChange}
-                    value={formData.feeYear}
-                    name="feeYear"
-                    required
-                  >
-                    {yearOptions.map((yearValue) => (
-                      <option key={yearValue} value={yearValue}>
-                        {yearValue}
-                      </option>
-                    ))}
-                  </select>
-                  {formErrors.feeYear && (
-                    <p className="mt-1 text-xs text-rose-600">
-                      {formErrors.feeYear}
                     </p>
                   )}
                 </div>

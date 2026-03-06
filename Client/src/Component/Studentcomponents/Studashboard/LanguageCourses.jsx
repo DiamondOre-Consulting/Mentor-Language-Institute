@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Tesseract from "tesseract.js";
 import { useApi } from "../../../api/useApi";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
@@ -137,21 +138,22 @@ const LanguageCourses = () => {
     notes: "",
     screenshot: null,
   });
+  const [isScanning, setIsScanning] = useState(false);
 
   const buildPaymentErrors = (nextForm) => {
     const hasPaymentDetails = Boolean(
       nextForm.transactionId ||
-        nextForm.amount ||
-        nextForm.paidOn ||
-        nextForm.payerName ||
-        nextForm.phone ||
-        nextForm.screenshot
+      nextForm.amount ||
+      nextForm.paidOn ||
+      nextForm.payerName ||
+      nextForm.phone ||
+      nextForm.screenshot
     );
     if (!hasPaymentDetails) {
       return {};
     }
     return {
-      transactionId: validateRequired(nextForm.transactionId, "Transaction ID"),
+      transactionId: validateRequired(nextForm.transactionId, "UTR Number"),
       amount: validateNumber(nextForm.amount, { min: 1, label: "Amount" }),
       paidOn: validateRequired(nextForm.paidOn, "Paid on date"),
       payerName: validateRequired(nextForm.payerName, "Payer name"),
@@ -186,6 +188,7 @@ const LanguageCourses = () => {
       notes: "",
       screenshot: null,
     });
+    setIsScanning(false);
   };
 
   const settings = {
@@ -304,11 +307,11 @@ const LanguageCourses = () => {
 
       const hasPaymentDetails = Boolean(
         paymentForm.transactionId ||
-          paymentForm.amount ||
-          paymentForm.paidOn ||
-          paymentForm.payerName ||
-          paymentForm.phone ||
-          paymentForm.screenshot
+        paymentForm.amount ||
+        paymentForm.paidOn ||
+        paymentForm.payerName ||
+        paymentForm.phone ||
+        paymentForm.screenshot
       );
 
       const nextErrors = buildPaymentErrors(paymentForm);
@@ -393,6 +396,35 @@ const LanguageCourses = () => {
     }
   };
 
+  const handleScreenshotUpload = async (e) => {
+    const file = e.target.files?.[0];
+    updatePaymentField("screenshot", file || null);
+
+    if (file) {
+      setIsScanning(true);
+      try {
+        const { data: { text } } = await Tesseract.recognize(file, "eng");
+        // UTR Extraction (12 digits)
+        const utrMatch = text.match(/\b\d{12}\b/);
+
+        if (utrMatch) {
+          setPaymentForm(prev => {
+            const next = { ...prev, transactionId: utrMatch[0] };
+            setPaymentErrors(buildPaymentErrors(next));
+            return next;
+          });
+          setPopupMessage(null);
+        } else {
+          console.log("No matching 12-digit UTR found in screenshot.");
+        }
+      } catch (error) {
+        console.error("Error scanning screenshot:", error);
+      } finally {
+        setIsScanning(false);
+      }
+    }
+  };
+
   const CourseCard = ({ course }) => {
     const isEnrolled = Boolean(course?.isEnrolled);
     const schedule = isEnrolled ? getScheduleSummary(course) : { totalSessions: 0, upcoming: [] };
@@ -441,11 +473,10 @@ const LanguageCourses = () => {
           </div>
           <Button
             size="sm"
-            className={`h-9 w-full rounded-lg text-xs font-semibold tracking-wide shadow-sm ${
-              isEnrolled
-                ? "bg-slate-200 text-slate-600 cursor-not-allowed hover:bg-slate-200"
-                : "bg-orange-500 hover:bg-orange-600"
-            }`}
+            className={`h-9 w-full rounded-lg text-xs font-semibold tracking-wide shadow-sm ${isEnrolled
+              ? "bg-slate-200 text-slate-600 cursor-not-allowed hover:bg-slate-200"
+              : "bg-orange-500 hover:bg-orange-600"
+              }`}
             disabled={isEnrolled}
             onClick={() => !isEnrolled && handleEnrollClick(course._id)}
           >
@@ -504,9 +535,12 @@ const LanguageCourses = () => {
         <DialogContent
           style={{
             maxWidth: "min(95vw, 680px)",
+            maxHeight: "95vh",
             padding: 0,
             borderRadius: "1.25rem",
             overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
             border: "none",
             boxShadow: "0 25px 60px -10px rgba(0,0,0,0.18), 0 10px 30px -5px rgba(0,0,0,0.1)",
           }}
@@ -538,7 +572,7 @@ const LanguageCourses = () => {
           </div>
 
           {/* ── Scrollable body ── */}
-          <div style={{ maxHeight: "calc(95dvh - 120px)", overflowY: "auto", overscrollBehavior: "contain", background: "#fafafa" }}>
+          <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", background: "#fafafa" }}>
 
             {/* ── Course stats strip ── */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: "0.75rem", padding: "1.25rem 1.5rem 0" }}>
@@ -627,6 +661,28 @@ const LanguageCourses = () => {
 
                 {/* Form grid */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.875rem" }}>
+                  {/* Screenshot — full width (MOVED TO TOP) */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem", gridColumn: "1 / -1" }}>
+                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Payment Screenshot <span style={{ color: "#94a3b8", fontWeight: 500 }}>(optional)</span></label>
+                    <label
+                      style={{ display: "flex", alignItems: "center", gap: "0.6rem", width: "100%", borderRadius: "0.625rem", border: "1.5px dashed #fed7aa", background: "#fff7ed", padding: "0.65rem 0.875rem", cursor: isScanning ? "wait" : "pointer", transition: "border-color .15s, background .15s", opacity: isScanning ? 0.7 : 1 }}
+                      onMouseEnter={e => { if (!isScanning) { e.currentTarget.style.borderColor = "#f97316"; e.currentTarget.style.background = "#fff1e6"; } }}
+                      onMouseLeave={e => { if (!isScanning) { e.currentTarget.style.borderColor = "#fed7aa"; e.currentTarget.style.background = "#fff7ed"; } }}
+                    >
+                      <span style={{ fontSize: "1.1rem" }}>{isScanning ? "⏳" : "📎"}</span>
+                      <span style={{ fontSize: "0.8rem", color: "#c2410c", fontWeight: 600 }}>
+                        {isScanning ? "Scanning receipt..." : (paymentForm.screenshot ? paymentForm.screenshot.name : "Upload screenshot to autofill details")}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={handleScreenshotUpload}
+                        disabled={isScanning}
+                        style={{ display: "none" }}
+                      />
+                    </label>
+                  </div>
+
                   {/* Payment Method */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
                     <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Payment Method (UPI only)</label>
@@ -639,102 +695,102 @@ const LanguageCourses = () => {
 
                   {/* Transaction ID */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
-                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Transaction / UTR ID <span style={{ color: "#ef4444" }}>*</span></label>
-                      <input
-                        value={paymentForm.transactionId}
-                        onChange={(e) => updatePaymentField("transactionId", e.target.value)}
-                        placeholder="e.g. 4234XXXXXXXX"
-                        style={{ width: "100%", borderRadius: "0.625rem", border: "1.5px solid #e2e8f0", background: "#fff", padding: "0.55rem 0.75rem", fontSize: "0.85rem", color: "#1e293b", outline: "none", transition: "border-color .15s" }}
-                        onFocus={e => e.target.style.borderColor = "#f97316"}
-                        onBlur={e => e.target.style.borderColor = "#e2e8f0"}
-                      />
-                      {paymentErrors.transactionId && (
-                        <span style={{ fontSize: "0.7rem", color: "#e11d48" }}>
-                          {paymentErrors.transactionId}
-                        </span>
-                      )}
-                    </div>
+                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>UTR Number <span style={{ color: "#ef4444" }}>*</span></label>
+                    <input
+                      value={paymentForm.transactionId}
+                      onChange={(e) => updatePaymentField("transactionId", e.target.value)}
+                      placeholder="e.g. 4234XXXXXXXX"
+                      style={{ width: "100%", borderRadius: "0.625rem", border: "1.5px solid #e2e8f0", background: "#fff", padding: "0.55rem 0.75rem", fontSize: "0.85rem", color: "#1e293b", outline: "none", transition: "border-color .15s" }}
+                      onFocus={e => e.target.style.borderColor = "#f97316"}
+                      onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+                    />
+                    {paymentErrors.transactionId && (
+                      <span style={{ fontSize: "0.7rem", color: "#e11d48" }}>
+                        {paymentErrors.transactionId}
+                      </span>
+                    )}
+                  </div>
 
                   {/* Amount */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
                     <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Amount Paid (₹) <span style={{ color: "#ef4444" }}>*</span></label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={paymentForm.amount}
-                        onChange={(e) => updatePaymentField("amount", e.target.value)}
-                        placeholder="0"
-                        style={{ width: "100%", borderRadius: "0.625rem", border: "1.5px solid #e2e8f0", background: "#fff", padding: "0.55rem 0.75rem", fontSize: "0.85rem", color: "#1e293b", outline: "none", transition: "border-color .15s" }}
-                        onFocus={e => e.target.style.borderColor = "#f97316"}
-                        onBlur={e => e.target.style.borderColor = "#e2e8f0"}
-                      />
-                      {paymentErrors.amount && (
-                        <span style={{ fontSize: "0.7rem", color: "#e11d48" }}>
-                          {paymentErrors.amount}
-                        </span>
-                      )}
-                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      value={paymentForm.amount}
+                      onChange={(e) => updatePaymentField("amount", e.target.value)}
+                      placeholder="0"
+                      style={{ width: "100%", borderRadius: "0.625rem", border: "1.5px solid #e2e8f0", background: "#fff", padding: "0.55rem 0.75rem", fontSize: "0.85rem", color: "#1e293b", outline: "none", transition: "border-color .15s" }}
+                      onFocus={e => e.target.style.borderColor = "#f97316"}
+                      onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+                    />
+                    {paymentErrors.amount && (
+                      <span style={{ fontSize: "0.7rem", color: "#e11d48" }}>
+                        {paymentErrors.amount}
+                      </span>
+                    )}
+                  </div>
 
                   {/* Paid On */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
                     <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Paid On <span style={{ color: "#ef4444" }}>*</span></label>
-                      <input
-                        type="date"
-                        value={paymentForm.paidOn}
-                        onChange={(e) => updatePaymentField("paidOn", e.target.value)}
-                        style={{ width: "100%", borderRadius: "0.625rem", border: "1.5px solid #e2e8f0", background: "#fff", padding: "0.55rem 0.75rem", fontSize: "0.85rem", color: "#1e293b", outline: "none", transition: "border-color .15s" }}
-                        onFocus={e => e.target.style.borderColor = "#f97316"}
-                        onBlur={e => e.target.style.borderColor = "#e2e8f0"}
-                      />
-                      {paymentErrors.paidOn && (
-                        <span style={{ fontSize: "0.7rem", color: "#e11d48" }}>
-                          {paymentErrors.paidOn}
-                        </span>
-                      )}
-                    </div>
+                    <input
+                      type="date"
+                      value={paymentForm.paidOn}
+                      onChange={(e) => updatePaymentField("paidOn", e.target.value)}
+                      style={{ width: "100%", borderRadius: "0.625rem", border: "1.5px solid #e2e8f0", background: "#fff", padding: "0.55rem 0.75rem", fontSize: "0.85rem", color: "#1e293b", outline: "none", transition: "border-color .15s" }}
+                      onFocus={e => e.target.style.borderColor = "#f97316"}
+                      onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+                    />
+                    {paymentErrors.paidOn && (
+                      <span style={{ fontSize: "0.7rem", color: "#e11d48" }}>
+                        {paymentErrors.paidOn}
+                      </span>
+                    )}
+                  </div>
 
                   {/* Payer Name */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
                     <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Payer Name <span style={{ color: "#ef4444" }}>*</span></label>
-                      <input
-                        value={paymentForm.payerName}
-                        onChange={(e) => updatePaymentField("payerName", e.target.value)}
-                        placeholder="Full name"
-                        style={{ width: "100%", borderRadius: "0.625rem", border: "1.5px solid #e2e8f0", background: "#fff", padding: "0.55rem 0.75rem", fontSize: "0.85rem", color: "#1e293b", outline: "none", transition: "border-color .15s" }}
-                        onFocus={e => e.target.style.borderColor = "#f97316"}
-                        onBlur={e => e.target.style.borderColor = "#e2e8f0"}
-                      />
-                      {paymentErrors.payerName && (
-                        <span style={{ fontSize: "0.7rem", color: "#e11d48" }}>
-                          {paymentErrors.payerName}
-                        </span>
-                      )}
-                    </div>
+                    <input
+                      value={paymentForm.payerName}
+                      onChange={(e) => updatePaymentField("payerName", e.target.value)}
+                      placeholder="Full name"
+                      style={{ width: "100%", borderRadius: "0.625rem", border: "1.5px solid #e2e8f0", background: "#fff", padding: "0.55rem 0.75rem", fontSize: "0.85rem", color: "#1e293b", outline: "none", transition: "border-color .15s" }}
+                      onFocus={e => e.target.style.borderColor = "#f97316"}
+                      onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+                    />
+                    {paymentErrors.payerName && (
+                      <span style={{ fontSize: "0.7rem", color: "#e11d48" }}>
+                        {paymentErrors.payerName}
+                      </span>
+                    )}
+                  </div>
 
                   {/* Phone */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
                     <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Phone <span style={{ color: "#ef4444" }}>*</span></label>
-                      <input
-                        value={paymentForm.phone}
-                        onChange={(e) =>
-                          updatePaymentField(
-                            "phone",
-                            normalizeDigits(e.target.value).slice(0, 10)
-                          )
-                        }
-                        placeholder="XXXXXXXXXX"
-                        style={{ width: "100%", borderRadius: "0.625rem", border: "1.5px solid #e2e8f0", background: "#fff", padding: "0.55rem 0.75rem", fontSize: "0.85rem", color: "#1e293b", outline: "none", transition: "border-color .15s" }}
-                        onFocus={e => e.target.style.borderColor = "#f97316"}
-                        onBlur={e => e.target.style.borderColor = "#e2e8f0"}
-                        inputMode="numeric"
-                        maxLength={10}
-                      />
-                      {paymentErrors.phone && (
-                        <span style={{ fontSize: "0.7rem", color: "#e11d48" }}>
-                          {paymentErrors.phone}
-                        </span>
-                      )}
-                    </div>
+                    <input
+                      value={paymentForm.phone}
+                      onChange={(e) =>
+                        updatePaymentField(
+                          "phone",
+                          normalizeDigits(e.target.value).slice(0, 10)
+                        )
+                      }
+                      placeholder="XXXXXXXXXX"
+                      style={{ width: "100%", borderRadius: "0.625rem", border: "1.5px solid #e2e8f0", background: "#fff", padding: "0.55rem 0.75rem", fontSize: "0.85rem", color: "#1e293b", outline: "none", transition: "border-color .15s" }}
+                      onFocus={e => e.target.style.borderColor = "#f97316"}
+                      onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+                      inputMode="numeric"
+                      maxLength={10}
+                    />
+                    {paymentErrors.phone && (
+                      <span style={{ fontSize: "0.7rem", color: "#e11d48" }}>
+                        {paymentErrors.phone}
+                      </span>
+                    )}
+                  </div>
 
                   {/* Notes — full width */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem", gridColumn: "1 / -1" }}>
@@ -750,28 +806,6 @@ const LanguageCourses = () => {
                     />
                   </div>
 
-                  {/* Screenshot — full width */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem", gridColumn: "1 / -1" }}>
-                    <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Payment Screenshot <span style={{ color: "#94a3b8", fontWeight: 500 }}>(optional)</span></label>
-                    <label
-                      style={{ display: "flex", alignItems: "center", gap: "0.6rem", width: "100%", borderRadius: "0.625rem", border: "1.5px dashed #fed7aa", background: "#fff7ed", padding: "0.65rem 0.875rem", cursor: "pointer", transition: "border-color .15s, background .15s" }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = "#f97316"; e.currentTarget.style.background = "#fff1e6"; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = "#fed7aa"; e.currentTarget.style.background = "#fff7ed"; }}
-                    >
-                      <span style={{ fontSize: "1.1rem" }}>📎</span>
-                      <span style={{ fontSize: "0.8rem", color: "#c2410c", fontWeight: 600 }}>
-                        {paymentForm.screenshot ? paymentForm.screenshot.name : "Click to upload screenshot"}
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp"
-                        onChange={(e) =>
-                          updatePaymentField("screenshot", e.target.files?.[0] || null)
-                        }
-                        style={{ display: "none" }}
-                      />
-                    </label>
-                  </div>
                 </div>
 
                 {/* Error message */}

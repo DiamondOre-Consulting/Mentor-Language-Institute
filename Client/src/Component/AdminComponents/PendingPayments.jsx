@@ -45,7 +45,6 @@ const PendingPayments = () => {
   const [isFetching, setIsFetching] = useState(true);
   const [busyKey, setBusyKey] = useState(null);
   const [amounts, setAmounts] = useState({});
-  const [selectedMonths, setSelectedMonths] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [message, setMessage] = useState("");
   const currentMonth = new Date().getMonth() + 1;
@@ -55,18 +54,18 @@ const PendingPayments = () => {
   const [selectedCourse, setSelectedCourse] = useState("");
 
   const monthOptions = [
-    { value: 1, label: "January" },
-    { value: 2, label: "February" },
-    { value: 3, label: "March" },
-    { value: 4, label: "April" },
-    { value: 5, label: "May" },
-    { value: 6, label: "June" },
-    { value: 7, label: "July" },
-    { value: 8, label: "August" },
-    { value: 9, label: "September" },
-    { value: 10, label: "October" },
-    { value: 11, label: "November" },
-    { value: 12, label: "December" },
+    { value: 1, label: "January", short: "Jan" },
+    { value: 2, label: "February", short: "Feb" },
+    { value: 3, label: "March", short: "Mar" },
+    { value: 4, label: "April", short: "Apr" },
+    { value: 5, label: "May", short: "May" },
+    { value: 6, label: "June", short: "Jun" },
+    { value: 7, label: "July", short: "Jul" },
+    { value: 8, label: "August", short: "Aug" },
+    { value: 9, label: "September", short: "Sep" },
+    { value: 10, label: "October", short: "Oct" },
+    { value: 11, label: "November", short: "Nov" },
+    { value: 12, label: "December", short: "Dec" },
   ];
 
   const yearOptions = Array.from({ length: 5 }, (_, index) => currentYear - 2 + index);
@@ -74,31 +73,26 @@ const PendingPayments = () => {
   const fetchPendingPayments = async () => {
     try {
       setIsFetching(true);
-        const response = await get({
-          url: "/admin-confi/pending-payments",
-          params: {
-            month: selectedMonth,
-            year: selectedYear,
-            classId: selectedCourse || undefined,
-          },
-        }).unwrap();
+      const response = await get({
+        url: "/admin-confi/pending-payments",
+        params: {
+          month: selectedMonth,
+          year: selectedYear,
+          classId: selectedCourse || undefined,
+        },
+      }).unwrap();
 
       if (response.status === 200) {
         const pending = response.data?.pendingPayments || [];
         setPendingPayments(pending);
         const nextAmounts = {};
-        const nextSelectedMonths = {};
         pending.forEach((item) => {
           const key = buildKey(item);
           if (nextAmounts[key] === undefined) {
             nextAmounts[key] = item.totalFee ?? "";
           }
-          if (!nextSelectedMonths[key]) {
-            nextSelectedMonths[key] = [Number(item.feeMonth)].filter(Number.isInteger);
-          }
         });
         setAmounts(nextAmounts);
-        setSelectedMonths(nextSelectedMonths);
       }
     } catch (error) {
       console.error("Error fetching pending payments:", error);
@@ -143,12 +137,22 @@ const PendingPayments = () => {
     });
   }, [pendingPayments, searchQuery]);
 
+  // Statistics calculation
+  const stats = useMemo(() => {
+    const totalCount = filteredPayments.length;
+    const totalExpected = filteredPayments.reduce((acc, curr) => acc + Number(curr.totalFee || 0), 0);
+    const totalPaid = filteredPayments.reduce((acc, curr) => acc + Number(curr.amountPaid || 0), 0);
+    const totalDue = Math.max(0, totalExpected - totalPaid);
+
+    return {
+      totalCount,
+      totalExpected,
+      totalDue
+    };
+  }, [filteredPayments]);
+
   const handleAmountChange = (key, value) => {
     setAmounts((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleMonthsChange = (key, value) => {
-    setSelectedMonths((prev) => ({ ...prev, [key]: value }));
   };
 
   const markAsPaid = async (item) => {
@@ -158,12 +162,10 @@ const PendingPayments = () => {
       setMessage("Please enter a valid amount before marking paid.");
       return;
     }
-    const months = selectedMonths[key]?.length
-      ? selectedMonths[key]
-      : [Number(item.feeMonth)].filter(Number.isInteger);
+    const monthValue = Number(item.feeMonth);
     const yearValue = Number(item?.feeYear) || selectedYear || currentYear;
-    if (!months.length) {
-      setMessage("Please select at least one month to process.");
+    if (!Number.isInteger(monthValue)) {
+      setMessage("Payment period is missing for this record.");
       return;
     }
 
@@ -173,7 +175,7 @@ const PendingPayments = () => {
       const response = await put({
         url: `/admin-confi/update-fee/${item.classId}/${item.studentId}`,
         data: {
-          feeMonths: months,
+          feeMonth: monthValue,
           feeYear: yearValue,
           paid: true,
           amountPaid: amountValue,
@@ -197,77 +199,122 @@ const PendingPayments = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in pb-10">
-      {/* Header Section */}
-      <div className="overflow-hidden rounded-3xl border border-orange-100 bg-white shadow-sm ring-1 ring-orange-500/5">
-        <div className="relative bg-gradient-to-br from-orange-50 to-white px-6 py-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-1">
-              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 lg:text-4xl">
-                Pending <span className="text-orange-600">Payments</span>
-              </h1>
-              <p className="text-slate-500 font-medium text-sm sm:text-base">
-                Track, manage and process student enrollment fees.
-              </p>
+    <div className="space-y-8 animate-fade-in pb-10 max-w-[1600px] mx-auto px-4 sm:px-6">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-black tracking-tight text-slate-900 lg:text-4xl">
+            Pending <span className="bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">Payments</span>
+          </h1>
+          <p className="text-slate-500 font-medium text-sm sm:text-base">
+            Financial oversight and fee collection management
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          Live Financial Sync
+        </div>
+      </div>
+
+      {/* Fix #9: Warning about records missing a feeYear */}
+      <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-md mb-6">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-amber-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <p className="text-sm text-amber-700">
+              Note: Unpaid enrollments without an explicitly assigned fee year will only appear when filtering by the current year.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[
+          { label: "Pending Records", value: stats.totalCount, sub: "Total entries", color: "blue", icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" },
+          { label: "Total Revenue", value: `₹${stats.totalExpected.toLocaleString()}`, sub: "Expected total", color: "orange", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
+          { label: "Outstanding Dues", value: `₹${stats.totalDue.toLocaleString()}`, sub: "Collective balance", color: "rose", icon: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" },
+        ].map((stat, i) => (
+          <div key={i} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+            <div className={`absolute -right-4 -top-4 w-24 h-24 bg-${stat.color}-500/5 rounded-full group-hover:scale-150 transition-transform duration-500`}></div>
+            <div className={`p-2.5 bg-${stat.color}-50 text-${stat.color}-600 rounded-2xl w-fit mb-4`}>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={stat.icon} />
+              </svg>
+            </div>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{stat.label}</p>
+            <h3 className="text-2xl font-black text-slate-900">{stat.value}</h3>
+            <p className="text-slate-400 text-xs mt-1 font-medium">{stat.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Filter Toolbar */}
+      <div className="bg-white p-4 sm:p-5 rounded-[2rem] border border-slate-100 shadow-sm ring-1 ring-slate-900/5">
+        <div className="flex flex-col lg:flex-row gap-5">
+          <div className="relative flex-1 group">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-slate-400 group-focus-within:text-orange-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search by student name, email, or course..."
+              className="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-4 focus:ring-orange-500/10 focus:bg-white transition-all outline-none"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
+            <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+              <select
+                className="bg-transparent pl-3 pr-8 py-2 text-sm font-bold text-slate-700 outline-none cursor-pointer appearance-none"
+                value={String(selectedMonth)}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              >
+                {monthOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+              <div className="w-px h-4 bg-slate-200"></div>
+              <select
+                className="bg-transparent pl-3 pr-8 py-2 text-sm font-bold text-slate-700 outline-none cursor-pointer appearance-none"
+                value={String(selectedYear)}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+              >
+                {yearOptions.map((yearValue) => (
+                  <option key={yearValue} value={yearValue}>{yearValue}</option>
+                ))}
+              </select>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row lg:items-center">
-              <div className="relative group">
-                {!searchQuery && (
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-slate-400 group-focus-within:text-orange-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                )}
-                <input
-                  type="text"
-                  placeholder={!searchQuery ? "      Search students..." : ""}
-                  className={`block w-full sm:w-64 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all shadow-sm ${!searchQuery ? 'pl-10' : 'pl-4'}`}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
+            <select
+              className="flex-1 sm:w-56 pl-4 pr-10 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-700 focus:ring-4 focus:ring-orange-500/10 focus:bg-white transition-all outline-none"
+              value={selectedCourse}
+              onChange={(e) => setSelectedCourse(e.target.value)}
+            >
+              <option value="">All Academic Courses</option>
+              {courses.map((course) => (
+                <option key={course._id} value={course._id}>{course.classTitle}</option>
+              ))}
+            </select>
 
-              <div className="flex gap-2">
-                <select
-                  className="flex-1 sm:w-36 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all shadow-sm font-medium"
-                  value={String(selectedMonth)}
-                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                >
-                  {monthOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  className="flex-1 sm:w-28 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all shadow-sm font-medium"
-                  value={String(selectedYear)}
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                >
-                  {yearOptions.map((yearValue) => (
-                    <option key={yearValue} value={yearValue}>
-                      {yearValue}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  className="flex-1 sm:w-44 px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all shadow-sm font-medium"
-                  value={selectedCourse}
-                  onChange={(e) => setSelectedCourse(e.target.value)}
-                >
-                  <option value="">All courses</option>
-                  {courses.map((course) => (
-                    <option key={course._id} value={course._id}>
-                      {course.classTitle || "Untitled course"}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            <button
+              onClick={fetchPendingPayments}
+              className="p-3.5 bg-orange-600 text-white rounded-2xl hover:bg-orange-700 transition-colors shadow-lg shadow-orange-200 active:scale-95"
+              title="Refresh Data"
+            >
+              <svg className={`w-5 h-5 ${isFetching ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -282,113 +329,113 @@ const PendingPayments = () => {
       )}
 
       {isFetching ? (
-        <TableSkeleton rows={6} cols={7} />
+        <div className="space-y-4">
+          <TableSkeleton rows={8} cols={7} />
+        </div>
       ) : filteredPayments.length > 0 ? (
         <>
-          {/* Desktop View (Table) */}
-          <div className="hidden md:block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-200/5">
+          <div className="hidden md:block overflow-hidden rounded-[2.5rem] border border-slate-100 bg-white shadow-xl shadow-slate-200/50 ring-1 ring-slate-900/5">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-100 table-fixed text-sm">
+              <table className="min-w-full divide-y divide-slate-100">
                 <thead>
-                  <tr className="bg-slate-50/80">
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500 w-1/4">Student Info</th>
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Course & Month</th>
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Apply Months</th>
-                    <th scope="col" className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Fees (Total/Paid)</th>
-                    <th scope="col" className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-500">Status</th>
-                    <th scope="col" className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-500">Amount / Month</th>
-                    <th scope="col" className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-500 w-[180px]">Action</th>
+                  <tr className="bg-slate-50/50">
+                    <th scope="col" className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Student & Curriculum</th>
+                    <th scope="col" className="px-6 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Billing Period</th>
+                    <th scope="col" className="px-6 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Ledger Status</th>
+                    <th scope="col" className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Quick Settlement</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
+                <tbody className="divide-y divide-slate-50 bg-white">
                   {filteredPayments.map((item) => {
                     const key = buildKey(item);
                     const totalFee = Number(item.totalFee || 0);
                     const paidSoFar = Number(item.amountPaid || 0);
                     const balanceDue = Math.max(0, totalFee - paidSoFar);
-                    const statusLabel = paidSoFar > 0 ? "Partial" : "Pending";
+                    const isPartiallyPaid = paidSoFar > 0;
                     const feeYearLabel = Number(item.feeYear) || selectedYear || currentYear;
 
                     return (
-                      <tr key={key} className="hover:bg-slate-50/50 transition-colors duration-150 group">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex flex-col">
-                            <span className="text-sm font-bold text-slate-900 group-hover:text-orange-600 transition-colors">
-                              {item.studentName}
-                            </span>
-                            <span className="text-xs text-slate-500 mt-0.5">{item.studentEmail || "No Email"}</span>
+                      <tr key={key} className="hover:bg-slate-50/80 transition-all duration-300 group">
+                        <td className="px-8 py-6">
+                          <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 flex-shrink-0 rounded-2xl bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center text-orange-600 font-bold text-xl ring-4 ring-orange-50/50 group-hover:scale-110 transition-transform">
+                              {item.studentName?.charAt(0)}
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-sm font-black text-slate-900 leading-none group-hover:text-orange-600 transition-colors">
+                                {item.studentName}
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[11px] font-bold text-slate-400">#{item.studentId?.slice(-6).toUpperCase()}</span>
+                                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                <span className="text-[11px] font-black text-slate-700">{item.classTitle}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-[10px] font-black text-orange-600 uppercase tracking-wide">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                {monthNumberToName(item.feeMonth)} {feeYearLabel}
+                              </div>
+                            </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-slate-800">{item.classTitle}</span>
-                            <span className="text-xs font-medium text-orange-600 bg-orange-50 w-fit px-2 py-0.5 rounded-full mt-1">
-                              {monthNumberToName(item.feeMonth)} {feeYearLabel}
-                            </span>
+                        <td className="px-6 py-6">
+                          <div className="text-sm font-black text-slate-900">
+                            {monthNumberToName(item.feeMonth)} {feeYearLabel}
+                          </div>
+                          <p className="mt-1 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+                            Recorded Automatically
+                          </p>
+                        </td>
+                        <td className="px-6 py-6">
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-3">
+                              <div className="text-sm font-black text-slate-900 tracking-tight">Total: ₹{totalFee.toLocaleString()}</div>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border ${isPartiallyPaid
+                                ? "bg-amber-50 text-amber-600 border-amber-100"
+                                : "bg-rose-50 text-rose-600 border-rose-100"
+                                }`}>
+                                {isPartiallyPaid ? "Partial" : "Pending"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                <span className="text-[10px] font-bold text-slate-500">Paid: ₹{paidSoFar.toLocaleString()}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                <span className="text-[10px] font-black text-rose-600">Due: ₹{balanceDue.toLocaleString()}</span>
+                              </div>
+                            </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <select
-                            multiple
-                            className="w-40 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-medium focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 outline-none"
-                            value={(selectedMonths[key] || []).map(String)}
-                            onChange={(e) =>
-                              handleMonthsChange(
-                                key,
-                                Array.from(e.target.selectedOptions).map((opt) => Number(opt.value))
-                              )
-                            }
-                          >
-                            {monthOptions.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                          <div className="flex flex-col items-end">
-                            <div className="text-sm font-bold text-slate-900">₹{totalFee}</div>
-                            <div className="text-[11px] font-medium text-emerald-600 mt-0.5">Paid: ₹{paidSoFar}</div>
-                            {balanceDue > 0 && <div className="text-[11px] font-medium text-rose-500">Due: ₹{balanceDue}</div>}
+                        <td className="px-8 py-6">
+                          <div className="flex items-center justify-end gap-3">
+                            <div className="inline-flex items-center px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl focus-within:ring-4 focus-within:ring-orange-500/10 focus-within:bg-white focus-within:border-orange-200 transition-all w-28 group/in">
+                              <span className="text-slate-400 text-[10px] font-black mr-2">₹</span>
+                              <input
+                                type="number"
+                                min="0"
+                                className="w-full bg-transparent text-xs font-black text-slate-900 outline-none placeholder:text-slate-300"
+                                placeholder="0"
+                                value={amounts[key] ?? ""}
+                                onChange={(e) => handleAmountChange(key, e.target.value)}
+                              />
+                            </div>
+                            <button
+                              onClick={() => markAsPaid(item)}
+                              disabled={busyKey !== null}
+                              className={`h-10 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:grayscale flex items-center justify-center ${busyKey === key
+                                ? "bg-slate-400"
+                                : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:shadow-emerald-200"
+                                }`}
+                            >
+                              {busyKey === key ? (
+                                <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                              ) : "Process"}
+                            </button>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center text-xs">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full font-bold ring-1 ring-inset ${paidSoFar > 0
-                            ? "bg-amber-50 text-amber-700 ring-amber-600/20"
-                            : "bg-rose-50 text-rose-700 ring-rose-600/20"
-                            }`}>
-                            <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${paidSoFar > 0 ? "bg-amber-500" : "bg-rose-500"}`}></span>
-                            {statusLabel}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <div className="relative inline-block w-28 group/input">
-                            <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-slate-400 group-focus-within/input:text-orange-500 font-bold">₹</div>
-                            <input
-                              type="number"
-                              min="0"
-                              className="w-full pl-8 pr-2 py-1.5 text-sm font-semibold border border-slate-200 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 outline-none transition-all"
-                              value={amounts[key] ?? ""}
-                              onChange={(e) => handleAmountChange(key, e.target.value)}
-                            />
-                          </div>
-                          <div className="mt-1 text-[10px] text-slate-400">Per month</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <button
-                            onClick={() => markAsPaid(item)}
-                            disabled={busyKey !== null}
-                            className={`inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none ${busyKey === key
-                              ? "bg-slate-400"
-                              : "bg-emerald-600 hover:bg-emerald-700 hover:shadow-emerald-200"
-                              }`}
-                          >
-                            {busyKey === key ? (
-                              <svg className="animate-spin h-3 w-3 mr-2 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            ) : null}
-                            {busyKey === key ? "Updating..." : "Process Payment"}
-                          </button>
                         </td>
                       </tr>
                     );
@@ -398,93 +445,99 @@ const PendingPayments = () => {
             </div>
           </div>
 
-          {/* Mobile View (Cards) */}
-          <div className="md:hidden space-y-4">
+          {/* Mobile View (Premium Cards) */}
+          <div className="md:hidden grid grid-cols-1 gap-6">
             {filteredPayments.map((item) => {
               const key = buildKey(item);
               const totalFee = Number(item.totalFee || 0);
               const paidSoFar = Number(item.amountPaid || 0);
               const balanceDue = Math.max(0, totalFee - paidSoFar);
-              const statusLabel = paidSoFar > 0 ? "Partial" : "Pending";
+              const isPartiallyPaid = paidSoFar > 0;
               const feeYearLabel = Number(item.feeYear) || selectedYear || currentYear;
 
               return (
-                <div key={key} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4 hover:border-orange-200 transition-colors">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="text-base font-bold text-slate-900 leading-tight">
-                        {item.studentName}
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-1 truncate">{item.studentEmail || "No Email"}</p>
-                    </div>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase ${paidSoFar > 0
-                      ? "bg-amber-50 text-amber-700 border border-amber-200"
-                      : "bg-rose-50 text-rose-700 border border-rose-200"
-                      }`}>
-                      {statusLabel}
-                    </span>
-                  </div>
+                <div key={key} className="bg-white border border-slate-100 rounded-[2.5rem] p-6 shadow-xl shadow-slate-200/40 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
 
-                  <div className="grid grid-cols-2 gap-y-3 gap-x-4 border-y border-slate-50 py-3">
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Course</p>
-                      <p className="text-xs font-semibold text-slate-800 truncate">{item.classTitle}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Fee Month</p>
-                      <p className="text-xs font-semibold text-orange-600">{monthNumberToName(item.feeMonth)} {feeYearLabel}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Total Fee</p>
-                      <p className="text-sm font-bold text-slate-900">₹{totalFee}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Remaining</p>
-                      <p className="text-sm font-bold text-rose-500">₹{balanceDue}</p>
+                  <div className="flex justify-between items-start relative z-10 mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="h-14 w-14 rounded-3xl bg-orange-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-orange-200">
+                        {item.studentName?.charAt(0)}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-black text-slate-900 leading-tight">{item.studentName}</h3>
+                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">#{item.studentId?.slice(-6).toUpperCase()}</p>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-3 pt-1">
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Apply Months</p>
-                      <select
-                        multiple
-                        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all"
-                        value={(selectedMonths[key] || []).map(String)}
-                        onChange={(e) =>
-                          handleMonthsChange(
-                            key,
-                            Array.from(e.target.selectedOptions).map((opt) => Number(opt.value))
-                          )
-                        }
+                  <div className="grid grid-cols-2 gap-4 relative z-10 mb-6">
+                    <div className="p-4 bg-slate-50/50 rounded-3xl border border-slate-50">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Academic Course</p>
+                      <p className="text-sm font-bold text-slate-800 line-clamp-1">{item.classTitle}</p>
+                    </div>
+                    <div className="p-4 bg-orange-50/50 rounded-3xl border border-orange-50">
+                      <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-1.5">Billed For</p>
+                      <p className="text-sm font-black text-orange-600">{monthNumberToName(item.feeMonth)} {feeYearLabel}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 relative z-10">
+                    <div className="flex items-center justify-between px-2">
+                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Fee Statistics</span>
+                      <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${isPartiallyPaid ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'}`}>
+                        {isPartiallyPaid ? 'Partial' : 'Pending'}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <div className="flex-1 p-4 bg-white border border-slate-100 rounded-3xl text-center">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Total</p>
+                        <p className="text-lg font-black text-slate-900 font-mono">₹{totalFee}</p>
+                      </div>
+                      <div className="flex-1 p-4 bg-emerald-50 border border-emerald-100 rounded-3xl text-center">
+                        <p className="text-[10px] font-bold text-emerald-600 uppercase mb-1">Paid</p>
+                        <p className="text-lg font-black text-emerald-700 font-mono">₹{paidSoFar}</p>
+                      </div>
+                    </div>
+
+                    <div className="py-2">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 text-center">
+                        Billing Period
+                      </p>
+                      <div className="text-center text-sm font-black text-orange-600">
+                        {monthNumberToName(item.feeMonth)} {feeYearLabel}
+                      </div>
+                      <p className="mt-2 text-[10px] text-slate-400 font-semibold uppercase tracking-widest text-center">
+                        Recorded Automatically
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-sm">₹</span>
+                        <input
+                          type="number"
+                          className="w-full pl-9 pr-4 py-4 bg-slate-50 border-none rounded-[1.5rem] text-sm font-black outline-none focus:ring-4 focus:ring-orange-500/10 focus:bg-white transition-all shadow-inner"
+                          placeholder="Amount"
+                          value={amounts[key] ?? ""}
+                          onChange={(e) => handleAmountChange(key, e.target.value)}
+                        />
+                      </div>
+                      <button
+                        onClick={() => markAsPaid(item)}
+                        disabled={busyKey !== null}
+                        className="p-4 bg-emerald-600 text-white rounded-[1.5rem] shadow-xl shadow-emerald-200 active:scale-95 disabled:grayscale"
                       >
-                        {monthOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
+                        {busyKey === key ? (
+                          <svg className="animate-spin h-6 w-6" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        ) : (
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
                     </div>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400 text-sm font-bold">₹</div>
-                      <input
-                        type="number"
-                        min="0"
-                        placeholder="Amount to pay"
-                        className="w-full pl-9 pr-4 py-2 text-sm font-semibold border border-slate-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all"
-                        value={amounts[key] ?? ""}
-                        onChange={(e) => handleAmountChange(key, e.target.value)}
-                      />
-                    </div>
-                    <p className="text-[10px] text-slate-400">Amount per month</p>
-                    <button
-                      onClick={() => markAsPaid(item)}
-                      disabled={busyKey !== null}
-                      className="w-full flex items-center justify-center py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold shadow-sm shadow-emerald-100 active:scale-[0.98] transition-all disabled:opacity-50"
-                    >
-                      {busyKey === key && <svg className="animate-spin h-3.5 w-3.5 mr-2 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
-                      {busyKey === key ? "Updating..." : "Process & Mark Paid"}
-                    </button>
                   </div>
                 </div>
               );

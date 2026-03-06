@@ -22,7 +22,6 @@ import {
   resolveCourseGrade,
   toGradeLabel,
 } from "../utils/grade.js";
-import { normalizeFeeMonths, normalizeFeeYear } from "../utils/fee.js";
 import {
   findStudentUniquenessConflict,
   isValidEmail,
@@ -579,16 +578,9 @@ router.post(
           (classId) => String(classId) === String(id)
         );
         const now = new Date();
-        const requestedMonths = alreadyEnrolled
-          ? normalizeFeeMonths(req.body?.feeMonths ?? req.body?.feeMonth)
-          : [];
-        const providedYear = normalizeFeeYear(req.body?.feeYear);
-        if (req.body?.feeYear && !providedYear) {
-          return res.status(400).json({
-            message: "Fee year must be a valid year (e.g., 2026).",
-          });
-        }
-        const normalizedFeeYear = providedYear || now.getFullYear();
+        const paymentDate = paidDate || now;
+        const paymentMonth = paymentDate.getMonth() + 1;
+        const paymentYear = paymentDate.getFullYear();
         if (!alreadyEnrolled) {
           const resolvedCourseGrade = resolveCourseGrade(classExists);
           if (resolvedCourseGrade && !classExists.grade) {
@@ -600,34 +592,18 @@ router.post(
               .status(403)
               .json({ message: "Student grade does not match this course." });
           }
-        } else if (!requestedMonths.length) {
-          return res.status(400).json({
-            message: "Fee month is required for fee payment requests.",
-          });
         }
 
-        let monthsToCreate = [];
-        let skippedMonths = [];
         if (alreadyEnrolled) {
-          const existingPending = await PaymentRequest.find({
+          const existingPending = await PaymentRequest.findOne({
             studentId: userId,
             classId: id,
             status: "pending",
             requestType: "fee_payment",
-            feeMonth: { $in: requestedMonths },
-            feeYear:
-              normalizedFeeYear === now.getFullYear()
-                ? { $in: [normalizedFeeYear, null] }
-                : normalizedFeeYear,
-          }).select("feeMonth");
-          const pendingSet = new Set(
-            (existingPending || []).map((row) => Number(row?.feeMonth)).filter(Number.isInteger)
-          );
-          monthsToCreate = requestedMonths.filter((month) => !pendingSet.has(month));
-          skippedMonths = requestedMonths.filter((month) => pendingSet.has(month));
-          if (!monthsToCreate.length) {
+          });
+          if (existingPending) {
             return res.status(409).json({
-              message: "Payment request already submitted for selected month(s).",
+              message: "A payment request is already pending for this course.",
             });
           }
         } else {
@@ -679,13 +655,13 @@ router.post(
 
         let createdRequests = [];
         if (alreadyEnrolled) {
-          const payloads = monthsToCreate.map((month) => ({
+          const request = await PaymentRequest.create({
             ...basePayload,
             requestType: "fee_payment",
-            feeMonth: month,
-            feeYear: normalizedFeeYear,
-          }));
-          createdRequests = await PaymentRequest.insertMany(payloads);
+            feeMonth: paymentMonth,
+            feeYear: paymentYear,
+          });
+          createdRequests = [request];
         } else {
           const request = await PaymentRequest.create({
             ...basePayload,
@@ -708,9 +684,8 @@ router.post(
         return res.status(201).json({
           message: "Payment request submitted successfully.",
           requestIds: createdRequests.map((r) => r._id),
-          createdMonths: alreadyEnrolled ? monthsToCreate : [],
-          skippedMonths: alreadyEnrolled ? skippedMonths : [],
-          feeYear: alreadyEnrolled ? normalizedFeeYear : null,
+          feeMonth: alreadyEnrolled ? paymentMonth : null,
+          feeYear: alreadyEnrolled ? paymentYear : null,
         });
       } catch (error) {
         console.error("Payment request error:", error);

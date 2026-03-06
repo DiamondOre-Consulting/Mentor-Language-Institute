@@ -13,20 +13,21 @@ const feeSchema = new mongoose.Schema({
   },
   totalFee: {
     type: Number,
-    // required: true
+    required: true,
+    min: 0,
   },
   detailFee: {
     type: [
       {
         feeMonth: {
-            type: Number,
+          type: Number,
         },
         feeYear: {
           type: Number,
         },
         paid: {
-            type: Boolean,
-            default: null
+          type: Boolean,
+          default: null
         },
         amountPaid: {
           type: Number,

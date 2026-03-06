@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useApi } from "../../../api/useApi";
+import Tesseract from "tesseract.js";
 import { Button } from "../../../components/ui/button";
 import {
   Dialog,
@@ -180,9 +181,6 @@ const StudentOverview = ({ student }) => {
   const [pendingFees, setPendingFees] = useState([]);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
-  const [availableFeeMonths, setAvailableFeeMonths] = useState([]);
-  const [selectedFeeMonths, setSelectedFeeMonths] = useState([]);
-  const [selectedFeeYear, setSelectedFeeYear] = useState(new Date().getFullYear());
   const [paymentForm, setPaymentForm] = useState({
     paymentMethod: "UPI",
     transactionId: "",
@@ -196,6 +194,7 @@ const StudentOverview = ({ student }) => {
   const [paymentErrors, setPaymentErrors] = useState({});
   const [paymentMessage, setPaymentMessage] = useState("");
   const [paymentSubmitting, setPaymentSubmitting] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   const [summary, setSummary] = useState({
     enrolledCount: 0,
     appliedCount: 0,
@@ -212,17 +211,17 @@ const StudentOverview = ({ student }) => {
     const next = {};
     const hasDetails = Boolean(
       form.transactionId ||
-        form.amount ||
-        form.paidOn ||
-        form.payerName ||
-        form.phone ||
-        form.screenshot
+      form.amount ||
+      form.paidOn ||
+      form.payerName ||
+      form.phone ||
+      form.screenshot
     );
     if (!hasDetails) {
       next.amount = "Please provide payment details.";
       return next;
     }
-    next.transactionId = validateRequired(form.transactionId, "Transaction ID");
+    next.transactionId = validateRequired(form.transactionId, "UTR Number");
     next.amount = validateAmountPaid(form.amount, totalFee, { required: true });
     next.paidOn = validateRequired(form.paidOn, "Paid on date");
     next.payerName = validateRequired(form.payerName, "Payer name");
@@ -415,36 +414,6 @@ const StudentOverview = ({ student }) => {
     setSelectedPayment(item);
     setPaymentMessage("");
     setPaymentErrors({});
-    const currentYear = new Date().getFullYear();
-    const yearValue = Number(item?.feeYear) || currentYear;
-    setSelectedFeeYear(yearValue);
-    const classMonths = pendingFees
-      .filter(
-        (fee) =>
-          String(fee.classId) === String(item.classId) &&
-          Number(fee.feeYear) === yearValue
-      )
-      .map((fee) => ({
-        value: Number(fee.feeMonth),
-        label: fee.feeMonthLabel,
-        disabled: fee.awaitingApproval,
-      }))
-      .filter((fee) => Number.isInteger(fee.value));
-    const uniqueMonths = new Map();
-    classMonths.forEach((entry) => {
-      if (!uniqueMonths.has(entry.value)) {
-        uniqueMonths.set(entry.value, entry);
-      }
-    });
-    const options = Array.from(uniqueMonths.values()).sort(
-      (a, b) => a.value - b.value
-    );
-    setAvailableFeeMonths(options);
-    setSelectedFeeMonths(
-      options.some((opt) => opt.value === Number(item.feeMonth) && !opt.disabled)
-        ? [Number(item.feeMonth)]
-        : options.filter((opt) => !opt.disabled).map((opt) => opt.value).slice(0, 1)
-    );
     setPaymentForm({
       paymentMethod: "UPI",
       transactionId: "",
@@ -455,36 +424,19 @@ const StudentOverview = ({ student }) => {
       notes: "",
       screenshot: null,
     });
+    setIsScanning(false);
     setPaymentDialogOpen(true);
-  };
-
-  const toggleFeeMonth = (monthValue) => {
-    setSelectedFeeMonths((prev) => {
-      if (prev.includes(monthValue)) {
-        return prev.filter((value) => value !== monthValue);
-      }
-      return [...prev, monthValue].sort((a, b) => a - b);
-    });
   };
 
   const handlePaymentDialogChange = (open) => {
     setPaymentDialogOpen(open);
-    if (!open) {
-      setSelectedFeeMonths([]);
-      setAvailableFeeMonths([]);
-      setSelectedFeeYear(new Date().getFullYear());
-    }
   };
 
   const submitPayment = async (e) => {
     e?.preventDefault?.();
     if (!selectedPayment) return;
-    if (!selectedFeeMonths.length) {
-      setPaymentMessage("Please select at least one month.");
-      return;
-    }
-    const totalFee = selectedPayment.totalFee || 0;
-    const nextErrors = buildPaymentErrors(paymentForm, totalFee);
+    const balanceDue = selectedPayment.balanceDue || 0;
+    const nextErrors = buildPaymentErrors(paymentForm, balanceDue);
     setPaymentErrors(nextErrors);
     if (Object.values(nextErrors).some(Boolean)) {
       setPaymentMessage("Please fix the highlighted fields.");
@@ -507,15 +459,10 @@ const StudentOverview = ({ student }) => {
       formData.append("paidOn", paymentForm.paidOn);
       formData.append("payerName", paymentForm.payerName);
       formData.append("phone", paymentForm.phone);
-      formData.append("feeMonths", JSON.stringify(selectedFeeMonths));
-      formData.append("feeYear", String(selectedFeeYear));
       if (paymentForm.screenshot) {
         formData.append("screenshot", paymentForm.screenshot);
       }
-      const feeNote = selectedFeeMonths.length
-        ? `Fee months: ${selectedFeeMonths.map((month) => monthYearLabel(month, selectedFeeYear)).join(", ")}`
-        : "";
-      const combinedNotes = [paymentForm.notes, feeNote]
+      const combinedNotes = [paymentForm.notes]
         .map((v) => String(v || "").trim())
         .filter(Boolean)
         .join(" | ");
@@ -536,14 +483,11 @@ const StudentOverview = ({ student }) => {
         setPaymentDialogOpen(false);
         setPendingFees((prev) =>
           prev.map((item) =>
-            item.classId === selectedPayment.classId &&
-            Number(item.feeYear) === Number(selectedFeeYear) &&
-            selectedFeeMonths.includes(Number(item.feeMonth))
+            item.classId === selectedPayment.classId
               ? { ...item, awaitingApproval: true }
               : item
           )
         );
-        setSelectedFeeMonths([]);
       }
     } catch (error) {
       const status = error?.response?.status;
@@ -552,7 +496,7 @@ const StudentOverview = ({ student }) => {
       } else {
         setPaymentMessage(
           error?.response?.data?.message ||
-            "Unable to submit payment right now."
+          "Unable to submit payment right now."
         );
       }
     } finally {
@@ -560,23 +504,40 @@ const StudentOverview = ({ student }) => {
     }
   };
 
-  const selectedBalance = selectedPayment
-    ? pendingFees
-      .filter(
-        (fee) =>
-          String(fee.classId) === String(selectedPayment.classId) &&
-          Number(fee.feeYear) === Number(selectedFeeYear) &&
-          selectedFeeMonths.includes(Number(fee.feeMonth))
-      )
-      .reduce((sum, fee) => sum + toNumber(fee.balanceDue), 0)
-    : 0;
-  const totalAmount =
-    selectedFeeMonths.length > 0
-      ? toNumber(paymentForm.amount) * selectedFeeMonths.length
-      : 0;
-  const selectedMonthsLabel = selectedFeeMonths.length
-    ? selectedFeeMonths.map((month) => monthYearLabel(month, selectedFeeYear)).join(", ")
-    : "None selected";
+  const handleScreenshotUpload = async (e) => {
+    const file = e.target.files?.[0];
+
+    setPaymentForm((prev) => ({ ...prev, screenshot: file || null }));
+
+    if (file) {
+      setIsScanning(true);
+      try {
+        const { data: { text } } = await Tesseract.recognize(file, "eng");
+        // UTR Extraction (12 digits)
+        const utrMatch = text.match(/\b\d{12}\b/);
+
+        if (utrMatch) {
+          setPaymentForm(prev => ({ ...prev, transactionId: utrMatch[0] }));
+        } else {
+          console.log("No matching 12-digit UTR found in screenshot.");
+        }
+      } catch (error) {
+        console.error("Error scanning screenshot:", error);
+      } finally {
+        setIsScanning(false);
+      }
+    }
+  };
+
+  const selectedBalance = selectedPayment?.balanceDue || 0;
+  const paymentPeriodLabel = (() => {
+    const fallbackDate = new Date();
+    const dateValue = paymentForm.paidOn ? new Date(paymentForm.paidOn) : fallbackDate;
+    if (Number.isNaN(dateValue.getTime())) {
+      return monthYearLabel(fallbackDate.getMonth() + 1, fallbackDate.getFullYear());
+    }
+    return monthYearLabel(dateValue.getMonth() + 1, dateValue.getFullYear());
+  })();
 
   const cardStyle = {
     background: "#fff",
@@ -936,237 +897,230 @@ const StudentOverview = ({ student }) => {
       </div>
 
       <Dialog open={paymentDialogOpen} onOpenChange={handlePaymentDialogChange}>
-        <DialogContent style={{ maxWidth: "min(95vw, 720px)" }}>
-          <DialogHeader>
-            <DialogTitle>Pay Pending Fee</DialogTitle>
-            <DialogDescription>
-              Submit payment details for{" "}
-              <strong>{selectedPayment?.classTitle || "your course"}</strong>.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent
+          style={{
+            maxWidth: "min(95vw, 720px)",
+            maxHeight: "95vh",
+            padding: 0,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            borderRadius: "1rem"
+          }}
+        >
+          <div className="p-5 border-b bg-slate-50/50">
+            <DialogHeader>
+              <DialogTitle>Pay Pending Fee</DialogTitle>
+              <DialogDescription>
+                Submit payment details for{" "}
+                <strong>{selectedPayment?.classTitle || "your course"}</strong>.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
 
-          {paymentMessage && (
-            <div className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-700">
-              {paymentMessage}
-            </div>
-          )}
-
-          <div className="grid gap-6 md:grid-cols-[220px_1fr]">
-            <div className="rounded-xl border border-orange-100 bg-orange-50/40 p-4 text-center">
-              <img
-                src={paymentQr}
-                alt="Payment QR Code"
-                className="mx-auto mb-3 w-40 rounded-lg border border-orange-200 bg-white p-1"
-              />
-              <p className="text-xs font-semibold text-orange-700">Scan QR to Pay</p>
-              <p className="mt-1 text-[11px] text-slate-500">
-                Balance: ₹ {selectedFeeMonths.length ? selectedBalance : (selectedPayment?.balanceDue || 0)}
-              </p>
-            </div>
-
-            <form className="space-y-3" onSubmit={submitPayment}>
-              <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                  Payment Method
-                </label>
-                <select
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
-                  value={paymentForm.paymentMethod}
-                  onChange={(e) =>
-                    setPaymentForm((prev) => ({ ...prev, paymentMethod: e.target.value }))
-                  }
-                >
-                  <option value="UPI">UPI</option>
-                </select>
+          <div className="flex-1 overflow-y-auto p-5 scrollbar-thin">
+            {paymentMessage && (
+              <div className="mb-4 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-700">
+                {paymentMessage}
               </div>
+            )}
 
-              <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                  Fee Months
-                </label>
-                {availableFeeMonths.length ? (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {availableFeeMonths.map((option) => {
-                      const checked = selectedFeeMonths.includes(option.value);
-                      return (
-                        <label
-                          key={option.value}
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
-                            option.disabled
-                              ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
-                              : checked
-                                ? "border-orange-300 bg-orange-50 text-orange-700"
-                                : "border-slate-200 bg-white text-slate-600"
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            className="h-3 w-3"
-                            disabled={option.disabled}
-                            checked={checked}
-                            onChange={() => toggleFeeMonth(option.value)}
-                          />
-                          {option.label || monthNumberToLabel(option.value)}
-                        </label>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="mt-1 text-xs text-slate-500">No pending months available.</p>
-                )}
-                <p className="mt-2 text-[11px] text-slate-500">
-                  Selected: {selectedMonthsLabel}
+            <div className="grid gap-6 md:grid-cols-[220px_1fr]">
+              <div className="rounded-xl border border-orange-100 bg-orange-50/40 p-4 text-center">
+                <img
+                  src={paymentQr}
+                  alt="Payment QR Code"
+                  className="mx-auto mb-3 w-40 rounded-lg border border-orange-200 bg-white p-1"
+                />
+                <p className="text-xs font-semibold text-orange-700">Scan QR to Pay</p>
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Balance: ₹ {selectedBalance}
                 </p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
+              <form className="space-y-3" onSubmit={submitPayment}>
+                <div className="col-span-full">
                   <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    Transaction ID
+                    Payment Screenshot{" "}
+                    <span className="font-medium normal-case text-slate-400">(optional)</span>
                   </label>
-                  <input
-                    type="text"
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                    value={paymentForm.transactionId}
-                    onChange={(e) =>
-                      setPaymentForm((prev) => ({ ...prev, transactionId: e.target.value }))
-                    }
-                  />
-                  {paymentErrors.transactionId && (
-                    <p className="mt-1 text-[11px] text-rose-600">
-                      {paymentErrors.transactionId}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    Amount Paid (per month)
+                  <label
+                    className={`mt-1 flex w-full cursor-pointer items-center gap-2 rounded-lg border-[1.5px] border-dashed border-orange-200 bg-orange-50/50 px-3 py-2.5 transition-colors ${isScanning ? "opacity-75 cursor-wait" : "hover:border-orange-400 hover:bg-orange-50"
+                      }`}
+                  >
+                    <span className="text-lg">{isScanning ? "⏳" : "📎"}</span>
+                    <span className="text-xs font-semibold text-orange-700">
+                      {isScanning
+                        ? "Scanning receipt..."
+                        : paymentForm.screenshot
+                          ? paymentForm.screenshot.name
+                          : "Upload screenshot to autofill details"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={handleScreenshotUpload}
+                      disabled={isScanning}
+                      className="hidden"
+                    />
                   </label>
-                  <input
-                    type="number"
-                    min="0"
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                    value={paymentForm.amount}
-                    onChange={(e) =>
-                      setPaymentForm((prev) => ({ ...prev, amount: e.target.value }))
-                    }
-                  />
-                  {selectedFeeMonths.length > 1 && (
-                    <p className="mt-1 text-[11px] text-slate-500">
-                      Total for {selectedFeeMonths.length} months: ₹ {totalAmount}
-                    </p>
-                  )}
-                  {paymentErrors.amount && (
-                    <p className="mt-1 text-[11px] text-rose-600">
-                      {paymentErrors.amount}
-                    </p>
-                  )}
                 </div>
-              </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    Paid On
+                    Payment Method
                   </label>
-                  <input
-                    type="date"
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                    value={paymentForm.paidOn}
+                  <select
+                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+                    value={paymentForm.paymentMethod}
                     onChange={(e) =>
-                      setPaymentForm((prev) => ({ ...prev, paidOn: e.target.value }))
+                      setPaymentForm((prev) => ({ ...prev, paymentMethod: e.target.value }))
                     }
-                  />
-                  {paymentErrors.paidOn && (
-                    <p className="mt-1 text-[11px] text-rose-600">
-                      {paymentErrors.paidOn}
-                    </p>
-                  )}
+                  >
+                    <option value="UPI">UPI</option>
+                  </select>
                 </div>
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    Payer Name
-                  </label>
-                  <input
-                    type="text"
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                    value={paymentForm.payerName}
-                    onChange={(e) =>
-                      setPaymentForm((prev) => ({ ...prev, payerName: e.target.value }))
-                    }
-                  />
-                  {paymentErrors.payerName && (
-                    <p className="mt-1 text-[11px] text-rose-600">
-                      {paymentErrors.payerName}
-                    </p>
-                  )}
-                </div>
-              </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    Phone
+                    Payment Period
                   </label>
-                  <input
-                    type="tel"
+                  <p className="mt-1 text-sm font-semibold text-slate-700">
+                    {paymentPeriodLabel}
+                  </p>
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    Recorded from the paid on date.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      UTR Number
+                    </label>
+                    <input
+                      type="text"
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      value={paymentForm.transactionId}
+                      onChange={(e) =>
+                        setPaymentForm((prev) => ({ ...prev, transactionId: e.target.value }))
+                      }
+                    />
+                    {paymentErrors.transactionId && (
+                      <p className="mt-1 text-[11px] text-rose-600">
+                        {paymentErrors.transactionId}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      Amount Paid
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      value={paymentForm.amount}
+                      onChange={(e) =>
+                        setPaymentForm((prev) => ({ ...prev, amount: e.target.value }))
+                      }
+                    />
+                    {paymentErrors.amount && (
+                      <p className="mt-1 text-[11px] text-rose-600">
+                        {paymentErrors.amount}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      Paid On
+                    </label>
+                    <input
+                      type="date"
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      value={paymentForm.paidOn}
+                      onChange={(e) =>
+                        setPaymentForm((prev) => ({ ...prev, paidOn: e.target.value }))
+                      }
+                    />
+                    {paymentErrors.paidOn && (
+                      <p className="mt-1 text-[11px] text-rose-600">
+                        {paymentErrors.paidOn}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      Payer Name
+                    </label>
+                    <input
+                      type="text"
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      value={paymentForm.payerName}
+                      onChange={(e) =>
+                        setPaymentForm((prev) => ({ ...prev, payerName: e.target.value }))
+                      }
+                    />
+                    {paymentErrors.payerName && (
+                      <p className="mt-1 text-[11px] text-rose-600">
+                        {paymentErrors.payerName}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      Phone
+                    </label>
+                    <input
+                      type="tel"
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      value={paymentForm.phone}
+                      onChange={(e) =>
+                        setPaymentForm((prev) => ({ ...prev, phone: e.target.value }))
+                      }
+                    />
+                    {paymentErrors.phone && (
+                      <p className="mt-1 text-[11px] text-rose-600">
+                        {paymentErrors.phone}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Notes (optional)
+                  </label>
+                  <textarea
+                    rows={2}
                     className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                    value={paymentForm.phone}
+                    value={paymentForm.notes}
                     onChange={(e) =>
-                      setPaymentForm((prev) => ({ ...prev, phone: e.target.value }))
-                    }
-                  />
-                  {paymentErrors.phone && (
-                    <p className="mt-1 text-[11px] text-rose-600">
-                      {paymentErrors.phone}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    Screenshot (optional)
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="mt-1 w-full text-xs"
-                    onChange={(e) =>
-                      setPaymentForm((prev) => ({
-                        ...prev,
-                        screenshot: e.target.files?.[0] || null,
-                      }))
+                      setPaymentForm((prev) => ({ ...prev, notes: e.target.value }))
                     }
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                  Notes (optional)
-                </label>
-                <textarea
-                  rows={2}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  value={paymentForm.notes}
-                  onChange={(e) =>
-                    setPaymentForm((prev) => ({ ...prev, notes: e.target.value }))
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => handlePaymentDialogChange(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={paymentSubmitting}>
-                  {paymentSubmitting ? "Submitting..." : "Submit Payment"}
-                </Button>
-              </div>
-            </form>
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handlePaymentDialogChange(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={paymentSubmitting}>
+                    {paymentSubmitting ? "Submitting..." : "Submit Payment"}
+                  </Button>
+                </div>
+              </form>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
